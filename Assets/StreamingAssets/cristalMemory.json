@@ -1,0 +1,158 @@
+{
+    "version": "2.0",
+    "sessionId": "FRACTURE_00_G81",
+    "createdAt": "2026-01-06T07:31:20.1451776Z",
+    "lastModified": "2026-01-07T01:10:22.6348421Z",
+    "commands": [
+        {
+            "input": "hello brother",
+            "timestamp": "2026-01-06T07:31:45.6041085Z",
+            "sessionTime": 23.501070022583009,
+            "emotionalWeight": 0.0,
+            "keywords": [
+                "hello",
+                "brother"
+            ],
+            "responseType": "Processing",
+            "stateAtTime": "Processing"
+        },
+        {
+            "input": "Thank you",
+            "timestamp": "2026-01-06T07:31:54.2789723Z",
+            "sessionTime": 32.1766471862793,
+            "emotionalWeight": 0.0,
+            "keywords": [
+                "thank"
+            ],
+            "responseType": "Processing",
+            "stateAtTime": "Responding"
+        },
+        {
+            "input": "hello sir",
+            "timestamp": "2026-01-06T07:43:20.2713608Z",
+            "sessionTime": 13.165313720703125,
+            "emotionalWeight": 0.0,
+            "keywords": [
+                "hello",
+                "sir"
+            ],
+            "responseType": "Processing",
+            "stateAtTime": "Processing"
+        },
+        {
+            "input": "jo",
+            "timestamp": "2026-01-06T07:43:26.0969846Z",
+            "sessionTime": 18.992496490478517,
+            "emotionalWeight": 0.0,
+            "keywords": [],
+            "responseType": "Processing",
+            "stateAtTime": "Responding"
+        },
+        {
+            "input": "start",
+            "timestamp": "2026-01-06T07:43:33.1522205Z",
+            "sessionTime": 26.04804039001465,
+            "emotionalWeight": 0.0,
+            "keywords": [
+                "start"
+            ],
+            "responseType": "Processing",
+            "stateAtTime": "Responding"
+        }
+    ],
+    "discoveredKeywords": {
+        "entries": [
+            {
+                "keyword": "hello",
+                "count": 2
+            },
+            {
+                "keyword": "brother",
+                "count": 1
+            },
+            {
+                "keyword": "thank",
+                "count": 1
+            },
+            {
+                "keyword": "sir",
+                "count": 1
+            },
+            {
+                "keyword": "start",
+                "count": 1
+            }
+        ]
+    },
+    "stateFlags": {
+        "hasSeenWelcome": true,
+        "hasInvokedArcana": true,
+        "hasEnteredCorruption": false,
+        "hasRemembered": false,
+        "corruptionLevel": 0.0,
+        "stabilityIndex": 1.0,
+        "seekingTriggered": false,
+        "echoCount": 0,
+        "totalCommands": 5,
+        "cumulativeEmotionalWeight": 0.0,
+        "dominantEmotion": "neutral",
+        "exitAttempted": false,
+        "truthRevealed": false,
+        "loveMentioned": false
+    },
+    "arcana": {
+        "unlocked": [
+            0,
+            14,
+            10
+        ],
+        "locked": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            11,
+            12,
+            13,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21
+        ],
+        "activeUntil": "",
+        "invocationHistory": []
+    },
+    "symbols": {
+        "discovered": [],
+        "activated": []
+    },
+    "progression": {
+        "chapter": 1,
+        "majorEvents": [],
+        "endingsSeen": [],
+        "totalPlayTime": 0.0,
+        "sessionCount": 8
+    },
+    "ritual": {
+        "hasVisitedRemembering": false,
+        "hasVisitedCorrupted": false,
+        "hasVisitedEcho": false,
+        "hasInvokedDeath": false,
+        "hasInvokedDevil": false,
+        "hasInvokedMoon": false,
+        "hasTypedWhoUnmadeYou": false,
+        "hasTypedSilenceIsSacred": false,
+        "hasTypedInvokeArcana0": false,
+        "hasEnteredUnbound": false,
+        "unboundEntryCount": 0,
+        "lastUnboundEntry": ""
+    }
+}

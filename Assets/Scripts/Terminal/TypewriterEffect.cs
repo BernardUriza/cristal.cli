@@ -173,7 +173,7 @@ namespace Cristal.CLI
         private void Update()
         {
             // Allow skipping with space or enter while typing
-            if (_isTyping && (Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Return)))
+            if (_isTyping && (UnityEngine.Input.GetKeyDown(KeyCode.Space) || UnityEngine.Input.GetKeyDown(KeyCode.Return)))
             {
                 // Disabled by default - can be enabled for accessibility
                 // Skip();

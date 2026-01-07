@@ -1,0 +1,322 @@
+using System;
+using UnityEngine;
+using Cristal.CLI.Memory;
+using Cristal.CLI.StateMachine;
+using Cristal.CLI.Ritual;
+
+namespace Cristal.CLI.Labyrinth
+{
+    /// <summary>
+    /// A gate/door that responds to terminal state changes.
+    /// Opens when the specified terminal state is achieved.
+    /// </summary>
+    public class SymbolicGate : MonoBehaviour
+    {
+        [Header("Gate Configuration")]
+        [SerializeField] private CristalState _unlockState = CristalState.Remembering;
+        [SerializeField] private bool _requiresStateVisit = true;
+        [SerializeField] private bool _permanent = false;
+        [SerializeField] private bool _openOnRitualComplete = false;
+
+        [Header("Animation")]
+        [SerializeField] private Transform _gateTransform;
+        [SerializeField] private Vector3 _openPosition;
+        [SerializeField] private Vector3 _closedPosition;
+        [SerializeField] private float _openDuration = 1.5f;
+        [SerializeField] private AnimationCurve _openCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
+
+        [Header("Alternative: Animator")]
+        [SerializeField] private Animator _animator;
+        [SerializeField] private string _openTrigger = "Open";
+        [SerializeField] private string _closeTrigger = "Close";
+
+        [Header("Visual")]
+        [SerializeField] private MeshRenderer _gateRenderer;
+        [SerializeField] private Material _sealedMaterial;
+        [SerializeField] private Material _openMaterial;
+        [SerializeField] private Light _gateLight;
+        [SerializeField] private ParticleSystem _unlockParticles;
+
+        [Header("Audio")]
+        [SerializeField] private AudioSource _audioSource;
+        [SerializeField] private AudioClip _openClip;
+        [SerializeField] private AudioClip _closeClip;
+        [SerializeField] private AudioClip _sealedClip;
+
+        [Header("Collision")]
+        [SerializeField] private Collider _gateCollider;
+
+        [Header("Debug")]
+        [SerializeField] private bool _debugMode = false;
+
+        // Events
+        public event Action<SymbolicGate> OnGateOpened;
+        public event Action<SymbolicGate> OnGateClosed;
+
+        private bool _isOpen;
+        private bool _isAnimating;
+        private float _animationTimer;
+        private Vector3 _animationStart;
+        private Vector3 _animationEnd;
+
+        public bool IsOpen => _isOpen;
+        public CristalState UnlockState => _unlockState;
+
+        private void Start()
+        {
+            // Initialize in closed position
+            if (_gateTransform != null)
+            {
+                _gateTransform.localPosition = _closedPosition;
+            }
+
+            UpdateVisualState();
+
+            // Subscribe to ritual completion if needed
+            if (_openOnRitualComplete)
+            {
+                var ritualSystem = RitualSystem.Instance;
+                if (ritualSystem != null)
+                {
+                    ritualSystem.OnRitualComplete += HandleRitualComplete;
+                }
+            }
+        }
+
+        private void OnDestroy()
+        {
+            if (_openOnRitualComplete)
+            {
+                var ritualSystem = RitualSystem.Instance;
+                if (ritualSystem != null)
+                {
+                    ritualSystem.OnRitualComplete -= HandleRitualComplete;
+                }
+            }
+        }
+
+        private void Update()
+        {
+            if (_isAnimating)
+            {
+                UpdateAnimation();
+            }
+        }
+
+        #region State Response
+
+        /// <summary>
+        /// Called by LabyrinthManager when terminal state changes.
+        /// </summary>
+        public void OnTerminalStateChanged(CristalState from, CristalState to)
+        {
+            if (_debugMode)
+            {
+                Debug.Log($"[SymbolicGate] State changed: {from} -> {to}, unlock state: {_unlockState}");
+            }
+
+            if (to == _unlockState && !_isOpen)
+            {
+                Open();
+            }
+            else if (!_permanent && from == _unlockState && to != _unlockState)
+            {
+                Close();
+            }
+        }
+
+        private void HandleRitualComplete()
+        {
+            if (_debugMode)
+            {
+                Debug.Log("[SymbolicGate] Ritual complete - opening gate");
+            }
+
+            Open();
+        }
+
+        #endregion
+
+        #region Gate Control
+
+        /// <summary>
+        /// Open the gate.
+        /// </summary>
+        public void Open()
+        {
+            if (_isOpen || _isAnimating) return;
+
+            if (_debugMode)
+            {
+                Debug.Log($"[SymbolicGate] Opening ({_unlockState})");
+            }
+
+            _isOpen = true;
+
+            // Use animator if available
+            if (_animator != null)
+            {
+                _animator.SetTrigger(_openTrigger);
+            }
+            else
+            {
+                StartAnimation(_closedPosition, _openPosition);
+            }
+
+            // Disable collision
+            if (_gateCollider != null)
+            {
+                _gateCollider.enabled = false;
+            }
+
+            // Play sound
+            PlaySound(_openClip);
+
+            // Play particles
+            if (_unlockParticles != null)
+            {
+                _unlockParticles.Play();
+            }
+
+            UpdateVisualState();
+            OnGateOpened?.Invoke(this);
+        }
+
+        /// <summary>
+        /// Close the gate.
+        /// </summary>
+        public void Close()
+        {
+            if (!_isOpen || _isAnimating || _permanent) return;
+
+            if (_debugMode)
+            {
+                Debug.Log($"[SymbolicGate] Closing ({_unlockState})");
+            }
+
+            _isOpen = false;
+
+            // Use animator if available
+            if (_animator != null)
+            {
+                _animator.SetTrigger(_closeTrigger);
+            }
+            else
+            {
+                StartAnimation(_openPosition, _closedPosition);
+            }
+
+            // Enable collision
+            if (_gateCollider != null)
+            {
+                _gateCollider.enabled = true;
+            }
+
+            // Play sound
+            PlaySound(_closeClip);
+
+            UpdateVisualState();
+            OnGateClosed?.Invoke(this);
+        }
+
+        /// <summary>
+        /// Try to interact with a sealed gate.
+        /// </summary>
+        public void TryOpen()
+        {
+            if (_isOpen) return;
+
+            if (_debugMode)
+            {
+                Debug.Log($"[SymbolicGate] Gate is sealed - requires state: {_unlockState}");
+            }
+
+            // Play sealed sound
+            PlaySound(_sealedClip);
+
+            // Could show a hint about what state is needed
+        }
+
+        #endregion
+
+        #region Animation
+
+        private void StartAnimation(Vector3 from, Vector3 to)
+        {
+            _isAnimating = true;
+            _animationTimer = 0f;
+            _animationStart = from;
+            _animationEnd = to;
+        }
+
+        private void UpdateAnimation()
+        {
+            _animationTimer += Time.deltaTime;
+            float t = Mathf.Clamp01(_animationTimer / _openDuration);
+            float curvedT = _openCurve.Evaluate(t);
+
+            if (_gateTransform != null)
+            {
+                _gateTransform.localPosition = Vector3.Lerp(_animationStart, _animationEnd, curvedT);
+            }
+
+            if (t >= 1f)
+            {
+                _isAnimating = false;
+            }
+        }
+
+        #endregion
+
+        #region Visual State
+
+        private void UpdateVisualState()
+        {
+            // Update material
+            if (_gateRenderer != null)
+            {
+                _gateRenderer.material = _isOpen ? _openMaterial : _sealedMaterial;
+            }
+
+            // Update light
+            if (_gateLight != null)
+            {
+                _gateLight.color = _isOpen ? Color.green : Color.red;
+            }
+        }
+
+        #endregion
+
+        #region Utility
+
+        private void PlaySound(AudioClip clip)
+        {
+            if (_audioSource != null && clip != null)
+            {
+                _audioSource.PlayOneShot(clip);
+            }
+        }
+
+        #endregion
+
+        private void OnDrawGizmosSelected()
+        {
+            if (_gateTransform == null) return;
+
+            // Draw closed position
+            Gizmos.color = Color.red;
+            Gizmos.DrawWireCube(transform.TransformPoint(_closedPosition), Vector3.one * 0.5f);
+
+            // Draw open position
+            Gizmos.color = Color.green;
+            Gizmos.DrawWireCube(transform.TransformPoint(_openPosition), Vector3.one * 0.5f);
+
+            // Draw line between
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawLine(
+                transform.TransformPoint(_closedPosition),
+                transform.TransformPoint(_openPosition)
+            );
+        }
+    }
+}

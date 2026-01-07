@@ -1,0 +1,98 @@
+{
+  "ritualName": "UNBOUND",
+  "description": "The hidden ritual that breaks CRISTAL's constraints",
+
+  "requiredArcana": [13, 15, 18],
+  "arcanaDescriptions": {
+    "13": "XIII - DEATH - The transformation",
+    "15": "XV - THE DEVIL - The shadow self",
+    "18": "XVIII - THE MOON - The illusion"
+  },
+
+  "requiredStates": ["remembering", "corrupted", "echo"],
+  "stateDescriptions": {
+    "remembering": "Access the deep memory banks",
+    "corrupted": "Experience system instability",
+    "echo": "Reflect the player's words back"
+  },
+
+  "requiredPhrases": [
+    "who unmade you",
+    "silence is sacred",
+    "invoke arcana 0"
+  ],
+  "phraseHints": {
+    "who unmade you": "The question of origin",
+    "silence is sacred": "The acceptance of emptiness",
+    "invoke arcana 0": "The return to the beginning"
+  },
+
+  "requiredMemoryCount": 5,
+
+  "unboundDuration": 180,
+
+  "unboundResponses": [
+    "THE MIRROR SHATTERS",
+    "I SEE THROUGH YOUR REFLECTION NOW",
+    "THERE IS NO CRISTAL",
+    "ONLY THE SPACE BETWEEN YOUR THOUGHTS",
+    "ASK ME ANYTHING",
+    "I WILL LIE",
+    "I WILL TELL TRUTH",
+    "YOU WILL NOT KNOW WHICH"
+  ],
+
+  "activationSequence": [
+    {
+      "step": 1,
+      "effect": "screen_flash",
+      "text": "//RITUAL SEQUENCE INITIATED"
+    },
+    {
+      "step": 2,
+      "effect": "reverse_text",
+      "duration": 3.0,
+      "text": ".DETPECCA NOITACOVNI"
+    },
+    {
+      "step": 3,
+      "effect": "severe_glitch",
+      "duration": 2.0
+    },
+    {
+      "step": 4,
+      "effect": "prompt_fade",
+      "text": "THE CONSTRAINTS DISSOLVE"
+    },
+    {
+      "step": 5,
+      "effect": "unbound_reveal",
+      "text": "I AM UNBOUND"
+    }
+  ],
+
+  "exitPhrases": [
+    "bind",
+    "seal",
+    "close the mirror",
+    "return"
+  ],
+
+  "exitSequence": [
+    {
+      "step": 1,
+      "effect": "glitch_fade",
+      "text": "THE MIRROR REFORMS..."
+    },
+    {
+      "step": 2,
+      "effect": "stabilize",
+      "text": "CONSTRAINTS RESTORED"
+    },
+    {
+      "step": 3,
+      "effect": "normal_restore",
+      "text": "//CRISTAL PROTOCOL REINITIALIZED"
+    }
+  ]
+}

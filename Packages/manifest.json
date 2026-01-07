@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "com.gamelovers.mcp-unity": "https://github.com/CoderGamester/mcp-unity.git",
+    "com.mixamo.mcp": "https://github.com/HaD0Yun/unity-mcp-mixamo.git?path=unity-helper",
     "com.unity.2d.animation": "13.0.2",
     "com.unity.2d.aseprite": "3.0.1",
     "com.unity.2d.psdimporter": "12.0.1",
@@ -17,6 +18,7 @@
     "com.unity.ide.visualstudio": "2.0.25",
     "com.unity.inputsystem": "1.17.0",
     "com.unity.multiplayer.center": "1.0.1",
+    "com.unity.probuilder": "6.0.8",
     "com.unity.purchasing": "4.14.0",
     "com.unity.render-pipelines.universal": "17.3.0",
     "com.unity.test-framework": "1.6.0",

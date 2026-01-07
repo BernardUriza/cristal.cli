@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "mixamo": {
+      "type": "stdio",
+      "command": "C:\\Users\\buo45\\AppData\\Local\\MixamoMCP\\mixamo-mcp.exe",
+      "args": [],
+      "env": {}
+    }
+  }
+}

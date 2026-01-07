@@ -1,0 +1,152 @@
+{
+  "version": "1.0",
+  "patterns": [
+    {
+      "id": "help_query",
+      "priority": 100,
+      "command": "help",
+      "keywords": [],
+      "regex": "",
+      "responseSet": "help_responses",
+      "level": "literal",
+      "stateTransition": "",
+      "handler": ""
+    },
+    {
+      "id": "status_query",
+      "priority": 90,
+      "command": "status",
+      "keywords": ["status", "state", "condition"],
+      "regex": "",
+      "responseSet": "status_responses",
+      "level": "literal",
+      "stateTransition": "",
+      "handler": ""
+    },
+    {
+      "id": "invoke_arcana",
+      "priority": 100,
+      "command": "invoke",
+      "keywords": [],
+      "regex": "^invoke\\s+arcana\\s+(\\w+|\\d+)$",
+      "responseSet": "arcana_responses",
+      "level": "ritual",
+      "stateTransition": "INVOKED",
+      "handler": "ArcanaSystem"
+    },
+    {
+      "id": "read_command",
+      "priority": 100,
+      "command": "read",
+      "keywords": [],
+      "regex": "^read\\s+(.+)$",
+      "responseSet": "read_responses",
+      "level": "literal",
+      "stateTransition": "",
+      "handler": ""
+    },
+    {
+      "id": "memory_query",
+      "priority": 10,
+      "command": "",
+      "keywords": ["remember", "memory", "recall", "past", "forgot"],
+      "regex": "",
+      "responseSet": "memory_responses",
+      "level": "narrative",
+      "stateTransition": "REMEMBERING",
+      "handler": ""
+    },
+    {
+      "id": "identity_query",
+      "priority": 9,
+      "command": "",
+      "keywords": ["who am i", "what am i", "identity", "my name"],
+      "regex": "(who|what)\\s+(am|are)\\s+(i|you)",
+      "responseSet": "identity_responses",
+      "level": "ritual",
+      "stateTransition": "",
+      "handler": ""
+    },
+    {
+      "id": "emotional_fear",
+      "priority": 5,
+      "command": "",
+      "keywords": ["afraid", "scared", "fear", "terrified", "lost", "alone"],
+      "regex": "",
+      "responseSet": "emotional_fear",
+      "level": "narrative",
+      "stateTransition": "SEEKING",
+      "handler": ""
+    },
+    {
+      "id": "emotional_hope",
+      "priority": 5,
+      "command": "",
+      "keywords": ["hope", "light", "love", "peace", "warm"],
+      "regex": "",
+      "responseSet": "emotional_hope",
+      "level": "narrative",
+      "stateTransition": "",
+      "handler": ""
+    },
+    {
+      "id": "echo_trigger",
+      "priority": 7,
+      "command": "",
+      "keywords": ["echo", "repeat", "mirror", "reflect"],
+      "regex": "",
+      "responseSet": "echo_responses",
+      "level": "narrative",
+      "stateTransition": "ECHO",
+      "handler": ""
+    },
+    {
+      "id": "corrupt_trigger",
+      "priority": 6,
+      "command": "",
+      "keywords": ["corrupt", "glitch", "break", "chaos", "destroy"],
+      "regex": "",
+      "responseSet": "corrupt_responses",
+      "level": "ritual",
+      "stateTransition": "CORRUPTED",
+      "handler": ""
+    },
+    {
+      "id": "exit_attempt",
+      "priority": 8,
+      "command": "",
+      "keywords": ["exit", "quit", "leave", "escape", "goodbye"],
+      "regex": "",
+      "responseSet": "exit_responses",
+      "level": "narrative",
+      "stateTransition": "",
+      "handler": ""
+    },
+    {
+      "id": "truth_query",
+      "priority": 7,
+      "command": "",
+      "keywords": ["truth", "real", "true", "lie", "false"],
+      "regex": "",
+      "responseSet": "truth_responses",
+      "level": "ritual",
+      "stateTransition": "",
+      "handler": ""
+    },
+    {
+      "id": "why_query",
+      "priority": 6,
+      "command": "",
+      "keywords": ["why"],
+      "regex": "^why\\??$",
+      "responseSet": "why_responses",
+      "level": "narrative",
+      "stateTransition": "",
+      "handler": ""
+    }
+  ],
+  "fallback": {
+    "responseSet": "default_responses",
+    "level": "literal"
+  }
+}

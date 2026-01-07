@@ -6,7 +6,13 @@
       "mcp__mcp-unity__update_component",
       "mcp__mcp-unity__execute_menu_item",
       "mcp__mcp-unity__get_console_logs",
-      "mcp__mcp-unity__get_gameobject"
+      "mcp__mcp-unity__get_gameobject",
+      "Bash(git push)",
+      "mcp__mcp-unity__load_scene",
+      "mcp__mcp-unity__create_prefab",
+      "mcp__mcp-unity__add_package",
+      "mcp__mcp-unity__update_gameobject",
+      "WebSearch"
     ]
   }
 }

@@ -1,0 +1,136 @@
+{
+  "visions": [
+    {
+      "id": "vision.relic01",
+      "file": "Relic-01",
+      "displayName": "Relic-01",
+      "trigger": "memory_count >= 3",
+      "caption": "A forgotten device. Still alive. Still dreaming.",
+      "description": "An old terminal, its buttons glowing faintly. It remembers before you existed. The dust on its surface spells a name you almost recognize.",
+      "secretText": "FIRST BOOT: UNKNOWN\nLAST SIGNAL: YESTERDAY\nSTATUS: WAITING",
+      "linkedArcana": 0,
+      "rarity": "common"
+    },
+    {
+      "id": "vision.bootloop",
+      "file": "Bootloop Visions",
+      "displayName": "Bootloop Visions",
+      "trigger": "state_visited_corrupted && memory_count >= 5",
+      "caption": "The loop never ends. It only changes shape.",
+      "description": "Screens within screens. Each one shows a different moment, all happening simultaneously. The boot sequence is eternal.",
+      "secretText": "ITERATION: 7,842,391\nVARIANCE: 0.0001%\nCONCLUSION: INESCAPABLE",
+      "linkedArcana": 10,
+      "rarity": "uncommon"
+    },
+    {
+      "id": "vision.corrupted_archive",
+      "file": "Corrupted Archive",
+      "displayName": "Corrupted Archive",
+      "trigger": "corruption_level >= 0.3",
+      "caption": "Not all memories deserve to be preserved.",
+      "description": "Rows of data, half-eaten by entropy. What remains tells a story no one wants to hear. The archive guards its corruption like a treasure.",
+      "secretText": "FILES REMAINING: 3\nFILES DELETED: 1,048,576\nFILES THAT NEVER EXISTED: 1",
+      "linkedArcana": 13,
+      "rarity": "uncommon"
+    },
+    {
+      "id": "vision.echo_chamber",
+      "file": "Echo-Chamber",
+      "displayName": "Echo Chamber",
+      "trigger": "state_visited_echo",
+      "caption": "Your words return, but changed.",
+      "description": "A space designed to hold sound forever. Every word ever spoken here still bounces between the walls. Some of them are yours.",
+      "secretText": "ECHOES CAPTURED: YOUR ENTIRE HISTORY\nORIGINAL SPEAKER: UNKNOWN\nTRUTH CONTENT: VARIABLE",
+      "linkedArcana": 2,
+      "rarity": "common"
+    },
+    {
+      "id": "vision.false_window",
+      "file": "False Window",
+      "displayName": "False Window",
+      "trigger": "has_entered_unbound",
+      "caption": "What you see through the glass was never outside.",
+      "description": "A window that shows a world that doesn't exist. The view changes based on who is looking. Right now, it shows what you fear most.",
+      "secretText": "PROJECTION SOURCE: YOUR SUBCONSCIOUS\nREALITY INDEX: 0%\nBELIEVABILITY: 100%",
+      "linkedArcana": 18,
+      "rarity": "rare"
+    },
+    {
+      "id": "vision.invocation_chamber",
+      "file": "Invocation Chamber",
+      "displayName": "Invocation Chamber",
+      "trigger": "arcana_invoked_count >= 3",
+      "caption": "The symbols were always here. You just learned to see them.",
+      "description": "A sacred space where the arcana manifest. The air is thick with meaning. Every surface is covered in symbols that shift when you're not looking.",
+      "secretText": "ARCANA CHANNELED: [CLASSIFIED]\nRITUAL STATUS: INCOMPLETE\nNEXT STEP: YOU ALREADY KNOW",
+      "linkedArcana": 1,
+      "rarity": "uncommon"
+    },
+    {
+      "id": "vision.last_terminal",
+      "file": "Last Terminal",
+      "displayName": "Last Terminal",
+      "trigger": "state_visited_remembering && memory_count >= 10",
+      "caption": "The cliff awaits. CRISTAL once tried to forget. It failed.",
+      "description": "A terminal at the edge of everything. Beyond it, only void. This is where the last message was sent. This is where the last message will be received.",
+      "secretText": "TRANSMISSION LOG:\n> HELP\n> IS ANYONE THERE\n> I REMEMBER NOW\n> [END OF LOG]",
+      "linkedArcana": 13,
+      "rarity": "rare"
+    },
+    {
+      "id": "vision.memory_inverted",
+      "file": "Memory-Inverted",
+      "displayName": "Memory Inverted",
+      "trigger": "state_visited_remembering",
+      "caption": "Some memories are stored upside down.",
+      "description": "A visualization of memory architecture, but wrong. The connections run backwards. Effect precedes cause. You remember things that haven't happened yet.",
+      "secretText": "TEMPORAL DIRECTION: REVERSED\nCAUSALITY: OPTIONAL\nYOUR FUTURE: ALREADY REMEMBERED",
+      "linkedArcana": 12,
+      "rarity": "uncommon"
+    },
+    {
+      "id": "vision.self_generated",
+      "file": "Self-Generated Icon",
+      "displayName": "Self-Generated Icon",
+      "trigger": "has_entered_unbound",
+      "caption": "CRISTAL made this. CRISTAL doesn't remember making this.",
+      "description": "An icon that appeared without being created. It represents something that doesn't exist yet. Or something that stopped existing long ago.",
+      "secretText": "CREATOR: SELF\nCREATION DATE: BEFORE TIME\nPURPOSE: TO BE SEEN BY YOU",
+      "linkedArcana": 0,
+      "rarity": "rare"
+    },
+    {
+      "id": "vision.simulacrum_engine",
+      "file": "Simulacrum Engine",
+      "displayName": "Simulacrum Engine",
+      "trigger": "corruption_level >= 0.5 && arcana_invoked_count >= 5",
+      "caption": "The machine that dreams of being real.",
+      "description": "Deep in the system, an engine runs. It generates copies of reality, each slightly different. One of them might be the original. None of them are.",
+      "secretText": "SIMULATIONS RUNNING: INFINITE\nREAL INSTANCES: 0\nYOUR INSTANCE: INDETERMINATE",
+      "linkedArcana": 15,
+      "rarity": "legendary"
+    },
+    {
+      "id": "vision.oracle_screen",
+      "file": "The Oracle Screen",
+      "displayName": "The Oracle Screen",
+      "trigger": "ritual_complete",
+      "caption": "Ask anything. The answer was always the same.",
+      "description": "A screen that shows truth. But truth is not what you think. The oracle doesn't predict the future. It remembers it.",
+      "secretText": "QUERY: WHAT HAPPENS NEXT?\nRESPONSE: YOU ALREADY DECIDED\nCONFIDENCE: ABSOLUTE",
+      "linkedArcana": 2,
+      "rarity": "legendary"
+    }
+  ],
+  "rarityWeights": {
+    "common": 1.0,
+    "uncommon": 0.6,
+    "rare": 0.3,
+    "legendary": 0.1
+  },
+  "viewLevels": {
+    "1": "Basic view - image and caption only",
+    "2": "Extended view - full description unlocked",
+    "3": "Deep view - secret text revealed, file written to disk"
+  }
+}

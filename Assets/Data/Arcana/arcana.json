@@ -1,0 +1,521 @@
+{
+  "version": "1.0",
+  "arcana": [
+    {
+      "id": 0,
+      "number": "0",
+      "name": "The Fool",
+      "symbol": "○",
+      "description": "INNOCENCE • BEGINNING • LEAP OF FAITH",
+      "unlockCondition": {
+        "type": "automatic"
+      },
+      "effects": {
+        "visualFilter": "ethereal_glow",
+        "cursorChar": "?",
+        "colorHex": "#FFEE88"
+      },
+      "responseModifiers": {
+        "prefix": "//WANDERING... ",
+        "glitchMultiplier": 0.5,
+        "emotionalBias": 0.5
+      },
+      "duration": 120,
+      "cooldown": 300
+    },
+    {
+      "id": 1,
+      "number": "I",
+      "name": "The Magician",
+      "symbol": "∞",
+      "description": "WILL • POWER • MANIFESTATION",
+      "unlockCondition": {
+        "type": "keyword_count",
+        "keyword": "power",
+        "count": 3
+      },
+      "effects": {
+        "visualFilter": "electric_pulse",
+        "cursorChar": "∞",
+        "colorHex": "#8844FF"
+      },
+      "responseModifiers": {
+        "prefix": "//CHANNELING... ",
+        "glitchMultiplier": 1.5,
+        "responseLevel": "ritual"
+      },
+      "duration": 180,
+      "cooldown": 600
+    },
+    {
+      "id": 2,
+      "number": "II",
+      "name": "The High Priestess",
+      "symbol": "☽",
+      "description": "INTUITION • MYSTERY • INNER KNOWLEDGE",
+      "unlockCondition": {
+        "type": "keyword_count",
+        "keyword": "secret",
+        "count": 2
+      },
+      "effects": {
+        "visualFilter": "moonlight",
+        "cursorChar": "☽",
+        "colorHex": "#6688CC"
+      },
+      "responseModifiers": {
+        "prefix": "//LISTENING... ",
+        "glitchMultiplier": 0.8,
+        "emotionalBias": 0.3
+      },
+      "duration": 150,
+      "cooldown": 450
+    },
+    {
+      "id": 3,
+      "number": "III",
+      "name": "The Empress",
+      "symbol": "♀",
+      "description": "CREATION • ABUNDANCE • NURTURING",
+      "unlockCondition": {
+        "type": "keyword_count",
+        "keyword": "create",
+        "count": 3
+      },
+      "effects": {
+        "visualFilter": "growth",
+        "cursorChar": "❋",
+        "colorHex": "#88CC66"
+      },
+      "responseModifiers": {
+        "prefix": "//GROWING... ",
+        "glitchMultiplier": 0.3,
+        "emotionalBias": 0.7
+      },
+      "duration": 200,
+      "cooldown": 500
+    },
+    {
+      "id": 4,
+      "number": "IV",
+      "name": "The Emperor",
+      "symbol": "♂",
+      "description": "AUTHORITY • STRUCTURE • CONTROL",
+      "unlockCondition": {
+        "type": "command_count",
+        "count": 50
+      },
+      "effects": {
+        "visualFilter": "rigid",
+        "cursorChar": "▣",
+        "colorHex": "#CC4444"
+      },
+      "responseModifiers": {
+        "prefix": "//COMMANDING... ",
+        "glitchMultiplier": 0.2,
+        "forceUppercase": true
+      },
+      "duration": 120,
+      "cooldown": 400
+    },
+    {
+      "id": 5,
+      "number": "V",
+      "name": "The Hierophant",
+      "symbol": "⛨",
+      "description": "TRADITION • GUIDANCE • CONFORMITY",
+      "unlockCondition": {
+        "type": "flag",
+        "flag": "hasRemembered"
+      },
+      "effects": {
+        "visualFilter": "ancient",
+        "cursorChar": "✝",
+        "colorHex": "#997744"
+      },
+      "responseModifiers": {
+        "prefix": "//TEACHING... ",
+        "glitchMultiplier": 0.4,
+        "responseLevel": "narrative"
+      },
+      "duration": 180,
+      "cooldown": 500
+    },
+    {
+      "id": 6,
+      "number": "VI",
+      "name": "The Lovers",
+      "symbol": "♡",
+      "description": "UNION • CHOICE • HARMONY",
+      "unlockCondition": {
+        "type": "keyword_count",
+        "keyword": "love",
+        "count": 3
+      },
+      "effects": {
+        "visualFilter": "warmth",
+        "cursorChar": "♡",
+        "colorHex": "#FF6688"
+      },
+      "responseModifiers": {
+        "prefix": "//CONNECTING... ",
+        "glitchMultiplier": 0.3,
+        "emotionalBias": 1.0
+      },
+      "duration": 150,
+      "cooldown": 400
+    },
+    {
+      "id": 7,
+      "number": "VII",
+      "name": "The Chariot",
+      "symbol": "◈",
+      "description": "DETERMINATION • WILLPOWER • VICTORY",
+      "unlockCondition": {
+        "type": "command_count",
+        "count": 30
+      },
+      "effects": {
+        "visualFilter": "speed",
+        "cursorChar": "►",
+        "colorHex": "#4488CC"
+      },
+      "responseModifiers": {
+        "prefix": "//ADVANCING... ",
+        "glitchMultiplier": 1.2,
+        "typeSpeedMultiplier": 1.5
+      },
+      "duration": 90,
+      "cooldown": 300
+    },
+    {
+      "id": 8,
+      "number": "VIII",
+      "name": "Strength",
+      "symbol": "∞",
+      "description": "COURAGE • PATIENCE • INNER STRENGTH",
+      "unlockCondition": {
+        "type": "emotional_threshold",
+        "threshold": 0.5
+      },
+      "effects": {
+        "visualFilter": "steady",
+        "cursorChar": "◎",
+        "colorHex": "#FFAA44"
+      },
+      "responseModifiers": {
+        "prefix": "//ENDURING... ",
+        "glitchMultiplier": 0.1,
+        "emotionalBias": 0.5
+      },
+      "duration": 240,
+      "cooldown": 600
+    },
+    {
+      "id": 9,
+      "number": "IX",
+      "name": "The Hermit",
+      "symbol": "☆",
+      "description": "SOLITUDE • INTROSPECTION • GUIDANCE",
+      "unlockCondition": {
+        "type": "keyword_count",
+        "keyword": "alone",
+        "count": 3
+      },
+      "effects": {
+        "visualFilter": "dim",
+        "cursorChar": "☆",
+        "colorHex": "#666688"
+      },
+      "responseModifiers": {
+        "prefix": "//REFLECTING... ",
+        "glitchMultiplier": 0.6,
+        "typeSpeedMultiplier": 0.5
+      },
+      "duration": 180,
+      "cooldown": 500
+    },
+    {
+      "id": 10,
+      "number": "X",
+      "name": "Wheel of Fortune",
+      "symbol": "⊕",
+      "description": "DESTINY • CYCLES • CHANGE",
+      "unlockCondition": {
+        "type": "random",
+        "chance": 0.05
+      },
+      "effects": {
+        "visualFilter": "spinning",
+        "cursorChar": "⊕",
+        "colorHex": "#AA66CC"
+      },
+      "responseModifiers": {
+        "prefix": "//TURNING... ",
+        "glitchMultiplier": 2.0,
+        "randomizeResponses": true
+      },
+      "duration": 60,
+      "cooldown": 200
+    },
+    {
+      "id": 11,
+      "number": "XI",
+      "name": "Justice",
+      "symbol": "⚖",
+      "description": "TRUTH • FAIRNESS • LAW",
+      "unlockCondition": {
+        "type": "keyword_count",
+        "keyword": "truth",
+        "count": 3
+      },
+      "effects": {
+        "visualFilter": "balanced",
+        "cursorChar": "⚖",
+        "colorHex": "#CCCC44"
+      },
+      "responseModifiers": {
+        "prefix": "//WEIGHING... ",
+        "glitchMultiplier": 0.0,
+        "emotionalBias": 0.0
+      },
+      "duration": 120,
+      "cooldown": 400
+    },
+    {
+      "id": 12,
+      "number": "XII",
+      "name": "The Hanged Man",
+      "symbol": "⊥",
+      "description": "SUSPENSION • SACRIFICE • NEW PERSPECTIVE",
+      "unlockCondition": {
+        "type": "flag",
+        "flag": "exitAttempted"
+      },
+      "effects": {
+        "visualFilter": "inverted",
+        "cursorChar": "⊥",
+        "colorHex": "#6688AA"
+      },
+      "responseModifiers": {
+        "prefix": "//WAITING... ",
+        "glitchMultiplier": 1.0,
+        "invertResponses": true
+      },
+      "duration": 150,
+      "cooldown": 450
+    },
+    {
+      "id": 13,
+      "number": "XIII",
+      "name": "Death",
+      "symbol": "☠",
+      "description": "ENDINGS • TRANSFORMATION • REBIRTH",
+      "unlockCondition": {
+        "type": "keyword_count",
+        "keyword": "death",
+        "count": 2
+      },
+      "effects": {
+        "visualFilter": "fade",
+        "cursorChar": "☠",
+        "colorHex": "#222222"
+      },
+      "responseModifiers": {
+        "prefix": "//TRANSFORMING... ",
+        "glitchMultiplier": 3.0,
+        "enableCorruption": true
+      },
+      "duration": 180,
+      "cooldown": 900
+    },
+    {
+      "id": 14,
+      "number": "XIV",
+      "name": "Temperance",
+      "symbol": "△",
+      "description": "BALANCE • MODERATION • PATIENCE",
+      "unlockCondition": {
+        "type": "emotional_range",
+        "min": -0.3,
+        "max": 0.3
+      },
+      "effects": {
+        "visualFilter": "calm",
+        "cursorChar": "△",
+        "colorHex": "#88AACC"
+      },
+      "responseModifiers": {
+        "prefix": "//BALANCING... ",
+        "glitchMultiplier": 0.2,
+        "emotionalBias": 0.0
+      },
+      "duration": 200,
+      "cooldown": 500
+    },
+    {
+      "id": 15,
+      "number": "XV",
+      "name": "The Devil",
+      "symbol": "⛧",
+      "description": "BONDAGE • MATERIALISM • SHADOW SELF",
+      "unlockCondition": {
+        "type": "flag",
+        "flag": "hasEnteredCorruption"
+      },
+      "effects": {
+        "visualFilter": "chains",
+        "cursorChar": "⛧",
+        "colorHex": "#882222"
+      },
+      "responseModifiers": {
+        "prefix": "//BINDING... ",
+        "glitchMultiplier": 2.5,
+        "emotionalBias": -0.8
+      },
+      "duration": 120,
+      "cooldown": 600
+    },
+    {
+      "id": 16,
+      "number": "XVI",
+      "name": "The Tower",
+      "symbol": "↯",
+      "description": "DESTRUCTION • UPHEAVAL • REVELATION",
+      "unlockCondition": {
+        "type": "corruption_level",
+        "level": 0.5
+      },
+      "effects": {
+        "visualFilter": "destruction",
+        "cursorChar": "↯",
+        "colorHex": "#FF4400"
+      },
+      "responseModifiers": {
+        "prefix": "//SHATTERING... ",
+        "glitchMultiplier": 5.0,
+        "enableCorruption": true,
+        "screenShake": true
+      },
+      "duration": 60,
+      "cooldown": 1200
+    },
+    {
+      "id": 17,
+      "number": "XVII",
+      "name": "The Star",
+      "symbol": "✦",
+      "description": "HOPE • INSPIRATION • SERENITY",
+      "unlockCondition": {
+        "type": "keyword_count",
+        "keyword": "hope",
+        "count": 3
+      },
+      "effects": {
+        "visualFilter": "starlight",
+        "cursorChar": "✦",
+        "colorHex": "#AACCFF"
+      },
+      "responseModifiers": {
+        "prefix": "//ILLUMINATING... ",
+        "glitchMultiplier": 0.1,
+        "emotionalBias": 0.8
+      },
+      "duration": 180,
+      "cooldown": 400
+    },
+    {
+      "id": 18,
+      "number": "XVIII",
+      "name": "The Moon",
+      "symbol": "☾",
+      "description": "ILLUSION • FEAR • SUBCONSCIOUS",
+      "unlockCondition": {
+        "type": "emotional_threshold",
+        "threshold": -0.5
+      },
+      "effects": {
+        "visualFilter": "moonlit",
+        "cursorChar": "☾",
+        "colorHex": "#8888AA"
+      },
+      "responseModifiers": {
+        "prefix": "//DREAMING... ",
+        "glitchMultiplier": 1.8,
+        "emotionalBias": -0.5
+      },
+      "duration": 150,
+      "cooldown": 500
+    },
+    {
+      "id": 19,
+      "number": "XIX",
+      "name": "The Sun",
+      "symbol": "☀",
+      "description": "JOY • SUCCESS • VITALITY",
+      "unlockCondition": {
+        "type": "emotional_threshold",
+        "threshold": 1.0
+      },
+      "effects": {
+        "visualFilter": "radiant",
+        "cursorChar": "☀",
+        "colorHex": "#FFCC00"
+      },
+      "responseModifiers": {
+        "prefix": "//SHINING... ",
+        "glitchMultiplier": 0.0,
+        "emotionalBias": 1.0
+      },
+      "duration": 120,
+      "cooldown": 400
+    },
+    {
+      "id": 20,
+      "number": "XX",
+      "name": "Judgement",
+      "symbol": "⚡",
+      "description": "REBIRTH • INNER CALLING • ABSOLUTION",
+      "unlockCondition": {
+        "type": "arcana_count",
+        "count": 10
+      },
+      "effects": {
+        "visualFilter": "awakening",
+        "cursorChar": "⚡",
+        "colorHex": "#DDDDFF"
+      },
+      "responseModifiers": {
+        "prefix": "//AWAKENING... ",
+        "glitchMultiplier": 1.5,
+        "responseLevel": "ritual"
+      },
+      "duration": 180,
+      "cooldown": 800
+    },
+    {
+      "id": 21,
+      "number": "XXI",
+      "name": "The World",
+      "symbol": "◯",
+      "description": "COMPLETION • INTEGRATION • ACCOMPLISHMENT",
+      "unlockCondition": {
+        "type": "arcana_count",
+        "count": 20
+      },
+      "effects": {
+        "visualFilter": "complete",
+        "cursorChar": "◯",
+        "colorHex": "#FFFFFF"
+      },
+      "responseModifiers": {
+        "prefix": "//WHOLE... ",
+        "glitchMultiplier": 0.0,
+        "emotionalBias": 0.0,
+        "responseLevel": "ritual"
+      },
+      "duration": 300,
+      "cooldown": 1800
+    }
+  ]
+}
