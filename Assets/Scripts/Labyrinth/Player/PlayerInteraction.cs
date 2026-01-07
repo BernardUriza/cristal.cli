@@ -20,6 +20,9 @@ namespace Cristal.CLI.Labyrinth
         [SerializeField] private FloatingInteractPrompt _floatingPrompt;
         [SerializeField] private bool _useFloatingPrompt = true;
 
+        [Header("Prompt Controller (Contextual)")]
+        [SerializeField] private FloatingPromptController _promptController;
+
         [Header("UI (Legacy)")]
         [SerializeField] private GameObject _promptPanel;
         [SerializeField] private TextMeshProUGUI _promptText;
@@ -109,7 +112,7 @@ namespace Cristal.CLI.Labyrinth
                     }
                 }
 
-                if (interactable != null && interactable.CanInteract)
+                if (interactable != null)
                 {
                     SetTarget(interactable, targetTransform);
                     return;
@@ -136,8 +139,15 @@ namespace Cristal.CLI.Labyrinth
             _currentTargetTransform = targetTransform;
             _currentTarget.OnFocus();
 
-            // Show floating prompt
-            ShowPrompt(_currentTarget.InteractPrompt, targetTransform);
+            if (_promptController != null)
+            {
+                _promptController.SetTarget(_currentTarget, targetTransform);
+            }
+            else
+            {
+                // Show prompt (legacy/floating)
+                ShowPrompt(_currentTarget.InteractPrompt, targetTransform);
+            }
 
             if (_debugMode)
             {
@@ -156,7 +166,14 @@ namespace Cristal.CLI.Labyrinth
             _currentTarget = null;
             _currentTargetTransform = null;
 
-            HidePrompt();
+            if (_promptController != null)
+            {
+                _promptController.ClearTarget();
+            }
+            else
+            {
+                HidePrompt();
+            }
 
             if (_debugMode)
             {

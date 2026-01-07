@@ -170,6 +170,11 @@ namespace Cristal.CLI
             }
         }
 
+        public void SetBlinkRate(float blinkRate)
+        {
+            _blinkRate = Mathf.Max(0.01f, blinkRate);
+        }
+
         /// <summary>
         /// Trigger a manual glitch effect.
         /// </summary>

@@ -9,6 +9,7 @@ namespace Cristal.CLI.Labyrinth
     /// <summary>
     /// A gate/door that responds to terminal state changes.
     /// Opens when the specified terminal state is achieved.
+    /// Supports multi-direction placement and UNBOUND ritual events.
     /// </summary>
     public class SymbolicGate : MonoBehaviour
     {
@@ -18,12 +19,28 @@ namespace Cristal.CLI.Labyrinth
         [SerializeField] private bool _permanent = false;
         [SerializeField] private bool _openOnRitualComplete = false;
 
+        [Header("Direction & Placement")]
+        [SerializeField] private WallSide _direction = WallSide.North;
+        [SerializeField] private bool _autoComputeOpenPosition = true;
+        [SerializeField] private float _openDistance = 3f;
+
+        [Header("UNBOUND Support")]
+        [SerializeField] private bool _openOnUnboundTriggered = true;
+        [SerializeField] private bool _closeOnUnboundEnded = false;
+
         [Header("Animation")]
         [SerializeField] private Transform _gateTransform;
         [SerializeField] private Vector3 _openPosition;
         [SerializeField] private Vector3 _closedPosition;
         [SerializeField] private float _openDuration = 1.5f;
         [SerializeField] private AnimationCurve _openCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
+        
+        [Header("Scale & Fade Animation")]
+        [SerializeField] private bool _animateScaleFade = false;
+        [SerializeField] private Vector3 _closedScale = Vector3.one;
+        [SerializeField] private Vector3 _openScale = new Vector3(0.1f, 0.1f, 0.1f);
+        [SerializeField] private float _closedAlpha = 1f;
+        [SerializeField] private float _openAlpha = 0f;
 
         [Header("Alternative: Animator")]
         [SerializeField] private Animator _animator;
@@ -58,9 +75,18 @@ namespace Cristal.CLI.Labyrinth
         private float _animationTimer;
         private Vector3 _animationStart;
         private Vector3 _animationEnd;
+        private Vector3 _scaleStart;
+        private Vector3 _scaleEnd;
+        private float _alphaStart;
+        private float _alphaEnd;
+        private MaterialPropertyBlock _propBlock;
+        private static readonly int AlphaProperty = Shader.PropertyToID("_BaseColor");
 
+        // Public properties for runtime configuration
         public bool IsOpen => _isOpen;
         public CristalState UnlockState => _unlockState;
+        public WallSide Direction => _direction;
+        public bool OpenOnUnboundTriggered => _openOnUnboundTriggered;
 
         private void Start()
         {

@@ -42,6 +42,7 @@ namespace Cristal.CLI.Labyrinth.UI
         private Camera _mainCamera;
         private Vector3 _baseScale;
         private bool _isInitialized;
+        private PromptUrgency _urgency = PromptUrgency.Normal;
 
         #endregion
 
@@ -202,11 +203,21 @@ namespace Cristal.CLI.Labyrinth.UI
         /// <param name="keyText">Key to display (default: "E")</param>
         public void Show(Transform target, string actionText = null, string keyText = "E")
         {
+            Show(target, actionText, keyText, PromptUrgency.Normal);
+        }
+
+        /// <summary>
+        /// Show the prompt above the specified target with urgency.
+        /// </summary>
+        public void Show(Transform target, string actionText, string keyText, PromptUrgency urgency)
+        {
             if (target == null)
             {
                 Debug.LogWarning("[FloatingInteractPrompt] Show called with null target");
                 return;
             }
+
+            _urgency = urgency;
 
             // Update state
             _currentState = new PromptState(
@@ -324,7 +335,7 @@ namespace Cristal.CLI.Labyrinth.UI
             // Apply animation offset (bob)
             if (_animator != null && _config != null)
             {
-                basePosition += _animator.CalculatePositionOffset(time, _config);
+                basePosition += _animator.CalculatePositionOffset(time, _config, _urgency);
             }
 
             transform.position = basePosition;
@@ -354,14 +365,21 @@ namespace Cristal.CLI.Labyrinth.UI
             }
 
             // Apply scale with pulse effect
-            float scaleMultiplier = _animator.CalculateScaleMultiplier(time, distance, _config);
+            float scaleMultiplier = _animator.CalculateScaleMultiplier(time, distance, _config, _urgency);
             _container.localScale = _baseScale * scaleMultiplier;
 
             // Apply glow effect to text
             if (_keyText != null && _config != null)
             {
-                float glowIntensity = _animator.CalculateGlowIntensity(time, _config);
-                _keyText.color = Color.Lerp(_config.textColor, _config.glowColor, glowIntensity);
+                float glowIntensity = _animator.CalculateGlowIntensity(time, _config, _urgency);
+
+                Color accent = _config.glowColor;
+                if (_urgency == PromptUrgency.Warning)
+                {
+                    accent = _config.primaryColor;
+                }
+
+                _keyText.color = Color.Lerp(_config.textColor, accent, glowIntensity);
             }
         }
 
@@ -392,6 +410,7 @@ namespace Cristal.CLI.Labyrinth.UI
             if (_keyText != null)
             {
                 _keyText.text = _currentState.KeyText;
+                _keyText.gameObject.SetActive(!string.IsNullOrEmpty(_currentState.KeyText));
             }
 
             if (_actionText != null)

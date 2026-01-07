@@ -1,0 +1,150 @@
+using UnityEngine;
+using Cristal.CLI.Memory;
+using Cristal.CLI.StateMachine;
+
+namespace Cristal.CLI.Labyrinth.UI
+{
+    public struct PromptContext
+    {
+        public string ActionText;
+        public string KeyText;
+        public PromptUrgency Urgency;
+
+        public bool HasKey => !string.IsNullOrEmpty(KeyText);
+
+        public static PromptContext From(string actionText, string keyText, PromptUrgency urgency)
+        {
+            return new PromptContext
+            {
+                ActionText = actionText ?? "",
+                KeyText = keyText ?? "",
+                Urgency = urgency
+            };
+        }
+    }
+
+    /// <summary>
+    /// Resolves what the floating prompt should show based on current CristalState and target object.
+    /// </summary>
+    public class PromptContextResolver : MonoBehaviour
+    {
+        [Header("Vocabulary")]
+        [SerializeField] private PromptVocabulary _vocabulary;
+
+        [Header("State Source")]
+        [SerializeField] private TerminalStateMachine _stateMachine;
+
+        [Header("Fallback")]
+        [SerializeField] private string _defaultKey = "E";
+        [SerializeField] private PromptUrgency _disabledInteractableUrgency = PromptUrgency.Normal;
+
+        public PromptVocabulary Vocabulary
+        {
+            get => _vocabulary;
+            set => _vocabulary = value;
+        }
+
+        public TerminalStateMachine StateMachine
+        {
+            get => _stateMachine;
+            set => _stateMachine = value;
+        }
+
+        public CristalState CurrentState
+        {
+            get
+            {
+                var sm = _stateMachine != null ? _stateMachine : TerminalStateMachine.Instance;
+                return sm != null ? sm.CurrentStateId : CristalState.Waiting;
+            }
+        }
+
+        public PromptContext Resolve(Cristal.CLI.Labyrinth.IInteractable interactable, Transform targetTransform)
+        {
+            var state = CurrentState;
+            var subject = ResolveSubjectType(interactable, targetTransform);
+
+            // Highest priority: UNBOUND overrides everything
+            if (state == CristalState.Unbound)
+            {
+                if (_vocabulary != null && _vocabulary.TryResolve(state, PromptSubjectType.Any, out var unboundEntry))
+                {
+                    return ContextFromEntry(unboundEntry);
+                }
+
+                return PromptContext.From(
+                    "Nada es estable. Toca bajo tu propio riesgo.",
+                    "",
+                    PromptUrgency.Critical
+                );
+            }
+
+            // Vocabulary mapping
+            if (_vocabulary != null && _vocabulary.TryResolve(state, subject, out var entry))
+            {
+                // If target cannot interact and entry wants a key, strip it by default.
+                bool canInteract = interactable != null && interactable.CanInteract;
+                if (!canInteract && entry.includeKey)
+                {
+                    return PromptContext.From(entry.actionText, "", _disabledInteractableUrgency);
+                }
+
+                return ContextFromEntry(entry);
+            }
+
+            // Fallback: use interactable.InteractPrompt
+            if (interactable != null)
+            {
+                if (!interactable.CanInteract)
+                {
+                    return PromptContext.From(interactable.InteractPrompt, "", _disabledInteractableUrgency);
+                }
+
+                return PromptContext.From(interactable.InteractPrompt, _defaultKey, PromptUrgency.Normal);
+            }
+
+            return PromptContext.From("", "", PromptUrgency.Normal);
+        }
+
+        private PromptContext ContextFromEntry(PromptVocabularyEntry entry)
+        {
+            string keyText = entry.includeKey ? (string.IsNullOrEmpty(entry.keyText) ? _defaultKey : entry.keyText) : "";
+            return PromptContext.From(entry.actionText, keyText, entry.urgency);
+        }
+
+        private static PromptSubjectType ResolveSubjectType(Cristal.CLI.Labyrinth.IInteractable interactable, Transform targetTransform)
+        {
+            if (interactable is MonoBehaviour mb)
+            {
+                // Known concrete types
+                if (mb.GetComponent<Cristal.CLI.Labyrinth.Console.InWorldConsole>() != null)
+                {
+                    return PromptSubjectType.Console;
+                }
+
+                // Tag-based resolution for future objects
+                var go = mb.gameObject;
+                if (go != null)
+                {
+                    if (go.CompareTag("Door")) return PromptSubjectType.Door;
+                    if (go.CompareTag("Hologram")) return PromptSubjectType.Hologram;
+                }
+            }
+
+            // Name-based fallback (works for prototype scenes)
+            if (targetTransform != null)
+            {
+                string name = targetTransform.name;
+                if (!string.IsNullOrEmpty(name))
+                {
+                    string upper = name.ToUpperInvariant();
+                    if (upper.Contains("DOOR") || upper.Contains("PUERTA")) return PromptSubjectType.Door;
+                    if (upper.Contains("HOLOG") || upper.Contains("ECHO")) return PromptSubjectType.Hologram;
+                    if (upper.Contains("CONSOLE") || upper.Contains("TERMINAL")) return PromptSubjectType.Console;
+                }
+            }
+
+            return PromptSubjectType.Generic;
+        }
+    }
+}

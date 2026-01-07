@@ -9,6 +9,9 @@ namespace Cristal.CLI.Terminal.UI
     /// </summary>
     public class TerminalFrame : MonoBehaviour
     {
+        [Header("Visual Config (Optional)")]
+        [SerializeField] private TerminalVisualConfig _visualConfig;
+
         [Header("Frame Settings")]
         [SerializeField] private float _borderWidth = 2f;
         [SerializeField] private Color _borderColor = new Color(0.2f, 0.4f, 0.2f, 1f);
@@ -30,7 +33,26 @@ namespace Cristal.CLI.Terminal.UI
 
         private void Start()
         {
+            if (_visualConfig != null)
+            {
+                ApplyConfig(_visualConfig);
+            }
             ApplyStyle();
+        }
+
+        public void ApplyConfig(TerminalVisualConfig config)
+        {
+            if (config == null) return;
+
+            if (!config.showBorder)
+            {
+                SetBordersEnabled(false);
+                return;
+            }
+
+            SetBordersEnabled(true);
+            _borderWidth = config.borderWidth;
+            _borderColor = config.borderColor;
         }
 
         /// <summary>
@@ -52,6 +74,22 @@ namespace Cristal.CLI.Terminal.UI
                         accent.color = _borderColor;
                         accent.enabled = true;
                     }
+                }
+            }
+        }
+
+        private void SetBordersEnabled(bool enabled)
+        {
+            if (_topBorder != null) _topBorder.enabled = enabled;
+            if (_bottomBorder != null) _bottomBorder.enabled = enabled;
+            if (_leftBorder != null) _leftBorder.enabled = enabled;
+            if (_rightBorder != null) _rightBorder.enabled = enabled;
+
+            if (_cornerAccents != null)
+            {
+                foreach (var accent in _cornerAccents)
+                {
+                    if (accent != null) accent.enabled = enabled && _showCornerAccents;
                 }
             }
         }

@@ -4,14 +4,19 @@ using UnityEngine.UI;
 using UnityEditor;
 using TMPro;
 using Cristal.CLI;
+using Cristal.CLI.Terminal.UI;
 
 namespace Cristal.CLI.Editor
 {
     public class SimpleTerminalSetup : EditorWindow
     {
+        private const string DefaultVisualConfigResourcesPath = "Config/DefaultTerminalVisualConfig";
+
         [MenuItem("CRISTAL/Setup Simple Terminal")]
         public static void SetupSimpleTerminal()
         {
+            TerminalVisualConfig config = LoadDefaultVisualConfig();
+
             // Delete existing terminal objects
             var existingCanvases = GameObject.FindObjectsByType<Canvas>(FindObjectsSortMode.None);
             foreach (var existingCanvas in existingCanvases)
@@ -53,7 +58,7 @@ namespace Cristal.CLI.Editor
             GameObject bg = new GameObject("Background");
             bg.transform.SetParent(canvasObj.transform, false);
             Image bgImage = bg.AddComponent<Image>();
-            bgImage.color = Color.black;
+            bgImage.color = config != null ? config.backgroundColor : Color.black;
             RectTransform bgRect = bg.GetComponent<RectTransform>();
             bgRect.anchorMin = Vector2.zero;
             bgRect.anchorMax = Vector2.one;
@@ -65,8 +70,13 @@ namespace Cristal.CLI.Editor
             outputObj.transform.SetParent(canvasObj.transform, false);
             TextMeshProUGUI outputText = outputObj.AddComponent<TextMeshProUGUI>();
             outputText.text = "";
-            outputText.fontSize = 24;
-            outputText.color = new Color(0.4f, 1f, 0.4f); // Green terminal color
+            outputText.fontSize = config != null ? config.fontSize : 24;
+            outputText.lineSpacing = config != null ? config.lineSpacing : outputText.lineSpacing;
+            outputText.color = config != null ? config.outputColor : new Color(0.4f, 1f, 0.4f);
+            if (config != null && config.font != null)
+            {
+                outputText.font = config.font;
+            }
             outputText.alignment = TextAlignmentOptions.BottomLeft;
             outputText.enableWordWrapping = true;
             outputText.overflowMode = TextOverflowModes.Truncate;
@@ -81,7 +91,19 @@ namespace Cristal.CLI.Editor
             GameObject inputBg = new GameObject("InputBackground");
             inputBg.transform.SetParent(canvasObj.transform, false);
             Image inputBgImage = inputBg.AddComponent<Image>();
-            inputBgImage.color = new Color(0.1f, 0.1f, 0.1f, 0.8f);
+            if (config != null)
+            {
+                inputBgImage.color = new Color(
+                    config.backgroundColor.r,
+                    config.backgroundColor.g,
+                    config.backgroundColor.b,
+                    0.8f
+                );
+            }
+            else
+            {
+                inputBgImage.color = new Color(0.1f, 0.1f, 0.1f, 0.8f);
+            }
             RectTransform inputBgRect = inputBg.GetComponent<RectTransform>();
             inputBgRect.anchorMin = new Vector2(0.02f, 0.02f);
             inputBgRect.anchorMax = new Vector2(0.98f, 0.10f);
@@ -93,8 +115,12 @@ namespace Cristal.CLI.Editor
             promptObj.transform.SetParent(canvasObj.transform, false);
             TextMeshProUGUI promptText = promptObj.AddComponent<TextMeshProUGUI>();
             promptText.text = "> ";
-            promptText.fontSize = 28;
-            promptText.color = new Color(0.5f, 0.8f, 1f);
+            promptText.fontSize = config != null ? config.fontSize : 28;
+            promptText.color = config != null ? config.outputColor : new Color(0.5f, 0.8f, 1f);
+            if (config != null && config.font != null)
+            {
+                promptText.font = config.font;
+            }
             promptText.alignment = TextAlignmentOptions.Left;
 
             RectTransform promptRect = promptObj.GetComponent<RectTransform>();
@@ -145,8 +171,13 @@ namespace Cristal.CLI.Editor
             inputTextObj.transform.SetParent(textArea.transform, false);
             TextMeshProUGUI inputText = inputTextObj.AddComponent<TextMeshProUGUI>();
             inputText.text = "";
-            inputText.fontSize = 24;
-            inputText.color = Color.white;
+            inputText.fontSize = config != null ? config.fontSize : 24;
+            inputText.lineSpacing = config != null ? config.lineSpacing : inputText.lineSpacing;
+            inputText.color = config != null ? config.inputColor : Color.white;
+            if (config != null && config.font != null)
+            {
+                inputText.font = config.font;
+            }
             inputText.alignment = TextAlignmentOptions.Left;
             inputText.enableWordWrapping = false;
 
@@ -163,7 +194,7 @@ namespace Cristal.CLI.Editor
             inputField.placeholder = placeholderText;
             inputField.fontAsset = inputText.font;
             inputField.pointSize = 24;
-            inputField.caretColor = Color.white;
+            inputField.caretColor = config != null ? config.cursorColor : Color.white;
             inputField.customCaretColor = true;
             inputField.caretWidth = 2;
             inputField.selectionColor = new Color(0.3f, 0.5f, 0.8f, 0.5f);
@@ -173,10 +204,19 @@ namespace Cristal.CLI.Editor
             cursorObj.transform.SetParent(canvasObj.transform, false);
             TextMeshProUGUI cursorText = cursorObj.AddComponent<TextMeshProUGUI>();
             cursorText.text = "█";
-            cursorText.fontSize = 28;
-            cursorText.color = Color.white;
+            cursorText.fontSize = config != null ? config.fontSize : 28;
+            cursorText.color = config != null ? config.cursorColor : Color.white;
+            if (config != null && config.font != null)
+            {
+                cursorText.font = config.font;
+            }
             cursorText.alignment = TextAlignmentOptions.Left;
             CursorBlink cursorBlink = cursorObj.AddComponent<CursorBlink>();
+            if (config != null)
+            {
+                cursorBlink.SetColor(config.cursorColor);
+                cursorBlink.SetBlinkRate(config.cursorBlinkRate);
+            }
 
             RectTransform cursorRect = cursorObj.GetComponent<RectTransform>();
             cursorRect.anchorMin = new Vector2(0.96f, 0.02f);
@@ -193,6 +233,14 @@ namespace Cristal.CLI.Editor
             cliSO.FindProperty("_inputField").objectReferenceValue = inputField;
             cliSO.FindProperty("_outputText").objectReferenceValue = outputText;
             cliSO.FindProperty("_cursorText").objectReferenceValue = cursorText;
+            if (config != null)
+            {
+                SerializedProperty configProp = cliSO.FindProperty("_visualConfig");
+                if (configProp != null)
+                {
+                    configProp.objectReferenceValue = config;
+                }
+            }
             cliSO.ApplyModifiedProperties();
 
             // Create TerminalCore
@@ -206,6 +254,11 @@ namespace Cristal.CLI.Editor
 
             Selection.activeGameObject = canvasObj;
             Debug.Log("[CRISTAL] Simple Terminal setup complete!");
+        }
+
+        private static TerminalVisualConfig LoadDefaultVisualConfig()
+        {
+            return Resources.Load<TerminalVisualConfig>(DefaultVisualConfigResourcesPath);
         }
     }
 }

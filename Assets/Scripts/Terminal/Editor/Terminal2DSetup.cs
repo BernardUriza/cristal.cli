@@ -13,6 +13,8 @@ namespace Cristal.CLI.Terminal.Editor
         [MenuItem("CRISTAL/Setup 2D Terminal Scene")]
         public static void Setup2DTerminalScene()
         {
+            var config = FindFirstVisualConfig();
+
             // Create or find Canvas
             Canvas canvas = Object.FindFirstObjectByType<Canvas>();
             if (canvas == null)
@@ -34,7 +36,7 @@ namespace Cristal.CLI.Terminal.Editor
 
             // Create background
             var background = CreateUIElement<Image>("Background", canvas.transform);
-            background.color = new Color(0.02f, 0.02f, 0.02f, 1f);
+            background.color = config != null ? config.backgroundColor : new Color(0.02f, 0.02f, 0.02f, 1f);
             SetFullScreen(background.rectTransform);
 
             // Create terminal container
@@ -69,10 +71,15 @@ namespace Cristal.CLI.Terminal.Editor
             outputText.rectTransform.offsetMin = Vector2.zero;
             outputText.rectTransform.offsetMax = Vector2.zero;
             outputText.alignment = TextAlignmentOptions.TopLeft;
-            outputText.fontSize = 18;
-            outputText.color = new Color(0.6f, 0.9f, 0.6f);
+            outputText.fontSize = config != null ? config.fontSize : 18;
+            outputText.lineSpacing = config != null ? config.lineSpacing : outputText.lineSpacing;
+            outputText.color = config != null ? config.outputColor : new Color(0.6f, 0.9f, 0.6f);
             outputText.richText = true;
             outputText.enableWordWrapping = true;
+            if (config != null && config.font != null)
+            {
+                outputText.font = config.font;
+            }
 
             // Create input area
             var inputContainer = CreateUIElement<RectTransform>("InputContainer", terminalContainer);
@@ -87,9 +94,13 @@ namespace Cristal.CLI.Terminal.Editor
             prompt.rectTransform.sizeDelta = new Vector2(30, 0);
             prompt.rectTransform.anchoredPosition = new Vector2(15, 0);
             prompt.text = "> ";
-            prompt.fontSize = 18;
-            prompt.color = new Color(0.6f, 0.9f, 0.6f);
+            prompt.fontSize = config != null ? config.fontSize : 18;
+            prompt.color = config != null ? config.outputColor : new Color(0.6f, 0.9f, 0.6f);
             prompt.alignment = TextAlignmentOptions.Left;
+            if (config != null && config.font != null)
+            {
+                prompt.font = config.font;
+            }
 
             // Create input field
             var inputFieldGO = new GameObject("InputField");
@@ -107,21 +118,30 @@ namespace Cristal.CLI.Terminal.Editor
             
             var inputText = CreateUIElement<TextMeshProUGUI>("Text", textArea);
             SetFullScreen(inputText.rectTransform);
-            inputText.fontSize = 18;
-            inputText.color = new Color(0.8f, 0.8f, 0.8f);
+            inputText.fontSize = config != null ? config.fontSize : 18;
+            inputText.lineSpacing = config != null ? config.lineSpacing : inputText.lineSpacing;
+            inputText.color = config != null ? config.inputColor : new Color(0.8f, 0.8f, 0.8f);
             inputText.alignment = TextAlignmentOptions.Left;
+            if (config != null && config.font != null)
+            {
+                inputText.font = config.font;
+            }
 
             var placeholder = CreateUIElement<TextMeshProUGUI>("Placeholder", textArea);
             SetFullScreen(placeholder.rectTransform);
-            placeholder.fontSize = 18;
+            placeholder.fontSize = config != null ? config.fontSize : 18;
             placeholder.color = new Color(0.4f, 0.4f, 0.4f);
             placeholder.alignment = TextAlignmentOptions.Left;
             placeholder.text = "type here...";
+            if (config != null && config.font != null)
+            {
+                placeholder.font = config.font;
+            }
 
             inputField.textViewport = textArea;
             inputField.textComponent = inputText;
             inputField.placeholder = placeholder;
-            inputField.caretColor = new Color(0.6f, 1f, 0.6f);
+            inputField.caretColor = config != null ? config.cursorColor : new Color(0.6f, 1f, 0.6f);
             inputField.caretWidth = 2;
 
             // Create cursor blink
@@ -131,19 +151,37 @@ namespace Cristal.CLI.Terminal.Editor
             cursor.rectTransform.sizeDelta = new Vector2(15, 0);
             cursor.rectTransform.anchoredPosition = new Vector2(-7.5f, 0);
             cursor.text = "█";
-            cursor.fontSize = 18;
-            cursor.color = new Color(0.6f, 1f, 0.6f);
+            cursor.fontSize = config != null ? config.fontSize : 18;
+            cursor.color = config != null ? config.cursorColor : new Color(0.6f, 1f, 0.6f);
             cursor.alignment = TextAlignmentOptions.Center;
             cursor.gameObject.AddComponent<CursorBlink>();
+            if (config != null && config.font != null)
+            {
+                cursor.font = config.font;
+            }
 
             // Create frame border
-            CreateBorder(terminalContainer, new Color(0.2f, 0.4f, 0.2f), 2f);
+            if (config == null || config.showBorder)
+            {
+                Color borderColor = config != null ? config.borderColor : new Color(0.2f, 0.4f, 0.2f);
+                float borderWidth = config != null ? config.borderWidth : 2f;
+                CreateBorder(terminalContainer, borderColor, borderWidth);
+            }
 
             // Create scanline overlay
-            var scanlines = CreateUIElement<RawImage>("Scanlines", canvas.transform);
-            SetFullScreen(scanlines.rectTransform);
-            scanlines.raycastTarget = false;
-            scanlines.gameObject.AddComponent<UI.ScanlineEffect>();
+            if (config == null || config.enableScanlines)
+            {
+                var scanlines = CreateUIElement<RawImage>("Scanlines", canvas.transform);
+                SetFullScreen(scanlines.rectTransform);
+                scanlines.raycastTarget = false;
+                var effect = scanlines.gameObject.AddComponent<UI.ScanlineEffect>();
+
+                if (config != null)
+                {
+                    effect.SetAlpha(config.scanlineAlpha);
+                    effect.SetAnimated(config.scanlineSpeed > 0f, config.scanlineSpeed);
+                }
+            }
 
             // Add CrystalCLI controller
             var controller = canvas.gameObject.GetComponent<CrystalCLI>();
@@ -151,6 +189,23 @@ namespace Cristal.CLI.Terminal.Editor
             {
                 controller = canvas.gameObject.AddComponent<CrystalCLI>();
             }
+
+            // Bind references (so the scene actually works)
+            var cliSO = new SerializedObject(controller);
+            cliSO.FindProperty("_inputField").objectReferenceValue = inputField;
+            cliSO.FindProperty("_outputText").objectReferenceValue = outputText;
+            cliSO.FindProperty("_cursorText").objectReferenceValue = cursor;
+            cliSO.FindProperty("_scrollRect").objectReferenceValue = scrollRect;
+            cliSO.FindProperty("_contentRect").objectReferenceValue = content;
+            if (config != null)
+            {
+                var visualConfigProp = cliSO.FindProperty("_visualConfig");
+                if (visualConfigProp != null)
+                {
+                    visualConfigProp.objectReferenceValue = config;
+                }
+            }
+            cliSO.ApplyModifiedPropertiesWithoutUndo();
 
             // Log completion
             Debug.Log("[Terminal2DSetup] 2D Terminal scene configured successfully");
@@ -181,6 +236,15 @@ namespace Cristal.CLI.Terminal.Editor
                 AssetDatabase.SaveAssets();
                 Selection.activeObject = config;
             }
+        }
+
+        private static UI.TerminalVisualConfig FindFirstVisualConfig()
+        {
+            string[] guids = AssetDatabase.FindAssets("t:TerminalVisualConfig");
+            if (guids == null || guids.Length == 0) return null;
+            string assetPath = AssetDatabase.GUIDToAssetPath(guids[0]);
+            if (string.IsNullOrEmpty(assetPath)) return null;
+            return AssetDatabase.LoadAssetAtPath<UI.TerminalVisualConfig>(assetPath);
         }
 
         private static T CreateUIElement<T>(string name, Transform parent) where T : Component

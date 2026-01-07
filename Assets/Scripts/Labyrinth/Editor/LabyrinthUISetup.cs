@@ -18,6 +18,7 @@ namespace Cristal.CLI.Labyrinth.Editor
     {
         private const string PROMPT_PREFAB_PATH = "Assets/Prefabs/UI/FloatingInteractPrompt.prefab";
         private const string PROMPT_CONFIG_PATH = "Assets/Resources/Config/InteractPromptConfig.asset";
+        private const string PROMPT_VOCAB_PATH = "Assets/Resources/Config/PromptVocabulary.asset";
 
         [MenuItem("CRISTAL/Floating Prompt/Create Complete Setup")]
         public static void CreateCompleteSetup()
@@ -53,6 +54,17 @@ namespace Cristal.CLI.Labyrinth.Editor
             {
                 Selection.activeObject = config;
                 EditorGUIUtility.PingObject(config);
+            }
+        }
+
+        [MenuItem("CRISTAL/Floating Prompt/Create Vocabulary")]
+        public static void CreateVocabulary()
+        {
+            var vocab = CreatePromptVocabulary();
+            if (vocab != null)
+            {
+                Selection.activeObject = vocab;
+                EditorGUIUtility.PingObject(vocab);
             }
         }
 
@@ -104,6 +116,33 @@ namespace Cristal.CLI.Labyrinth.Editor
 
             Debug.Log($"[LabyrinthUISetup] Created InteractPromptConfig at {PROMPT_CONFIG_PATH}");
             return config;
+        }
+
+        private static PromptVocabulary CreatePromptVocabulary()
+        {
+            // Ensure directory exists
+            string directory = Path.GetDirectoryName(PROMPT_VOCAB_PATH);
+            if (!AssetDatabase.IsValidFolder(directory))
+            {
+                CreateFolderRecursive(directory);
+            }
+
+            // Check if already exists
+            var existing = AssetDatabase.LoadAssetAtPath<PromptVocabulary>(PROMPT_VOCAB_PATH);
+            if (existing != null)
+            {
+                Debug.Log($"[LabyrinthUISetup] PromptVocabulary already exists at {PROMPT_VOCAB_PATH}");
+                return existing;
+            }
+
+            var vocab = ScriptableObject.CreateInstance<PromptVocabulary>();
+            vocab.SetDefaultsIfEmpty();
+
+            AssetDatabase.CreateAsset(vocab, PROMPT_VOCAB_PATH);
+            AssetDatabase.SaveAssets();
+
+            Debug.Log($"[LabyrinthUISetup] Created PromptVocabulary at {PROMPT_VOCAB_PATH}");
+            return vocab;
         }
 
         private static GameObject CreatePromptPrefab(InteractPromptConfig config)
@@ -267,40 +306,72 @@ namespace Cristal.CLI.Labyrinth.Editor
                 return;
             }
 
-            // Check if already has prompt in scene
+            // Find or create prompt in scene
             var existingPrompt = Object.FindFirstObjectByType<FloatingInteractPrompt>();
-            if (existingPrompt != null)
+            if (existingPrompt == null)
             {
-                Debug.Log("[LabyrinthUISetup] FloatingInteractPrompt already exists in scene.");
-                Selection.activeGameObject = existingPrompt.gameObject;
-                return;
+                // Try to load prefab
+                var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PROMPT_PREFAB_PATH);
+                if (prefab == null)
+                {
+                    Debug.LogWarning("[LabyrinthUISetup] Prefab not found. Creating complete setup first...");
+                    CreateCompleteSetup();
+                    prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PROMPT_PREFAB_PATH);
+                }
+
+                if (prefab == null)
+                {
+                    Debug.LogError("[LabyrinthUISetup] Failed to create or load prefab!");
+                    return;
+                }
+
+                // Instantiate in scene
+                var instance = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
+                instance.name = "FloatingInteractPrompt";
+                Undo.RegisterCreatedObjectUndo(instance, "Create FloatingInteractPrompt");
+                existingPrompt = instance.GetComponent<FloatingInteractPrompt>();
             }
 
-            // Try to load prefab
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PROMPT_PREFAB_PATH);
-            if (prefab == null)
+            // Ensure vocabulary exists
+            var vocab = AssetDatabase.LoadAssetAtPath<PromptVocabulary>(PROMPT_VOCAB_PATH);
+            if (vocab == null)
             {
-                Debug.LogWarning("[LabyrinthUISetup] Prefab not found. Creating complete setup first...");
-                CreateCompleteSetup();
-                prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PROMPT_PREFAB_PATH);
+                vocab = CreatePromptVocabulary();
             }
 
-            if (prefab == null)
+            // Add / get resolver + controller on player
+            var resolver = player.GetComponent<PromptContextResolver>();
+            if (resolver == null)
             {
-                Debug.LogError("[LabyrinthUISetup] Failed to create or load prefab!");
-                return;
+                resolver = Undo.AddComponent<PromptContextResolver>(player.gameObject);
             }
 
-            // Instantiate in scene
-            var instance = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
-            instance.name = "FloatingInteractPrompt";
-            
-            Undo.RegisterCreatedObjectUndo(instance, "Create FloatingInteractPrompt");
+            var controller = player.GetComponent<FloatingPromptController>();
+            if (controller == null)
+            {
+                controller = Undo.AddComponent<FloatingPromptController>(player.gameObject);
+            }
 
-            Debug.Log("[LabyrinthUISetup] ✅ FloatingInteractPrompt added to scene.");
-            Debug.Log("Now assign it to PlayerInteraction._floatingPrompt field.");
+            // Wire resolver
+            resolver.Vocabulary = vocab;
 
-            Selection.activeGameObject = instance;
+            // Wire controller fields via SerializedObject (private serialized fields)
+            var controllerSO = new SerializedObject(controller);
+            controllerSO.FindProperty("_prompt").objectReferenceValue = existingPrompt;
+            controllerSO.FindProperty("_resolver").objectReferenceValue = resolver;
+            controllerSO.ApplyModifiedPropertiesWithoutUndo();
+
+            // Wire PlayerInteraction references via SerializedObject
+            var playerSO = new SerializedObject(player);
+            playerSO.FindProperty("_floatingPrompt").objectReferenceValue = existingPrompt;
+            playerSO.FindProperty("_promptController").objectReferenceValue = controller;
+            playerSO.ApplyModifiedPropertiesWithoutUndo();
+
+            Debug.Log("[LabyrinthUISetup] ✅ Contextual Floating Prompt system set up on Player.");
+            Debug.Log("- PlayerInteraction now uses FloatingPromptController for prompts.");
+            Debug.Log($"- Vocabulary: {PROMPT_VOCAB_PATH}");
+
+            Selection.activeGameObject = existingPrompt != null ? existingPrompt.gameObject : player.gameObject;
         }
     }
 }

@@ -1,4 +1,5 @@
 using UnityEngine;
+using Cristal.CLI.Core;
 
 namespace Cristal.CLI.Labyrinth
 {
@@ -6,10 +7,15 @@ namespace Cristal.CLI.Labyrinth
     /// Bootstrap component that generates the initial labyrinth room on scene load.
     /// Put this on an empty GameObject in the scene and it will create the room at runtime.
     /// 
-    /// Why? Because someone left placeholder cubes for months and called it "the floor".
+    /// Architecture notes:
+    /// - Uses explicit serialized references instead of GameObject.Find
+    /// - Logs via CristalLog for centralized control
+    /// - Validates references in OnValidate for editor feedback
     /// </summary>
     public class LabyrinthBootstrap : MonoBehaviour
     {
+        private const string LOG_SYSTEM = "LabyrinthBootstrap";
+
         [Header("Initial Room Configuration")]
         [SerializeField] private bool _generateOnStart = true;
         [SerializeField] private Vector3 _roomSize = new Vector3(10f, 4f, 10f);
@@ -22,11 +28,12 @@ namespace Cristal.CLI.Labyrinth
         [SerializeField] private Material _wallMaterial;
         [SerializeField] private Material _ceilingMaterial;
 
-        [Header("Player Setup")]
+        [Header("Scene References (assign in inspector)")]
+        [Tooltip("Drag RitualOperator from scene hierarchy")]
         [SerializeField] private Transform _playerTransform;
         [SerializeField] private Vector3 _playerSpawnOffset = new Vector3(0, 0.1f, -3f);
 
-        [Header("Console Setup")]
+        [Tooltip("Drag TerminalConsole from scene hierarchy")]
         [SerializeField] private Transform _consoleTransform;
         [SerializeField] private Vector3 _consoleOffset = new Vector3(0, 0, 3f);
 
@@ -38,6 +45,21 @@ namespace Cristal.CLI.Labyrinth
         [SerializeField] private bool _debugMode = true;
 
         private GameObject _generatedRoom;
+
+        #if UNITY_EDITOR
+        private void OnValidate()
+        {
+            // Provide editor feedback for missing references
+            if (_playerTransform == null)
+            {
+                Debug.LogWarning($"[{LOG_SYSTEM}] Player transform not assigned. Use Setup Scene References.", this);
+            }
+            if (_consoleTransform == null)
+            {
+                Debug.LogWarning($"[{LOG_SYSTEM}] Console transform not assigned. Use Setup Scene References.", this);
+            }
+        }
+        #endif
 
         private void Start()
         {
@@ -52,7 +74,7 @@ namespace Cristal.CLI.Labyrinth
         {
             if (_debugMode)
             {
-                Debug.Log("[LabyrinthBootstrap] Starting labyrinth generation...");
+                CristalLog.Info(LOG_SYSTEM, "Starting labyrinth generation...");
             }
 
             // Step 1: Clean up the placeholder garbage
@@ -106,7 +128,7 @@ namespace Cristal.CLI.Labyrinth
                 _playerTransform.position = _playerSpawnOffset;
                 if (_debugMode)
                 {
-                    Debug.Log($"[LabyrinthBootstrap] Positioned player at {_playerSpawnOffset}");
+                    CristalLog.Info(LOG_SYSTEM, $"Positioned player at {_playerSpawnOffset}");
                 }
             }
 
@@ -118,7 +140,7 @@ namespace Cristal.CLI.Labyrinth
                 _consoleTransform.rotation = Quaternion.Euler(0, 180, 0);
                 if (_debugMode)
                 {
-                    Debug.Log($"[LabyrinthBootstrap] Positioned console at {_consoleOffset}");
+                    CristalLog.Info(LOG_SYSTEM, $"Positioned console at {_consoleOffset}");
                 }
             }
 
@@ -127,7 +149,7 @@ namespace Cristal.CLI.Labyrinth
 
             if (_debugMode)
             {
-                Debug.Log($"[LabyrinthBootstrap] Generated room: {_roomSize.x}x{_roomSize.y}x{_roomSize.z}");
+                CristalLog.Info(LOG_SYSTEM, $"Generated room: {_roomSize.x}x{_roomSize.y}x{_roomSize.z}");
             }
         }
 
@@ -144,7 +166,7 @@ namespace Cristal.CLI.Labyrinth
                     {
                         if (_debugMode)
                         {
-                            Debug.Log($"[LabyrinthBootstrap] Destroying placeholder: {obj.name}");
+                            CristalLog.Info(LOG_SYSTEM, $"Destroying placeholder: {obj.name}");
                         }
                         Destroy(obj);
                         cleaned++;
@@ -154,7 +176,7 @@ namespace Cristal.CLI.Labyrinth
 
             if (_debugMode && cleaned > 0)
             {
-                Debug.Log($"[LabyrinthBootstrap] Cleaned up {cleaned} placeholder objects");
+                CristalLog.Info(LOG_SYSTEM, $"Cleaned up {cleaned} placeholder objects");
             }
         }
 
@@ -200,7 +222,7 @@ namespace Cristal.CLI.Labyrinth
             {
                 DestroyImmediate(_generatedRoom);
                 _generatedRoom = null;
-                Debug.Log("[LabyrinthBootstrap] Destroyed generated room");
+                CristalLog.Info(LOG_SYSTEM, "Destroyed generated room");
             }
         }
 
@@ -208,20 +230,20 @@ namespace Cristal.CLI.Labyrinth
         [ContextMenu("Setup Scene References")]
         public void SetupSceneReferences()
         {
-            // Find player
-            var player = GameObject.Find("RitualOperator");
-            if (player != null)
+            // Find player by tag or component (more reliable than name)
+            var playerController = FindFirstObjectByType<PlayerController>();
+            if (playerController != null)
             {
-                _playerTransform = player.transform;
-                Debug.Log("[LabyrinthBootstrap] Found player: RitualOperator");
+                _playerTransform = playerController.transform;
+                CristalLog.Info(LOG_SYSTEM, $"Found player: {_playerTransform.name}");
             }
 
-            // Find console
-            var console = GameObject.Find("TerminalConsole");
+            // Find console by component
+            var console = FindFirstObjectByType<Console.InWorldConsole>();
             if (console != null)
             {
                 _consoleTransform = console.transform;
-                Debug.Log("[LabyrinthBootstrap] Found console: TerminalConsole");
+                CristalLog.Info(LOG_SYSTEM, $"Found console: {_consoleTransform.name}");
             }
 
             UnityEditor.EditorUtility.SetDirty(this);

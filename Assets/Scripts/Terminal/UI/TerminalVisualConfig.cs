@@ -1,6 +1,6 @@
 using UnityEngine;
-using UnityEngine.UI;
 using TMPro;
+using Cristal.CLI;
 
 namespace Cristal.CLI.Terminal.UI
 {
@@ -19,6 +19,7 @@ namespace Cristal.CLI.Terminal.UI
         public Color errorColor = new Color(1f, 0.4f, 0.4f, 1f);
         public Color memoryColor = new Color(1f, 0.8f, 0.4f, 1f);
         public Color arcanaColor = new Color(0.8f, 0.5f, 1f, 1f);
+        public Color emotionalColor = new Color(1f, 0.6f, 0.7f, 1f);
         public Color cursorColor = new Color(0.6f, 1f, 0.6f, 1f);
 
         [Header("Typography")]
@@ -65,6 +66,27 @@ namespace Cristal.CLI.Terminal.UI
                 case "arcana":
                 case "identity":
                     return arcanaColor;
+                case "emotional":
+                    return emotionalColor;
+                default:
+                    return outputColor;
+            }
+        }
+
+        public Color GetColorForResponseType(ResponseType type)
+        {
+            switch (type)
+            {
+                case ResponseType.System:
+                    return systemColor;
+                case ResponseType.Memory:
+                    return memoryColor;
+                case ResponseType.Identity:
+                    return arcanaColor;
+                case ResponseType.Emotional:
+                    return emotionalColor;
+                case ResponseType.Error:
+                    return errorColor;
                 default:
                     return outputColor;
             }

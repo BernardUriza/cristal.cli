@@ -4,6 +4,7 @@ using UnityEngine.UI;
 using UnityEditor;
 using TMPro;
 using Cristal.CLI;
+using Cristal.CLI.Terminal.UI;
 
 namespace Cristal.CLI.Editor
 {
@@ -12,9 +13,13 @@ namespace Cristal.CLI.Editor
     /// </summary>
     public class TerminalSceneSetup : EditorWindow
     {
+        private const string DefaultVisualConfigResourcesPath = "Config/DefaultTerminalVisualConfig";
+
         [MenuItem("CRISTAL/Setup Terminal Scene")]
         public static void SetupScene()
         {
+            TerminalVisualConfig config = LoadDefaultVisualConfig();
+
             // Create Canvas
             GameObject canvasObj = new GameObject("TerminalCanvas");
             Canvas canvas = canvasObj.AddComponent<Canvas>();
@@ -28,7 +33,8 @@ namespace Cristal.CLI.Editor
             scaler.matchWidthOrHeight = 0.5f;
 
             // Create background panel (pure black)
-            GameObject bgPanel = CreatePanel(canvasObj.transform, "Background", Color.black);
+            Color bgColor = config != null ? config.backgroundColor : Color.black;
+            GameObject bgPanel = CreatePanel(canvasObj.transform, "Background", bgColor);
             RectTransform bgRect = bgPanel.GetComponent<RectTransform>();
             bgRect.anchorMin = Vector2.zero;
             bgRect.anchorMax = Vector2.one;
@@ -100,9 +106,10 @@ namespace Cristal.CLI.Editor
             outputTextObj.transform.SetParent(content.transform, false);
             TextMeshProUGUI outputText = outputTextObj.AddComponent<TextMeshProUGUI>();
             outputText.text = "";
-            outputText.fontSize = 18;
-            outputText.color = new Color(0.7f, 1f, 0.7f);
-            outputText.font = TMP_Settings.defaultFontAsset;
+            outputText.fontSize = config != null ? config.fontSize : 18;
+            outputText.lineSpacing = config != null ? config.lineSpacing : outputText.lineSpacing;
+            outputText.color = config != null ? config.outputColor : new Color(0.7f, 1f, 0.7f);
+            outputText.font = (config != null && config.font != null) ? config.font : TMP_Settings.defaultFontAsset;
             outputText.richText = true;
             outputText.alignment = TextAlignmentOptions.TopLeft;
 
@@ -133,8 +140,12 @@ namespace Cristal.CLI.Editor
             promptObj.transform.SetParent(inputArea.transform, false);
             TextMeshProUGUI promptText = promptObj.AddComponent<TextMeshProUGUI>();
             promptText.text = "> ";
-            promptText.fontSize = 20;
-            promptText.color = new Color(0.5f, 0.8f, 1f);
+            promptText.fontSize = config != null ? config.fontSize : 20;
+            promptText.color = config != null ? config.outputColor : new Color(0.5f, 0.8f, 1f);
+            if (config != null && config.font != null)
+            {
+                promptText.font = config.font;
+            }
             promptText.alignment = TextAlignmentOptions.Left;
 
             LayoutElement promptLayout = promptObj.AddComponent<LayoutElement>();
@@ -165,8 +176,13 @@ namespace Cristal.CLI.Editor
             GameObject inputTextObj = new GameObject("Text");
             inputTextObj.transform.SetParent(textArea.transform, false);
             TextMeshProUGUI inputText = inputTextObj.AddComponent<TextMeshProUGUI>();
-            inputText.fontSize = 20;
-            inputText.color = Color.white;
+            inputText.fontSize = config != null ? config.fontSize : 20;
+            inputText.lineSpacing = config != null ? config.lineSpacing : inputText.lineSpacing;
+            inputText.color = config != null ? config.inputColor : Color.white;
+            if (config != null && config.font != null)
+            {
+                inputText.font = config.font;
+            }
             inputText.alignment = TextAlignmentOptions.Left;
 
             RectTransform inputTextRect = inputTextObj.GetComponent<RectTransform>();
@@ -178,7 +194,7 @@ namespace Cristal.CLI.Editor
             // Configure input field
             inputField.textViewport = textAreaRect;
             inputField.textComponent = inputText;
-            inputField.caretColor = Color.white;
+            inputField.caretColor = config != null ? config.cursorColor : Color.white;
             inputField.caretWidth = 2;
             inputField.customCaretColor = true;
 
@@ -187,10 +203,19 @@ namespace Cristal.CLI.Editor
             cursorObj.transform.SetParent(inputArea.transform, false);
             TextMeshProUGUI cursorText = cursorObj.AddComponent<TextMeshProUGUI>();
             cursorText.text = "█";
-            cursorText.fontSize = 20;
-            cursorText.color = Color.white;
+            cursorText.fontSize = config != null ? config.fontSize : 20;
+            cursorText.color = config != null ? config.cursorColor : Color.white;
+            if (config != null && config.font != null)
+            {
+                cursorText.font = config.font;
+            }
             cursorText.alignment = TextAlignmentOptions.Left;
             CursorBlink cursorBlink = cursorObj.AddComponent<CursorBlink>();
+            if (config != null)
+            {
+                cursorBlink.SetColor(config.cursorColor);
+                cursorBlink.SetBlinkRate(config.cursorBlinkRate);
+            }
 
             LayoutElement cursorLayout = cursorObj.AddComponent<LayoutElement>();
             cursorLayout.preferredWidth = 20;
@@ -209,6 +234,14 @@ namespace Cristal.CLI.Editor
             cliSO.FindProperty("_cursorText").objectReferenceValue = cursorText;
             cliSO.FindProperty("_scrollRect").objectReferenceValue = scrollRect;
             cliSO.FindProperty("_contentRect").objectReferenceValue = contentRect;
+            if (config != null)
+            {
+                SerializedProperty configProp = cliSO.FindProperty("_visualConfig");
+                if (configProp != null)
+                {
+                    configProp.objectReferenceValue = config;
+                }
+            }
             cliSO.ApplyModifiedProperties();
 
             // Create TerminalCore
@@ -230,6 +263,11 @@ namespace Cristal.CLI.Editor
             Image image = panel.AddComponent<Image>();
             image.color = color;
             return panel;
+        }
+
+        private static TerminalVisualConfig LoadDefaultVisualConfig()
+        {
+            return Resources.Load<TerminalVisualConfig>(DefaultVisualConfigResourcesPath);
         }
 
         [MenuItem("CRISTAL/About")]

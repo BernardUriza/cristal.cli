@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using Cristal.CLI;
+using Cristal.CLI.Terminal.UI;
 
 namespace Cristal.CLI
 {
@@ -18,6 +19,9 @@ namespace Cristal.CLI
         [SerializeField] private TextMeshProUGUI _cursorText;
         [SerializeField] private ScrollRect _scrollRect;
         [SerializeField] private RectTransform _contentRect;
+
+        [Header("Visual Config (Optional)")]
+        [SerializeField] private TerminalVisualConfig _visualConfig;
 
         [Header("Visual Settings")]
         [SerializeField] private string _promptSymbol = "> ";
@@ -55,8 +59,16 @@ namespace Cristal.CLI
 
         private void Awake()
         {
+            ApplyVisualConfigIfPresent();
             ValidateReferences();
         }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            ApplyVisualConfigIfPresent();
+        }
+#endif
 
         private void Start()
         {
@@ -95,6 +107,8 @@ namespace Cristal.CLI
 
             // Get cursor blink component
             _cursorBlink = GetComponentInChildren<CursorBlink>();
+
+            ApplyVisualConfigIfPresent();
 
             // Setup input field
             if (_inputField != null)
@@ -263,6 +277,11 @@ namespace Cristal.CLI
 
         private Color GetColorForResponseType(ResponseType type)
         {
+            if (_visualConfig != null)
+            {
+                return _visualConfig.GetColorForResponseType(type);
+            }
+
             switch (type)
             {
                 case ResponseType.System:
@@ -277,6 +296,78 @@ namespace Cristal.CLI
                     return _errorColor;
                 default:
                     return _outputColor;
+            }
+        }
+
+        private void ApplyVisualConfigIfPresent()
+        {
+            if (_visualConfig == null) return;
+
+            _inputColor = _visualConfig.inputColor;
+            _outputColor = _visualConfig.outputColor;
+            _systemColor = _visualConfig.systemColor;
+            _errorColor = _visualConfig.errorColor;
+            _typewriterSpeed = _visualConfig.typewriterSpeed;
+            _glitchChance = _visualConfig.glitchChance;
+
+            if (_visualConfig.glitchChars != null && _visualConfig.glitchChars.Length > 0)
+            {
+                _glitchChars = _visualConfig.glitchChars;
+            }
+
+            if (_outputText != null)
+            {
+                if (_visualConfig.font != null)
+                {
+                    _outputText.font = _visualConfig.font;
+                }
+                _outputText.fontSize = _visualConfig.fontSize;
+                _outputText.lineSpacing = _visualConfig.lineSpacing;
+            }
+
+            if (_inputField != null)
+            {
+                if (_visualConfig.font != null)
+                {
+                    _inputField.textComponent.font = _visualConfig.font;
+                }
+                _inputField.textComponent.fontSize = _visualConfig.fontSize;
+                _inputField.textComponent.lineSpacing = _visualConfig.lineSpacing;
+                _inputField.caretColor = _visualConfig.cursorColor;
+            }
+
+            if (_cursorText != null)
+            {
+                if (_visualConfig.font != null)
+                {
+                    _cursorText.font = _visualConfig.font;
+                }
+                _cursorText.fontSize = _visualConfig.fontSize;
+                _cursorText.color = _visualConfig.cursorColor;
+            }
+
+            if (_cursorBlink != null)
+            {
+                _cursorBlink.SetColor(_visualConfig.cursorColor);
+                _cursorBlink.SetBlinkRate(_visualConfig.cursorBlinkRate);
+            }
+
+            var scanlines = GetComponentInChildren<ScanlineEffect>(true);
+            if (scanlines != null)
+            {
+                bool enabled = _visualConfig.enableScanlines;
+                scanlines.gameObject.SetActive(enabled);
+                if (enabled)
+                {
+                    scanlines.SetAlpha(_visualConfig.scanlineAlpha);
+                    scanlines.SetAnimated(_visualConfig.scanlineSpeed > 0f, _visualConfig.scanlineSpeed);
+                }
+            }
+
+            var frame = GetComponentInChildren<TerminalFrame>(true);
+            if (frame != null)
+            {
+                frame.ApplyConfig(_visualConfig);
             }
         }
 

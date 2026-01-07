@@ -2,6 +2,8 @@ using UnityEngine;
 
 namespace Cristal.CLI.Labyrinth.UI
 {
+    public enum PromptUrgency { Normal, Warning, Critical }
+
     /// <summary>
     /// Interface for prompt animation strategies.
     /// Allows swapping animation behaviors without modifying the core prompt component.
@@ -11,17 +13,17 @@ namespace Cristal.CLI.Labyrinth.UI
         /// <summary>
         /// Calculate position offset based on current time.
         /// </summary>
-        Vector3 CalculatePositionOffset(float time, InteractPromptConfig config);
+        Vector3 CalculatePositionOffset(float time, InteractPromptConfig config, PromptUrgency urgency);
 
         /// <summary>
         /// Calculate scale multiplier based on current time and distance.
         /// </summary>
-        float CalculateScaleMultiplier(float time, float distance, InteractPromptConfig config);
+        float CalculateScaleMultiplier(float time, float distance, InteractPromptConfig config, PromptUrgency urgency);
 
         /// <summary>
         /// Calculate glow intensity based on current time.
         /// </summary>
-        float CalculateGlowIntensity(float time, InteractPromptConfig config);
+        float CalculateGlowIntensity(float time, InteractPromptConfig config, PromptUrgency urgency);
     }
 
     /// <summary>
@@ -29,15 +31,16 @@ namespace Cristal.CLI.Labyrinth.UI
     /// </summary>
     public class DefaultPromptAnimator : IPromptAnimator
     {
-        public Vector3 CalculatePositionOffset(float time, InteractPromptConfig config)
+        public Vector3 CalculatePositionOffset(float time, InteractPromptConfig config, PromptUrgency urgency)
         {
             if (config == null || !config.enableBob) return Vector3.zero;
 
-            float bobOffset = Mathf.Sin(time * config.bobFrequency * Mathf.PI * 2f) * config.bobAmplitude;
+            float urgencyMultiplier = urgency == PromptUrgency.Critical ? 1.6f : (urgency == PromptUrgency.Warning ? 1.2f : 1f);
+            float bobOffset = Mathf.Sin(time * config.bobFrequency * urgencyMultiplier * Mathf.PI * 2f) * config.bobAmplitude;
             return new Vector3(0f, bobOffset, 0f);
         }
 
-        public float CalculateScaleMultiplier(float time, float distance, InteractPromptConfig config)
+        public float CalculateScaleMultiplier(float time, float distance, InteractPromptConfig config, PromptUrgency urgency)
         {
             if (config == null) return 1f;
 
@@ -48,16 +51,34 @@ namespace Cristal.CLI.Labyrinth.UI
             float pulseMultiplier = 1f;
             if (config.enablePulse)
             {
-                pulseMultiplier = config.GetPulseMultiplier(time);
+                float basePulse = config.GetPulseMultiplier(time);
+                if (urgency == PromptUrgency.Warning)
+                {
+                    // Slightly stronger pulse
+                    pulseMultiplier = 1f + (basePulse - 1f) * 1.5f;
+                }
+                else if (urgency == PromptUrgency.Critical)
+                {
+                    // Much stronger pulse
+                    pulseMultiplier = 1f + (basePulse - 1f) * 2.25f;
+                }
+                else
+                {
+                    pulseMultiplier = basePulse;
+                }
             }
 
             return distanceScale * pulseMultiplier;
         }
 
-        public float CalculateGlowIntensity(float time, InteractPromptConfig config)
+        public float CalculateGlowIntensity(float time, InteractPromptConfig config, PromptUrgency urgency)
         {
             if (config == null || !config.enableGlowAnimation) return 1f;
-            return config.GetGlowFactor(time);
+
+            float glow = config.GetGlowFactor(time);
+            if (urgency == PromptUrgency.Warning) return Mathf.Clamp01(glow * 1.1f);
+            if (urgency == PromptUrgency.Critical) return Mathf.Clamp01(glow * 1.25f);
+            return glow;
         }
     }
 
@@ -68,7 +89,7 @@ namespace Cristal.CLI.Labyrinth.UI
     {
         private const float URGENCY_MULTIPLIER = 2f;
 
-        public Vector3 CalculatePositionOffset(float time, InteractPromptConfig config)
+        public Vector3 CalculatePositionOffset(float time, InteractPromptConfig config, PromptUrgency urgency)
         {
             if (config == null) return Vector3.zero;
 
@@ -78,7 +99,7 @@ namespace Cristal.CLI.Labyrinth.UI
             return new Vector3(0f, bobOffset, 0f);
         }
 
-        public float CalculateScaleMultiplier(float time, float distance, InteractPromptConfig config)
+        public float CalculateScaleMultiplier(float time, float distance, InteractPromptConfig config, PromptUrgency urgency)
         {
             if (config == null) return 1f;
 
@@ -90,7 +111,7 @@ namespace Cristal.CLI.Labyrinth.UI
             return distanceScale * pulse;
         }
 
-        public float CalculateGlowIntensity(float time, InteractPromptConfig config)
+        public float CalculateGlowIntensity(float time, InteractPromptConfig config, PromptUrgency urgency)
         {
             // Always high glow for urgent
             return 0.7f + Mathf.Sin(time * 6f) * 0.3f;
