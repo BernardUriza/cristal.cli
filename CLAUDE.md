@@ -289,10 +289,82 @@ TerminalThemeManager (Assets/Scripts/Terminal/UI/TerminalThemeManager.cs):
 
   Events:
     OnThemeChanged(TerminalVisualConfig config)
+    OnThemeTransitionStarted(string themeName, float duration)
+    OnPrimaryColorChanged(Color newColor)
+    OnGlitchIntensityChanged(float intensity)
+    OnThemeApplied(TerminalVisualConfig config)
 
   Auto-triggers:
     - OnArcanaInvoked → Apply Arcana theme
     - OnArcanaExpired → Return to default
+```
+
+---
+
+## Terminal Commands (Phase 6.6)
+
+```
+TerminalCommandHandler (Assets/Scripts/Terminal/TerminalCommandHandler.cs):
+  Intercepts input before normal processing for system/debug commands.
+  
+  User Commands:
+    set theme [name]      # Switch visual theme (default, corrupted, unbound, etc.)
+    set glitch [0-1]      # Set glitch intensity
+    set scanlines [on|off]
+    set crt [simple|advanced]
+    themes                # List available themes
+    status                # Show system status
+    help                  # Show available commands
+
+  Debug Commands (require debug mode):
+    debug state [name]    # Force state transition
+    debug arcana [name]   # Force arcana invocation
+    debug unbound         # Trigger UNBOUND manually
+    debug glitch          # Trigger glitch effect
+    debug reset           # Reset to defaults
+
+  Integration:
+    Called first in TerminalCore.ProcessInput()
+    Returns TerminalResponse with ResponseType.System
+```
+
+---
+
+## Theme-Atmosphere Synchronization
+
+```
+ThemeAtmosphereBridge (Assets/Scripts/Terminal/UI/ThemeAtmosphereBridge.cs):
+  Bridges theme events to atmospheric systems (fog, lighting, audio).
+  
+  Subscribes to:
+    - TerminalThemeManager.OnThemeTransitionStarted
+    - TerminalThemeManager.OnPrimaryColorChanged
+    - TerminalThemeManager.OnGlitchIntensityChanged
+    - TerminalThemeManager.OnThemeApplied
+
+  Controls:
+    - RenderSettings.fogColor (influenced by theme primary color)
+    - RenderSettings.ambientLight (influenced by theme)
+    - Glitch particle emission rate
+    - Optional: RoomLighting accent color override
+
+  API:
+    bridge.ForceSyncNow();
+    bridge.SetColorInfluence(0.7f);
+    bridge.TriggerPulse(Color.red, 0.5f);
+    bridge.GetDebugInfo();
+
+ThemeDebugPanel (Assets/Scripts/Terminal/UI/ThemeDebugPanel.cs):
+  Runtime debug UI for visual QA.
+  Toggle: F12 (configurable)
+  
+  Sections:
+    - Current State: View/force CristalState
+    - Theme Manager: Apply themes, view transition status
+    - Arcana: Invoke arcana for testing
+    - Visual Effects: Adjust scanlines, glitch, CRT mode
+    - Atmosphere Bridge: Sync controls, pulse effects
+    - Render Settings: View fog/ambient values
 ```
 
 ---

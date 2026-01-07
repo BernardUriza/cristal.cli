@@ -1,27 +1,43 @@
+using System;
 using System.Collections;
 using UnityEngine;
 using Cristal.CLI.Core;
+using Cristal.CLI.Core.Events;
 using Cristal.CLI.StateMachine;
 using Cristal.CLI.Ritual;
+using Cristal.CLI.Memory;
 
 namespace Cristal.CLI.Labyrinth
 {
     /// <summary>
     /// Manages ambient audio throughout the labyrinth.
-    /// Responds to terminal state changes and ritual events.
+    /// Responds to terminal state changes and ritual events via ReactiveSystemBus.
     /// Supports layered audio with crossfades.
     /// </summary>
-    public class LabyrinthAmbientAudio : MonoBehaviour
+    public class LabyrinthAmbientAudio : MonoBehaviour, IReactiveSystem
     {
         // Legacy singleton - use ServiceLocator.Get<LabyrinthAmbientAudio>() instead
         [Obsolete("Use ServiceLocator.Get<LabyrinthAmbientAudio>() instead")]
         public static LabyrinthAmbientAudio Instance { get; private set; }
+
+        // Reactive system signals we care about
+        public SymbolicSignalType[] SubscribedSignals => new[]
+        {
+            SymbolicSignalType.StateTransition,
+            SymbolicSignalType.RitualComplete,
+            SymbolicSignalType.UnboundTriggered,
+            SymbolicSignalType.UnboundEnded,
+            SymbolicSignalType.RoomEntered,
+            SymbolicSignalType.GateOpened,
+            SymbolicSignalType.GateClosed
+        };
 
         [Header("Audio Sources")]
         [SerializeField] private AudioSource _baseAmbientSource;
         [SerializeField] private AudioSource _stateLayerSource;
         [SerializeField] private AudioSource _eventLayerSource;
         [SerializeField] private AudioSource _musicSource;
+
 
         [Header("Base Ambient Clips")]
         [SerializeField] private AudioClip _labyrinthHum;
@@ -83,16 +99,35 @@ namespace Cristal.CLI.Labyrinth
             InitializeAudioSources();
         }
 
+        private void OnEnable()
+        {
+            // Subscribe to ReactiveSystemBus
+            foreach (var signal in SubscribedSignals)
+            {
+                ReactiveSystemBus.Subscribe(signal, OnSymbolicEvent);
+            }
+        }
+
+        private void OnDisable()
+        {
+            // Unsubscribe from ReactiveSystemBus
+            foreach (var signal in SubscribedSignals)
+            {
+                ReactiveSystemBus.Unsubscribe(signal, OnSymbolicEvent);
+            }
+        }
+
         private void Start()
         {
-            // Subscribe to state changes
+            // Legacy subscriptions (kept for backward compatibility)
+            #pragma warning disable CS0618
             if (TerminalStateMachine.Instance != null)
             {
                 TerminalStateMachine.Instance.OnStateTransition += HandleStateTransition;
             }
 
-            // Subscribe to ritual events
             var ritualSystem = RitualSystem.Instance;
+            #pragma warning restore CS0618
             if (ritualSystem != null)
             {
                 ritualSystem.OnRitualComplete += HandleRitualComplete;
@@ -106,12 +141,14 @@ namespace Cristal.CLI.Labyrinth
 
         private void OnDestroy()
         {
+            #pragma warning disable CS0618
             if (TerminalStateMachine.Instance != null)
             {
                 TerminalStateMachine.Instance.OnStateTransition -= HandleStateTransition;
             }
 
             var ritualSystem = RitualSystem.Instance;
+            #pragma warning restore CS0618
             if (ritualSystem != null)
             {
                 ritualSystem.OnRitualComplete -= HandleRitualComplete;
@@ -122,6 +159,50 @@ namespace Cristal.CLI.Labyrinth
             if (Instance == this)
             {
                 Instance = null;
+            }
+        }
+
+        #endregion
+
+        #region Reactive Event Handling
+
+        /// <summary>
+        /// Handle symbolic events from ReactiveSystemBus.
+        /// </summary>
+        public void OnSymbolicEvent(in SymbolicEvent evt)
+        {
+            switch (evt.Signal)
+            {
+                case SymbolicSignalType.StateTransition:
+                    if (evt.Payload is StateTransitionPayload statePayload)
+                    {
+                        HandleStateTransition(statePayload.From, statePayload.To);
+                    }
+                    break;
+
+                case SymbolicSignalType.RitualComplete:
+                    HandleRitualComplete();
+                    break;
+
+                case SymbolicSignalType.UnboundTriggered:
+                    HandleUnboundTriggered();
+                    break;
+
+                case SymbolicSignalType.UnboundEnded:
+                    HandleUnboundEnded();
+                    break;
+
+                case SymbolicSignalType.RoomEntered:
+                    PlayRoomEnter();
+                    break;
+
+                case SymbolicSignalType.GateOpened:
+                    PlayEventStinger(_gateOpenStinger);
+                    break;
+
+                case SymbolicSignalType.GateClosed:
+                    PlayEventStinger(_gateCloseStinger);
+                    break;
             }
         }
 

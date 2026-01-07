@@ -220,6 +220,22 @@ namespace Cristal.CLI
 
             string trimmedInput = input.Trim();
 
+            // Try system commands first (set theme, debug, etc.)
+            if (TerminalCommandHandler.Instance != null &&
+                TerminalCommandHandler.Instance.TryProcessCommand(trimmedInput, out string cmdResponse))
+            {
+                // Emit as system response
+                var systemResponse = new TerminalResponse
+                {
+                    Lines = new List<string>(cmdResponse.Split('\n')),
+                    ResponseType = ResponseType.System,
+                    ApplyGlitch = false,
+                    CustomDelay = 0f
+                };
+                OnResponseGenerated?.Invoke(systemResponse);
+                return;
+            }
+
             OnInputReceived?.Invoke(trimmedInput);
 
             if (_usePhase2Systems)

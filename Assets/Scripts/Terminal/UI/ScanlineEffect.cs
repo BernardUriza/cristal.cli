@@ -157,6 +157,30 @@ namespace Cristal.CLI.Terminal.UI
             _image.material = null; // Use default UI material
         }
 
+        #region Public Properties
+
+        /// <summary>
+        /// Current effect mode.
+        /// </summary>
+        public EffectMode CurrentMode => _mode;
+
+        /// <summary>
+        /// Current scanline intensity/alpha.
+        /// </summary>
+        public float CurrentIntensity => _alpha;
+
+        #endregion
+
+        #region Public Methods
+
+        /// <summary>
+        /// Set scanline intensity (alias for SetAlpha for consistency).
+        /// </summary>
+        public void SetIntensity(float intensity)
+        {
+            SetAlpha(intensity);
+        }
+
         /// <summary>
         /// Trigger a glitch pulse effect (temporary noise boost).
         /// </summary>
@@ -164,6 +188,15 @@ namespace Cristal.CLI.Terminal.UI
         {
             if (!_pulseOnGlitch) return;
             _glitchTimer = _glitchDuration;
+        }
+
+        /// <summary>
+        /// Trigger a glitch pulse with custom duration.
+        /// </summary>
+        public void TriggerGlitch(float duration)
+        {
+            if (!_pulseOnGlitch) return;
+            _glitchTimer = duration;
         }
 
         /// <summary>

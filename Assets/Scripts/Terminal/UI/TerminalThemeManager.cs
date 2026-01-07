@@ -1,13 +1,16 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Cristal.CLI.Arcana;
+using Cristal.CLI.StateMachine;
 
 namespace Cristal.CLI.Terminal.UI
 {
     /// <summary>
     /// Manages dynamic terminal themes based on game state and Arcana invocations.
     /// Enables seamless transitions between visual styles.
+    /// Broadcasts theme changes to atmosphere, lighting, and audio systems.
     /// </summary>
     public class TerminalThemeManager : MonoBehaviour
     {
@@ -18,20 +21,34 @@ namespace Cristal.CLI.Terminal.UI
         [SerializeField] private float _transitionDuration = 0.5f;
         [SerializeField] private AnimationCurve _transitionCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
 
+        [Header("Named Themes")]
+        [SerializeField] private List<NamedTheme> _namedThemes = new List<NamedTheme>();
+
         [Header("Arcana Theme Overrides")]
         [SerializeField] private List<ArcanaThemeMapping> _arcanaThemes = new List<ArcanaThemeMapping>();
+
+        [Header("Transition Effects")]
+        [SerializeField] private bool _glitchOnTransition = true;
+        [SerializeField] private bool _flickerOnTransition = true;
+        [SerializeField] private float _transitionGlitchDuration = 0.3f;
+        [SerializeField] private int _transitionFlickerCount = 3;
 
         [Header("References")]
         [SerializeField] private CrystalCLI _cli;
         [SerializeField] private ScanlineEffect _scanlineEffect;
         [SerializeField] private TerminalFrame _frame;
 
+        // Events for global synchronization
         public event Action<TerminalVisualConfig> OnThemeChanged;
+        public event Action<TerminalVisualConfig, float> OnThemeTransitionStarted;
+        public event Action<Color> OnPrimaryColorChanged;
+        public event Action<float> OnGlitchIntensityChanged;
 
         private TerminalVisualConfig _currentConfig;
         private TerminalVisualConfig _targetConfig;
         private float _transitionProgress = 1f;
         private bool _isTransitioning = false;
+        private Coroutine _transitionEffectsCoroutine;
 
         // Cached interpolated values
         private Color _currentBgColor;
@@ -41,6 +58,12 @@ namespace Cristal.CLI.Terminal.UI
         private Color _currentBorderColor;
         private float _currentScanlineAlpha;
         private float _currentGlitchChance;
+
+        // Debug state
+        private string _lastAppliedThemeName = "default";
+        public string LastAppliedThemeName => _lastAppliedThemeName;
+        public bool IsTransitioning => _isTransitioning;
+        public float TransitionProgress => _transitionProgress;
 
         private void Awake()
         {
@@ -223,6 +246,16 @@ namespace Cristal.CLI.Terminal.UI
             _transitionProgress = 0f;
             _isTransitioning = true;
 
+            // Notify listeners that transition is starting
+            OnThemeTransitionStarted?.Invoke(newConfig, _transitionDuration);
+
+            // Play transition effects
+            if (_transitionEffectsCoroutine != null)
+            {
+                StopCoroutine(_transitionEffectsCoroutine);
+            }
+            _transitionEffectsCoroutine = StartCoroutine(PlayTransitionEffects());
+
             Debug.Log($"[TerminalThemeManager] Transitioning to theme: {newConfig.name}");
         }
 
@@ -279,8 +312,8 @@ namespace Cristal.CLI.Terminal.UI
                 _frame.SetBorderColor(borderColor);
             }
 
-            // Note: Full color application to text elements would require
-            // exposing more methods on CrystalCLI for runtime color changes
+            // Broadcast primary color for external systems
+            OnPrimaryColorChanged?.Invoke(outputColor);
         }
 
         /// <summary>
@@ -288,6 +321,7 @@ namespace Cristal.CLI.Terminal.UI
         /// </summary>
         public void ResetToDefault()
         {
+            _lastAppliedThemeName = "default";
             TransitionToTheme(_defaultConfig);
         }
 
@@ -299,6 +333,117 @@ namespace Cristal.CLI.Terminal.UI
             return _isTransitioning ? _targetConfig : _currentConfig;
         }
 
+        /// <summary>
+        /// Apply a theme by name (for terminal commands).
+        /// </summary>
+        public bool ApplyThemeByName(string themeName)
+        {
+            if (string.IsNullOrEmpty(themeName)) return false;
+
+            string lowerName = themeName.ToLower();
+
+            // Check named themes
+            foreach (var named in _namedThemes)
+            {
+                if (named.name.ToLower() == lowerName && named.config != null)
+                {
+                    _lastAppliedThemeName = named.name;
+                    TransitionToTheme(named.config);
+                    return true;
+                }
+            }
+
+            // Check if it's "default"
+            if (lowerName == "default" || lowerName == "base")
+            {
+                ResetToDefault();
+                return true;
+            }
+
+            // Check Arcana themes by name
+            if (ArcanaSystem.Instance != null)
+            {
+                var arcana = ArcanaSystem.Instance.GetArcana(themeName);
+                if (arcana != null)
+                {
+                    var arcanaConfig = GetThemeForArcana(arcana);
+                    if (arcanaConfig != null)
+                    {
+                        _lastAppliedThemeName = arcana.name;
+                        TransitionToTheme(arcanaConfig);
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Get list of available theme names.
+        /// </summary>
+        public List<string> GetAvailableThemeNames()
+        {
+            List<string> names = new List<string> { "default" };
+
+            foreach (var named in _namedThemes)
+            {
+                if (!string.IsNullOrEmpty(named.name))
+                {
+                    names.Add(named.name);
+                }
+            }
+
+            return names;
+        }
+
+        /// <summary>
+        /// Play transition effects (glitch, flicker).
+        /// </summary>
+        private IEnumerator PlayTransitionEffects()
+        {
+            // Trigger glitch
+            if (_glitchOnTransition && _scanlineEffect != null)
+            {
+                _scanlineEffect.TriggerGlitch();
+            }
+
+            // Flicker effect
+            if (_flickerOnTransition && _frame != null)
+            {
+                for (int i = 0; i < _transitionFlickerCount; i++)
+                {
+                    _frame.gameObject.SetActive(false);
+                    yield return new WaitForSeconds(0.03f);
+                    _frame.gameObject.SetActive(true);
+                    yield return new WaitForSeconds(0.05f);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Force a specific glitch intensity (for debug/effects).
+        /// </summary>
+        public void SetGlitchIntensity(float intensity)
+        {
+            if (_scanlineEffect != null)
+            {
+                _scanlineEffect.SetNoiseAlpha(intensity);
+            }
+            OnGlitchIntensityChanged?.Invoke(intensity);
+        }
+
+        /// <summary>
+        /// Get debug info string.
+        /// </summary>
+        public string GetDebugInfo()
+        {
+            return $"Theme: {_lastAppliedThemeName}\n" +
+                   $"Transitioning: {_isTransitioning}\n" +
+                   $"Progress: {_transitionProgress:F2}\n" +
+                   $"Config: {(_currentConfig != null ? _currentConfig.name : "null")}";
+        }
+
         private void OnDestroy()
         {
             if (ArcanaSystem.Instance != null)
@@ -307,11 +452,26 @@ namespace Cristal.CLI.Terminal.UI
                 ArcanaSystem.Instance.OnArcanaExpired -= HandleArcanaExpired;
             }
 
+            if (_transitionEffectsCoroutine != null)
+            {
+                StopCoroutine(_transitionEffectsCoroutine);
+            }
+
             if (Instance == this)
             {
                 Instance = null;
             }
         }
+    }
+
+    /// <summary>
+    /// Named theme for manual selection.
+    /// </summary>
+    [Serializable]
+    public class NamedTheme
+    {
+        public string name;
+        public TerminalVisualConfig config;
     }
 
     /// <summary>

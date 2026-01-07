@@ -1,17 +1,22 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.Rendering;
+using Cristal.CLI.Core;
+using Cristal.CLI.Core.Events;
 using Cristal.CLI.StateMachine;
 using Cristal.CLI.Ritual;
+using Cristal.CLI.Memory;
 
 namespace Cristal.CLI.Labyrinth
 {
     /// <summary>
     /// Controls atmospheric effects in the labyrinth - fog, lighting, post-processing.
-    /// Responds to terminal state changes and ritual events.
+    /// Responds to terminal state changes and ritual events via ReactiveSystemBus.
     /// </summary>
-    public class LabyrinthAtmosphere : MonoBehaviour
+    public class LabyrinthAtmosphere : ReactiveMonoBehaviour
     {
+        // Legacy singleton - use ServiceLocator.Get<LabyrinthAtmosphere>() instead
+        [System.Obsolete("Use ServiceLocator.Get<LabyrinthAtmosphere>() instead")]
         public static LabyrinthAtmosphere Instance { get; private set; }
 
         [Header("Fog Settings")]
@@ -64,6 +69,17 @@ namespace Cristal.CLI.Labyrinth
         [SerializeField] private bool _unboundScreenShake = true;
         [SerializeField] private float _unboundShakeIntensity = 0.05f;
 
+        // Reactive system signals we care about
+        public override SymbolicSignalType[] SubscribedSignals => new[]
+        {
+            SymbolicSignalType.StateTransition,
+            SymbolicSignalType.UnboundTriggered,
+            SymbolicSignalType.UnboundEnded,
+            SymbolicSignalType.FogPulse,
+            SymbolicSignalType.CorruptionSpike,
+            SymbolicSignalType.GlitchTriggered
+        };
+
         // Internal state
         private CristalState _currentState;
         private Coroutine _transitionCoroutine;
@@ -86,20 +102,22 @@ namespace Cristal.CLI.Labyrinth
                 return;
             }
             Instance = this;
+            ServiceLocator.RegisterMono(this);
 
             CacheOriginalValues();
         }
 
         private void Start()
         {
-            // Subscribe to state changes
+            // Legacy subscriptions (kept for backward compatibility, will be removed)
+            #pragma warning disable CS0618
             if (TerminalStateMachine.Instance != null)
             {
                 TerminalStateMachine.Instance.OnStateTransition += HandleStateTransition;
             }
 
-            // Subscribe to ritual events
             var ritualSystem = RitualSystem.Instance;
+            #pragma warning restore CS0618
             if (ritualSystem != null)
             {
                 ritualSystem.OnUnboundTriggered += HandleUnboundTriggered;
@@ -128,12 +146,14 @@ namespace Cristal.CLI.Labyrinth
         {
             RestoreOriginalValues();
 
+            #pragma warning disable CS0618
             if (TerminalStateMachine.Instance != null)
             {
                 TerminalStateMachine.Instance.OnStateTransition -= HandleStateTransition;
             }
 
             var ritualSystem = RitualSystem.Instance;
+            #pragma warning restore CS0618
             if (ritualSystem != null)
             {
                 ritualSystem.OnUnboundTriggered -= HandleUnboundTriggered;
@@ -144,6 +164,124 @@ namespace Cristal.CLI.Labyrinth
             {
                 Instance = null;
             }
+        }
+
+        #endregion
+
+        #region Reactive Event Handling
+
+        /// <summary>
+        /// Handle symbolic events from ReactiveSystemBus.
+        /// This is the new decoupled way to receive events.
+        /// </summary>
+        public override void OnSymbolicEvent(in SymbolicEvent evt)
+        {
+            switch (evt.Signal)
+            {
+                case SymbolicSignalType.StateTransition:
+                    if (evt.Payload is StateTransitionPayload statePayload)
+                    {
+                        HandleStateTransition(statePayload.From, statePayload.To);
+                    }
+                    break;
+
+                case SymbolicSignalType.UnboundTriggered:
+                    HandleUnboundTriggered();
+                    break;
+
+                case SymbolicSignalType.UnboundEnded:
+                    HandleUnboundEnded();
+                    break;
+
+                case SymbolicSignalType.FogPulse:
+                    TriggerFogPulse(evt.Intensity / 100f);
+                    break;
+
+                case SymbolicSignalType.CorruptionSpike:
+                    TriggerCorruptionEffect(evt.Intensity / 100f);
+                    break;
+
+                case SymbolicSignalType.GlitchTriggered:
+                    TriggerGlitchParticles(evt.Intensity / 100f);
+                    break;
+            }
+        }
+
+        /// <summary>Trigger a fog pulse effect.</summary>
+        private void TriggerFogPulse(float intensity)
+        {
+            if (!_enableFog) return;
+
+            StartCoroutine(FogPulseCoroutine(intensity));
+        }
+
+        private IEnumerator FogPulseCoroutine(float intensity)
+        {
+            float originalDensity = RenderSettings.fogDensity;
+            float pulseDensity = originalDensity * (1f + intensity);
+
+            float duration = 0.5f;
+            float elapsed = 0f;
+
+            // Pulse up
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                float t = elapsed / duration;
+                RenderSettings.fogDensity = Mathf.Lerp(originalDensity, pulseDensity, t);
+                yield return null;
+            }
+
+            // Pulse down
+            elapsed = 0f;
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                float t = elapsed / duration;
+                RenderSettings.fogDensity = Mathf.Lerp(pulseDensity, originalDensity, t);
+                yield return null;
+            }
+
+            RenderSettings.fogDensity = originalDensity;
+        }
+
+        /// <summary>Trigger corruption visual effect.</summary>
+        private void TriggerCorruptionEffect(float intensity)
+        {
+            // Tint fog red temporarily
+            StartCoroutine(CorruptionFlashCoroutine(intensity));
+        }
+
+        private IEnumerator CorruptionFlashCoroutine(float intensity)
+        {
+            Color originalColor = RenderSettings.fogColor;
+            Color corruptColor = Color.Lerp(originalColor, _corruptedFogColor, intensity);
+
+            float duration = 0.3f;
+            float elapsed = 0f;
+
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                float t = 1f - (elapsed / duration);
+                RenderSettings.fogColor = Color.Lerp(originalColor, corruptColor, t);
+                yield return null;
+            }
+
+            RenderSettings.fogColor = originalColor;
+        }
+
+        /// <summary>Trigger glitch particles.</summary>
+        private void TriggerGlitchParticles(float intensity)
+        {
+            if (_glitchParticles == null) return;
+
+            var emission = _glitchParticles.emission;
+            var originalRate = emission.rateOverTime.constant;
+
+            // Burst based on intensity
+            int burstCount = Mathf.RoundToInt(intensity * 50);
+            _glitchParticles.Emit(burstCount);
         }
 
         #endregion

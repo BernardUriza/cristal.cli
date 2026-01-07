@@ -105,6 +105,14 @@ namespace Cristal.CLI.Memory
             sorted.Sort((a, b) => b.count.CompareTo(a.count));
             return sorted.GetRange(0, Mathf.Min(count, sorted.Count));
         }
+
+        /// <summary>
+        /// Get the count of unique keywords discovered.
+        /// </summary>
+        public int GetUniqueCount()
+        {
+            return entries.Count;
+        }
     }
 
     [Serializable]
