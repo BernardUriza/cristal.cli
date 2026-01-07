@@ -404,6 +404,8 @@ CRISTAL/
 ├── Setup 2D Terminal Scene      # Configure 2D terminal scene
 ├── SVG Export Window            # Export glyphs to SVG
 ├── Create Terminal Visual Config
+├── Dream/
+│   └── Room Definition          # Create DreamRoomDefinition asset
 ├── Floating Prompt/
 │   ├── Create Complete Setup    # Prefab + Config + Vocabulary
 │   ├── Create Config Only
@@ -412,6 +414,371 @@ CRISTAL/
 │   └── Setup on Player          # Wire everything to PlayerInteraction
 ├── Start Play Mode
 └── Stop Play Mode
+```
+
+---
+
+## Dream Tunnels System (Phase 6.7)
+
+```
+Architecture:
+  DreamTunnelSystem
+  ├── DreamTunnel (runtime instances)
+  │   ├── DreamRoom[] (individual rooms)
+  │   ├── Narrative fragments
+  │   └── Symbol projections
+  ├── DreamAIOracle (AI content generation)
+  ├── DreamSymbolProjector (procedural symbols)
+  ├── DreamMemoryBridge (memory context)
+  └── DreamRoomDefinition (ScriptableObject archetypes)
+
+DreamAIOracle (Assets/Scripts/AI/Dreams/DreamAIOracle.cs):
+  Generates AI content via Qwen3/Ollama:
+  - Room names: Evocative 2-4 word titles
+  - Wall inscriptions: Cryptic prophetic text
+  - Narrative fragments: Surreal dream messages
+  - Symbol descriptions: Geometric imagery prompts
+
+  API:
+    oracle.GenerateRoomName(context, onComplete);
+    oracle.GenerateWallInscription(context, onComplete);
+    oracle.GenerateNarrativeFragment(context, onComplete);
+    oracle.GenerateSymbolDescription(context, onComplete);
+
+  Fallbacks:
+    If Ollama unavailable, uses procedural fallback generation
+
+DreamSymbolProjector (Assets/Scripts/VFX/DreamSymbolProjector.cs):
+  Projects procedural symbols onto dream surfaces:
+  - Eye, Spiral, Mirror, Key, Hourglass, Moon, Star, Ouroboros
+  - Animated reveal with glow pulse
+  - Mapped to arcana (e.g., Moon -> Moon symbol)
+
+  API:
+    projector.ProjectSymbol(definition, position, rotation);
+    projector.ProjectOnRandomWall(definition, roomBounds);
+    projector.GenerateSymbolTexture(SymbolType.Eye, 256);
+
+DreamMemoryBridge (Assets/Scripts/Memory/DreamMemoryBridge.cs):
+  Exposes memory to AI systems:
+  - BuildDreamContext() -> DreamContext for prompts
+  - GetEmotionalProfile() -> emotion summary
+  - GetJourneySummary() -> narrative context
+  - Records dream entries/exits for persistence
+
+  Dream-specific tracking:
+    - Total dreams entered
+    - Total dream time
+    - Symbol encounter frequency
+    - Inscription history
+
+DreamRoomDefinition (Assets/Scripts/Labyrinth/Dream/DreamRoomDefinition.cs):
+  ScriptableObject archetype for dream rooms:
+  - Visual: colors, fog, light, particles
+  - Geometry: shape (Corridor, Chamber, Spiral, Void, etc.)
+  - Symbols: primary/secondary symbols, density
+  - Narrative: fallback inscriptions/narratives
+  - Audio: ambient loop, entry/exit stingers
+  - Triggers: arcana IDs, emotions, corruption threshold
+
+  Create via: CRISTAL > Dream > Room Definition
+
+Dream Triggers:
+  - Arcana invocation (Moon, High Priestess, Hanged Man)
+  - Emotional threshold (>70% intensity)
+  - UNBOUND state (ultimate dream)
+  - Manual debug command
+
+Entry Flow:
+  1. Trigger detected → CreateDreamFromArcana/Emotion/Unbound
+  2. AI generates room name, inscriptions
+  3. Symbols projected on walls
+  4. Player teleported to dream spawn
+  5. Narrative sequence plays
+  6. Timer runs until exit condition
+
+Exit Conditions:
+  - Time expired
+  - Arcana expired
+  - Player exits voluntarily
+  - Narrative complete
+  - Forced (debug)
+
+Glitch Fragment:
+  On dream exit, leaves emotional fragment in CLI:
+    "// something lingers from the dream..."
+```
+
+---
+
+## Symbolic Forge System (Phase 8)
+
+```
+Overview:
+  Procedural symbol generation system responding to game events.
+  Creates visual rituals, arcana glyphs, and ambient symbolism
+  that reinforce CRISTAL.cli's occult-terminal aesthetic.
+
+  Use cases:
+    - Arcana invocation visuals
+    - Corruption manifestation
+    - Memory recovery ceremonies
+    - UNBOUND ritual sequences
+    - AI prompt context enrichment
+
+Architecture:
+  ReactiveSystemBus (pub/sub)
+       │
+       ▼
+  SymbolicForge (central system)
+       │
+       ├── SVGGenerator (procedural engine)
+       ├── SymbolicTemplate (configs)
+       ├── SymbolicProjection (display)
+       └── SymbolicMemoryLog (persistence)
+```
+
+### SymbolicTemplate
+
+```
+ScriptableObject: Assets/Scripts/Symbolic/SymbolicTemplate.cs
+
+Fields:
+  archetype        : SymbolicArchetype (22 Tarot + 8 CRISTAL)
+  displayName      : Human-readable name
+  description      : Meaning/context for AI prompts
+  shapeLanguage    : ShapeLanguage enum (see below)
+  
+  Visual:
+    primaryColor   : Core symbol color
+    secondaryColor : Accent/glow color
+    glowIntensity  : 0-2 bloom factor
+    animationSpeed : Rotation/pulse speed
+    complexity     : 1-10 layer count
+  
+  Projection:
+    defaultStyle   : Hologram | Surface | Overlay | Particle
+    lifetime       : Duration before fade
+    scale          : World-space size
+    audioClip      : Optional appearance sound
+
+Create via script:
+  SymbolicTemplate.CreateFromArchetype(SymbolicArchetype.TheMoon);
+  // Auto-configures appropriate defaults for archetype
+
+Archetypes:
+  Tarot (22):
+    TheFool, TheMagician, TheHighPriestess, TheEmpress, TheEmperor,
+    TheHierophant, TheLovers, TheChariot, Strength, TheHermit,
+    WheelOfFortune, Justice, TheHangedMan, Death, Temperance,
+    TheDevil, TheTower, TheStar, TheMoon, TheSun, Judgement, TheWorld
+  
+  CRISTAL (8):
+    TheFragment   : Broken memories, partial recovery
+    TheEcho       : Recursive patterns, déjà vu
+    TheCorruption : System decay, visual noise
+    TheMemory     : Recovered context, clarity
+    TheUnbound    : Ultimate liberation, transcendence
+    TheVoid       : Empty states, null references
+    TheGate       : Transitions, thresholds
+    TheVision     : AI insight, prophecy
+```
+
+### SVGGenerator
+
+```
+Engine: Assets/Scripts/Symbolic/SVGGenerator.cs
+
+ShapeLanguages (visual styles):
+  Geometric  : Polygons, grids, precise angles
+  Circular   : Concentric rings, spirals, mandalas
+  Linear     : Rays, lines, crosshatch patterns
+  Organic    : Curves, waves, flowing forms
+  Fractal    : Self-similar recursive patterns
+  Glitch     : Digital corruption, noise bars
+  Sacred     : Flower of Life, Metatron's Cube
+  Runic      : Ancient symbols, Nordic/Celtic forms
+
+API:
+  // From template
+  string svg = SVGGenerator.Generate(template, seed);
+  
+  // From event (auto-selects template)
+  GeneratedSymbol symbol = SVGGenerator.GenerateFromEvent(in evt);
+  
+  // Quick generation
+  string svg = SVGGenerator.GenerateQuick(
+    SymbolicArchetype.TheMoon,
+    ShapeLanguage.Circular,
+    Color.cyan
+  );
+
+Features:
+  - Deterministic: same seed → same output
+  - CSS animations: rotation, pulse, glow
+  - SVG filters: gaussian blur, glow, noise
+  - Gradients: radial/linear with archetype colors
+  - Layered complexity: 1-10 nested elements
+
+Shape generators:
+  GeneratePolygon()         : N-sided regular polygons
+  GenerateConcentricCircles(): Nested rings
+  GenerateSpiralPath()      : Logarithmic spirals
+  GenerateFlowerOfLife()    : Sacred geometry pattern
+  GenerateGlitchPattern()   : Corruption rectangles
+  GenerateRunicSymbol()     : Abstract runic forms
+  GenerateWavePattern()     : Organic sine waves
+  GenerateFractalTree()     : Recursive branching
+```
+
+### SymbolicProjection
+
+```
+Component: Assets/Scripts/Symbolic/SymbolicProjection.cs
+
+Projection Styles:
+  Hologram  : Floating 3D with shader effects
+  Surface   : Projected onto world geometry
+  Overlay   : UI-space fullscreen
+  Particle  : Dissolves into particle system
+
+API:
+  projection.Project(
+    GeneratedSymbol symbol,
+    float duration = 3f,
+    ProjectionStyle style = ProjectionStyle.Hologram
+  );
+
+Features:
+  - Fade in/out with configurable curves
+  - Camera-facing billboards (Hologram mode)
+  - Floating animation with sine offset
+  - Optional audio on appear/disappear
+  - Procedural texture from archetype
+
+Integration:
+  // Subscribe to forge events
+  SymbolicForge.Instance.OnSymbolGenerated += (symbol) => {
+    projection.Project(symbol);
+  };
+
+Procedural textures:
+  DrawPolygon()      : Fill convex shapes
+  DrawCircle()       : Filled/outlined circles
+  DrawGlitchPattern(): Corruption scanlines
+  DrawFlowerPattern(): Sacred geometry fill
+```
+
+### SymbolicMemoryLog
+
+```
+Component: Assets/Scripts/Symbolic/SymbolicMemoryLog.cs
+
+Purpose:
+  Tracks all generated symbols for:
+  - Debugging and QA
+  - Ritual progression (thresholds)
+  - AI context (symbol history)
+  - Analytics
+
+Persistence:
+  File: [PersistentDataPath]/symbolic_log.json
+  Auto-save on pause/quit
+  Max entries: 500 (configurable)
+
+Entry fields:
+  symbolId     : Unique 8-char hex
+  archetype    : SymbolicArchetype
+  sourceSignal : SymbolicSignalType
+  sourceState  : CristalState
+  intensity    : 0-100
+  timestamp    : Time.time
+  source       : System that triggered
+  svgHash      : Content fingerprint
+
+Thresholds (trigger events):
+  TheCorruption : 5 → RitualProgress event
+  TheEcho       : 7 → RitualProgress event
+  TheMemory     : 10 → RitualProgress event
+  Death         : 3 → RitualProgress event
+  TheMoon       : 3 → RitualProgress event
+  TheDevil      : 3 → RitualProgress event
+
+Query API:
+  log.GetArchetypeCount(SymbolicArchetype.TheMoon);
+  log.GetEntriesBySignal(SymbolicSignalType.ArcanaInvoked, 10);
+  log.GetEntriesInTimeRange(startTime, endTime);
+  log.HasSeenArchetype(SymbolicArchetype.TheUnbound);
+  log.ExportToString();  // Debug dump
+
+Events:
+  OnEntryLogged(SymbolicLogEntry entry)
+  OnArchetypeThreshold(SymbolicArchetype, int count)
+```
+
+### Integration with ReactiveSystemBus
+
+```
+SymbolicForge subscribes to:
+  - ArcanaInvoked      → Generate arcana symbol
+  - MemoryRecovered    → Generate memory symbol
+  - CorruptionSpike    → Generate corruption symbol
+  - UnboundTriggered   → Generate unbound ritual
+  - VisionUnlocked     → Generate vision symbol
+  - RitualProgress     → Chain symbol generation
+  - GlitchTriggered    → Quick glitch symbol
+
+SymbolicForge publishes:
+  - SymbolicUnlocked   → When new archetype first seen
+  - ProjectionTriggered→ When symbol displayed
+
+Example flow:
+  1. ArcanaSystem invokes Moon
+  2. ReactiveSystemBus.Publish(ArcanaInvoked, archetype: TheMoon)
+  3. SymbolicForge.OnSymbolicEvent() receives
+  4. SVGGenerator.GenerateFromEvent() creates SVG
+  5. SymbolicProjection.Project() displays hologram
+  6. SymbolicMemoryLog.LogSymbol() records entry
+  7. If threshold met → RitualProgress published
+```
+
+### How to Extend
+
+```csharp
+// Add new archetype (SymbolicArchetype enum)
+public enum SymbolicArchetype
+{
+    // ... existing ...
+    TheNewArchetype = 30,
+}
+
+// Configure in SVGGenerator.GetDefaultTemplate()
+case SymbolicArchetype.TheNewArchetype:
+    return new SymbolicTemplate {
+        shapeLanguage = ShapeLanguage.Sacred,
+        primaryColor = new Color(0.8f, 0.2f, 1f),
+        complexity = 7
+    };
+
+// Add new ShapeLanguage
+public enum ShapeLanguage
+{
+    // ... existing ...
+    NewStyle = 8,
+}
+
+// Implement generator in SVGGenerator
+private static string GenerateNewStyleShape(int sides, float size, int seed)
+{
+    // Return SVG path/shape string
+}
+
+// Associate symbol with narrative event
+ReactiveSystemBus.Subscribe(SymbolicSignalType.CustomEvent, evt => {
+    var symbol = SVGGenerator.GenerateFromEvent(in evt);
+    var forge = ServiceLocator.Get<SymbolicForge>();
+    forge.ProjectSymbol(symbol);
+});
 ```
 
 ---
@@ -432,4 +799,9 @@ Pantalla negra sin UI:
 Play Mode via MCP no inicia:
   - Usar boton Play manual en Unity
   - O: CRISTAL -> Start Play Mode
+
+Dream no genera contenido AI:
+  - Verificar Ollama running: http://localhost:11434
+  - Verificar modelo: qwen3:8b
+  - Fallback procedural activo si AI falla
 ```
