@@ -1,5 +1,6 @@
 using UnityEngine;
 using TMPro;
+using Cristal.CLI.Labyrinth.UI;
 
 namespace Cristal.CLI.Labyrinth
 {
@@ -15,7 +16,11 @@ namespace Cristal.CLI.Labyrinth
         [SerializeField] private LayerMask _interactableMask = -1;
         [SerializeField] private Transform _raycastOrigin;
 
-        [Header("UI")]
+        [Header("Floating Prompt")]
+        [SerializeField] private FloatingInteractPrompt _floatingPrompt;
+        [SerializeField] private bool _useFloatingPrompt = true;
+
+        [Header("UI (Legacy)")]
         [SerializeField] private GameObject _promptPanel;
         [SerializeField] private TextMeshProUGUI _promptText;
         [SerializeField] private string _defaultPromptFormat = "Press E to {0}";
@@ -28,6 +33,7 @@ namespace Cristal.CLI.Labyrinth
 
         private PlayerInputHandler _inputHandler;
         private IInteractable _currentTarget;
+        private Transform _currentTargetTransform;
         private bool _isEnabled = true;
 
         public IInteractable CurrentTarget => _currentTarget;
@@ -91,16 +97,21 @@ namespace Cristal.CLI.Labyrinth
             {
                 // Check if hit object has IInteractable
                 IInteractable interactable = hit.collider.GetComponent<IInteractable>();
+                Transform targetTransform = hit.collider.transform;
 
                 if (interactable == null)
                 {
                     // Check parent
                     interactable = hit.collider.GetComponentInParent<IInteractable>();
+                    if (interactable != null)
+                    {
+                        targetTransform = (interactable as MonoBehaviour)?.transform ?? hit.collider.transform;
+                    }
                 }
 
                 if (interactable != null && interactable.CanInteract)
                 {
-                    SetTarget(interactable);
+                    SetTarget(interactable, targetTransform);
                     return;
                 }
             }
@@ -108,7 +119,7 @@ namespace Cristal.CLI.Labyrinth
             ClearTarget();
         }
 
-        private void SetTarget(IInteractable interactable)
+        private void SetTarget(IInteractable interactable, Transform targetTransform)
         {
             if (_currentTarget == interactable)
             {
@@ -122,10 +133,11 @@ namespace Cristal.CLI.Labyrinth
             }
 
             _currentTarget = interactable;
+            _currentTargetTransform = targetTransform;
             _currentTarget.OnFocus();
 
-            // Show prompt
-            ShowPrompt(_currentTarget.InteractPrompt);
+            // Show floating prompt
+            ShowPrompt(_currentTarget.InteractPrompt, targetTransform);
 
             if (_debugMode)
             {
@@ -142,6 +154,7 @@ namespace Cristal.CLI.Labyrinth
 
             _currentTarget.OnUnfocus();
             _currentTarget = null;
+            _currentTargetTransform = null;
 
             HidePrompt();
 
@@ -183,8 +196,15 @@ namespace Cristal.CLI.Labyrinth
 
         #region UI
 
-        private void ShowPrompt(string prompt)
+        private void ShowPrompt(string prompt, Transform target)
         {
+            // Floating prompt (preferred)
+            if (_useFloatingPrompt && _floatingPrompt != null)
+            {
+                _floatingPrompt.Show(target, prompt);
+            }
+
+            // Legacy panel prompt (fallback)
             if (_promptPanel != null)
             {
                 _promptPanel.SetActive(true);
@@ -198,6 +218,13 @@ namespace Cristal.CLI.Labyrinth
 
         private void HidePrompt()
         {
+            // Hide floating prompt
+            if (_floatingPrompt != null)
+            {
+                _floatingPrompt.Hide();
+            }
+
+            // Hide legacy panel
             if (_promptPanel != null)
             {
                 _promptPanel.SetActive(false);
