@@ -94,7 +94,20 @@ namespace Cristal.CLI.Labyrinth
             if (_gateTransform != null)
             {
                 _gateTransform.localPosition = _closedPosition;
+                if (_animateScaleFade)
+                {
+                    _gateTransform.localScale = _closedScale;
+                }
             }
+
+            // Auto-compute open position based on direction
+            if (_autoComputeOpenPosition && _gateTransform != null)
+            {
+                _openPosition = _closedPosition + GetDirectionVector() * _openDistance;
+            }
+
+            // Initialize property block for alpha
+            _propBlock = new MaterialPropertyBlock();
 
             UpdateVisualState();
 
@@ -107,16 +120,35 @@ namespace Cristal.CLI.Labyrinth
                     ritualSystem.OnRitualComplete += HandleRitualComplete;
                 }
             }
-        }
 
-        private void OnDestroy()
-        {
-            if (_openOnRitualComplete)
+            // Subscribe to UNBOUND events
+            if (_openOnUnboundTriggered)
             {
                 var ritualSystem = RitualSystem.Instance;
                 if (ritualSystem != null)
                 {
+                    ritualSystem.OnUnboundTriggered += HandleUnboundTriggered;
+                    if (_closeOnUnboundEnded)
+                    {
+                        ritualSystem.OnUnboundEnded += HandleUnboundEnded;
+                    }
+                }
+            }
+        }
+
+        private void OnDestroy()
+        {
+            var ritualSystem = RitualSystem.Instance;
+            if (ritualSystem != null)
+            {
+                if (_openOnRitualComplete)
+                {
                     ritualSystem.OnRitualComplete -= HandleRitualComplete;
+                }
+                if (_openOnUnboundTriggered)
+                {
+                    ritualSystem.OnUnboundTriggered -= HandleUnboundTriggered;
+                    ritualSystem.OnUnboundEnded -= HandleUnboundEnded;
                 }
             }
         }
@@ -128,6 +160,66 @@ namespace Cristal.CLI.Labyrinth
                 UpdateAnimation();
             }
         }
+
+        #region Direction Helpers
+
+        private Vector3 GetDirectionVector()
+        {
+            return _direction switch
+            {
+                WallSide.North => Vector3.forward,
+                WallSide.South => Vector3.back,
+                WallSide.East => Vector3.right,
+                WallSide.West => Vector3.left,
+                _ => Vector3.up
+            };
+        }
+
+        #endregion
+
+        #region UNBOUND Handlers
+
+        private void HandleUnboundTriggered()
+        {
+            if (_debugMode)
+            {
+                Debug.Log("[SymbolicGate] UNBOUND triggered - opening gate");
+            }
+            Open();
+        }
+
+        private void HandleUnboundEnded()
+        {
+            if (_closeOnUnboundEnded && !_permanent)
+            {
+                if (_debugMode)
+                {
+                    Debug.Log("[SymbolicGate] UNBOUND ended - closing gate");
+                }
+                Close();
+            }
+        }
+
+        #endregion
+
+        #region Runtime Configuration
+
+        /// <summary>
+        /// Configure this gate at runtime (used by BuildLabyrinthFromMap).
+        /// </summary>
+        public void Configure(WallSide direction, CristalState unlockState, bool openOnUnbound)
+        {
+            _direction = direction;
+            _unlockState = unlockState;
+            _openOnUnboundTriggered = openOnUnbound;
+
+            if (_autoComputeOpenPosition && _gateTransform != null)
+            {
+                _openPosition = _closedPosition + GetDirectionVector() * _openDistance;
+            }
+        }
+
+        #endregion
 
         #region State Response
 
@@ -186,7 +278,7 @@ namespace Cristal.CLI.Labyrinth
             }
             else
             {
-                StartAnimation(_closedPosition, _openPosition);
+                StartAnimation(_closedPosition, _openPosition, _closedScale, _openScale, _closedAlpha, _openAlpha);
             }
 
             // Disable collision
@@ -229,7 +321,7 @@ namespace Cristal.CLI.Labyrinth
             }
             else
             {
-                StartAnimation(_openPosition, _closedPosition);
+                StartAnimation(_openPosition, _closedPosition, _openScale, _closedScale, _openAlpha, _closedAlpha);
             }
 
             // Enable collision
@@ -267,12 +359,18 @@ namespace Cristal.CLI.Labyrinth
 
         #region Animation
 
-        private void StartAnimation(Vector3 from, Vector3 to)
+        private void StartAnimation(Vector3 fromPos, Vector3 toPos, 
+            Vector3 fromScale, Vector3 toScale, 
+            float fromAlpha, float toAlpha)
         {
             _isAnimating = true;
             _animationTimer = 0f;
-            _animationStart = from;
-            _animationEnd = to;
+            _animationStart = fromPos;
+            _animationEnd = toPos;
+            _scaleStart = fromScale;
+            _scaleEnd = toScale;
+            _alphaStart = fromAlpha;
+            _alphaEnd = toAlpha;
         }
 
         private void UpdateAnimation()
@@ -284,6 +382,23 @@ namespace Cristal.CLI.Labyrinth
             if (_gateTransform != null)
             {
                 _gateTransform.localPosition = Vector3.Lerp(_animationStart, _animationEnd, curvedT);
+
+                if (_animateScaleFade)
+                {
+                    _gateTransform.localScale = Vector3.Lerp(_scaleStart, _scaleEnd, curvedT);
+
+                    // Update alpha via MaterialPropertyBlock
+                    if (_gateRenderer != null && _propBlock != null)
+                    {
+                        float alpha = Mathf.Lerp(_alphaStart, _alphaEnd, curvedT);
+                        Color baseColor = _gateRenderer.sharedMaterial != null 
+                            ? _gateRenderer.sharedMaterial.color 
+                            : Color.white;
+                        baseColor.a = alpha;
+                        _propBlock.SetColor(AlphaProperty, baseColor);
+                        _gateRenderer.SetPropertyBlock(_propBlock);
+                    }
+                }
             }
 
             if (t >= 1f)

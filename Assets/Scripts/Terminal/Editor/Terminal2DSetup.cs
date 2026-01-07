@@ -238,8 +238,21 @@ namespace Cristal.CLI.Terminal.Editor
             }
         }
 
+        private const string DefaultVisualConfigResourcesPath = "Config/DefaultTerminalVisualConfig";
+
+        /// <summary>
+        /// Load visual config from Resources first, fallback to any config in the project.
+        /// </summary>
         private static UI.TerminalVisualConfig FindFirstVisualConfig()
         {
+            // Priority: Resources path (same as other setups)
+            var resourcesConfig = Resources.Load<UI.TerminalVisualConfig>(DefaultVisualConfigResourcesPath);
+            if (resourcesConfig != null)
+            {
+                return resourcesConfig;
+            }
+
+            // Fallback: any TerminalVisualConfig in the project
             string[] guids = AssetDatabase.FindAssets("t:TerminalVisualConfig");
             if (guids == null || guids.Length == 0) return null;
             string assetPath = AssetDatabase.GUIDToAssetPath(guids[0]);

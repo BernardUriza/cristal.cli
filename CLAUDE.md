@@ -131,27 +131,53 @@ Control via Claude Code:
 ## CRISTAL CLI System Architecture
 
 ```
-┌─────────────────────────────────────────┐
-│          CrystalCLI (UI Layer)          │
-│  - TMP_InputField, TextMeshProUGUI      │
-│  - Typewriter effect, visual feedback   │
-└──────────────────┬──────────────────────┘
-                   │
-┌──────────────────▼──────────────────────┐
-│        TerminalCore (Engine)            │
-│  - Input processing                     │
-│  - Response generation                  │
-│  - State management                     │
-│  - Future: AI integration (IAIProvider) │
-└──────────────────┬──────────────────────┘
-                   │
-┌──────────────────▼──────────────────────┐
-│       CommandMemory (Persistence)       │
-│  - Input history log                    │
-│  - Keyword extraction                   │
-│  - Emotional weight analysis            │
-│  - AI context formatting                │
-└─────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                     CristalBootstrap                            │
+│   [DefaultExecutionOrder(-100)] - Initializes all services      │
+│   Registers: Memory, StateMachine, Response, Arcana, Effects    │
+└──────────────────────────┬──────────────────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                     ServiceLocator                              │
+│   Centralized service registry replacing 13+ singletons         │
+│   - Register<T>(service) / Get<T>() / TryGet<T>()              │
+│   - Auto-unregister on MonoBehaviour destroy                    │
+└──────────────────────────┬──────────────────────────────────────┘
+                           │
+        ┌──────────────────┼──────────────────┐
+        ▼                  ▼                  ▼
+┌───────────────┐  ┌───────────────┐  ┌───────────────┐
+│ CrystalCLI    │  │TerminalCore   │  │LabyrinthMgr   │
+│ (2D UI)       │  │(Logic Engine) │  │(3D World)     │
+└───────────────┘  └───────────────┘  └───────────────┘
+
+State Machine:
+  CristalState enum: Bootstrap, Waiting, Processing, Responding,
+                     Seeking, Echo, Corrupted, Remembering,
+                     Invoked, Error, Locked, Unbound
+
+Prompt System (3D Labyrinth):
+  PromptVocabulary.asset → PromptContextResolver → FloatingPromptController
+  → FloatingInteractPrompt (urgency: Normal/Warning/Critical)
+```
+
+---
+
+## Logging
+
+```csharp
+// Use CristalLog instead of Debug.Log for consistent filtering
+using Cristal.CLI.Core;
+
+CristalLog.Info("SystemName", "Message");
+CristalLog.Warning("SystemName", "Message");
+CristalLog.Error("SystemName", "Message");
+CristalLog.State("StateMachine", "Waiting", "Processing");
+CristalLog.Event("RitualSystem", "UnboundTriggered");
+
+// Configure via: Create > CRISTAL > Log Config
+// Per-system log levels, auto-strip in release builds
 ```
 
 ---
@@ -181,6 +207,10 @@ Interaction model:
 ## Quick Commands
 
 ```csharp
+// ServiceLocator (preferred over singletons)
+var memory = ServiceLocator.Get<CristalMemory>();
+var stateMachine = ServiceLocator.TryGet<TerminalStateMachine>();
+
 // TerminalCore
 TerminalCore.Instance.ProcessInput("hello");
 TerminalCore.Instance.SetState(TerminalState.Waiting);
@@ -193,6 +223,30 @@ cli.ClearTerminal();
 memory.LogCommand("input");
 memory.GetRecentMemories(10);
 memory.FormatForAI();
+
+// Prompt System (3D)
+var resolver = ServiceLocator.Get<PromptContextResolver>();
+var context = resolver.Resolve(interactable, targetTransform);
+// context.ActionText, context.KeyText, context.Urgency
+```
+
+---
+
+## Editor Menu
+
+```
+CRISTAL/
+├── Setup 2D Terminal Scene      # Configure 2D terminal scene
+├── SVG Export Window            # Export glyphs to SVG
+├── Create Terminal Visual Config
+├── Floating Prompt/
+│   ├── Create Complete Setup    # Prefab + Config + Vocabulary
+│   ├── Create Config Only
+│   ├── Create Vocabulary
+│   ├── Create Prefab Only
+│   └── Setup on Player          # Wire everything to PlayerInteraction
+├── Start Play Mode
+└── Stop Play Mode
 ```
 
 ---
