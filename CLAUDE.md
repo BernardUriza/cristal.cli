@@ -783,6 +783,281 @@ ReactiveSystemBus.Subscribe(SymbolicSignalType.CustomEvent, evt => {
 
 ---
 
+## Ritual System (Phase 9)
+
+```
+Overview:
+  Multi-step ceremonial sequences that require invoking archetypes
+  in specific order. Completing rituals unlocks new archetypes,
+  memories, and narrative progression.
+
+  Use cases:
+    - Unlock hidden archetypes through symbolic sequences
+    - Gate narrative progression behind ritual completion
+    - Create meaningful player agency via symbolic choices
+    - Track player journey through archetype encounters
+
+Architecture:
+  ReactiveSystemBus (events)
+       │
+       ▼
+  RitualExecutor (orchestrator)
+       │
+       ├── RitualDefinition[] (available rituals)
+       ├── ActiveRitual[] (in-progress)
+       ├── RitualProgressTracker (persistence)
+       └── SymbolicTrigger[] (world interactions)
+```
+
+### RitualDefinition
+
+```
+ScriptableObject: Assets/Scripts/Ritual/RitualDefinition.cs
+Create via: CRISTAL > Ritual > Ritual Definition
+
+Identity:
+  ritualId     : Unique identifier (e.g., "moon_awakening")
+  displayName  : Human-readable name
+  description  : Lore/context text
+
+Conditions (RitualConditions):
+  allowedStates          : CristalState[] that permit starting
+  prerequisiteArchetypes : Must have seen these archetypes
+  prerequisiteRituals    : Must have completed these rituals
+  minMemoryIntensity     : 0-100 memory threshold
+  maxCorruptionLevel     : 0-100 corruption ceiling
+
+Steps (RitualStep[]):
+  requiredArchetype : SymbolicArchetype to invoke
+  triggerSignal     : SymbolicSignalType (usually ArcanaInvoked)
+  minIntensity      : Minimum event intensity
+  hintText          : Player guidance
+  timeLimit         : Seconds (0 = no limit)
+  completionSound   : AudioClip
+  projectSymbol     : bool
+
+Sequence:
+  strictOrder    : Must complete steps in exact order?
+  totalTimeLimit : Overall ritual timeout (0 = no limit)
+
+Reward (RitualReward):
+  unlockedArchetype   : New archetype granted
+  revealedMemory      : Memory text unlocked
+  resultingState      : CristalState after completion
+  completionSignal    : SymbolicSignalType to publish
+  completionIntensity : 0-100
+  unlockedVisionId    : Vision ID if applicable
+  corruptionReduction : 0-50
+  completionStinger   : AudioClip
+  projectFinalSymbol  : bool
+  finalProjectionDuration : seconds
+
+Failure:
+  failureMessage : Text shown on timeout
+  failureSignal  : SymbolicSignalType
+  retryable      : Can retry after failure?
+  retryCooldown  : Seconds before retry
+
+Visual:
+  ritualColor   : Color theme
+  shapeLanguage : ShapeLanguage for symbols
+  ambientLoop   : AudioClip during ritual
+```
+
+### RitualExecutor
+
+```
+Component: Assets/Scripts/Ritual/RitualExecutor.cs
+
+Subscribed signals:
+  - ArcanaInvoked
+  - MemoryRecovered
+  - VisionUnlocked
+  - CorruptionSpike
+  - UnboundTriggered
+
+Lifecycle:
+  1. TryStartRitual(definition) → validates conditions
+  2. ActiveRitual created with state InProgress
+  3. OnSymbolicEvent() checks step completion
+  4. CompleteStep() advances or CompleteRitual()
+  5. RitualReward applied, events published
+  6. RitualProgressTracker.RecordCompletion()
+
+API:
+  executor.TryStartRitual("moon_awakening");
+  executor.CancelRitual("moon_awakening");
+  executor.ActiveRituals;  // IReadOnlyList<ActiveRitual>
+  executor.CompletedRitualIds;  // IReadOnlyCollection<string>
+  executor.GetStatusString();  // Debug dump
+
+Events:
+  OnRitualStarted(RitualDefinition)
+  OnRitualStepCompleted(RitualDefinition, int stepIndex)
+  OnRitualCompleted(RitualDefinition, RitualReward)
+  OnRitualFailed(RitualDefinition, string reason)
+  OnRitualHintUpdated(RitualDefinition, RitualStep)
+
+Configuration:
+  _availableRituals  : RitualDefinition[]
+  _autoStartEligible : Start rituals when conditions met
+  _maxConcurrentRituals : Limit active rituals
+```
+
+### SymbolicTrigger
+
+```
+Component: Assets/Scripts/Ritual/SymbolicTrigger.cs
+Implements: IInteractable
+
+Trigger Types:
+  Interact       : E key (uses PlayerInteraction)
+  Proximity      : Enter collider radius
+  LookAt         : Gaze for duration
+  StateDependent : Specific CristalState
+  TimeBasedLoop  : Repeating timer
+  OneShot        : Single use then disabled
+
+Configuration:
+  _archetype         : SymbolicArchetype to publish
+  _signalType        : SymbolicSignalType (default: ArcanaInvoked)
+  _baseIntensity     : 0-100
+  _scaleWithProximity: Intensity based on distance
+  _cooldownSeconds   : Delay between triggers
+  _interactionPrompt : "Invoke" (shown in FloatingInteractPrompt)
+  _lockedPrompt      : "Sealed" (when conditions not met)
+  _consumeOnUse      : Disable after first trigger
+
+Conditions:
+  _requiredStates        : CristalState[]
+  _prerequisiteArchetypes: SymbolicArchetype[]
+  _requiresActiveRitual  : Must have active ritual?
+  _specificRitualId      : Only for this ritual
+
+Visual Feedback:
+  _projectSymbolOnTrigger : Generate symbol on trigger
+  _projectionPoint        : Transform for symbol
+  _idleParticles          : Ambient particles
+  _activationParticles    : Burst on trigger
+  _glyphRenderer          : Mesh with emission
+  _emissionColorProperty  : "_EmissionColor"
+
+API:
+  trigger.Trigger();  // Force activate
+  trigger.SetEnabled(bool);
+  trigger.Reset();
+  trigger.SetArchetype(SymbolicArchetype);
+  trigger.CanInteract();
+  trigger.InteractionPrompt;
+
+Events:
+  OnTriggered(SymbolicTrigger)
+  OnLocked(SymbolicTrigger)
+```
+
+### RitualProgressTracker
+
+```
+Component: Assets/Scripts/Ritual/RitualProgressTracker.cs
+
+Persistence:
+  File: [PersistentDataPath]/ritual_progress.json
+  Auto-save on pause/quit
+
+Data (RitualProgressData):
+  sessionId            : Unique session ID
+  completedRitualIds   : List<string>
+  seenArchetypes       : List<string>
+  totalRitualsCompleted: int
+  totalRitualsFailed   : int
+  totalRitualTime      : float
+  history              : List<RitualHistoryEntry>
+
+RitualHistoryEntry:
+  ritualId, ritualName, completed, duration,
+  stepsCompleted, timestamp, rewardArchetype
+
+API:
+  tracker.Load();
+  tracker.Save(data);
+  tracker.RecordCompletion(ritual, duration, steps, reward);
+  tracker.RecordFailure(ritual, duration, steps, reason);
+  tracker.TrackArchetype(SymbolicArchetype);
+  tracker.IsRitualCompleted("moon_awakening");
+  tracker.HasSeenArchetype(SymbolicArchetype.TheMoon);
+  tracker.GetRecentHistory(10);
+  tracker.ClearProgress();  // New game
+  tracker.ExportToString();
+
+Statistics:
+  tracker.GetCompletionRate();  // 0-100%
+  tracker.GetAverageRitualDuration();
+  tracker.GetMostCommonReward();
+
+Events:
+  OnProgressLoaded(RitualProgressData)
+  OnProgressSaved(RitualProgressData)
+  OnRitualCompleted(string ritualId)
+  OnArchetypeUnlocked(SymbolicArchetype)
+```
+
+### Example Ritual Flow
+
+```
+1. Player enters labyrinth room with SymbolicTrigger (TheMoon)
+2. Player presses E → trigger.OnInteract()
+3. SymbolicTrigger.Trigger() publishes:
+   ReactiveSystemBus.Publish(ArcanaInvoked, TheMoon, intensity=50)
+
+4. RitualExecutor.OnSymbolicEvent() receives event
+5. If conditions met for "moon_awakening" ritual:
+   → TryStartRitual() creates ActiveRitual
+   → Step 1 requires TheMoon → already satisfied!
+   → CompleteStep() advances to step 2
+
+6. Player finds another trigger (TheHighPriestess)
+7. Trigger publishes ArcanaInvoked with TheHighPriestess
+8. RitualExecutor matches step 2 → CompleteStep()
+9. Repeat for step 3 (TheStar)
+
+10. All steps complete → CompleteRitual():
+    - Publishes RitualComplete signal
+    - Unlocks TheVision archetype
+    - Reveals memory fragment
+    - Transitions to Remembering state
+    - Projects final symbol
+    - RitualProgressTracker.RecordCompletion()
+
+11. Next session: progress loaded, ritual marked complete
+```
+
+### How to Create a Ritual
+
+```csharp
+// 1. Create ScriptableObject via menu:
+//    CRISTAL > Ritual > Ritual Definition
+
+// 2. Or create programmatically:
+var ritual = RitualDefinition.CreateProgression(
+    "path_of_memory",
+    SymbolicArchetype.TheFragment,
+    SymbolicArchetype.TheEcho,
+    SymbolicArchetype.TheMemory,
+    SymbolicArchetype.TheVision  // Reward
+);
+
+// 3. Add to RitualExecutor._availableRituals
+
+// 4. Place SymbolicTriggers in world with matching archetypes
+
+// 5. Test flow:
+//    - Enter play mode
+//    - Interact with triggers in order
+//    - Watch RitualExecutor.GetStatusString() in console
+```
+
+---
+
 ## Troubleshooting
 
 ```
