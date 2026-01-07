@@ -204,6 +204,99 @@ Interaction model:
 
 ---
 
+## Terminal Visual Config System
+
+```
+Architecture:
+  TerminalVisualConfig (ScriptableObject)
+  ├── Colors: background, input, output, system, error, memory, arcana, emotional, cursor, border
+  ├── Typography: font (TMP_FontAsset), fontSize, lineSpacing
+  ├── Layout: padding, inputHeight, cursorWidth
+  ├── Effects: typewriterSpeed, glitchChance, cursorBlinkRate, glitchChars[]
+  ├── Scanlines: enable, alpha, speed
+  └── Border: show, width, color
+
+Default Config Location:
+  Assets/Resources/Config/DefaultTerminalVisualConfig.asset
+
+Load Priority (all setups):
+  1. Resources.Load("Config/DefaultTerminalVisualConfig")
+  2. AssetDatabase search (Terminal2DSetup only)
+  3. Hardcoded fallback values
+
+Runtime Application:
+  CrystalCLI._visualConfig (optional)
+  ├── ApplyVisualConfigIfPresent() in Awake + InitializeCLI
+  ├── GetColorForResponseType() delegates to config if present
+  ├── Drives: CursorBlink, ScanlineEffect, TerminalFrame
+  └── OnValidate() for live editor preview
+
+Editor Tools:
+  CRISTAL/Create Terminal Visual Config     # Create new config asset
+  CRISTAL/Setup 2D Terminal Scene           # Auto-applies config
+  CRISTAL/Setup Terminal Scene              # Auto-applies config
+  CRISTAL/Setup Simple Terminal             # Auto-applies config
+
+Console Output:
+  [CRISTAL] Terminal config: DefaultTerminalVisualConfig
+  [CRISTAL] Terminal config: none (using defaults)
+```
+
+---
+
+## Advanced Visual Effects
+
+```
+ScanlineEffect (Assets/Scripts/Terminal/UI/ScanlineEffect.cs):
+  Modes:
+    - Simple: Lightweight texture-based scanlines
+    - Advanced: Full CRT shader with procedural effects
+  
+  Advanced Mode Features:
+    - Noise: Procedural film grain
+    - Vignette: Screen edge darkening
+    - Chromatic Aberration: RGB channel offset
+    - Screen Curvature: CRT barrel distortion
+    - Flicker: Subtle brightness oscillation
+    - Glitch Pulse: TriggerGlitch() for temporary noise boost
+
+  API:
+    effect.SetMode(EffectMode.Advanced);
+    effect.SetNoiseAlpha(0.05f);
+    effect.SetVignette(0.4f);
+    effect.SetChromaticAberration(0.003f);
+    effect.SetCurvature(0.02f);
+    effect.TriggerGlitch();
+
+CRTEffect Shader (Assets/Shaders/Terminal/CRTEffect.shader):
+  URP-compatible post-process style shader for UI overlay
+  Properties exposed for runtime adjustment
+
+TerminalThemeManager (Assets/Scripts/Terminal/UI/TerminalThemeManager.cs):
+  Dynamic theme switching based on game state
+  
+  Features:
+    - Smooth color transitions with AnimationCurve
+    - Auto-subscribe to ArcanaSystem events
+    - Per-Arcana theme mappings (ScriptableObject configs)
+    - Dynamic theme generation from Arcana.effects.colorHex
+    - Glitch pulse on theme transition
+
+  API:
+    TerminalThemeManager.Instance.TransitionToTheme(config);
+    TerminalThemeManager.Instance.ResetToDefault();
+    TerminalThemeManager.Instance.GetCurrentTheme();
+
+  Events:
+    OnThemeChanged(TerminalVisualConfig config)
+
+  Auto-triggers:
+    - OnArcanaInvoked → Apply Arcana theme
+    - OnArcanaExpired → Return to default
+```
+
+---
+
 ## Quick Commands
 
 ```csharp

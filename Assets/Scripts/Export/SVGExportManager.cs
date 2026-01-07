@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using UnityEngine;
+using Cristal.CLI.Core;
 
 namespace Cristal.CLI.Export
 {
@@ -10,6 +11,8 @@ namespace Cristal.CLI.Export
     /// </summary>
     public class SVGExportManager : MonoBehaviour
     {
+        // Legacy singleton - use ServiceLocator.Get<SVGExportManager>() instead
+        [Obsolete("Use ServiceLocator.Get<SVGExportManager>() instead")]
         public static SVGExportManager Instance { get; private set; }
 
         [Header("Export Settings")]
@@ -30,6 +33,7 @@ namespace Cristal.CLI.Export
             if (Instance == null)
             {
                 Instance = this;
+                ServiceLocator.RegisterMono(this);
                 Initialize();
             }
             else

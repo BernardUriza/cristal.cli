@@ -16,6 +16,7 @@ namespace Cristal.CLI.Editor
         public static void SetupSimpleTerminal()
         {
             TerminalVisualConfig config = LoadDefaultVisualConfig();
+            Debug.Log($"[CRISTAL] Terminal config: {(config != null ? config.name : "none (using defaults)")}");
 
             // Delete existing terminal objects
             var existingCanvases = GameObject.FindObjectsByType<Canvas>(FindObjectsSortMode.None);

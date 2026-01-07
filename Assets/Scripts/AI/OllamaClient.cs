@@ -3,6 +3,7 @@ using System.Collections;
 using System.Text;
 using UnityEngine;
 using UnityEngine.Networking;
+using Cristal.CLI.Core;
 
 namespace Cristal.CLI.AI
 {
@@ -12,6 +13,8 @@ namespace Cristal.CLI.AI
     /// </summary>
     public class OllamaClient : MonoBehaviour
     {
+        // Legacy singleton - use ServiceLocator.Get<OllamaClient>() instead
+        [Obsolete("Use ServiceLocator.Get<OllamaClient>() instead")]
         public static OllamaClient Instance { get; private set; }
 
         [Header("Ollama Settings")]
@@ -43,6 +46,7 @@ namespace Cristal.CLI.AI
             if (Instance == null)
             {
                 Instance = this;
+                ServiceLocator.RegisterMono(this);
             }
             else
             {

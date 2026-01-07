@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Cristal.CLI.Core;
 using Cristal.CLI.Memory;
 using Cristal.CLI.StateMachine;
 using Cristal.CLI.Arcana;
@@ -13,6 +14,8 @@ namespace Cristal.CLI.Ritual
     /// </summary>
     public class RitualSystem : MonoBehaviour
     {
+        // Legacy singleton - use ServiceLocator.Get<RitualSystem>() instead
+        [Obsolete("Use ServiceLocator.Get<RitualSystem>() instead")]
         public static RitualSystem Instance { get; private set; }
 
         [Header("Ritual Configuration")]
@@ -55,6 +58,7 @@ namespace Cristal.CLI.Ritual
             if (Instance == null)
             {
                 Instance = this;
+                ServiceLocator.RegisterMono(this);
                 LoadConfig();
             }
             else

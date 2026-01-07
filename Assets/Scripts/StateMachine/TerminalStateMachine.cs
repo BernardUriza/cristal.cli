@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Cristal.CLI.Core;
 using Cristal.CLI.Memory;
 using Cristal.CLI.StateMachine.States;
 
@@ -12,6 +13,8 @@ namespace Cristal.CLI.StateMachine
     /// </summary>
     public class TerminalStateMachine : MonoBehaviour
     {
+        // Legacy singleton - use ServiceLocator.Get<TerminalStateMachine>() instead
+        [Obsolete("Use ServiceLocator.Get<TerminalStateMachine>() instead")]
         public static TerminalStateMachine Instance { get; private set; }
 
         [Header("Debug")]
@@ -35,6 +38,7 @@ namespace Cristal.CLI.StateMachine
             if (Instance == null)
             {
                 Instance = this;
+                ServiceLocator.RegisterMono(this);
                 InitializeStates();
             }
             else

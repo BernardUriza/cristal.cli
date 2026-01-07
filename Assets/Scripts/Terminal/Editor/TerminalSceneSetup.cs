@@ -19,6 +19,7 @@ namespace Cristal.CLI.Editor
         public static void SetupScene()
         {
             TerminalVisualConfig config = LoadDefaultVisualConfig();
+            Debug.Log($"[CRISTAL] Terminal config: {(config != null ? config.name : "none (using defaults)")}");
 
             // Create Canvas
             GameObject canvasObj = new GameObject("TerminalCanvas");

@@ -14,6 +14,7 @@ namespace Cristal.CLI.Terminal.Editor
         public static void Setup2DTerminalScene()
         {
             var config = FindFirstVisualConfig();
+            Debug.Log($"[CRISTAL] Terminal config: {(config != null ? config.name : "none (using defaults)")}");
 
             // Create or find Canvas
             Canvas canvas = Object.FindFirstObjectByType<Canvas>();

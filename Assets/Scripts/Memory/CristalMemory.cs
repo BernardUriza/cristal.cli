@@ -2,16 +2,19 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
+using Cristal.CLI.Core;
 
 namespace Cristal.CLI.Memory
 {
     /// <summary>
     /// Core persistent memory manager for CRISTAL.
     /// Handles JSON persistence to StreamingAssets and runtime memory operations.
-    /// Singleton pattern with DontDestroyOnLoad.
+    /// Registered with ServiceLocator, DontDestroyOnLoad.
     /// </summary>
     public class CristalMemory : MonoBehaviour
     {
+        // Legacy singleton - use ServiceLocator.Get<CristalMemory>() instead
+        [Obsolete("Use ServiceLocator.Get<CristalMemory>() instead")]
         public static CristalMemory Instance { get; private set; }
 
         [Header("Persistence Settings")]
@@ -41,6 +44,7 @@ namespace Cristal.CLI.Memory
             if (Instance == null)
             {
                 Instance = this;
+                ServiceLocator.RegisterMono(this);
                 DontDestroyOnLoad(gameObject);
                 InitializeMemory();
             }

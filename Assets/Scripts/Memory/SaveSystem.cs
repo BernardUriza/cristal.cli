@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using UnityEngine;
+using Cristal.CLI.Core;
 using Cristal.CLI.Arcana;
 
 namespace Cristal.CLI.Memory
@@ -11,6 +12,8 @@ namespace Cristal.CLI.Memory
     /// </summary>
     public class SaveSystem : MonoBehaviour
     {
+        // Legacy singleton - use ServiceLocator.Get<SaveSystem>() instead
+        [Obsolete("Use ServiceLocator.Get<SaveSystem>() instead")]
         public static SaveSystem Instance { get; private set; }
 
         [Header("Save Settings")]
@@ -32,6 +35,7 @@ namespace Cristal.CLI.Memory
             if (Instance == null)
             {
                 Instance = this;
+                ServiceLocator.RegisterMono(this);
             }
             else
             {

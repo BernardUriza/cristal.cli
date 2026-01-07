@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Cristal.CLI.Core;
 using Cristal.CLI.Memory;
 using Cristal.CLI.Response;
 using Cristal.CLI.Arcana;
@@ -14,6 +15,8 @@ namespace Cristal.CLI.AI
     /// </summary>
     public class AIIntegration : MonoBehaviour
     {
+        // Legacy singleton - use ServiceLocator.Get<AIIntegration>() instead
+        [Obsolete("Use ServiceLocator.Get<AIIntegration>() instead")]
         public static AIIntegration Instance { get; private set; }
 
         [Header("Behavior")]
@@ -53,6 +56,7 @@ namespace Cristal.CLI.AI
             if (Instance == null)
             {
                 Instance = this;
+                ServiceLocator.RegisterMono(this);
                 LoadFallbackResponses();
             }
             else

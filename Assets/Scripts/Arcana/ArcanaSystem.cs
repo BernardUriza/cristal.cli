@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
+using Cristal.CLI.Core;
 using Cristal.CLI.Memory;
 using Cristal.CLI.Input;
 using Cristal.CLI.StateMachine;
@@ -15,6 +16,8 @@ namespace Cristal.CLI.Arcana
     /// </summary>
     public class ArcanaSystem : MonoBehaviour
     {
+        // Legacy singleton - use ServiceLocator.Get<ArcanaSystem>() instead
+        [Obsolete("Use ServiceLocator.Get<ArcanaSystem>() instead")]
         public static ArcanaSystem Instance { get; private set; }
 
         [Header("Settings")]
@@ -41,6 +44,7 @@ namespace Cristal.CLI.Arcana
             if (Instance == null)
             {
                 Instance = this;
+                ServiceLocator.RegisterMono(this);
                 _cooldowns = new Dictionary<int, float>();
                 LoadDatabase();
             }

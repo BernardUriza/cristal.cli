@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
+using Cristal.CLI.Core;
 using Cristal.CLI.Memory;
 using Cristal.CLI.Arcana;
 
@@ -14,6 +15,8 @@ namespace Cristal.CLI.Effects
     /// </summary>
     public class VisualEffectsController : MonoBehaviour
     {
+        // Legacy singleton - use ServiceLocator.Get<VisualEffectsController>() instead
+        [Obsolete("Use ServiceLocator.Get<VisualEffectsController>() instead")]
         public static VisualEffectsController Instance { get; private set; }
 
         [Header("References")]
@@ -50,6 +53,7 @@ namespace Cristal.CLI.Effects
             if (Instance == null)
             {
                 Instance = this;
+                ServiceLocator.RegisterMono(this);
             }
             else
             {

@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using Cristal.CLI.Core;
 using Cristal.CLI.Input;
 using Cristal.CLI.Memory;
 using Cristal.CLI.StateMachine;
@@ -12,6 +13,8 @@ namespace Cristal.CLI.Response
     /// </summary>
     public class ResponseEngine : MonoBehaviour
     {
+        // Legacy singleton - use ServiceLocator.Get<ResponseEngine>() instead
+        [Obsolete("Use ServiceLocator.Get<ResponseEngine>() instead")]
         public static ResponseEngine Instance { get; private set; }
 
         [Header("Settings")]
@@ -34,6 +37,7 @@ namespace Cristal.CLI.Response
             if (Instance == null)
             {
                 Instance = this;
+                ServiceLocator.RegisterMono(this);
                 Initialize();
             }
             else

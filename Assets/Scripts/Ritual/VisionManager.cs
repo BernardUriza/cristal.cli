@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
+using Cristal.CLI.Core;
 using Cristal.CLI.Memory;
 using Cristal.CLI.Response;
 
@@ -13,6 +14,8 @@ namespace Cristal.CLI.Ritual
     /// </summary>
     public class VisionManager : MonoBehaviour
     {
+        // Legacy singleton - use ServiceLocator.Get<VisionManager>() instead
+        [Obsolete("Use ServiceLocator.Get<VisionManager>() instead")]
         public static VisionManager Instance { get; private set; }
 
         [Header("Configuration")]
@@ -46,6 +49,7 @@ namespace Cristal.CLI.Ritual
             if (Instance == null)
             {
                 Instance = this;
+                ServiceLocator.RegisterMono(this);
                 _loadedVisions = new Dictionary<string, VisionInstance>();
                 InitializeOutputPath();
                 LoadRegistry();

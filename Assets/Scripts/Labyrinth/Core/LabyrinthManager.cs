@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using Cristal.CLI.Core;
 using Cristal.CLI.Memory;
 using Cristal.CLI.StateMachine;
 using Cristal.CLI.Ritual;
@@ -13,6 +14,8 @@ namespace Cristal.CLI.Labyrinth
     /// </summary>
     public class LabyrinthManager : MonoBehaviour
     {
+        // Legacy singleton - use ServiceLocator.Get<LabyrinthManager>() instead
+        [Obsolete("Use ServiceLocator.Get<LabyrinthManager>() instead")]
         public static LabyrinthManager Instance { get; private set; }
 
         [Header("References")]
@@ -47,6 +50,7 @@ namespace Cristal.CLI.Labyrinth
             if (Instance == null)
             {
                 Instance = this;
+                ServiceLocator.RegisterMono(this);
                 DontDestroyOnLoad(gameObject);
             }
             else

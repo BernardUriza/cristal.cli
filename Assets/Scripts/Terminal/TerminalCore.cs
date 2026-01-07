@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Cristal.CLI.Core;
 using Cristal.CLI.Memory;
 using Cristal.CLI.StateMachine;
 using Cristal.CLI.Input;
@@ -19,6 +20,8 @@ namespace Cristal.CLI
     /// </summary>
     public class TerminalCore : MonoBehaviour
     {
+        // Legacy singleton - use ServiceLocator.Get<TerminalCore>() instead
+        [Obsolete("Use ServiceLocator.Get<TerminalCore>() instead")]
         public static TerminalCore Instance { get; private set; }
 
         [Header("Terminal State")]
@@ -60,6 +63,7 @@ namespace Cristal.CLI
             if (Instance == null)
             {
                 Instance = this;
+                ServiceLocator.RegisterMono(this);
                 DontDestroyOnLoad(gameObject);
                 InitializeTerminal();
             }
