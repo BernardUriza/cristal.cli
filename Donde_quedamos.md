@@ -36,6 +36,16 @@
   - `SVGExportManager.cs` - Unity integration
   - `SVGExportWindow.cs` - Editor window (`CRISTAL/SVG Export Window`)
   - Glyphs: Cursor, Crystal, Eye, Arcana, Fragment, Portal
+- [x] **Floating Interact Prompt (Senior Architecture)**:
+  - `InteractPromptConfig.cs` - ScriptableObject con configuración completa
+  - `PromptState.cs` - Struct inmutable para gestión de estado
+  - `IPromptAnimator.cs` - Interface estrategia de animación
+  - `FloatingInteractPrompt.cs` - Componente refactorizado con arquitectura limpia
+  - `LabyrinthUISetup.cs` - Editor tools mejorado con menús:
+    - `CRISTAL/Floating Prompt/Create Complete Setup`
+    - `CRISTAL/Floating Prompt/Create Config Only`
+    - `CRISTAL/Floating Prompt/Create Prefab Only`
+    - `CRISTAL/Floating Prompt/Setup on Player`
 
 ### En Progreso
 - [ ] **Reiniciar Claude Code** para cargar Mixamo MCP
@@ -92,11 +102,8 @@ Assets/Scripts/Export/          # SVG export system
 ├── SVGExportManager.cs
 └── Editor/
     └── SVGExportWindow.cs
-```
 
-### Scripts Labyrinth
-```
-Assets/Scripts/Labyrinth/
+Assets/Scripts/Labyrinth/       # Labyrinth world
 ├── Core/
 │   ├── LabyrinthManager.cs
 │   └── IInteractable.cs
@@ -105,9 +112,16 @@ Assets/Scripts/Labyrinth/
 │   ├── PlayerCamera.cs
 │   ├── PlayerInteraction.cs
 │   └── PlayerInputHandler.cs
-└── Console/
-    ├── InWorldConsole.cs
-    └── ConsoleUIBridge.cs
+├── Console/
+│   ├── InWorldConsole.cs
+│   └── ConsoleUIBridge.cs
+├── UI/                         # Floating prompts (refactored)
+│   ├── InteractPromptConfig.cs
+│   ├── PromptState.cs
+│   ├── IPromptAnimator.cs
+│   └── FloatingInteractPrompt.cs
+└── Editor/
+    └── LabyrinthUISetup.cs
 ```
 
 ### MCP Servers
@@ -119,9 +133,14 @@ Assets/Scripts/Labyrinth/
 ## Comandos Unity Editor (CRISTAL Menu)
 
 ```
-CRISTAL > Setup 2D Terminal Scene    # Configura escena 2D completa
-CRISTAL > SVG Export Window          # Exportar glyphs/simbolos a SVG
-CRISTAL > Create Terminal Visual Config  # Crear ScriptableObject de config
+CRISTAL > Setup 2D Terminal Scene           # Configura escena 2D completa
+CRISTAL > SVG Export Window                 # Exportar glyphs/simbolos a SVG
+CRISTAL > Create Terminal Visual Config     # Crear ScriptableObject de config
+CRISTAL > Floating Prompt >
+    ├── Create Complete Setup               # Prefab + Config en un paso
+    ├── Create Config Only                  # Solo InteractPromptConfig.asset
+    ├── Create Prefab Only                  # Solo FloatingInteractPrompt.prefab
+    └── Setup on Player                     # Instanciar en escena actual
 CRISTAL > Start Play Mode
 CRISTAL > Stop Play Mode
 ```

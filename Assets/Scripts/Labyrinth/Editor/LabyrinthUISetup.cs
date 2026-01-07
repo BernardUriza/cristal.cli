@@ -3,20 +3,149 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using Cristal.CLI.Labyrinth.UI;
+using System.IO;
 
 namespace Cristal.CLI.Labyrinth.Editor
 {
     /// <summary>
-    /// Editor tools for creating Labyrinth UI prefabs.
+    /// Editor tools for creating Labyrinth UI prefabs and configuration assets.
+    /// Follows senior Unity dev best practices:
+    /// - Creates both prefab and config ScriptableObject
+    /// - Properly wires up serialized fields
+    /// - Organizes assets in appropriate folders
     /// </summary>
     public static class LabyrinthUISetup
     {
-        [MenuItem("CRISTAL/Create Floating Interact Prompt")]
-        public static void CreateFloatingPrompt()
+        private const string PROMPT_PREFAB_PATH = "Assets/Prefabs/UI/FloatingInteractPrompt.prefab";
+        private const string PROMPT_CONFIG_PATH = "Assets/Resources/Config/InteractPromptConfig.asset";
+
+        [MenuItem("CRISTAL/Floating Prompt/Create Complete Setup")]
+        public static void CreateCompleteSetup()
+        {
+            // 1. Create config ScriptableObject
+            var config = CreatePromptConfig();
+            if (config == null)
+            {
+                Debug.LogError("[LabyrinthUISetup] Failed to create config!");
+                return;
+            }
+
+            // 2. Create prefab with config wired up
+            var prefab = CreatePromptPrefab(config);
+            if (prefab == null)
+            {
+                Debug.LogError("[LabyrinthUISetup] Failed to create prefab!");
+                return;
+            }
+
+            Debug.Log("[LabyrinthUISetup] ✅ Complete setup created:");
+            Debug.Log($"  Config: {PROMPT_CONFIG_PATH}");
+            Debug.Log($"  Prefab: {PROMPT_PREFAB_PATH}");
+
+            Selection.activeObject = prefab;
+        }
+
+        [MenuItem("CRISTAL/Floating Prompt/Create Config Only")]
+        public static void CreateConfigOnly()
+        {
+            var config = CreatePromptConfig();
+            if (config != null)
+            {
+                Selection.activeObject = config;
+                EditorGUIUtility.PingObject(config);
+            }
+        }
+
+        [MenuItem("CRISTAL/Floating Prompt/Create Prefab Only")]
+        public static void CreatePrefabOnly()
+        {
+            // Try to find existing config
+            var config = AssetDatabase.LoadAssetAtPath<InteractPromptConfig>(PROMPT_CONFIG_PATH);
+            if (config == null)
+            {
+                config = Resources.Load<InteractPromptConfig>("Config/InteractPromptConfig");
+            }
+
+            if (config == null)
+            {
+                Debug.LogWarning("[LabyrinthUISetup] No config found. Creating prefab without config assignment.");
+            }
+
+            var prefab = CreatePromptPrefab(config);
+            if (prefab != null)
+            {
+                Selection.activeObject = prefab;
+                EditorGUIUtility.PingObject(prefab);
+            }
+        }
+
+        private static InteractPromptConfig CreatePromptConfig()
+        {
+            // Ensure directory exists
+            string directory = Path.GetDirectoryName(PROMPT_CONFIG_PATH);
+            if (!AssetDatabase.IsValidFolder(directory))
+            {
+                CreateFolderRecursive(directory);
+            }
+
+            // Check if already exists
+            var existing = AssetDatabase.LoadAssetAtPath<InteractPromptConfig>(PROMPT_CONFIG_PATH);
+            if (existing != null)
+            {
+                Debug.Log($"[LabyrinthUISetup] Config already exists at {PROMPT_CONFIG_PATH}");
+                return existing;
+            }
+
+            // Create new config with CRISTAL-themed defaults
+            var config = ScriptableObject.CreateInstance<InteractPromptConfig>();
+            
+            AssetDatabase.CreateAsset(config, PROMPT_CONFIG_PATH);
+            AssetDatabase.SaveAssets();
+
+            Debug.Log($"[LabyrinthUISetup] Created InteractPromptConfig at {PROMPT_CONFIG_PATH}");
+            return config;
+        }
+
+        private static GameObject CreatePromptPrefab(InteractPromptConfig config)
+        {
+            // Ensure directory exists
+            string directory = Path.GetDirectoryName(PROMPT_PREFAB_PATH);
+            if (!AssetDatabase.IsValidFolder(directory))
+            {
+                CreateFolderRecursive(directory);
+            }
+
+            // Check if already exists
+            var existing = AssetDatabase.LoadAssetAtPath<GameObject>(PROMPT_PREFAB_PATH);
+            if (existing != null)
+            {
+                if (!EditorUtility.DisplayDialog(
+                    "Prefab Exists",
+                    "FloatingInteractPrompt prefab already exists. Replace it?",
+                    "Replace", "Cancel"))
+                {
+                    return existing;
+                }
+                AssetDatabase.DeleteAsset(PROMPT_PREFAB_PATH);
+            }
+
+            // Create hierarchy
+            var root = CreatePromptHierarchy(config);
+
+            // Save as prefab
+            var prefab = PrefabUtility.SaveAsPrefabAsset(root, PROMPT_PREFAB_PATH);
+            
+            // Clean up scene instance
+            Object.DestroyImmediate(root);
+
+            Debug.Log($"[LabyrinthUISetup] Created prefab at {PROMPT_PREFAB_PATH}");
+            return prefab;
+        }
+
+        private static GameObject CreatePromptHierarchy(InteractPromptConfig config)
         {
             // Create root object
             var root = new GameObject("FloatingInteractPrompt");
-            var prompt = root.AddComponent<FloatingInteractPrompt>();
 
             // Create World Space Canvas
             var canvasGO = new GameObject("Canvas");
@@ -49,11 +178,24 @@ namespace Cristal.CLI.Labyrinth.Editor
             var bgGO = new GameObject("KeyBackground");
             bgGO.transform.SetParent(container.transform, false);
             var bgImage = bgGO.AddComponent<Image>();
-            bgImage.color = new Color(0, 0, 0, 0.7f);
+            bgImage.color = config != null ? config.backgroundColor : new Color(0, 0, 0, 0.7f);
             
             var bgRT = bgGO.GetComponent<RectTransform>();
             bgRT.sizeDelta = new Vector2(60, 60);
             bgRT.anchoredPosition = new Vector2(0, 15);
+
+            // Create glow effect (behind background)
+            var glowGO = new GameObject("Glow");
+            glowGO.transform.SetParent(bgGO.transform, false);
+            glowGO.transform.SetAsFirstSibling();
+            var glowImage = glowGO.AddComponent<Image>();
+            glowImage.color = config != null 
+                ? new Color(config.glowColor.r, config.glowColor.g, config.glowColor.b, 0.3f)
+                : new Color(0.4f, 1f, 0.4f, 0.3f);
+            
+            var glowRT = glowGO.GetComponent<RectTransform>();
+            glowRT.sizeDelta = new Vector2(80, 80);
+            glowRT.anchoredPosition = Vector2.zero;
 
             // Create key text (E)
             var keyGO = new GameObject("KeyText");
@@ -62,7 +204,7 @@ namespace Cristal.CLI.Labyrinth.Editor
             keyText.text = "E";
             keyText.fontSize = 36;
             keyText.fontStyle = FontStyles.Bold;
-            keyText.color = new Color(0.6f, 1f, 0.6f);
+            keyText.color = config != null ? config.textColor : new Color(0.6f, 1f, 0.6f);
             keyText.alignment = TextAlignmentOptions.Center;
             keyText.enableAutoSizing = false;
 
@@ -78,35 +220,43 @@ namespace Cristal.CLI.Labyrinth.Editor
             actionText.fontSize = 14;
             actionText.color = new Color(0.8f, 0.8f, 0.8f);
             actionText.alignment = TextAlignmentOptions.Center;
+            actionGO.SetActive(false); // Hidden by default
 
             var actionRT = actionGO.GetComponent<RectTransform>();
             actionRT.sizeDelta = new Vector2(150, 30);
             actionRT.anchoredPosition = new Vector2(0, -25);
 
-            // Create glow effect (optional outline)
-            var glowGO = new GameObject("Glow");
-            glowGO.transform.SetParent(bgGO.transform, false);
-            glowGO.transform.SetAsFirstSibling();
-            var glowImage = glowGO.AddComponent<Image>();
-            glowImage.color = new Color(0.4f, 1f, 0.4f, 0.3f);
+            // Add and configure FloatingInteractPrompt component
+            var prompt = root.AddComponent<FloatingInteractPrompt>();
             
-            var glowRT = glowGO.GetComponent<RectTransform>();
-            glowRT.sizeDelta = new Vector2(80, 80);
-            glowRT.anchoredPosition = Vector2.zero;
+            // Wire up serialized fields using SerializedObject
+            var so = new SerializedObject(prompt);
+            so.FindProperty("_config").objectReferenceValue = config;
+            so.FindProperty("_canvas").objectReferenceValue = canvas;
+            so.FindProperty("_canvasGroup").objectReferenceValue = canvasGroup;
+            so.FindProperty("_keyText").objectReferenceValue = keyText;
+            so.FindProperty("_actionText").objectReferenceValue = actionText;
+            so.FindProperty("_container").objectReferenceValue = containerRT;
+            so.ApplyModifiedPropertiesWithoutUndo();
 
-            // Wire up SerializedFields via SerializedObject
-            Selection.activeGameObject = root;
-
-            Debug.Log("[LabyrinthUISetup] Created FloatingInteractPrompt. Drag to Prefabs folder to save.");
-            Debug.Log("Note: Assign the serialized fields in the inspector after saving as prefab.");
-
-            // Mark scene dirty
-            UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(
-                UnityEditor.SceneManagement.EditorSceneManager.GetActiveScene()
-            );
+            return root;
         }
 
-        [MenuItem("CRISTAL/Setup Floating Prompt on Player")]
+        private static void CreateFolderRecursive(string path)
+        {
+            if (AssetDatabase.IsValidFolder(path)) return;
+
+            string parent = Path.GetDirectoryName(path);
+            if (!AssetDatabase.IsValidFolder(parent))
+            {
+                CreateFolderRecursive(parent);
+            }
+
+            string folderName = Path.GetFileName(path);
+            AssetDatabase.CreateFolder(parent, folderName);
+        }
+
+        [MenuItem("CRISTAL/Floating Prompt/Setup on Player")]
         public static void SetupPromptOnPlayer()
         {
             // Find player
@@ -117,7 +267,7 @@ namespace Cristal.CLI.Labyrinth.Editor
                 return;
             }
 
-            // Check if already has prompt
+            // Check if already has prompt in scene
             var existingPrompt = Object.FindFirstObjectByType<FloatingInteractPrompt>();
             if (existingPrompt != null)
             {
@@ -126,10 +276,31 @@ namespace Cristal.CLI.Labyrinth.Editor
                 return;
             }
 
-            // Create prompt and add to scene
-            CreateFloatingPrompt();
+            // Try to load prefab
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PROMPT_PREFAB_PATH);
+            if (prefab == null)
+            {
+                Debug.LogWarning("[LabyrinthUISetup] Prefab not found. Creating complete setup first...");
+                CreateCompleteSetup();
+                prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PROMPT_PREFAB_PATH);
+            }
 
-            Debug.Log("[LabyrinthUISetup] FloatingInteractPrompt created. Now wire it up in PlayerInteraction.");
+            if (prefab == null)
+            {
+                Debug.LogError("[LabyrinthUISetup] Failed to create or load prefab!");
+                return;
+            }
+
+            // Instantiate in scene
+            var instance = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
+            instance.name = "FloatingInteractPrompt";
+            
+            Undo.RegisterCreatedObjectUndo(instance, "Create FloatingInteractPrompt");
+
+            Debug.Log("[LabyrinthUISetup] ✅ FloatingInteractPrompt added to scene.");
+            Debug.Log("Now assign it to PlayerInteraction._floatingPrompt field.");
+
+            Selection.activeGameObject = instance;
         }
     }
 }
