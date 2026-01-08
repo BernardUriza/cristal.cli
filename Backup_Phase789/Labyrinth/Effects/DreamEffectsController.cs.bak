@@ -1,0 +1,605 @@
+using System;
+using System.Collections;
+using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
+using Cristal.CLI.Labyrinth.Dream;
+
+namespace Cristal.CLI.Labyrinth.Effects
+{
+    /// <summary>
+    /// Controls dream-specific visual effects: distortion, time dilation, breathing lights.
+    /// </summary>
+    public class DreamEffectsController : MonoBehaviour
+    {
+        public static DreamEffectsController Instance { get; private set; }
+
+        [Header("Post-Processing")]
+        [SerializeField] private Volume _dreamVolume;
+        [SerializeField] private VolumeProfile _dreamProfile;
+
+        [Header("Distortion")]
+        [SerializeField] private Material _distortionMaterial;
+        [SerializeField] private float _maxDistortionStrength = 0.15f;
+        [SerializeField] private float _distortionTransitionSpeed = 2f;
+
+        [Header("Time Effects")]
+        [SerializeField] private float _dreamTimeScale = 0.8f;
+        [SerializeField] private float _timeTransitionDuration = 1f;
+
+        [Header("Breathing Lights")]
+        [SerializeField] private float _breathFrequency = 0.5f;
+        [SerializeField] private float _breathIntensityMin = 0.3f;
+        [SerializeField] private float _breathIntensityMax = 1f;
+
+        [Header("Audio")]
+        [SerializeField] private AudioSource _dreamAudioSource;
+        [SerializeField] private AudioClip _reversedAmbient;
+        [SerializeField] private float _audioReverbWet = 0.7f;
+        [SerializeField] private AudioReverbPreset _dreamReverb = AudioReverbPreset.Psychotic;
+
+        [Header("Particles")]
+        [SerializeField] private ParticleSystem _dreamDustParticles;
+        [SerializeField] private ParticleSystem _voidParticles;
+
+        // State
+        private bool _isInDream;
+        private float _currentDistortion;
+        private float _targetDistortion;
+        private float _originalTimeScale;
+        private DreamConfig _currentConfig;
+        private Coroutine _breathingCoroutine;
+        private AudioReverbZone _reverbZone;
+
+        // Post-processing components
+        private Bloom _bloom;
+        private ChromaticAberration _chromaticAberration;
+        private Vignette _vignette;
+        private ColorAdjustments _colorAdjustments;
+        private LensDistortion _lensDistortion;
+
+        // Events
+        public event Action OnDreamEffectsActivated;
+        public event Action OnDreamEffectsDeactivated;
+
+        #region Unity Lifecycle
+
+        private void Awake()
+        {
+            if (Instance != null && Instance != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
+            Instance = this;
+
+            InitializePostProcessing();
+            InitializeAudio();
+        }
+
+        private void Start()
+        {
+            // Subscribe to dream events
+            var dreamSystem = DreamTunnelSystem.Instance;
+            if (dreamSystem != null)
+            {
+                dreamSystem.OnDreamEntered += HandleDreamEntered;
+                dreamSystem.OnDreamExited += HandleDreamExited;
+            }
+
+            _originalTimeScale = Time.timeScale;
+        }
+
+        private void OnDestroy()
+        {
+            var dreamSystem = DreamTunnelSystem.Instance;
+            if (dreamSystem != null)
+            {
+                dreamSystem.OnDreamEntered -= HandleDreamEntered;
+                dreamSystem.OnDreamExited -= HandleDreamExited;
+            }
+
+            if (Instance == this)
+            {
+                Instance = null;
+            }
+        }
+
+        private void Update()
+        {
+            if (_isInDream)
+            {
+                UpdateDistortion();
+                UpdateDreamProgress();
+            }
+        }
+
+        #endregion
+
+        #region Initialization
+
+        private void InitializePostProcessing()
+        {
+            // Create dream volume if not assigned
+            if (_dreamVolume == null)
+            {
+                var volumeObj = new GameObject("DreamVolume");
+                volumeObj.transform.SetParent(transform);
+                _dreamVolume = volumeObj.AddComponent<Volume>();
+                _dreamVolume.isGlobal = true;
+                _dreamVolume.priority = 100;
+                _dreamVolume.weight = 0f;
+            }
+
+            // Create or use profile
+            if (_dreamProfile == null)
+            {
+                _dreamProfile = ScriptableObject.CreateInstance<VolumeProfile>();
+                _dreamVolume.profile = _dreamProfile;
+
+                // Add components
+                _bloom = _dreamProfile.Add<Bloom>(true);
+                _chromaticAberration = _dreamProfile.Add<ChromaticAberration>(true);
+                _vignette = _dreamProfile.Add<Vignette>(true);
+                _colorAdjustments = _dreamProfile.Add<ColorAdjustments>(true);
+                _lensDistortion = _dreamProfile.Add<LensDistortion>(true);
+            }
+            else
+            {
+                _dreamVolume.profile = _dreamProfile;
+                _dreamProfile.TryGet(out _bloom);
+                _dreamProfile.TryGet(out _chromaticAberration);
+                _dreamProfile.TryGet(out _vignette);
+                _dreamProfile.TryGet(out _colorAdjustments);
+                _dreamProfile.TryGet(out _lensDistortion);
+            }
+        }
+
+        private void InitializeAudio()
+        {
+            if (_dreamAudioSource == null)
+            {
+                _dreamAudioSource = gameObject.AddComponent<AudioSource>();
+                _dreamAudioSource.playOnAwake = false;
+                _dreamAudioSource.loop = true;
+                _dreamAudioSource.spatialBlend = 0f;
+            }
+
+            // Create reverb zone
+            _reverbZone = gameObject.AddComponent<AudioReverbZone>();
+            _reverbZone.enabled = false;
+            _reverbZone.reverbPreset = _dreamReverb;
+        }
+
+        #endregion
+
+        #region Event Handlers
+
+        private void HandleDreamEntered(DreamTunnel tunnel)
+        {
+            _currentConfig = tunnel.Config;
+            ActivateDreamEffects(tunnel.Config);
+        }
+
+        private void HandleDreamExited(DreamTunnel tunnel)
+        {
+            DeactivateDreamEffects();
+        }
+
+        #endregion
+
+        #region Dream Effects
+
+        public void ActivateDreamEffects(DreamConfig config)
+        {
+            _isInDream = true;
+            _currentConfig = config;
+
+            StartCoroutine(TransitionToDream(config));
+
+            OnDreamEffectsActivated?.Invoke();
+        }
+
+        public void DeactivateDreamEffects()
+        {
+            _isInDream = false;
+
+            StartCoroutine(TransitionFromDream());
+
+            OnDreamEffectsDeactivated?.Invoke();
+        }
+
+        private IEnumerator TransitionToDream(DreamConfig config)
+        {
+            // Activate particles
+            if (_dreamDustParticles != null)
+            {
+                _dreamDustParticles.Play();
+            }
+
+            if (config.isUnbound && _voidParticles != null)
+            {
+                _voidParticles.Play();
+            }
+
+            // Start breathing lights
+            _breathingCoroutine = StartCoroutine(BreathingLightsLoop());
+
+            // Time dilation
+            StartCoroutine(TransitionTimeScale(config.timeScale * _dreamTimeScale, _timeTransitionDuration));
+
+            // Audio
+            if (_reversedAmbient != null)
+            {
+                _dreamAudioSource.clip = _reversedAmbient;
+                _dreamAudioSource.Play();
+                StartCoroutine(FadeAudio(_dreamAudioSource, 0f, 0.4f, 2f));
+            }
+
+            _reverbZone.enabled = true;
+
+            // Post-processing transition
+            float elapsed = 0f;
+            float duration = 2f;
+
+            while (elapsed < duration)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                float t = elapsed / duration;
+
+                _dreamVolume.weight = Mathf.Lerp(0f, 1f, t);
+
+                // Configure effects based on config
+                if (_bloom != null)
+                {
+                    _bloom.intensity.value = Mathf.Lerp(0f, 0.5f, t);
+                    _bloom.tint.value = config.primaryColor;
+                }
+
+                if (_chromaticAberration != null)
+                {
+                    _chromaticAberration.intensity.value = Mathf.Lerp(0f, config.distortionIntensity, t);
+                }
+
+                if (_vignette != null)
+                {
+                    _vignette.intensity.value = Mathf.Lerp(0f, 0.4f, t);
+                    _vignette.color.value = Color.Lerp(Color.black, config.secondaryColor, t);
+                }
+
+                if (_colorAdjustments != null)
+                {
+                    _colorAdjustments.saturation.value = Mathf.Lerp(0f, config.isUnbound ? -30f : -10f, t);
+                    _colorAdjustments.colorFilter.value = Color.Lerp(Color.white, config.primaryColor, t * 0.3f);
+                }
+
+                if (_lensDistortion != null)
+                {
+                    _lensDistortion.intensity.value = Mathf.Lerp(0f, config.distortionIntensity * -0.2f, t);
+                }
+
+                _targetDistortion = config.distortionIntensity;
+
+                yield return null;
+            }
+        }
+
+        private IEnumerator TransitionFromDream()
+        {
+            // Stop breathing lights
+            if (_breathingCoroutine != null)
+            {
+                StopCoroutine(_breathingCoroutine);
+            }
+
+            // Return time to normal
+            StartCoroutine(TransitionTimeScale(1f, _timeTransitionDuration));
+
+            // Fade out audio
+            if (_dreamAudioSource.isPlaying)
+            {
+                StartCoroutine(FadeAudio(_dreamAudioSource, _dreamAudioSource.volume, 0f, 1f));
+            }
+
+            _reverbZone.enabled = false;
+
+            // Stop particles
+            if (_dreamDustParticles != null)
+            {
+                _dreamDustParticles.Stop();
+            }
+
+            if (_voidParticles != null)
+            {
+                _voidParticles.Stop();
+            }
+
+            // Post-processing transition out
+            float elapsed = 0f;
+            float duration = 1.5f;
+
+            while (elapsed < duration)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                float t = elapsed / duration;
+
+                _dreamVolume.weight = Mathf.Lerp(1f, 0f, t);
+                _targetDistortion = Mathf.Lerp(_currentDistortion, 0f, t);
+
+                yield return null;
+            }
+
+            _dreamVolume.weight = 0f;
+            _currentDistortion = 0f;
+            _currentConfig = null;
+        }
+
+        #endregion
+
+        #region Distortion
+
+        private void UpdateDistortion()
+        {
+            _currentDistortion = Mathf.Lerp(
+                _currentDistortion,
+                _targetDistortion,
+                Time.deltaTime * _distortionTransitionSpeed
+            );
+
+            if (_distortionMaterial != null)
+            {
+                _distortionMaterial.SetFloat("_DistortionStrength", _currentDistortion * _maxDistortionStrength);
+            }
+        }
+
+        /// <summary>
+        /// Pulse distortion effect.
+        /// </summary>
+        public void PulseDistortion(float intensity, float duration)
+        {
+            StartCoroutine(DistortionPulse(intensity, duration));
+        }
+
+        private IEnumerator DistortionPulse(float intensity, float duration)
+        {
+            float originalTarget = _targetDistortion;
+            _targetDistortion = intensity;
+
+            yield return new WaitForSeconds(duration * 0.3f);
+
+            float elapsed = 0f;
+            while (elapsed < duration * 0.7f)
+            {
+                elapsed += Time.deltaTime;
+                _targetDistortion = Mathf.Lerp(intensity, originalTarget, elapsed / (duration * 0.7f));
+                yield return null;
+            }
+
+            _targetDistortion = originalTarget;
+        }
+
+        #endregion
+
+        #region Time Effects
+
+        private IEnumerator TransitionTimeScale(float targetScale, float duration)
+        {
+            float startScale = Time.timeScale;
+            float elapsed = 0f;
+
+            while (elapsed < duration)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                Time.timeScale = Mathf.Lerp(startScale, targetScale, elapsed / duration);
+                yield return null;
+            }
+
+            Time.timeScale = targetScale;
+        }
+
+        /// <summary>
+        /// Create a time freeze effect.
+        /// </summary>
+        public void TimeFreeze(float duration)
+        {
+            StartCoroutine(TimeFreezeEffect(duration));
+        }
+
+        private IEnumerator TimeFreezeEffect(float duration)
+        {
+            float originalScale = Time.timeScale;
+            Time.timeScale = 0.01f;
+
+            // Visual pulse
+            PulseDistortion(0.3f, duration);
+
+            yield return new WaitForSecondsRealtime(duration);
+
+            Time.timeScale = originalScale;
+        }
+
+        #endregion
+
+        #region Breathing Lights
+
+        private IEnumerator BreathingLightsLoop()
+        {
+            while (_isInDream)
+            {
+                float breath = (Mathf.Sin(Time.time * _breathFrequency * Mathf.PI * 2f) + 1f) * 0.5f;
+                float intensity = Mathf.Lerp(_breathIntensityMin, _breathIntensityMax, breath);
+
+                // Apply to bloom
+                if (_bloom != null)
+                {
+                    _bloom.intensity.value = 0.5f * intensity;
+                }
+
+                // Apply to ambient light
+                if (_currentConfig != null)
+                {
+                    RenderSettings.ambientLight = Color.Lerp(
+                        _currentConfig.secondaryColor * 0.1f,
+                        _currentConfig.primaryColor * 0.3f,
+                        intensity
+                    );
+                }
+
+                yield return null;
+            }
+        }
+
+        #endregion
+
+        #region Dream Progress
+
+        private void UpdateDreamProgress()
+        {
+            var dreamSystem = DreamTunnelSystem.Instance;
+            if (dreamSystem?.CurrentDream == null) return;
+
+            float progress = dreamSystem.CurrentDream.DreamProgress;
+
+            // Intensify effects as dream progresses
+            if (_chromaticAberration != null && _currentConfig != null)
+            {
+                float baseCA = _currentConfig.distortionIntensity;
+                _chromaticAberration.intensity.value = Mathf.Lerp(baseCA, baseCA * 1.5f, progress);
+            }
+
+            // Increase vignette
+            if (_vignette != null)
+            {
+                _vignette.intensity.value = Mathf.Lerp(0.3f, 0.5f, progress);
+            }
+
+            // Desaturate more
+            if (_colorAdjustments != null && _currentConfig != null)
+            {
+                float baseSat = _currentConfig.isUnbound ? -30f : -10f;
+                _colorAdjustments.saturation.value = Mathf.Lerp(baseSat, baseSat * 1.5f, progress);
+            }
+        }
+
+        #endregion
+
+        #region Audio Helpers
+
+        private IEnumerator FadeAudio(AudioSource source, float from, float to, float duration)
+        {
+            float elapsed = 0f;
+            while (elapsed < duration)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                source.volume = Mathf.Lerp(from, to, elapsed / duration);
+                yield return null;
+            }
+            source.volume = to;
+
+            if (to <= 0f)
+            {
+                source.Stop();
+            }
+        }
+
+        /// <summary>
+        /// Apply atmosphere data from AI.
+        /// </summary>
+        public void ApplyAtmosphereData(AI.DreamAtmosphereData data)
+        {
+            if (data == null) return;
+
+            // Apply fog
+            RenderSettings.fogColor = data.fogColor;
+            RenderSettings.fogDensity = data.fogDensity;
+
+            // Apply bloom tint
+            if (_bloom != null)
+            {
+                _bloom.tint.value = data.lightColor;
+            }
+
+            // Apply time scale
+            StartCoroutine(TransitionTimeScale(data.timeScale, 1f));
+
+            // Apply distortion
+            _targetDistortion = data.distortion;
+        }
+
+        #endregion
+
+        #region Public API
+
+        /// <summary>
+        /// Apply a glitch effect.
+        /// </summary>
+        public void Glitch(float intensity = 1f, float duration = 0.2f)
+        {
+            StartCoroutine(GlitchEffect(intensity, duration));
+        }
+
+        private IEnumerator GlitchEffect(float intensity, float duration)
+        {
+            float originalCA = _chromaticAberration?.intensity.value ?? 0f;
+            float originalLD = _lensDistortion?.intensity.value ?? 0f;
+
+            if (_chromaticAberration != null)
+            {
+                _chromaticAberration.intensity.value = intensity;
+            }
+
+            if (_lensDistortion != null)
+            {
+                _lensDistortion.intensity.value = -0.5f * intensity;
+            }
+
+            yield return new WaitForSeconds(duration);
+
+            if (_chromaticAberration != null)
+            {
+                _chromaticAberration.intensity.value = originalCA;
+            }
+
+            if (_lensDistortion != null)
+            {
+                _lensDistortion.intensity.value = originalLD;
+            }
+        }
+
+        /// <summary>
+        /// Flash the screen with a color.
+        /// </summary>
+        public void Flash(Color color, float duration = 0.3f)
+        {
+            StartCoroutine(FlashEffect(color, duration));
+        }
+
+        private IEnumerator FlashEffect(Color color, float duration)
+        {
+            if (_vignette == null) yield break;
+
+            Color originalColor = _vignette.color.value;
+            float originalIntensity = _vignette.intensity.value;
+
+            _vignette.color.value = color;
+            _vignette.intensity.value = 0.8f;
+
+            yield return new WaitForSeconds(duration * 0.2f);
+
+            float elapsed = 0f;
+            while (elapsed < duration * 0.8f)
+            {
+                elapsed += Time.deltaTime;
+                float t = elapsed / (duration * 0.8f);
+                _vignette.intensity.value = Mathf.Lerp(0.8f, originalIntensity, t);
+                _vignette.color.value = Color.Lerp(color, originalColor, t);
+                yield return null;
+            }
+
+            _vignette.color.value = originalColor;
+            _vignette.intensity.value = originalIntensity;
+        }
+
+        #endregion
+    }
+}

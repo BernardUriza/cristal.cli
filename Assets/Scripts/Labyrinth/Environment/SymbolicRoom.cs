@@ -1,6 +1,7 @@
 using UnityEngine;
 using Cristal.CLI.Memory;
 using Cristal.CLI.StateMachine;
+using Cristal.CLI.Labyrinth.Console;
 
 namespace Cristal.CLI.Labyrinth
 {
@@ -187,7 +188,7 @@ namespace Cristal.CLI.Labyrinth
                     tint = new Color(0.7f, 0.8f, 1f); // Cool blue
                     break;
 
-                case CristalState.Unbound:
+                case CristalState.UNBOUND:
                     intensity = 1.5f;
                     tint = new Color(1f, 0.3f, 1f); // Magenta
                     break;
@@ -228,7 +229,7 @@ namespace Cristal.CLI.Labyrinth
             {
                 CristalState.Corrupted => 3f,
                 CristalState.Error => 5f,
-                CristalState.Unbound => 5f + Mathf.Sin(Time.time * 2f) * 3f,
+                CristalState.UNBOUND => 5f + Mathf.Sin(Time.time * 2f) * 3f,
                 CristalState.Invoked => 2f,
                 _ => 0f
             };

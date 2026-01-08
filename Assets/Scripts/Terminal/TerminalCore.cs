@@ -10,7 +10,7 @@ using Cristal.CLI.Response;
 using Cristal.CLI.Arcana;
 using Cristal.CLI.Effects;
 using Cristal.CLI.AI;
-using Cristal.CLI.Ritual;
+// TODO Phase 9: using Cristal.CLI.Ritual;
 
 namespace Cristal.CLI
 {
@@ -51,8 +51,8 @@ namespace Cristal.CLI
         private ArcanaSystem _arcanaSystem;
         private VisualEffectsController _effectsController;
         private AIIntegration _aiIntegration;
-        private RitualSystem _ritualSystem;
-        private VisionManager _visionManager;
+        // TODO Phase 9: private RitualSystem _ritualSystem;
+        // TODO Phase 9: private VisionManager _visionManager;
 
         public TerminalState CurrentState => _currentState;
         public bool IsFirstInput => _isFirstInput;
@@ -131,19 +131,19 @@ namespace Cristal.CLI
                 _aiIntegration = gameObject.AddComponent<AIIntegration>();
             }
 
-            // Initialize RitualSystem
+            /* TODO Phase 9: RitualSystem and VisionManager disabled
             _ritualSystem = GetComponent<RitualSystem>();
             if (_ritualSystem == null)
             {
                 _ritualSystem = gameObject.AddComponent<RitualSystem>();
             }
 
-            // Initialize VisionManager
             _visionManager = GetComponent<VisionManager>();
             if (_visionManager == null)
             {
                 _visionManager = gameObject.AddComponent<VisionManager>();
             }
+            */
 
             // Subscribe to events
             SubscribeToPhase2Events();
@@ -188,7 +188,7 @@ namespace Cristal.CLI
                 _arcanaSystem.OnArcanaInvoked += HandleArcanaInvoked;
             }
 
-            // Subscribe to ritual events
+            /* TODO Phase 9: Ritual/Vision event subscriptions disabled
             if (_ritualSystem != null)
             {
                 _ritualSystem.OnRitualComplete += HandleRitualComplete;
@@ -196,13 +196,13 @@ namespace Cristal.CLI
                 _ritualSystem.OnUnboundEnded += HandleUnboundEnded;
             }
 
-            // Subscribe to vision events
             if (_visionManager != null)
             {
                 _visionManager.OnVisionUnlocked += HandleVisionUnlocked;
                 _visionManager.OnVisionViewed += HandleVisionViewed;
                 _visionManager.OnNewVisionsAvailable += HandleNewVisionsAvailable;
             }
+            */
         }
 
         private string GenerateSessionId()
@@ -220,21 +220,22 @@ namespace Cristal.CLI
 
             string trimmedInput = input.Trim();
 
+            // TODO: Re-enable when TerminalCommandHandler is fixed
             // Try system commands first (set theme, debug, etc.)
-            if (TerminalCommandHandler.Instance != null &&
-                TerminalCommandHandler.Instance.TryProcessCommand(trimmedInput, out string cmdResponse))
-            {
-                // Emit as system response
-                var systemResponse = new TerminalResponse
-                {
-                    Lines = new List<string>(cmdResponse.Split('\n')),
-                    ResponseType = ResponseType.System,
-                    ApplyGlitch = false,
-                    CustomDelay = 0f
-                };
-                OnResponseGenerated?.Invoke(systemResponse);
-                return;
-            }
+            // if (TerminalCommandHandler.Instance != null &&
+            //     TerminalCommandHandler.Instance.TryProcessCommand(trimmedInput, out string cmdResponse))
+            // {
+            //     // Emit as system response
+            //     var systemResponse = new TerminalResponse
+            //     {
+            //         Lines = new List<string>(cmdResponse.Split('\n')),
+            //         ResponseType = ResponseType.System,
+            //         ApplyGlitch = false,
+            //         CustomDelay = 0f
+            //     };
+            //     OnResponseGenerated?.Invoke(systemResponse);
+            //     return;
+            // }
 
             OnInputReceived?.Invoke(trimmedInput);
 
@@ -253,8 +254,8 @@ namespace Cristal.CLI
             // Parse the input
             ParsedCommand command = InputParser.Parse(input);
 
-            // Process through ritual system to check for ritual phrases
-            _ritualSystem?.ProcessInput(input);
+            // TODO Phase 9: Process through ritual system
+            // _ritualSystem?.ProcessInput(input);
 
             // Set processing state
             _stateMachine?.TransitionTo(CristalState.Processing);
@@ -611,39 +612,16 @@ namespace Cristal.CLI
 
         private BuiltResponse HandleVisionCommand(ParsedCommand command)
         {
-            if (_visionManager == null)
+            // TODO Phase 9: VisionManager disabled
+            return new BuiltResponse
             {
-                return new BuiltResponse
-                {
-                    Lines = new List<string> { "", "VISION SYSTEM OFFLINE", "" },
-                    Level = ResponseLevel.Literal,
-                    ApplyGlitch = false
-                };
-            }
-
-            // "see visions" or just "visions" - show list
-            if (command.Command == "visions" ||
-                command.Command == "vision" ||
-                (command.Command == "see" && (command.ArgumentCount == 0 || command.HasArgument("visions"))))
-            {
-                return _visionManager.GenerateSeeVisionsResponse();
-            }
-
-            // "see [vision name]" - view specific vision
-            if (command.Command == "see" && command.ArgumentCount > 0)
-            {
-                string visionName = command.ArgumentString;
-                // Filter out "visions" if it's the first arg
-                if (visionName.ToLower().StartsWith("visions "))
-                {
-                    visionName = visionName.Substring(8).Trim();
-                }
-                return _visionManager.GenerateViewVisionResponse(visionName);
-            }
-
-            return _visionManager.GenerateSeeVisionsResponse();
+                Lines = new List<string> { "", "VISION SYSTEM OFFLINE", "" },
+                Level = ResponseLevel.Literal,
+                ApplyGlitch = false
+            };
         }
 
+        /* TODO Phase 9: Vision handlers disabled
         private void HandleVisionUnlocked(VisionInstance vision)
         {
             Debug.Log($"[TerminalCore] Vision unlocked: {vision.Definition.displayName}");
@@ -652,16 +630,14 @@ namespace Cristal.CLI
         private void HandleVisionViewed(VisionInstance vision)
         {
             Debug.Log($"[TerminalCore] Vision viewed: {vision.Definition.displayName} (Level {vision.CurrentViewLevel})");
-
-            // Trigger visual effect for vision viewing
             _effectsController?.TriggerEffect("vision_display");
         }
 
         private void HandleNewVisionsAvailable(int count)
         {
             Debug.Log($"[TerminalCore] {count} new vision(s) available!");
-            // Could trigger a notification or glow effect
         }
+        */
 
         #endregion
 
@@ -801,6 +777,7 @@ namespace Cristal.CLI
                 _arcanaSystem.OnArcanaInvoked -= HandleArcanaInvoked;
             }
 
+            /* TODO Phase 9: RitualSystem and VisionManager unsubscribe disabled
             if (_ritualSystem != null)
             {
                 _ritualSystem.OnRitualComplete -= HandleRitualComplete;
@@ -814,6 +791,7 @@ namespace Cristal.CLI
                 _visionManager.OnVisionViewed -= HandleVisionViewed;
                 _visionManager.OnNewVisionsAvailable -= HandleNewVisionsAvailable;
             }
+            */
         }
     }
 

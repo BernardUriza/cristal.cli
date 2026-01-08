@@ -33,7 +33,7 @@ namespace Cristal.CLI.AI
             CristalState.Echo,
             CristalState.Invoked,
             CristalState.Corrupted,
-            CristalState.Unbound  // Ritual state - full AI access
+            CristalState.UNBOUND  // Ritual state - full AI access
         };
 
         // Events
@@ -228,7 +228,7 @@ namespace Cristal.CLI.AI
                     }
                     return PromptBuilder.BuildPrompt(userInput, state, memory);
 
-                case CristalState.Unbound:
+                case CristalState.UNBOUND:
                     return PromptBuilder.BuildUnboundPrompt(userInput, memory);
 
                 default:
@@ -279,7 +279,7 @@ namespace Cristal.CLI.AI
                 case CristalState.Invoked:
                     response.Effect = "arcana_glow";
                     break;
-                case CristalState.Unbound:
+                case CristalState.UNBOUND:
                     response.Effect = "unbound_ritual";
                     response.ApplyGlitch = true;
                     response.Level = ResponseLevel.Ritual;
@@ -297,7 +297,7 @@ namespace Cristal.CLI.AI
             switch (state)
             {
                 case CristalState.Invoked:
-                case CristalState.Unbound:
+                case CristalState.UNBOUND:
                     return ResponseLevel.Ritual;
                 case CristalState.Corrupted:
                 case CristalState.Remembering:
@@ -419,6 +419,32 @@ namespace Cristal.CLI.AI
         public void SetModel(string model)
         {
             _ollamaClient?.SetModel(model);
+        }
+
+        /// <summary>
+        /// Async wrapper for sending a raw prompt to Qwen.
+        /// Used by dream integration and other async systems.
+        /// </summary>
+        public System.Threading.Tasks.Task<string> SendPromptAsync(string prompt)
+        {
+            var tcs = new System.Threading.Tasks.TaskCompletionSource<string>();
+
+            if (_ollamaClient == null || !_isConnected)
+            {
+                tcs.SetResult(null);
+                return tcs.Task;
+            }
+
+            _ollamaClient.Generate(prompt,
+                response => tcs.SetResult(response),
+                error =>
+                {
+                    Debug.LogWarning($"[AIIntegration] SendPromptAsync failed: {error}");
+                    tcs.SetResult(null);
+                }
+            );
+
+            return tcs.Task;
         }
     }
 

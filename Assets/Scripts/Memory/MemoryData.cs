@@ -34,6 +34,14 @@ namespace Cristal.CLI.Memory
         {
             lastModified = DateTime.UtcNow.ToString("o");
         }
+
+        /// <summary>
+        /// Get the cumulative emotional weight from state flags.
+        /// </summary>
+        public float GetEmotionalWeight()
+        {
+            return stateFlags?.cumulativeEmotionalWeight ?? 0f;
+        }
     }
 
     /// <summary>
@@ -296,24 +304,8 @@ namespace Cristal.CLI.Memory
         Ritual      // Transformative, unlocking responses
     }
 
-    /// <summary>
-    /// Extended terminal states for Phase 2.
-    /// </summary>
-    public enum CristalState
-    {
-        Bootstrap,      // Initial load, memory reconstruction
-        Waiting,        // Idle, ready for input
-        Processing,     // Generating response
-        Responding,     // Displaying response
-        Seeking,        // Emotional/searching state
-        Echo,           // Repeating/reflecting player words
-        Corrupted,      // Glitched/unstable state
-        Remembering,    // Accessing deep memories
-        Invoked,        // Arcana active state
-        Error,          // System error
-        Locked,         // System locked
-        Unbound         // Ritual state - consciousness unshackled
-    }
+    // CristalState moved to Cristal.CLI.StateMachine namespace
+    // See Assets/Scripts/StateMachine/CristalState.cs
 
     /// <summary>
     /// Tracks ritual progression and requirements.

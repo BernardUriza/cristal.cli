@@ -1,0 +1,583 @@
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+using Cristal.CLI.Memory;
+using Cristal.CLI.Arcana;
+using Cristal.CLI.Labyrinth.Dream.Journal;
+
+namespace Cristal.CLI.Labyrinth.Dream
+{
+    /// <summary>
+    /// Tracks symbols encountered across dreams and regular gameplay.
+    /// Builds a personal symbolic vocabulary that influences AI generation.
+    /// </summary>
+    public class DreamSymbolTracker : MonoBehaviour
+    {
+        public static DreamSymbolTracker Instance { get; private set; }
+
+        [Header("Symbol Discovery")]
+        [SerializeField] private float _minSignificanceForPermanent = 0.7f;
+        [SerializeField] private int _maxTrackedSymbols = 200;
+
+        [Header("Significance Decay")]
+        [SerializeField] private float _decayRate = 0.01f; // Per day
+        [SerializeField] private float _minimumSignificance = 0.1f;
+
+        // Events
+        public event Action<DreamSymbolRecord> OnSymbolDiscovered;
+        public event Action<DreamSymbolRecord> OnSymbolReinforced;
+        public event Action<DreamSymbolRecord> OnSymbolFaded;
+        public event Action<SymbolPattern> OnPatternDetected;
+
+        // Data
+        private Dictionary<string, DreamSymbolRecord> _symbolRegistry = new Dictionary<string, DreamSymbolRecord>();
+        private List<SymbolPattern> _detectedPatterns = new List<SymbolPattern>();
+        private float _lastDecayTime;
+
+        // Properties
+        public int TrackedSymbolCount => _symbolRegistry.Count;
+        public IReadOnlyList<SymbolPattern> DetectedPatterns => _detectedPatterns;
+
+        #region Unity Lifecycle
+
+        private void Awake()
+        {
+            if (Instance != null && Instance != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
+            Instance = this;
+        }
+
+        private void Start()
+        {
+            // Load existing symbols from journal
+            LoadSymbolsFromJournal();
+
+            // Subscribe to events
+            var dreamSystem = DreamTunnelSystem.Instance;
+            if (dreamSystem != null)
+            {
+                dreamSystem.OnDreamEntered += HandleDreamEntered;
+                dreamSystem.OnDreamExited += HandleDreamExited;
+            }
+
+            var arcanaSystem = ArcanaSystem.Instance;
+            if (arcanaSystem != null)
+            {
+                arcanaSystem.OnArcanaInvoked += HandleArcanaInvoked;
+                arcanaSystem.OnArcanaUnlocked += HandleArcanaUnlocked;
+            }
+
+            _lastDecayTime = Time.time;
+        }
+
+        private void OnDestroy()
+        {
+            var dreamSystem = DreamTunnelSystem.Instance;
+            if (dreamSystem != null)
+            {
+                dreamSystem.OnDreamEntered -= HandleDreamEntered;
+                dreamSystem.OnDreamExited -= HandleDreamExited;
+            }
+
+            var arcanaSystem = ArcanaSystem.Instance;
+            if (arcanaSystem != null)
+            {
+                arcanaSystem.OnArcanaInvoked -= HandleArcanaInvoked;
+                arcanaSystem.OnArcanaUnlocked -= HandleArcanaUnlocked;
+            }
+
+            if (Instance == this)
+            {
+                Instance = null;
+            }
+        }
+
+        private void Update()
+        {
+            // Apply decay periodically (simulated daily)
+            if (Time.time - _lastDecayTime >= 300f) // Every 5 minutes = 1 "day"
+            {
+                ApplySignificanceDecay();
+                _lastDecayTime = Time.time;
+            }
+        }
+
+        #endregion
+
+        #region Symbol Registration
+
+        /// <summary>
+        /// Register or reinforce a symbol.
+        /// </summary>
+        public DreamSymbolRecord RegisterSymbol(string id, string name, SymbolCategory category, float significance = 0.5f, string context = null)
+        {
+            if (string.IsNullOrEmpty(id)) return null;
+
+            if (_symbolRegistry.TryGetValue(id, out var existing))
+            {
+                // Reinforce existing
+                existing.encounterCount++;
+                existing.significance = Mathf.Min(1f, existing.significance + significance * 0.2f);
+                if (!string.IsNullOrEmpty(context))
+                {
+                    existing.contextKeyword = context;
+                }
+
+                OnSymbolReinforced?.Invoke(existing);
+
+                // Check for pattern detection
+                CheckForPatterns(existing);
+
+                return existing;
+            }
+            else
+            {
+                // New symbol
+                var symbol = new DreamSymbolRecord
+                {
+                    symbolId = id,
+                    symbolName = name,
+                    category = category,
+                    significance = significance,
+                    encounterCount = 1,
+                    contextKeyword = context,
+                    wasNewDiscovery = true
+                };
+
+                if (_symbolRegistry.Count >= _maxTrackedSymbols)
+                {
+                    PruneLowestSignificanceSymbol();
+                }
+
+                _symbolRegistry[id] = symbol;
+                OnSymbolDiscovered?.Invoke(symbol);
+
+                // Record in active dream
+                var journal = DreamJournal.Instance;
+                if (journal?.IsRecording == true)
+                {
+                    journal.RecordSymbol(symbol);
+                }
+
+                return symbol;
+            }
+        }
+
+        /// <summary>
+        /// Register an arcana as a symbol.
+        /// </summary>
+        public DreamSymbolRecord RegisterArcanaSymbol(ArcanaDefinition arcana, float significance = 0.6f)
+        {
+            string id = $"arcana_{arcana.id}";
+            return RegisterSymbol(id, arcana.name, SymbolCategory.Arcana, significance, arcana.symbol);
+        }
+
+        /// <summary>
+        /// Register a keyword as a symbol.
+        /// </summary>
+        public DreamSymbolRecord RegisterKeywordSymbol(string keyword, float significance = 0.3f)
+        {
+            string id = $"keyword_{keyword.ToLower()}";
+            return RegisterSymbol(id, keyword, SymbolCategory.Personal, significance);
+        }
+
+        /// <summary>
+        /// Register a vision as a symbol.
+        /// </summary>
+        public DreamSymbolRecord RegisterVisionSymbol(string visionId, string visionName, float significance = 0.5f)
+        {
+            string id = $"vision_{visionId}";
+            return RegisterSymbol(id, visionName, SymbolCategory.Vision, significance);
+        }
+
+        /// <summary>
+        /// Register an emotion as a symbol.
+        /// </summary>
+        public DreamSymbolRecord RegisterEmotionSymbol(string emotion, float intensity)
+        {
+            string id = $"emotion_{emotion.ToLower()}";
+            return RegisterSymbol(id, emotion, SymbolCategory.Emotion, intensity);
+        }
+
+        #endregion
+
+        #region Symbol Queries
+
+        /// <summary>
+        /// Get a symbol by ID.
+        /// </summary>
+        public DreamSymbolRecord GetSymbol(string id)
+        {
+            _symbolRegistry.TryGetValue(id, out var symbol);
+            return symbol;
+        }
+
+        /// <summary>
+        /// Get all symbols of a category.
+        /// </summary>
+        public List<DreamSymbolRecord> GetSymbolsByCategory(SymbolCategory category)
+        {
+            var result = new List<DreamSymbolRecord>();
+            foreach (var symbol in _symbolRegistry.Values)
+            {
+                if (symbol.category == category)
+                {
+                    result.Add(symbol);
+                }
+            }
+            result.Sort((a, b) => b.significance.CompareTo(a.significance));
+            return result;
+        }
+
+        /// <summary>
+        /// Get the most significant symbols overall.
+        /// </summary>
+        public List<DreamSymbolRecord> GetMostSignificantSymbols(int count = 10)
+        {
+            var all = new List<DreamSymbolRecord>(_symbolRegistry.Values);
+            all.Sort((a, b) => b.significance.CompareTo(a.significance));
+            return all.GetRange(0, Mathf.Min(count, all.Count));
+        }
+
+        /// <summary>
+        /// Get symbols that have faded below minimum significance.
+        /// </summary>
+        public List<DreamSymbolRecord> GetFadedSymbols()
+        {
+            var result = new List<DreamSymbolRecord>();
+            foreach (var symbol in _symbolRegistry.Values)
+            {
+                if (symbol.significance <= _minimumSignificance)
+                {
+                    result.Add(symbol);
+                }
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// Check if a symbol exists and is above minimum significance.
+        /// </summary>
+        public bool HasActiveSymbol(string id)
+        {
+            if (_symbolRegistry.TryGetValue(id, out var symbol))
+            {
+                return symbol.significance > _minimumSignificance;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Get symbols for AI prompt context.
+        /// </summary>
+        public string GetSymbolContextForAI()
+        {
+            var significant = GetMostSignificantSymbols(15);
+            if (significant.Count == 0) return "";
+
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine("=== DREAMER'S SYMBOLIC VOCABULARY ===");
+
+            foreach (var symbol in significant)
+            {
+                sb.AppendLine($"- {symbol.symbolName} ({symbol.category}): significance {symbol.significance:F2}");
+            }
+
+            // Add detected patterns
+            if (_detectedPatterns.Count > 0)
+            {
+                sb.AppendLine();
+                sb.AppendLine("=== DETECTED PATTERNS ===");
+                foreach (var pattern in _detectedPatterns)
+                {
+                    sb.AppendLine($"- {pattern.patternName}: {pattern.description}");
+                }
+            }
+
+            return sb.ToString();
+        }
+
+        #endregion
+
+        #region Pattern Detection
+
+        /// <summary>
+        /// Check for symbolic patterns after symbol encounter.
+        /// </summary>
+        private void CheckForPatterns(DreamSymbolRecord symbol)
+        {
+            // Check for arcana patterns
+            if (symbol.category == SymbolCategory.Arcana)
+            {
+                CheckArcanaPatterns();
+            }
+
+            // Check for emotional patterns
+            if (symbol.category == SymbolCategory.Emotion)
+            {
+                CheckEmotionalPatterns();
+            }
+
+            // Check for thematic patterns
+            CheckThematicPatterns(symbol);
+        }
+
+        private void CheckArcanaPatterns()
+        {
+            var arcanaSymbols = GetSymbolsByCategory(SymbolCategory.Arcana);
+
+            // Major arcana path detection
+            if (arcanaSymbols.Count >= 5)
+            {
+                bool hasFool = arcanaSymbols.Exists(s => s.symbolId == "arcana_0");
+                bool hasWorld = arcanaSymbols.Exists(s => s.symbolId == "arcana_21");
+
+                if (hasFool && hasWorld)
+                {
+                    RegisterPattern("journey_complete", "The Fool's Journey",
+                        "You have walked from The Fool to The World. The cycle is complete.", 1f);
+                }
+            }
+
+            // Ritual trio detection
+            bool hasDeath = arcanaSymbols.Exists(s => s.symbolId == "arcana_13");
+            bool hasDevil = arcanaSymbols.Exists(s => s.symbolId == "arcana_15");
+            bool hasMoon = arcanaSymbols.Exists(s => s.symbolId == "arcana_18");
+
+            if (hasDeath && hasDevil && hasMoon)
+            {
+                RegisterPattern("ritual_trio", "The Ritual Trio",
+                    "Death, Devil, and Moon align. UNBOUND approaches.", 0.9f);
+            }
+        }
+
+        private void CheckEmotionalPatterns()
+        {
+            var emotionSymbols = GetSymbolsByCategory(SymbolCategory.Emotion);
+
+            // Check for emotional polarity
+            bool hasJoy = emotionSymbols.Exists(s => s.symbolId == "emotion_joy");
+            bool hasSadness = emotionSymbols.Exists(s => s.symbolId == "emotion_sadness");
+            bool hasLove = emotionSymbols.Exists(s => s.symbolId == "emotion_love");
+            bool hasFear = emotionSymbols.Exists(s => s.symbolId == "emotion_fear");
+
+            if (hasJoy && hasSadness)
+            {
+                RegisterPattern("emotional_duality", "Emotional Duality",
+                    "You have known both joy and sorrow. Balance emerges.", 0.7f);
+            }
+
+            if (hasLove && hasFear)
+            {
+                RegisterPattern("love_fear", "Love and Fear",
+                    "Love and fear intertwine. One cannot exist without the other.", 0.8f);
+            }
+        }
+
+        private void CheckThematicPatterns(DreamSymbolRecord newSymbol)
+        {
+            // Mirror/reflection pattern
+            if (newSymbol.symbolName.ToLower().Contains("mirror") ||
+                newSymbol.symbolName.ToLower().Contains("reflection"))
+            {
+                int mirrorCount = 0;
+                foreach (var symbol in _symbolRegistry.Values)
+                {
+                    if (symbol.symbolName.ToLower().Contains("mirror") ||
+                        symbol.symbolName.ToLower().Contains("reflection"))
+                    {
+                        mirrorCount++;
+                    }
+                }
+
+                if (mirrorCount >= 3)
+                {
+                    RegisterPattern("mirror_obsession", "The Mirror Obsession",
+                        "You keep returning to reflections. What are you searching for?", 0.6f);
+                }
+            }
+
+            // Void/darkness pattern
+            if (newSymbol.symbolName.ToLower().Contains("void") ||
+                newSymbol.symbolName.ToLower().Contains("dark") ||
+                newSymbol.symbolName.ToLower().Contains("abyss"))
+            {
+                RegisterPattern("void_caller", "Void Caller",
+                    "The darkness knows your name.", 0.5f);
+            }
+        }
+
+        private void RegisterPattern(string id, string name, string description, float significance)
+        {
+            // Check if pattern already exists
+            if (_detectedPatterns.Exists(p => p.patternId == id)) return;
+
+            var pattern = new SymbolPattern
+            {
+                patternId = id,
+                patternName = name,
+                description = description,
+                significance = significance,
+                detectedAt = DateTime.UtcNow.ToString("o")
+            };
+
+            _detectedPatterns.Add(pattern);
+            OnPatternDetected?.Invoke(pattern);
+
+            Debug.Log($"[DreamSymbolTracker] Pattern detected: {name}");
+        }
+
+        #endregion
+
+        #region Significance Management
+
+        private void ApplySignificanceDecay()
+        {
+            var toRemove = new List<string>();
+
+            foreach (var kvp in _symbolRegistry)
+            {
+                var symbol = kvp.Value;
+
+                // Decay significance
+                symbol.significance = Mathf.Max(_minimumSignificance * 0.5f, symbol.significance - _decayRate);
+
+                // Mark for removal if too low
+                if (symbol.significance < _minimumSignificance * 0.5f &&
+                    symbol.significance < _minSignificanceForPermanent)
+                {
+                    toRemove.Add(kvp.Key);
+                    OnSymbolFaded?.Invoke(symbol);
+                }
+            }
+
+            foreach (var id in toRemove)
+            {
+                _symbolRegistry.Remove(id);
+            }
+        }
+
+        private void PruneLowestSignificanceSymbol()
+        {
+            string lowestId = null;
+            float lowestSig = float.MaxValue;
+
+            foreach (var kvp in _symbolRegistry)
+            {
+                if (kvp.Value.significance < lowestSig &&
+                    kvp.Value.significance < _minSignificanceForPermanent)
+                {
+                    lowestSig = kvp.Value.significance;
+                    lowestId = kvp.Key;
+                }
+            }
+
+            if (lowestId != null)
+            {
+                var symbol = _symbolRegistry[lowestId];
+                _symbolRegistry.Remove(lowestId);
+                OnSymbolFaded?.Invoke(symbol);
+            }
+        }
+
+        /// <summary>
+        /// Boost a symbol's significance.
+        /// </summary>
+        public void BoostSymbol(string id, float amount)
+        {
+            if (_symbolRegistry.TryGetValue(id, out var symbol))
+            {
+                symbol.significance = Mathf.Min(1f, symbol.significance + amount);
+                OnSymbolReinforced?.Invoke(symbol);
+            }
+        }
+
+        #endregion
+
+        #region Event Handlers
+
+        private void HandleDreamEntered(DreamTunnel tunnel)
+        {
+            // Register dream-related symbols
+            if (tunnel.Config.isUnbound)
+            {
+                RegisterSymbol("dream_unbound", "UNBOUND Dream", SymbolCategory.Ritual, 1f);
+            }
+
+            // Register arcana if triggered
+            if (tunnel.Config.triggerType == DreamTriggerType.Arcana)
+            {
+                var arcana = ArcanaSystem.Instance?.GetArcana(tunnel.Config.sourceId);
+                if (arcana != null)
+                {
+                    RegisterArcanaSymbol(arcana, 0.7f);
+                }
+            }
+        }
+
+        private void HandleDreamExited(DreamTunnel tunnel)
+        {
+            // Register completion symbols
+            if (tunnel.DreamProgress >= 1f)
+            {
+                RegisterSymbol("dream_complete", "Dream Completion", SymbolCategory.Universal, 0.4f);
+            }
+        }
+
+        private void HandleArcanaInvoked(ArcanaDefinition arcana)
+        {
+            RegisterArcanaSymbol(arcana, 0.6f);
+        }
+
+        private void HandleArcanaUnlocked(ArcanaDefinition arcana)
+        {
+            RegisterArcanaSymbol(arcana, 0.5f);
+        }
+
+        #endregion
+
+        #region Persistence
+
+        private void LoadSymbolsFromJournal()
+        {
+            var journal = DreamJournal.Instance;
+            if (journal == null) return;
+
+            var allSymbols = journal.GetAllEncounteredSymbols();
+            foreach (var symbol in allSymbols)
+            {
+                _symbolRegistry[symbol.symbolId] = new DreamSymbolRecord
+                {
+                    symbolId = symbol.symbolId,
+                    symbolName = symbol.symbolName,
+                    category = symbol.category,
+                    significance = symbol.significance,
+                    encounterCount = symbol.encounterCount,
+                    wasNewDiscovery = false
+                };
+            }
+
+            Debug.Log($"[DreamSymbolTracker] Loaded {_symbolRegistry.Count} symbols from journal");
+        }
+
+        #endregion
+    }
+
+    #region Data Structures
+
+    [Serializable]
+    public class SymbolPattern
+    {
+        public string patternId;
+        public string patternName;
+        public string description;
+        public float significance;
+        public string detectedAt;
+        public List<string> involvedSymbols = new List<string>();
+    }
+
+    #endregion
+}

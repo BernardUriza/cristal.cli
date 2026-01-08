@@ -117,4 +117,35 @@ namespace Cristal.CLI.Arcana
         ArcanaCount,        // Unlocked N arcana
         Random              // Random chance per input
     }
+
+    /// <summary>
+    /// Arcana type identifiers for quick reference.
+    /// Maps to Tarot Major Arcana.
+    /// </summary>
+    public enum ArcanaType
+    {
+        None = -1,
+        TheFool = 0,
+        TheMagician = 1,
+        TheHighPriestess = 2,
+        TheEmpress = 3,
+        TheEmperor = 4,
+        TheHierophant = 5,
+        TheLovers = 6,
+        TheChariot = 7,
+        Strength = 8,
+        TheHermit = 9,
+        WheelOfFortune = 10,
+        Justice = 11,
+        TheHangedMan = 12,
+        Death = 13,
+        Temperance = 14,
+        TheDevil = 15,
+        TheTower = 16,
+        TheStar = 17,
+        TheMoon = 18,
+        TheSun = 19,
+        Judgement = 20,
+        TheWorld = 21
+    }
 }

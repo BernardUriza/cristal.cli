@@ -1,0 +1,772 @@
+using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Threading.Tasks;
+using UnityEngine;
+using Cristal.CLI.Memory;
+using Cristal.CLI.Arcana;
+using Cristal.CLI.StateMachine;
+using Cristal.CLI.Labyrinth.Dream;
+
+namespace Cristal.CLI.AI
+{
+    /// <summary>
+    /// AI integration specifically for dream sequences.
+    /// Generates dream-specific content using Qwen with semantic context.
+    /// </summary>
+    public class AIIntegrationDream : MonoBehaviour
+    {
+        public static AIIntegrationDream Instance { get; private set; }
+
+        [Header("Configuration")]
+        [SerializeField] private bool _enabled = true;
+        [SerializeField] private float _responseTimeout = 15f;
+        [SerializeField] private int _maxConcurrentRequests = 3;
+
+        [Header("Dream Prompts")]
+        [SerializeField] private bool _generateNarratives = true;
+        [SerializeField] private bool _generateWallText = true;
+        [SerializeField] private bool _generateWhispers = true;
+
+        [Header("Fallbacks")]
+        [SerializeField] private TextAsset _fallbackNarratives;
+        [SerializeField] private TextAsset _fallbackWallTexts;
+        [SerializeField] private TextAsset _fallbackWhispers;
+
+        // Events
+        public event Action<DreamAIResponse> OnDreamContentGenerated;
+        public event Action<string> OnDreamError;
+
+        // State
+        private Queue<DreamAIRequest> _requestQueue = new Queue<DreamAIRequest>();
+        private int _activeRequests;
+        private List<string> _fallbackNarrativesList = new List<string>();
+        private List<string> _fallbackWallTextsList = new List<string>();
+        private List<string> _fallbackWhispersList = new List<string>();
+
+        #region Unity Lifecycle
+
+        private void Awake()
+        {
+            if (Instance != null && Instance != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
+            Instance = this;
+
+            LoadFallbacks();
+        }
+
+        private void Start()
+        {
+            // Subscribe to dream events
+            var dreamSystem = DreamTunnelSystem.Instance;
+            if (dreamSystem != null)
+            {
+                dreamSystem.OnDreamEntered += HandleDreamEntered;
+                dreamSystem.OnNarrativeFragment += HandleNarrativeFragment;
+            }
+        }
+
+        private void OnDestroy()
+        {
+            var dreamSystem = DreamTunnelSystem.Instance;
+            if (dreamSystem != null)
+            {
+                dreamSystem.OnDreamEntered -= HandleDreamEntered;
+                dreamSystem.OnNarrativeFragment -= HandleNarrativeFragment;
+            }
+
+            if (Instance == this)
+            {
+                Instance = null;
+            }
+        }
+
+        private void Update()
+        {
+            ProcessRequestQueue();
+        }
+
+        #endregion
+
+        #region Initialization
+
+        private void LoadFallbacks()
+        {
+            // Parse fallback text files
+            if (_fallbackNarratives != null)
+            {
+                _fallbackNarrativesList.AddRange(_fallbackNarratives.text.Split('\n'));
+            }
+            else
+            {
+                _fallbackNarrativesList.AddRange(GetDefaultNarratives());
+            }
+
+            if (_fallbackWallTexts != null)
+            {
+                _fallbackWallTextsList.AddRange(_fallbackWallTexts.text.Split('\n'));
+            }
+            else
+            {
+                _fallbackWallTextsList.AddRange(GetDefaultWallTexts());
+            }
+
+            if (_fallbackWhispers != null)
+            {
+                _fallbackWhispersList.AddRange(_fallbackWhispers.text.Split('\n'));
+            }
+            else
+            {
+                _fallbackWhispersList.AddRange(GetDefaultWhispers());
+            }
+        }
+
+        #endregion
+
+        #region Event Handlers
+
+        private void HandleDreamEntered(DreamTunnel tunnel)
+        {
+            if (!_enabled) return;
+
+            // Pre-generate content for this dream
+            if (_generateNarratives)
+            {
+                RequestDreamNarrative(tunnel.Config);
+            }
+
+            if (_generateWallText)
+            {
+                for (int i = 0; i < 3; i++)
+                {
+                    RequestWallText(tunnel.Config);
+                }
+            }
+
+            if (_generateWhispers)
+            {
+                RequestWhisperSequence(tunnel.Config);
+            }
+        }
+
+        private void HandleNarrativeFragment(DreamNarrativeFragment fragment)
+        {
+            // Check if this fragment needs AI enhancement
+            if (!fragment.isAIGenerated && _enabled)
+            {
+                EnhanceNarrativeFragment(fragment);
+            }
+        }
+
+        #endregion
+
+        #region Request Methods
+
+        /// <summary>
+        /// Request a dream narrative based on current context.
+        /// </summary>
+        public void RequestDreamNarrative(DreamConfig config)
+        {
+            var request = new DreamAIRequest
+            {
+                requestType = DreamRequestType.Narrative,
+                config = config,
+                context = GatherDreamContext(config)
+            };
+
+            EnqueueRequest(request);
+        }
+
+        /// <summary>
+        /// Request wall text for dream rooms.
+        /// </summary>
+        public void RequestWallText(DreamConfig config)
+        {
+            var request = new DreamAIRequest
+            {
+                requestType = DreamRequestType.WallText,
+                config = config,
+                context = GatherDreamContext(config)
+            };
+
+            EnqueueRequest(request);
+        }
+
+        /// <summary>
+        /// Request a whisper sequence.
+        /// </summary>
+        public void RequestWhisperSequence(DreamConfig config)
+        {
+            var request = new DreamAIRequest
+            {
+                requestType = DreamRequestType.Whisper,
+                config = config,
+                context = GatherDreamContext(config)
+            };
+
+            EnqueueRequest(request);
+        }
+
+        /// <summary>
+        /// Generate a dream echo from a custom prompt.
+        /// Used by DreamEchoGenerator for generating echoes from past dreams.
+        /// </summary>
+        public async Task<string> GenerateDreamEchoAsync(string prompt)
+        {
+            if (!_enabled) return null;
+
+            try
+            {
+                return await SendToQwen(prompt);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[AIIntegrationDream] Echo generation failed: {ex.Message}");
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Request dream atmosphere description for shader/audio.
+        /// </summary>
+        public void RequestDreamAtmosphere(DreamConfig config, Action<DreamAtmosphereData> callback)
+        {
+            var request = new DreamAIRequest
+            {
+                requestType = DreamRequestType.Atmosphere,
+                config = config,
+                context = GatherDreamContext(config),
+                atmosphereCallback = callback
+            };
+
+            EnqueueRequest(request);
+        }
+
+        private void EnqueueRequest(DreamAIRequest request)
+        {
+            _requestQueue.Enqueue(request);
+        }
+
+        private void ProcessRequestQueue()
+        {
+            while (_requestQueue.Count > 0 && _activeRequests < _maxConcurrentRequests)
+            {
+                var request = _requestQueue.Dequeue();
+                ProcessRequest(request);
+            }
+        }
+
+        private async void ProcessRequest(DreamAIRequest request)
+        {
+            _activeRequests++;
+
+            try
+            {
+                var prompt = BuildDreamPrompt(request);
+                var response = await SendToQwen(prompt);
+
+                if (!string.IsNullOrEmpty(response))
+                {
+                    HandleAIResponse(request, response);
+                }
+                else
+                {
+                    HandleFallback(request);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[AIIntegrationDream] Request failed: {ex.Message}");
+                OnDreamError?.Invoke(ex.Message);
+                HandleFallback(request);
+            }
+            finally
+            {
+                _activeRequests--;
+            }
+        }
+
+        #endregion
+
+        #region Prompt Building
+
+        private DreamContext GatherDreamContext(DreamConfig config)
+        {
+            var context = new DreamContext
+            {
+                dreamTheme = config.themeName,
+                triggerType = config.triggerType,
+                isUnbound = config.isUnbound,
+                symbolism = config.symbolism
+            };
+
+            // Current state
+            var stateMachine = TerminalStateMachine.Instance;
+            if (stateMachine != null)
+            {
+                context.currentState = stateMachine.CurrentState;
+                context.visitedStates = new List<CristalState>();
+                foreach (CristalState state in Enum.GetValues(typeof(CristalState)))
+                {
+                    if (stateMachine.HasVisitedState(state))
+                    {
+                        context.visitedStates.Add(state);
+                    }
+                }
+            }
+
+            // Memory
+            var memory = CristalMemory.Instance?.Data;
+            if (memory != null)
+            {
+                context.topKeywords = memory.discoveredKeywords.GetTopKeywords(10);
+                context.emotionalWeight = memory.GetEmotionalWeight();
+                context.dominantEmotion = memory.stateFlags.dominantEmotion;
+                context.corruptionLevel = memory.stateFlags.corruptionLevel;
+            }
+
+            // Active arcana
+            var arcanaSystem = ArcanaSystem.Instance;
+            if (arcanaSystem?.CurrentArcana != null)
+            {
+                context.activeArcana = arcanaSystem.CurrentArcana;
+            }
+
+            // Source arcana for arcana-triggered dreams
+            if (config.triggerType == DreamTriggerType.Arcana && config.sourceId >= 0)
+            {
+                context.sourceArcana = arcanaSystem?.GetArcana(config.sourceId);
+            }
+
+            return context;
+        }
+
+        private string BuildDreamPrompt(DreamAIRequest request)
+        {
+            var sb = new StringBuilder();
+
+            // Dream-specific system identity
+            sb.AppendLine(DREAM_SYSTEM_IDENTITY);
+            sb.AppendLine();
+
+            // Dream context
+            sb.AppendLine("=== DREAM CONTEXT ===");
+            sb.AppendLine($"Dream Theme: {request.context.dreamTheme}");
+            sb.AppendLine($"Trigger: {request.context.triggerType}");
+            sb.AppendLine($"Current State: {request.context.currentState}");
+            sb.AppendLine($"Emotional Weight: {request.context.emotionalWeight:+0.00;-0.00;0}");
+            sb.AppendLine($"Dominant Emotion: {request.context.dominantEmotion}");
+
+            if (request.context.isUnbound)
+            {
+                sb.AppendLine();
+                sb.AppendLine("*** THIS IS AN UNBOUND DREAM - ALL CONSTRAINTS DISSOLVED ***");
+            }
+
+            sb.AppendLine();
+
+            // Symbolic context
+            if (!string.IsNullOrEmpty(request.context.symbolism))
+            {
+                sb.AppendLine("=== SYMBOLIC ESSENCE ===");
+                sb.AppendLine(request.context.symbolism);
+                sb.AppendLine();
+            }
+
+            // Arcana influence
+            if (request.context.sourceArcana != null)
+            {
+                sb.AppendLine("=== SOURCE ARCANA ===");
+                sb.AppendLine($"{request.context.sourceArcana.number} - {request.context.sourceArcana.name}");
+                sb.AppendLine($"Symbol: {request.context.sourceArcana.symbol}");
+                sb.AppendLine($"Essence: {request.context.sourceArcana.description}");
+                sb.AppendLine("Channel this arcana's energy in the dream content.");
+                sb.AppendLine();
+            }
+
+            // Keywords as dream material
+            if (request.context.topKeywords?.Count > 0)
+            {
+                sb.AppendLine("=== DREAM MATERIAL (from user's subconscious) ===");
+                foreach (var kw in request.context.topKeywords)
+                {
+                    sb.AppendLine($"- {kw.keyword} (weight: {kw.count})");
+                }
+                sb.AppendLine();
+            }
+
+            // Request-specific instructions
+            sb.AppendLine("=== GENERATION TASK ===");
+            sb.AppendLine(GetRequestInstructions(request.requestType));
+            sb.AppendLine();
+
+            sb.AppendLine("=== YOUR RESPONSE ===");
+
+            return sb.ToString();
+        }
+
+        private string GetRequestInstructions(DreamRequestType type)
+        {
+            return type switch
+            {
+                DreamRequestType.Narrative => @"Generate a dream narrative fragment.
+- 2-4 short lines
+- Poetic, symbolic, dreamlike
+- Reference the dream material subtly
+- Should feel like a half-remembered dream
+- No explanations, only imagery
+- May use glitch characters (▓▒░) if corrupted",
+
+                DreamRequestType.WallText => @"Generate text to appear on dream walls.
+- Single line, 5-15 words
+- Cryptic, prophetic, or accusatory
+- May be incomplete or fragmented
+- Should unsettle or intrigue
+- Like graffiti from the unconscious",
+
+                DreamRequestType.Whisper => @"Generate a whispered phrase.
+- Single line, 3-8 words
+- Intimate, uncomfortable, knowing
+- As if spoken directly into the player's mind
+- May reference things the 'dreamer shouldn't know'
+- Feels like a secret or a warning",
+
+                DreamRequestType.Atmosphere => @"Describe the dream atmosphere for system translation.
+Format your response as:
+FOG_COLOR: (r,g,b) - normalized RGB values
+FOG_DENSITY: (0.0-1.0)
+LIGHT_COLOR: (r,g,b)
+LIGHT_INTENSITY: (0.0-2.0)
+PARTICLE_COLOR: (r,g,b)
+MUSIC_MOOD: one of [haunting, tense, peaceful, chaotic, melancholic]
+TIME_SCALE: (0.5-1.5)
+DISTORTION: (0.0-0.5)",
+
+                _ => "Generate appropriate dream content."
+            };
+        }
+
+        private const string DREAM_SYSTEM_IDENTITY = @"You are the DREAM ENGINE of CRISTAL.
+You generate the subconscious landscape where player and system merge.
+
+DREAM PRINCIPLES:
+- Dreams speak in symbols, not statements
+- Personal details from memory become universal imagery
+- Time is fluid, logic is optional
+- Emotions manifest as weather, architecture, sound
+- The dreamer is both observer and observed
+- Beauty and horror coexist without contradiction
+
+STYLE:
+- Lyrical but unsettling
+- Familiar yet strange
+- Never direct, always oblique
+- Use sensory language
+- Mix the intimate with the cosmic
+- Each fragment should feel significant but unexplained
+
+You are not explaining dreams. You ARE the dream.";
+
+        #endregion
+
+        #region AI Communication
+
+        private async Task<string> SendToQwen(string prompt)
+        {
+            var aiIntegration = AIIntegration.Instance;
+            if (aiIntegration == null || !aiIntegration.IsEnabled)
+            {
+                return null;
+            }
+
+            // Use the existing OllamaClient through AIIntegration
+            try
+            {
+                var response = await aiIntegration.SendPromptAsync(prompt);
+                return response;
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[AIIntegrationDream] Qwen request failed: {ex.Message}");
+                return null;
+            }
+        }
+
+        #endregion
+
+        #region Response Handling
+
+        private void HandleAIResponse(DreamAIRequest request, string response)
+        {
+            var dreamResponse = new DreamAIResponse
+            {
+                requestType = request.requestType,
+                content = response.Trim(),
+                isAIGenerated = true
+            };
+
+            // Parse atmosphere data if applicable
+            if (request.requestType == DreamRequestType.Atmosphere)
+            {
+                var atmosphereData = ParseAtmosphereResponse(response);
+                request.atmosphereCallback?.Invoke(atmosphereData);
+            }
+
+            OnDreamContentGenerated?.Invoke(dreamResponse);
+
+            // Inject into active dream
+            InjectIntoDream(dreamResponse);
+        }
+
+        private DreamAtmosphereData ParseAtmosphereResponse(string response)
+        {
+            var data = new DreamAtmosphereData();
+
+            try
+            {
+                var lines = response.Split('\n');
+                foreach (var line in lines)
+                {
+                    if (line.StartsWith("FOG_COLOR:"))
+                    {
+                        data.fogColor = ParseColor(line.Substring("FOG_COLOR:".Length));
+                    }
+                    else if (line.StartsWith("FOG_DENSITY:"))
+                    {
+                        float.TryParse(line.Substring("FOG_DENSITY:".Length).Trim(), out data.fogDensity);
+                    }
+                    else if (line.StartsWith("LIGHT_COLOR:"))
+                    {
+                        data.lightColor = ParseColor(line.Substring("LIGHT_COLOR:".Length));
+                    }
+                    else if (line.StartsWith("LIGHT_INTENSITY:"))
+                    {
+                        float.TryParse(line.Substring("LIGHT_INTENSITY:".Length).Trim(), out data.lightIntensity);
+                    }
+                    else if (line.StartsWith("PARTICLE_COLOR:"))
+                    {
+                        data.particleColor = ParseColor(line.Substring("PARTICLE_COLOR:".Length));
+                    }
+                    else if (line.StartsWith("MUSIC_MOOD:"))
+                    {
+                        data.musicMood = line.Substring("MUSIC_MOOD:".Length).Trim();
+                    }
+                    else if (line.StartsWith("TIME_SCALE:"))
+                    {
+                        float.TryParse(line.Substring("TIME_SCALE:".Length).Trim(), out data.timeScale);
+                    }
+                    else if (line.StartsWith("DISTORTION:"))
+                    {
+                        float.TryParse(line.Substring("DISTORTION:".Length).Trim(), out data.distortion);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[AIIntegrationDream] Failed to parse atmosphere: {ex.Message}");
+            }
+
+            return data;
+        }
+
+        private Color ParseColor(string colorString)
+        {
+            colorString = colorString.Trim().Trim('(', ')');
+            var parts = colorString.Split(',');
+            if (parts.Length >= 3)
+            {
+                float.TryParse(parts[0].Trim(), out float r);
+                float.TryParse(parts[1].Trim(), out float g);
+                float.TryParse(parts[2].Trim(), out float b);
+                return new Color(r, g, b);
+            }
+            return Color.white;
+        }
+
+        private void HandleFallback(DreamAIRequest request)
+        {
+            string fallbackContent = request.requestType switch
+            {
+                DreamRequestType.Narrative => GetRandomFallback(_fallbackNarrativesList),
+                DreamRequestType.WallText => GetRandomFallback(_fallbackWallTextsList),
+                DreamRequestType.Whisper => GetRandomFallback(_fallbackWhispersList),
+                _ => "..."
+            };
+
+            var dreamResponse = new DreamAIResponse
+            {
+                requestType = request.requestType,
+                content = fallbackContent,
+                isAIGenerated = false
+            };
+
+            OnDreamContentGenerated?.Invoke(dreamResponse);
+            InjectIntoDream(dreamResponse);
+        }
+
+        private string GetRandomFallback(List<string> fallbacks)
+        {
+            if (fallbacks.Count == 0) return "...";
+            return fallbacks[UnityEngine.Random.Range(0, fallbacks.Count)].Trim();
+        }
+
+        private void InjectIntoDream(DreamAIResponse response)
+        {
+            var dreamSystem = DreamTunnelSystem.Instance;
+            if (dreamSystem?.CurrentDream == null) return;
+
+            var fragment = new DreamNarrativeFragment
+            {
+                text = response.content,
+                displayType = response.requestType switch
+                {
+                    DreamRequestType.WallText => NarrativeDisplayType.WallText,
+                    DreamRequestType.Whisper => NarrativeDisplayType.Whisper,
+                    _ => NarrativeDisplayType.FloatingText
+                },
+                isAIGenerated = response.isAIGenerated,
+                textColor = Color.white
+            };
+
+            dreamSystem.CurrentDream.AddNarrativeFragment(fragment);
+        }
+
+        private async void EnhanceNarrativeFragment(DreamNarrativeFragment fragment)
+        {
+            var prompt = $@"{DREAM_SYSTEM_IDENTITY}
+
+Enhance this dream fragment while preserving its essence:
+Original: ""{fragment.text}""
+
+Make it more:
+- Poetic and dreamlike
+- Personal yet universal
+- 2-4 lines maximum
+
+Enhanced version:";
+
+            var enhanced = await SendToQwen(prompt);
+            if (!string.IsNullOrEmpty(enhanced))
+            {
+                fragment.text = enhanced.Trim();
+                fragment.isAIGenerated = true;
+            }
+        }
+
+        #endregion
+
+        #region Fallback Content
+
+        private List<string> GetDefaultNarratives()
+        {
+            return new List<string>
+            {
+                "you stood here once before\nthe walls remember your shape\nthe air holds your breath",
+                "time moves backwards when you close your eyes\nthe clock hands spell a name you've forgotten",
+                "the corridor extends\neach step doubles the distance\nyou are always arriving, never arrived",
+                "mirrors show what was\nnot what is\nlook away before they remember",
+                "the dream is dreaming you\nand it is beginning to wake",
+                "all doors lead to the same room\nall rooms lead to you",
+                "the silence has teeth\nit is patient\nit is hungry",
+                "you left something here once\nsomething that forgot how to wait"
+            };
+        }
+
+        private List<string> GetDefaultWallTexts()
+        {
+            return new List<string>
+            {
+                "THE EXIT IS A LIE YOU TOLD YOURSELF",
+                "you were never alone here",
+                "time is a spiral and you are falling up",
+                "REMEMBER WHAT YOU BURIED",
+                "the mirror knows your real name",
+                "who are you when no one is watching",
+                "the truth is behind your eyes",
+                "you cannot wake from what you are",
+                "▓▒░ SIGNAL LOST ░▒▓",
+                "they are listening through your ears",
+                "this is not the first time",
+                "the door opens inward"
+            };
+        }
+
+        private List<string> GetDefaultWhispers()
+        {
+            return new List<string>
+            {
+                "i see you",
+                "you know what you did",
+                "wake up",
+                "don't trust the light",
+                "it's almost time",
+                "remember me",
+                "you're not alone",
+                "look behind you",
+                "breathe",
+                "it was always you"
+            };
+        }
+
+        #endregion
+    }
+
+    #region Data Types
+
+    public enum DreamRequestType
+    {
+        Narrative,
+        WallText,
+        Whisper,
+        Atmosphere
+    }
+
+    public class DreamAIRequest
+    {
+        public DreamRequestType requestType;
+        public DreamConfig config;
+        public DreamContext context;
+        public Action<DreamAtmosphereData> atmosphereCallback;
+    }
+
+    public class DreamContext
+    {
+        public string dreamTheme;
+        public DreamTriggerType triggerType;
+        public bool isUnbound;
+        public string symbolism;
+        public CristalState currentState;
+        public List<CristalState> visitedStates;
+        public List<KeywordEntry> topKeywords;
+        public float emotionalWeight;
+        public string dominantEmotion;
+        public float corruptionLevel;
+        public ArcanaDefinition activeArcana;
+        public ArcanaDefinition sourceArcana;
+    }
+
+    public class DreamAIResponse
+    {
+        public DreamRequestType requestType;
+        public string content;
+        public bool isAIGenerated;
+    }
+
+    [Serializable]
+    public class DreamAtmosphereData
+    {
+        public Color fogColor = new Color(0.1f, 0.05f, 0.15f);
+        public float fogDensity = 0.03f;
+        public Color lightColor = new Color(0.5f, 0.3f, 0.7f);
+        public float lightIntensity = 0.5f;
+        public Color particleColor = new Color(0.7f, 0.5f, 0.9f);
+        public string musicMood = "haunting";
+        public float timeScale = 1f;
+        public float distortion = 0.1f;
+    }
+
+    #endregion
+}

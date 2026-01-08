@@ -63,6 +63,7 @@ namespace Cristal.CLI.Labyrinth
 
         private void Start()
         {
+            Debug.Log("[LabyrinthBootstrap] Start() called, _generateOnStart=" + _generateOnStart);
             if (_generateOnStart)
             {
                 GenerateLabyrinth();
@@ -72,6 +73,8 @@ namespace Cristal.CLI.Labyrinth
         [ContextMenu("Generate Labyrinth Now")]
         public void GenerateLabyrinth()
         {
+            Debug.Log("[LabyrinthBootstrap] GenerateLabyrinth() STARTING");
+            
             if (_debugMode)
             {
                 CristalLog.Info(LOG_SYSTEM, "Starting labyrinth generation...");
@@ -121,15 +124,28 @@ namespace Cristal.CLI.Labyrinth
                     ceiling
                 );
             }
+            
+            Debug.Log($"[LabyrinthBootstrap] Room generated: {(_generatedRoom != null ? _generatedRoom.name : "NULL")}");
 
-            // Step 4: Position player
+            // Step 4: Position player (find by tag if not assigned)
+            if (_playerTransform == null)
+            {
+                var playerObj = GameObject.FindGameObjectWithTag("Player");
+                if (playerObj != null)
+                {
+                    _playerTransform = playerObj.transform;
+                    Debug.Log($"[LabyrinthBootstrap] Found player: {_playerTransform.name}");
+                }
+            }
+            
             if (_playerTransform != null)
             {
                 _playerTransform.position = _playerSpawnOffset;
-                if (_debugMode)
-                {
-                    CristalLog.Info(LOG_SYSTEM, $"Positioned player at {_playerSpawnOffset}");
-                }
+                Debug.Log($"[LabyrinthBootstrap] Positioned player at {_playerSpawnOffset}");
+            }
+            else
+            {
+                Debug.LogWarning("[LabyrinthBootstrap] No player found to position!");
             }
 
             // Step 5: Position console

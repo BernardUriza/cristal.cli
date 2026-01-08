@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Cristal.CLI.Memory;
+using Cristal.CLI.StateMachine;
 
 namespace Cristal.CLI.Response
 {

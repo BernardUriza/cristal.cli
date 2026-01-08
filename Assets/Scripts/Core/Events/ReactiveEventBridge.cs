@@ -124,7 +124,7 @@ namespace Cristal.CLI.Core.Events
                     );
                     break;
 
-                case CristalState.Unbound:
+                case CristalState.UNBOUND:
                     ReactiveSystemBus.Publish(SymbolicEvent.Simple(
                         SymbolicSignalType.UnboundTriggered,
                         newState,

@@ -73,7 +73,7 @@ namespace Cristal.CLI.StateMachine
                 { CristalState.Invoked, new InvokedState() },
                 { CristalState.Error, new ErrorState() },
                 { CristalState.Locked, new LockedState() },
-                { CristalState.Unbound, new UnboundState() }
+                { CristalState.UNBOUND, new UnboundState() }
             };
         }
 

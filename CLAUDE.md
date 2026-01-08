@@ -1,8 +1,20 @@
 # CRISTAL.CLI - Unity Narrative Terminal Game
 
 Owner: Bernard Uriza Orozco
-Version: 0.1.0
+Version: 0.6.3
 Updated: 2026-01-06
+
+---
+
+## Current State
+
+**Dual Mode:**
+- `CrystalCLI.unity` - Terminal 2D
+- `Labyrinth.unity` - Mundo 3D explorable
+
+**Session:** Ver `Donde_quedamos.md`
+
+**MCP:** `mcp-unity` (8090), `mixamo` (descargas)
 
 ---
 

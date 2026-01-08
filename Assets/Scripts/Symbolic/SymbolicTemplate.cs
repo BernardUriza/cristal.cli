@@ -275,4 +275,30 @@ namespace Cristal.CLI.Symbolic
             return template;
         }
     }
+
+    /// <summary>
+    /// Represents a recurring symbolic pattern identified across dreams.
+    /// Used by the dream analysis systems to track thematic connections.
+    /// </summary>
+    [Serializable]
+    public class SymbolicPattern
+    {
+        public string PatternId;
+        public string Description;
+        public System.Collections.Generic.List<string> InvolvedSymbols = new System.Collections.Generic.List<string>();
+        public float Strength;
+        public int OccurrenceCount;
+        public DateTime FirstSeen;
+        public DateTime LastSeen;
+
+        public SymbolicPattern() { }
+
+        public SymbolicPattern(string id, string description)
+        {
+            PatternId = id;
+            Description = description;
+            FirstSeen = DateTime.Now;
+            LastSeen = DateTime.Now;
+        }
+    }
 }

@@ -10,10 +10,9 @@ GameObject:
   m_Component:
   - component: {fileID: 4000000000000000}
   - component: {fileID: 143000000000000}
-  - component: {fileID: 114000000000002}
   - component: {fileID: 114000000000001}
-  - component: {fileID: 5252003414849157614}
-  - component: {fileID: 114000000000003}
+  - component: {fileID: 114000000000002}
+  - component: {fileID: 114000000000005}
   m_Layer: 0
   m_Name: RitualOperator
   m_TagString: Player
@@ -35,7 +34,6 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 4000000000000001}
-  - {fileID: 4000000000000002}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!143 &143000000000000
@@ -63,7 +61,7 @@ CharacterController:
   m_SkinWidth: 0.08
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 0.9, z: 0}
---- !u!114 &114000000000002
+--- !u!114 &114000000000001
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -76,8 +74,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Cristal.CLI.Labyrinth.PlayerInputHandler
   _inputActions: {fileID: 0}
-  _lookSensitivity: 1
---- !u!114 &114000000000001
+  _lookSensitivity: 2
+--- !u!114 &114000000000002
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -89,11 +87,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2ef030ea3482c2d40be2fb036c496ca4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Cristal.CLI.Labyrinth.PlayerController
-  _walkSpeed: 4
-  _sprintSpeed: 7
-  _crouchSpeed: 2
+  _walkSpeed: 5
+  _sprintSpeed: 8
+  _crouchSpeed: 2.5
   _rotationSpeed: 10
-  _gravity: -15
+  _gravity: -20
   _jumpHeight: 1.2
   _groundCheckDistance: 0.2
   _groundMask:
@@ -101,7 +99,7 @@ MonoBehaviour:
     m_Bits: 4294967295
   _cameraTransform: {fileID: 0}
   _debugMode: 0
---- !u!114 &5252003414849157614
+--- !u!114 &114000000000005
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -110,33 +108,19 @@ MonoBehaviour:
   m_GameObject: {fileID: 1000000000000000}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 164cb697a163bc24f9973d7acbe4b769, type: 3}
+  m_Script: {fileID: 11500000, guid: 0f28e1d76313eec4b8dbfe006f76e0f6, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Cristal.CLI.Labyrinth.PlayerInputHandler
-  _inputActions: {fileID: 0}
-  _lookSensitivity: 1
---- !u!114 &114000000000003
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1000000000000000}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: de4597751d6d4134e936b4af6257db9b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Cristal.CLI.Labyrinth.PlayerInteraction
-  _interactRange: 3
-  _interactableMask:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  _raycastOrigin: {fileID: 0}
-  _promptPanel: {fileID: 0}
-  _promptText: {fileID: 0}
-  _defaultPromptFormat: Press E to {0}
-  _playerCamera: {fileID: 0}
-  _debugMode: 0
+  m_EditorClassIdentifier: Assembly-CSharp::Cristal.CLI.Labyrinth.PlayerVisualEnhancer
+  _primaryColor: {r: 0.2, g: 0.9, b: 0.6, a: 1}
+  _secondaryColor: {r: 0.1, g: 0.4, b: 0.8, a: 1}
+  _pulseSpeed: 2
+  _rotationSpeed: 30
+  _hoverAmplitude: 0.1
+  _hoverSpeed: 1.5
+  _useOctahedron: 1
+  _orbitingSpheres: 3
+  _orbitRadius: 0.8
+  _orbitSpeed: 60
 --- !u!1 &1000000000000001
 GameObject:
   m_ObjectHideFlags: 0
@@ -163,9 +147,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1000000000000001}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0.9, z: 0}
-  m_LocalScale: {x: 0.6, y: 0.9, z: 0.6}
+  m_LocalScale: {x: 0.6, y: 1.2, z: 0.6}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4000000000000000}
@@ -227,155 +211,3 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!1 &1000000000000002
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 4000000000000002}
-  m_Layer: 0
-  m_Name: CameraRig
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &4000000000000002
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1000000000000002}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 4000000000000003}
-  m_Father: {fileID: 4000000000000000}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1000000000000003
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 4000000000000003}
-  - component: {fileID: 20000000000000}
-  - component: {fileID: 81000000000000}
-  - component: {fileID: 114000000000004}
-  m_Layer: 0
-  m_Name: PlayerCamera
-  m_TagString: MainCamera
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &4000000000000003
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1000000000000003}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0.1305262, y: 0, z: 0, w: 0.9914449}
-  m_LocalPosition: {x: 0, y: 2.5, z: -4}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 4000000000000002}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!20 &20000000000000
-Camera:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1000000000000003}
-  m_Enabled: 1
-  serializedVersion: 2
-  m_ClearFlags: 1
-  m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
-  m_projectionMatrixMode: 1
-  m_GateFitMode: 2
-  m_FOVAxisMode: 0
-  m_Iso: 200
-  m_ShutterSpeed: 0.005
-  m_Aperture: 16
-  m_FocusDistance: 10
-  m_FocalLength: 50
-  m_BladeCount: 5
-  m_Curvature: {x: 2, y: 11}
-  m_BarrelClipping: 0.25
-  m_Anamorphism: 0
-  m_SensorSize: {x: 36, y: 24}
-  m_LensShift: {x: 0, y: 0}
-  m_NormalizedViewPortRect:
-    serializedVersion: 2
-    x: 0
-    y: 0
-    width: 1
-    height: 1
-  near clip plane: 0.1
-  far clip plane: 100
-  field of view: 60
-  orthographic: 0
-  orthographic size: 5
-  m_Depth: 0
-  m_CullingMask:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_RenderingPath: -1
-  m_TargetTexture: {fileID: 0}
-  m_TargetDisplay: 0
-  m_TargetEye: 3
-  m_HDR: 1
-  m_AllowMSAA: 1
-  m_AllowDynamicResolution: 0
-  m_ForceIntoRT: 0
-  m_OcclusionCulling: 1
-  m_StereoConvergence: 10
-  m_StereoSeparation: 0.022
---- !u!81 &81000000000000
-AudioListener:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1000000000000003}
-  m_Enabled: 1
---- !u!114 &114000000000004
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1000000000000003}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7484d360d60fa7a46847186b71ee0f2e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Cristal.CLI.Labyrinth.PlayerCamera
-  _target: {fileID: 0}
-  _offset: {x: 0, y: 2.5, z: -4}
-  _followSmoothSpeed: 8
-  _lookSensitivity: 2
-  _minPitch: -30
-  _maxPitch: 60
-  _orbitDistance: 4
-  _consoleFocusDuration: 0.5
-  _consoleFocusOffset: {x: 0, y: 0.5, z: 1.5}
-  _collisionRadius: 0.3
-  _collisionMask:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  _minDistance: 1
-  _debugMode: 0

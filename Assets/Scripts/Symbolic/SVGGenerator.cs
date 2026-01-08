@@ -3,7 +3,7 @@ using System.Text;
 using System.Collections.Generic;
 using UnityEngine;
 using Cristal.CLI.Core.Events;
-using Cristal.CLI.Memory;
+using Cristal.CLI.StateMachine;
 
 namespace Cristal.CLI.Symbolic
 {
@@ -66,9 +66,9 @@ namespace Cristal.CLI.Symbolic
             {
                 foreach (var element in template.decorativeElements)
                 {
-                    float offsetX = (_random.NextSingle() - 0.5f) * 100f * template.chaosLevel;
-                    float offsetY = (_random.NextSingle() - 0.5f) * 100f * template.chaosLevel;
-                    float scale = 0.3f + _random.NextSingle() * 0.4f;
+                    float offsetX = ((float)_random.NextDouble() - 0.5f) * 100f * template.chaosLevel;
+                    float offsetY = ((float)_random.NextDouble() - 0.5f) * 100f * template.chaosLevel;
+                    float scale = 0.3f + (float)_random.NextDouble() * 0.4f;
 
                     sb.AppendLine(GenerateElement(element, template, CENTER + offsetX, CENTER + offsetY, MAX_RADIUS * scale));
                 }
@@ -250,7 +250,7 @@ namespace Cristal.CLI.Symbolic
             {
                 if (template.pulseSpeed > 0) classes += "pulsing ";
                 if (template.rotationSpeed > 0) classes += "rotating ";
-                if (template.glitchProbability > 0 && _random.NextSingle() < template.glitchProbability) classes += "glitching ";
+                if (template.glitchProbability > 0 && (float)_random.NextDouble() < template.glitchProbability) classes += "glitching ";
             }
 
             string groupStart = string.IsNullOrEmpty(classes)
@@ -394,7 +394,7 @@ namespace Cristal.CLI.Symbolic
             for (int i = 0; i < points; i++)
             {
                 float angle = i * 2 * Mathf.PI / points;
-                float variation = 1f + (_random.NextSingle() - 0.5f) * template.chaosLevel * 0.5f;
+                float variation = 1f + ((float)_random.NextDouble() - 0.5f) * template.chaosLevel * 0.5f;
                 float r = radius * variation;
                 pathPoints.Add((cx + r * Mathf.Cos(angle), cy + r * Mathf.Sin(angle)));
             }
@@ -462,14 +462,14 @@ namespace Cristal.CLI.Symbolic
 
             for (int i = 0; i < segments; i++)
             {
-                float x = cx - radius + _random.NextSingle() * radius * 2;
-                float y = cy - radius + _random.NextSingle() * radius * 2;
-                float w = 10 + _random.NextSingle() * 100;
-                float h = 2 + _random.NextSingle() * 20;
+                float x = cx - radius + (float)_random.NextDouble() * radius * 2;
+                float y = cy - radius + (float)_random.NextDouble() * radius * 2;
+                float w = 10 + (float)_random.NextDouble() * 100;
+                float h = 2 + (float)_random.NextDouble() * 20;
 
-                float offsetX = (_random.NextSingle() - 0.5f) * 20 * template.chaosLevel;
+                float offsetX = ((float)_random.NextDouble() - 0.5f) * 20 * template.chaosLevel;
 
-                string color = _random.NextSingle() > 0.5f ? element.strokeColor : template.AccentHex;
+                string color = (float)_random.NextDouble() > 0.5f ? element.strokeColor : template.AccentHex;
 
                 sb.AppendLine($@"    <rect x=""{x + offsetX:F1}"" y=""{y:F1}"" width=""{w:F1}"" height=""{h:F1}"" fill=""{color}"" opacity=""0.8""/>");
             }
@@ -478,7 +478,7 @@ namespace Cristal.CLI.Symbolic
             for (int i = 0; i < 10; i++)
             {
                 float y = cy - radius + i * radius * 0.2f;
-                if (_random.NextSingle() < 0.3f)
+                if ((float)_random.NextDouble() < 0.3f)
                 {
                     sb.AppendLine($@"    <line x1=""{cx - radius:F1}"" y1=""{y:F1}"" x2=""{cx + radius:F1}"" y2=""{y:F1}"" stroke=""{element.strokeColor}"" stroke-width=""1"" opacity=""0.3""/>");
                 }
@@ -525,20 +525,20 @@ namespace Cristal.CLI.Symbolic
 
             for (int i = 0; i < segments; i++)
             {
-                float startAngle = _random.NextSingle() * 2 * Mathf.PI;
-                float length = radius * (0.3f + _random.NextSingle() * 0.7f);
+                float startAngle = (float)_random.NextDouble() * 2 * Mathf.PI;
+                float length = radius * (0.3f + (float)_random.NextDouble() * 0.7f);
 
-                float x1 = cx + _random.NextSingle() * radius * 0.5f - radius * 0.25f;
-                float y1 = cy + _random.NextSingle() * radius * 0.5f - radius * 0.25f;
+                float x1 = cx + (float)_random.NextDouble() * radius * 0.5f - radius * 0.25f;
+                float y1 = cy + (float)_random.NextDouble() * radius * 0.5f - radius * 0.25f;
                 float x2 = x1 + length * Mathf.Cos(startAngle);
                 float y2 = y1 + length * Mathf.Sin(startAngle);
 
                 sb.AppendLine($@"    <line x1=""{x1:F1}"" y1=""{y1:F1}"" x2=""{x2:F1}"" y2=""{y2:F1}"" stroke=""{element.strokeColor}"" stroke-width=""{element.strokeWidth:F1}"" stroke-linecap=""round"" filter=""url(#glow)""/>");
 
                 // Add branching
-                if (_random.NextSingle() > 0.5f)
+                if ((float)_random.NextDouble() > 0.5f)
                 {
-                    float branchAngle = startAngle + (_random.NextSingle() > 0.5f ? 1 : -1) * Mathf.PI / 4;
+                    float branchAngle = startAngle + ((float)_random.NextDouble() > 0.5f ? 1 : -1) * Mathf.PI / 4;
                     float branchLength = length * 0.4f;
                     float midX = (x1 + x2) / 2;
                     float midY = (y1 + y2) / 2;
@@ -598,7 +598,7 @@ namespace Cristal.CLI.Symbolic
                 CristalState.Corrupted => SymbolicArchetype.TheCorruption,
                 CristalState.Echo => SymbolicArchetype.TheEcho,
                 CristalState.Remembering => SymbolicArchetype.TheMemory,
-                CristalState.Unbound => SymbolicArchetype.TheUnbound,
+                CristalState.UNBOUND => SymbolicArchetype.TheUnbound,
                 CristalState.Invoked => SymbolicArchetype.TheMagician,
                 CristalState.Seeking => SymbolicArchetype.TheHermit,
                 CristalState.Locked => SymbolicArchetype.TheVoid,

@@ -1,0 +1,395 @@
+using System.Collections.Generic;
+using System.Text;
+using UnityEngine;
+using Cristal.CLI.Core;
+using Cristal.CLI.Memory;
+using Cristal.CLI.Arcana;
+using Cristal.CLI.StateMachine;
+using Cristal.CLI.AI.Dreams;
+
+namespace Cristal.CLI.Memory
+{
+    /// <summary>
+    /// Bridge between CristalMemory and Dream AI systems.
+    /// Exposes memory data in a format suitable for AI prompt building.
+    /// Tracks dream-specific memory fragments.
+    /// </summary>
+    public class DreamMemoryBridge : MonoBehaviour
+    {
+        public static DreamMemoryBridge Instance { get; private set; }
+
+        [Header("Memory Filtering")]
+        [SerializeField] private int _maxKeywordsForContext = 10;
+        [SerializeField] private int _maxCommandsForContext = 20;
+        [SerializeField] private float _emotionalWeightThreshold = 0.3f;
+
+        [Header("Dream Memory")]
+        [SerializeField] private int _maxDreamFragments = 50;
+
+        // Dream-specific memory
+        private List<DreamFragment> _dreamFragments = new List<DreamFragment>();
+        private Dictionary<string, int> _symbolEncounters = new Dictionary<string, int>();
+        private int _totalDreamsEntered;
+        private float _totalDreamTime;
+
+        // Properties
+        public int TotalDreamsEntered => _totalDreamsEntered;
+        public float TotalDreamTime => _totalDreamTime;
+        public IReadOnlyList<DreamFragment> DreamFragments => _dreamFragments;
+
+        #region Unity Lifecycle
+
+        private void Awake()
+        {
+            if (Instance != null && Instance != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
+            Instance = this;
+            ServiceLocator.RegisterMono(this);
+        }
+
+        private void OnDestroy()
+        {
+            ServiceLocator.Unregister<DreamMemoryBridge>();
+            if (Instance == this) Instance = null;
+        }
+
+        #endregion
+
+        #region Context Building
+
+        /// <summary>
+        /// Build a complete dream context from current memory state.
+        /// </summary>
+        public DreamContext BuildDreamContext(string dreamTheme = null)
+        {
+            var memory = CristalMemory.Instance;
+            var arcanaSystem = ArcanaSystem.Instance;
+
+            ArcanaDefinition activeArcana = null;
+            if (memory?.Data?.arcana?.currentlyActive.HasValue == true)
+            {
+                activeArcana = arcanaSystem?.GetArcana(memory.Data.arcana.currentlyActive.Value);
+            }
+
+            return new DreamContext
+            {
+                CurrentState = memory?.Data?.stateFlags.lastState ?? CristalState.Waiting,
+                ActiveArcana = activeArcana,
+                DominantEmotion = memory?.Data?.stateFlags.dominantEmotion ?? "neutral",
+                CorruptionLevel = memory?.Data?.stateFlags.corruptionLevel ?? 0f,
+                RecentKeywords = GetRecentKeywords(),
+                DreamTheme = dreamTheme,
+                EmotionalIntensity = memory?.GetEmotionalWeight() ?? 0f
+            };
+        }
+
+        /// <summary>
+        /// Get filtered keywords for AI context.
+        /// </summary>
+        public List<string> GetRecentKeywords()
+        {
+            var memory = CristalMemory.Instance;
+            if (memory?.Data == null) return new List<string>();
+
+            return memory.GetRecentKeywords(_maxKeywordsForContext) ?? new List<string>();
+        }
+
+        /// <summary>
+        /// Get emotional profile summary for AI.
+        /// </summary>
+        public string GetEmotionalProfile()
+        {
+            var memory = CristalMemory.Instance;
+            if (memory?.Data == null) return "unknown";
+
+            var data = memory.Data;
+            var sb = new StringBuilder();
+
+            sb.Append(data.stateFlags.dominantEmotion ?? "neutral");
+
+            if (data.stateFlags.corruptionLevel > 0.5f)
+            {
+                sb.Append(" (heavily corrupted)");
+            }
+            else if (data.stateFlags.corruptionLevel > 0.2f)
+            {
+                sb.Append(" (partially corrupted)");
+            }
+
+            if (data.stateFlags.echoCount > 5)
+            {
+                sb.Append(", echoing");
+            }
+
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// Get a narrative summary of the player's journey for AI.
+        /// </summary>
+        public string GetJourneySummary()
+        {
+            var memory = CristalMemory.Instance;
+            if (memory?.Data == null) return "The journey is just beginning.";
+
+            var data = memory.Data;
+            var sb = new StringBuilder();
+
+            // Command count
+            sb.AppendLine($"Interactions: {data.commands.Count}");
+
+            // Unlocked arcana
+            if (data.arcana?.unlocked?.Count > 0)
+            {
+                sb.AppendLine($"Arcana discovered: {data.arcana.unlocked.Count}");
+            }
+
+            // Emotional journey
+            if (!string.IsNullOrEmpty(data.stateFlags.dominantEmotion))
+            {
+                sb.AppendLine($"Dominant feeling: {data.stateFlags.dominantEmotion}");
+            }
+
+            // Corruption
+            if (data.stateFlags.corruptionLevel > 0)
+            {
+                sb.AppendLine($"Corruption: {data.stateFlags.corruptionLevel:P0}");
+            }
+
+            // Dreams
+            if (_totalDreamsEntered > 0)
+            {
+                sb.AppendLine($"Dreams experienced: {_totalDreamsEntered}");
+            }
+
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// Get recent significant commands for AI context.
+        /// </summary>
+        public List<string> GetSignificantCommands()
+        {
+            var memory = CristalMemory.Instance;
+            if (memory?.Data?.commands == null) return new List<string>();
+
+            var result = new List<string>();
+            var commands = memory.Data.commands;
+
+            // Get last N commands that aren't system commands
+            for (int i = commands.Count - 1; i >= 0 && result.Count < _maxCommandsForContext; i--)
+            {
+                var cmd = commands[i];
+                if (!IsSystemCommand(cmd.input))
+                {
+                    result.Add(cmd.input);
+                }
+            }
+
+            result.Reverse();
+            return result;
+        }
+
+        private bool IsSystemCommand(string input)
+        {
+            if (string.IsNullOrEmpty(input)) return true;
+
+            string lower = input.ToLower().Trim();
+            return lower.StartsWith("set ") ||
+                   lower.StartsWith("debug ") ||
+                   lower == "help" ||
+                   lower == "status" ||
+                   lower == "themes" ||
+                   lower == "clear";
+        }
+
+        #endregion
+
+        #region Dream Memory
+
+        /// <summary>
+        /// Record entering a dream.
+        /// </summary>
+        public void RecordDreamEntry(string dreamName, DreamContext context)
+        {
+            _totalDreamsEntered++;
+
+            var fragment = new DreamFragment
+            {
+                dreamName = dreamName,
+                entryTime = Time.time,
+                context = context,
+                inscriptionsEncountered = new List<string>(),
+                symbolsEncountered = new List<string>()
+            };
+
+            _dreamFragments.Add(fragment);
+
+            // Trim if too many
+            while (_dreamFragments.Count > _maxDreamFragments)
+            {
+                _dreamFragments.RemoveAt(0);
+            }
+
+            CristalLog.Event("DreamMemoryBridge", $"Dream entry recorded: {dreamName}");
+        }
+
+        /// <summary>
+        /// Record exiting a dream.
+        /// </summary>
+        public void RecordDreamExit(float duration, string exitReason)
+        {
+            _totalDreamTime += duration;
+
+            if (_dreamFragments.Count > 0)
+            {
+                var last = _dreamFragments[_dreamFragments.Count - 1];
+                last.duration = duration;
+                last.exitReason = exitReason;
+            }
+
+            CristalLog.Event("DreamMemoryBridge", $"Dream exit: {exitReason}, duration: {duration:F1}s");
+        }
+
+        /// <summary>
+        /// Record encountering a wall inscription.
+        /// </summary>
+        public void RecordInscription(string inscription)
+        {
+            if (_dreamFragments.Count > 0)
+            {
+                _dreamFragments[_dreamFragments.Count - 1].inscriptionsEncountered.Add(inscription);
+            }
+        }
+
+        /// <summary>
+        /// Record encountering a symbol.
+        /// </summary>
+        public void RecordSymbolEncounter(string symbolName)
+        {
+            if (!_symbolEncounters.ContainsKey(symbolName))
+            {
+                _symbolEncounters[symbolName] = 0;
+            }
+            _symbolEncounters[symbolName]++;
+
+            if (_dreamFragments.Count > 0)
+            {
+                _dreamFragments[_dreamFragments.Count - 1].symbolsEncountered.Add(symbolName);
+            }
+        }
+
+        /// <summary>
+        /// Get the most frequently encountered symbols.
+        /// </summary>
+        public List<string> GetFrequentSymbols(int count = 5)
+        {
+            var sorted = new List<KeyValuePair<string, int>>(_symbolEncounters);
+            sorted.Sort((a, b) => b.Value.CompareTo(a.Value));
+
+            var result = new List<string>();
+            for (int i = 0; i < Mathf.Min(count, sorted.Count); i++)
+            {
+                result.Add(sorted[i].Key);
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Get dream-specific context for AI.
+        /// </summary>
+        public string GetDreamHistorySummary()
+        {
+            if (_totalDreamsEntered == 0)
+            {
+                return "This is the first dream.";
+            }
+
+            var sb = new StringBuilder();
+            sb.AppendLine($"Dreams visited: {_totalDreamsEntered}");
+            sb.AppendLine($"Total dream time: {_totalDreamTime:F0} seconds");
+
+            var frequentSymbols = GetFrequentSymbols(3);
+            if (frequentSymbols.Count > 0)
+            {
+                sb.AppendLine($"Recurring symbols: {string.Join(", ", frequentSymbols)}");
+            }
+
+            // Last few dream names
+            if (_dreamFragments.Count > 0)
+            {
+                int count = Mathf.Min(3, _dreamFragments.Count);
+                var recentDreams = new List<string>();
+                for (int i = _dreamFragments.Count - count; i < _dreamFragments.Count; i++)
+                {
+                    recentDreams.Add(_dreamFragments[i].dreamName);
+                }
+                sb.AppendLine($"Recent dreams: {string.Join(", ", recentDreams)}");
+            }
+
+            return sb.ToString();
+        }
+
+        #endregion
+
+        #region Persistence
+
+        /// <summary>
+        /// Export dream memory for save system.
+        /// </summary>
+        public DreamMemoryExport ExportDreamMemory()
+        {
+            return new DreamMemoryExport
+            {
+                totalDreamsEntered = _totalDreamsEntered,
+                totalDreamTime = _totalDreamTime,
+                symbolEncounters = new Dictionary<string, int>(_symbolEncounters),
+                recentFragments = new List<DreamFragment>(_dreamFragments)
+            };
+        }
+
+        /// <summary>
+        /// Import dream memory from save.
+        /// </summary>
+        public void ImportDreamMemory(DreamMemoryExport data)
+        {
+            if (data == null) return;
+
+            _totalDreamsEntered = data.totalDreamsEntered;
+            _totalDreamTime = data.totalDreamTime;
+            _symbolEncounters = new Dictionary<string, int>(data.symbolEncounters ?? new Dictionary<string, int>());
+            _dreamFragments = new List<DreamFragment>(data.recentFragments ?? new List<DreamFragment>());
+        }
+
+        #endregion
+    }
+
+    #region Supporting Types
+
+    [System.Serializable]
+    public class DreamFragment
+    {
+        public string dreamName;
+        public float entryTime;
+        public float duration;
+        public string exitReason;
+        public DreamContext context;
+        public List<string> inscriptionsEncountered;
+        public List<string> symbolsEncountered;
+    }
+
+    [System.Serializable]
+    public class DreamMemoryExport
+    {
+        public int totalDreamsEntered;
+        public float totalDreamTime;
+        public Dictionary<string, int> symbolEncounters;
+        public List<DreamFragment> recentFragments;
+    }
+
+    #endregion
+}

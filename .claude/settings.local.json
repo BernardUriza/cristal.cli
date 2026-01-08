@@ -12,7 +12,15 @@
       "mcp__mcp-unity__create_prefab",
       "mcp__mcp-unity__add_package",
       "mcp__mcp-unity__update_gameobject",
-      "WebSearch"
+      "WebSearch",
+      "Bash(powershell -Command:*)",
+      "Bash(tasklist:*)",
+      "Bash(findstr:*)",
+      "Bash(dir \"C:\\\\Users\\\\buo45\\\\cristal.cli\\\\Temp\" /b)"
     ]
-  }
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "mixamo"
+  ]
 }

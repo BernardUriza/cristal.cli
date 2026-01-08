@@ -4,6 +4,7 @@ using Cristal.CLI.Core;
 using Cristal.CLI.Memory;
 using Cristal.CLI.StateMachine;
 using Cristal.CLI.Ritual;
+using Cristal.CLI.Labyrinth.Console;
 
 namespace Cristal.CLI.Labyrinth
 {

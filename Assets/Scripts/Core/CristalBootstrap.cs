@@ -5,7 +5,7 @@ using Cristal.CLI.Response;
 using Cristal.CLI.Arcana;
 using Cristal.CLI.Effects;
 using Cristal.CLI.AI;
-using Cristal.CLI.Ritual;
+// TODO Phase 9: using Cristal.CLI.Ritual;
 
 namespace Cristal.CLI.Core
 {
@@ -32,8 +32,8 @@ namespace Cristal.CLI.Core
         [SerializeField] private ArcanaSystem _arcanaSystem;
         [SerializeField] private VisualEffectsController _effectsController;
         [SerializeField] private AIIntegration _aiIntegration;
-        [SerializeField] private RitualSystem _ritualSystem;
-        [SerializeField] private VisionManager _visionManager;
+        // TODO Phase 9: [SerializeField] private RitualSystem _ritualSystem;
+        // TODO Phase 9: [SerializeField] private VisionManager _visionManager;
 
         private static bool _isInitialized;
 
@@ -73,8 +73,8 @@ namespace Cristal.CLI.Core
             // 3. Feature systems
             RegisterService(ref _arcanaSystem, "ArcanaSystem");
             RegisterService(ref _effectsController, "VisualEffectsController");
-            RegisterService(ref _ritualSystem, "RitualSystem");
-            RegisterService(ref _visionManager, "VisionManager");
+            // TODO Phase 9: RegisterService(ref _ritualSystem, "RitualSystem");
+            // TODO Phase 9: RegisterService(ref _visionManager, "VisionManager");
 
             // 4. AI (optional)
             if (_aiIntegration != null)

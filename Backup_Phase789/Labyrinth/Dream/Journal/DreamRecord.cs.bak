@@ -1,0 +1,282 @@
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+
+namespace Cristal.CLI.Labyrinth.Dream.Journal
+{
+    /// <summary>
+    /// Complete record of a single dream experience.
+    /// Persisted to disk for journal review and AI echo generation.
+    /// </summary>
+    [Serializable]
+    public class DreamRecord
+    {
+        // Identity
+        public string id;
+        public string themeName;
+        public string timestamp;
+        public float duration;
+
+        // Trigger context
+        public DreamTriggerType triggerType;
+        public int sourceArcanaId = -1;
+        public string sourceArcanaName;
+        public string triggerEmotion;
+        public float triggerEmotionalIntensity;
+
+        // Visual profile
+        public SerializableColor primaryColor;
+        public SerializableColor secondaryColor;
+        public float fogDensity;
+        public float distortionIntensity;
+        public bool wasUnbound;
+
+        // Structure
+        public int roomCount;
+        public List<DreamRoomRecord> rooms = new List<DreamRoomRecord>();
+
+        // Narrative content
+        public List<DreamNarrativeRecord> narratives = new List<DreamNarrativeRecord>();
+        public List<string> wallTexts = new List<string>();
+        public List<string> whispers = new List<string>();
+
+        // Symbols collected
+        public List<DreamSymbolRecord> symbolsEncountered = new List<DreamSymbolRecord>();
+        public List<string> keywordsReinforced = new List<string>();
+
+        // Emotional journey
+        public float entryEmotionalWeight;
+        public float exitEmotionalWeight;
+        public string dominantEmotionDuring;
+        public List<EmotionalMoment> emotionalMoments = new List<EmotionalMoment>();
+
+        // Exit context
+        public DreamExitReason exitReason;
+        public float completionPercentage;
+
+        // AI generation metadata
+        public bool hadAIContent;
+        public int aiFragmentsGenerated;
+        public List<string> aiPromptSeeds = new List<string>();
+
+        // Player behavior
+        public float timeSpentExploring;
+        public int roomsVisited;
+        public bool reachedCore;
+
+        // Alias properties for backward compatibility
+        public string Theme => themeName;
+        public List<DreamSymbolRecord> Symbols => symbolsEncountered;
+        public string StartTime => timestamp;
+        public List<DreamNarrativeRecord> Narratives => narratives;
+        public List<string> EmotionalJourney => emotionalMoments.ConvertAll(e => e.emotion);
+
+        public DreamRecord()
+        {
+            id = Guid.NewGuid().ToString("N").Substring(0, 12);
+            timestamp = DateTime.UtcNow.ToString("o");
+        }
+
+        public DreamRecord(DreamTunnel tunnel, DreamConfig config) : this()
+        {
+            themeName = config.themeName;
+            triggerType = config.triggerType;
+            sourceArcanaId = config.sourceId;
+            wasUnbound = config.isUnbound;
+            roomCount = config.roomCount;
+            fogDensity = config.fogDensity;
+            distortionIntensity = config.distortionIntensity;
+            primaryColor = new SerializableColor(config.primaryColor);
+            secondaryColor = new SerializableColor(config.secondaryColor);
+        }
+
+        /// <summary>
+        /// Generate a display title for the journal.
+        /// </summary>
+        public string GetDisplayTitle()
+        {
+            if (wasUnbound)
+            {
+                return "THE UNBINDING";
+            }
+
+            if (!string.IsNullOrEmpty(sourceArcanaName))
+            {
+                return $"Dream of {sourceArcanaName}";
+            }
+
+            if (!string.IsNullOrEmpty(triggerEmotion))
+            {
+                return $"Dream of {triggerEmotion}";
+            }
+
+            return themeName ?? $"Dream #{id.Substring(0, 6)}";
+        }
+
+        /// <summary>
+        /// Get a short summary for list display.
+        /// </summary>
+        public string GetSummary()
+        {
+            string exitText = exitReason switch
+            {
+                DreamExitReason.TimeExpired => "faded naturally",
+                DreamExitReason.ArcanaExpired => "arcana released",
+                DreamExitReason.PlayerExited => "awakened",
+                DreamExitReason.NarrativeComplete => "story ended",
+                DreamExitReason.Forced => "torn away",
+                _ => "ended"
+            };
+
+            return $"{roomsVisited}/{roomCount} rooms explored, {exitText}";
+        }
+
+        /// <summary>
+        /// Get the most significant symbols from this dream.
+        /// </summary>
+        public List<DreamSymbolRecord> GetSignificantSymbols(int count = 5)
+        {
+            var sorted = new List<DreamSymbolRecord>(symbolsEncountered);
+            sorted.Sort((a, b) => b.significance.CompareTo(a.significance));
+            return sorted.GetRange(0, Mathf.Min(count, sorted.Count));
+        }
+
+        /// <summary>
+        /// Calculate overall dream intensity (0-1).
+        /// </summary>
+        public float GetIntensity()
+        {
+            float baseIntensity = wasUnbound ? 1f : 0.5f;
+            float emotionalFactor = Mathf.Abs(entryEmotionalWeight) * 0.2f;
+            float distortionFactor = distortionIntensity * 0.3f;
+            float completionFactor = completionPercentage * 0.2f;
+
+            return Mathf.Clamp01(baseIntensity + emotionalFactor + distortionFactor + completionFactor);
+        }
+    }
+
+    /// <summary>
+    /// Record of a single room within a dream.
+    /// </summary>
+    [Serializable]
+    public class DreamRoomRecord
+    {
+        public int index;
+        public DreamRoomType roomType;
+        public float timeSpent;
+        public bool wasVisited;
+        public bool hadNarrative;
+        public DreamSpecialFeature specialFeature;
+        public List<string> textsDisplayed = new List<string>();
+    }
+
+    /// <summary>
+    /// Record of a narrative fragment displayed during dream.
+    /// </summary>
+    [Serializable]
+    public class DreamNarrativeRecord
+    {
+        public string text;
+        public NarrativeDisplayType displayType;
+        public float displayTime;
+        public int roomIndex;
+        public bool wasAIGenerated;
+        public SerializableColor textColor;
+
+        // Alias for backward compatibility
+        public string Text => text;
+    }
+
+    /// <summary>
+    /// Record of a symbol encountered or reinforced in dream.
+    /// </summary>
+    [Serializable]
+    public class DreamSymbolRecord
+    {
+        public string symbolId;
+        public string symbolName;
+        public SymbolCategory category;
+        public float significance;
+        public int encounterCount;
+        public string contextKeyword;
+        public bool wasNewDiscovery;
+
+        // Alias for backward compatibility
+        public string Symbol => symbolName;
+
+        public DreamSymbolRecord() { }
+
+        public DreamSymbolRecord(string id, string name, SymbolCategory cat)
+        {
+            symbolId = id;
+            symbolName = name;
+            category = cat;
+            encounterCount = 1;
+            significance = 0.5f;
+        }
+    }
+
+    /// <summary>
+    /// Categories of dream symbols.
+    /// </summary>
+    public enum SymbolCategory
+    {
+        Arcana,
+        Emotion,
+        Memory,
+        Vision,
+        Ritual,
+        Personal,
+        Universal,
+        Glitch
+    }
+
+    /// <summary>
+    /// Emotional moment captured during dream.
+    /// </summary>
+    [Serializable]
+    public class EmotionalMoment
+    {
+        public float timestamp;
+        public string emotion;
+        public float intensity;
+        public string trigger;
+    }
+
+    /// <summary>
+    /// Serializable color for JSON persistence.
+    /// </summary>
+    [Serializable]
+    public class SerializableColor
+    {
+        public float r, g, b, a;
+
+        public SerializableColor()
+        {
+            r = g = b = a = 1f;
+        }
+
+        public SerializableColor(Color color)
+        {
+            r = color.r;
+            g = color.g;
+            b = color.b;
+            a = color.a;
+        }
+
+        public Color ToColor()
+        {
+            return new Color(r, g, b, a);
+        }
+
+        public static implicit operator Color(SerializableColor sc)
+        {
+            return sc?.ToColor() ?? Color.white;
+        }
+
+        public static implicit operator SerializableColor(Color c)
+        {
+            return new SerializableColor(c);
+        }
+    }
+}

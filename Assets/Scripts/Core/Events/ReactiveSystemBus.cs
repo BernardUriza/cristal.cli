@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Cristal.CLI.StateMachine;
 
 namespace Cristal.CLI.Core.Events
 {
@@ -235,13 +236,13 @@ namespace Cristal.CLI.Core.Events
         /// </summary>
         public static void Publish(SymbolicSignalType signal, string source = null)
         {
-            Publish(SymbolicEvent.Simple(signal, Memory.CristalState.Waiting, source));
+            Publish(SymbolicEvent.Simple(signal, CristalState.Waiting, source));
         }
 
         /// <summary>
         /// Publish a signal with intensity.
         /// </summary>
-        public static void Publish(SymbolicSignalType signal, int intensity, Memory.CristalState state, string source = null)
+        public static void Publish(SymbolicSignalType signal, int intensity, CristalState state, string source = null)
         {
             Publish(SymbolicEvent.Effect(signal, intensity, state, source));
         }

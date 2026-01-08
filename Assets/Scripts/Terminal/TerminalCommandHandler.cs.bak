@@ -1,0 +1,625 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+using Cristal.CLI.Terminal.UI;
+using Cristal.CLI.StateMachine;
+using Cristal.CLI.Arcana;
+using Cristal.CLI.Ritual;
+using Cristal.CLI.Labyrinth.Dream.Journal;
+
+namespace Cristal.CLI.Terminal
+{
+    /// <summary>
+    /// Handles system/debug commands for the terminal.
+    /// Commands: set theme, debug, status, etc.
+    /// </summary>
+    public class TerminalCommandHandler : MonoBehaviour
+    {
+        public static TerminalCommandHandler Instance { get; private set; }
+
+        [Header("Settings")]
+        [SerializeField] private bool _enableDebugCommands = true;
+        [SerializeField] private string _debugCommandPrefix = "debug";
+
+        public event Action<string> OnCommandResponse;
+
+        private Dictionary<string, Func<string[], string>> _commands;
+
+        private void Awake()
+        {
+            if (Instance == null)
+            {
+                Instance = this;
+                InitializeCommands();
+            }
+            else
+            {
+                Destroy(gameObject);
+            }
+        }
+
+        private void InitializeCommands()
+        {
+            _commands = new Dictionary<string, Func<string[], string>>(StringComparer.OrdinalIgnoreCase)
+            {
+                { "set", HandleSetCommand },
+                { "theme", HandleThemeCommand },
+                { "themes", HandleListThemesCommand },
+                { "status", HandleStatusCommand },
+                { "debug", HandleDebugCommand },
+                { "help", HandleHelpCommand },
+                { "dream", HandleDreamCommand },
+                { "dreams", HandleDreamsCommand },
+                { "symbols", HandleSymbolsCommand }
+            };
+        }
+
+        /// <summary>
+        /// Try to process input as a system command.
+        /// Returns true if it was handled, false otherwise.
+        /// </summary>
+        public bool TryProcessCommand(string input, out string response)
+        {
+            response = null;
+            if (string.IsNullOrWhiteSpace(input)) return false;
+
+            string[] parts = input.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length == 0) return false;
+
+            string command = parts[0].ToLower();
+
+            if (_commands.TryGetValue(command, out var handler))
+            {
+                response = handler(parts);
+                return response != null;
+            }
+
+            return false;
+        }
+
+        #region Command Handlers
+
+        private string HandleSetCommand(string[] args)
+        {
+            if (args.Length < 3) return null;
+
+            string property = args[1].ToLower();
+
+            switch (property)
+            {
+                case "theme":
+                    string themeName = string.Join(" ", args, 2, args.Length - 2);
+                    return SetTheme(themeName);
+                
+                case "glitch":
+                    if (float.TryParse(args[2], out float glitchVal))
+                    {
+                        TerminalThemeManager.Instance?.SetGlitchIntensity(glitchVal);
+                        return $"Glitch intensity set to {glitchVal:F2}";
+                    }
+                    return "Invalid glitch value. Use: set glitch [0.0-1.0]";
+
+                case "scanlines":
+                    if (args[2].ToLower() == "on" || args[2] == "1")
+                    {
+                        var scanline = FindFirstObjectByType<ScanlineEffect>();
+                        scanline?.gameObject.SetActive(true);
+                        return "Scanlines enabled";
+                    }
+                    else if (args[2].ToLower() == "off" || args[2] == "0")
+                    {
+                        var scanline = FindFirstObjectByType<ScanlineEffect>();
+                        scanline?.gameObject.SetActive(false);
+                        return "Scanlines disabled";
+                    }
+                    return "Use: set scanlines [on|off]";
+
+                case "crt":
+                    var effect = FindFirstObjectByType<ScanlineEffect>();
+                    if (effect == null) return "ScanlineEffect not found";
+                    
+                    if (args[2].ToLower() == "advanced")
+                    {
+                        effect.SetMode(ScanlineEffect.EffectMode.Advanced);
+                        return "CRT mode: Advanced (shader-based)";
+                    }
+                    else if (args[2].ToLower() == "simple")
+                    {
+                        effect.SetMode(ScanlineEffect.EffectMode.Simple);
+                        return "CRT mode: Simple (texture-based)";
+                    }
+                    return "Use: set crt [simple|advanced]";
+
+                default:
+                    return null;
+            }
+        }
+
+        private string HandleThemeCommand(string[] args)
+        {
+            if (args.Length < 2)
+            {
+                return HandleListThemesCommand(args);
+            }
+
+            string themeName = string.Join(" ", args, 1, args.Length - 1);
+            return SetTheme(themeName);
+        }
+
+        private string SetTheme(string themeName)
+        {
+            if (TerminalThemeManager.Instance == null)
+            {
+                return "Theme system not initialized";
+            }
+
+            if (TerminalThemeManager.Instance.ApplyThemeByName(themeName))
+            {
+                return $"Theme changed to: {themeName}";
+            }
+
+            var available = TerminalThemeManager.Instance.GetAvailableThemeNames();
+            return $"Theme '{themeName}' not found. Available: {string.Join(", ", available)}";
+        }
+
+        private string HandleListThemesCommand(string[] args)
+        {
+            if (TerminalThemeManager.Instance == null)
+            {
+                return "Theme system not initialized";
+            }
+
+            var themes = TerminalThemeManager.Instance.GetAvailableThemeNames();
+            string current = TerminalThemeManager.Instance.LastAppliedThemeName;
+
+            return $"Available themes: {string.Join(", ", themes)}\nCurrent: {current}";
+        }
+
+        private string HandleStatusCommand(string[] args)
+        {
+            var lines = new List<string>
+            {
+                "=== CRISTAL STATUS ==="
+            };
+
+            // State machine
+            if (TerminalStateMachine.Instance != null)
+            {
+                lines.Add($"State: {TerminalStateMachine.Instance.CurrentStateId}");
+            }
+
+            // Theme
+            if (TerminalThemeManager.Instance != null)
+            {
+                lines.Add($"Theme: {TerminalThemeManager.Instance.LastAppliedThemeName}");
+                lines.Add($"Transitioning: {TerminalThemeManager.Instance.IsTransitioning}");
+            }
+
+            // Arcana
+            if (ArcanaSystem.Instance != null)
+            {
+                lines.Add($"Active Arcana: {(ArcanaSystem.Instance.HasActiveArcana ? ArcanaSystem.Instance.CurrentInvocation?.Definition?.name : "none")}");
+            }
+
+            // Ritual
+            if (RitualSystem.Instance != null)
+            {
+                lines.Add($"Ritual Active: {RitualSystem.Instance.IsRitualActive}");
+                lines.Add($"UNBOUND: {RitualSystem.Instance.IsUnboundActive}");
+            }
+
+            return string.Join("\n", lines);
+        }
+
+        private string HandleDebugCommand(string[] args)
+        {
+            if (!_enableDebugCommands)
+            {
+                return "Debug commands disabled";
+            }
+
+            if (args.Length < 2)
+            {
+                return "Debug commands: state, arcana, unbound, glitch, theme";
+            }
+
+            string subCommand = args[1].ToLower();
+
+            switch (subCommand)
+            {
+                case "state":
+                    if (args.Length < 3) return "Use: debug state [Waiting|Processing|Corrupted|Remembering|Echo|Unbound|...]";
+                    if (Enum.TryParse<CristalState>(args[2], true, out var newState))
+                    {
+                        TerminalStateMachine.Instance?.TransitionTo(newState);
+                        return $"State forced to: {newState}";
+                    }
+                    return $"Invalid state. Valid: {string.Join(", ", Enum.GetNames(typeof(CristalState)))}";
+
+                case "arcana":
+                    if (args.Length < 3) return "Use: debug arcana [name|id]";
+                    var arcana = ArcanaSystem.Instance?.GetArcana(args[2]);
+                    if (arcana != null)
+                    {
+                        ArcanaSystem.Instance?.Invoke(arcana);
+                        return $"Arcana invoked: {arcana.DisplayName}";
+                    }
+                    return $"Arcana '{args[2]}' not found";
+
+                case "unbound":
+                    // Trigger UNBOUND manually
+                    RitualSystem.Instance?.TriggerUnbound();
+                    return "UNBOUND triggered manually";
+
+                case "glitch":
+                    var scanline = FindFirstObjectByType<ScanlineEffect>();
+                    scanline?.TriggerGlitch();
+                    return "Glitch triggered";
+
+                case "theme":
+                    if (TerminalThemeManager.Instance != null)
+                    {
+                        return TerminalThemeManager.Instance.GetDebugInfo();
+                    }
+                    return "Theme manager not found";
+
+                case "reset":
+                    TerminalStateMachine.Instance?.TransitionTo(CristalState.Waiting);
+                    TerminalThemeManager.Instance?.ResetToDefault();
+                    return "State and theme reset to defaults";
+
+                default:
+                    return $"Unknown debug command: {subCommand}";
+            }
+        }
+
+        private string HandleDreamCommand(string[] args)
+        {
+            if (DreamJournal.Instance == null)
+            {
+                return "Dream journal not initialized. Enter the labyrinth first.";
+            }
+
+            if (args.Length < 2)
+            {
+                return HandleDreamsCommand(args); // Default to listing dreams
+            }
+
+            string subCommand = args[1].ToLower();
+
+            switch (subCommand)
+            {
+                case "log":
+                case "list":
+                    return HandleDreamsCommand(args);
+
+                case "last":
+                    var lastDream = DreamJournal.Instance.GetMostRecentDream();
+                    if (lastDream == null) return "No dreams recorded yet.";
+                    return FormatDreamDetail(lastDream);
+
+                case "view":
+                    if (args.Length < 3) return "Use: dream view [id|number]";
+                    if (int.TryParse(args[2], out int index))
+                    {
+                        var dreams = DreamJournal.Instance.GetAllDreams().ToList();
+                        if (index < 1 || index > dreams.Count)
+                            return $"Invalid dream number. You have {dreams.Count} recorded dreams.";
+                        return FormatDreamDetail(dreams[index - 1]);
+                    }
+                    // Try by ID
+                    var dreamById = DreamJournal.Instance.GetDreamById(args[2]);
+                    if (dreamById != null) return FormatDreamDetail(dreamById);
+                    return $"Dream '{args[2]}' not found.";
+
+                case "symbols":
+                    return HandleSymbolsCommand(args);
+
+                case "patterns":
+                    return HandlePatternsCommand(args);
+
+                case "stats":
+                    return HandleDreamStatsCommand(args);
+
+                case "search":
+                    if (args.Length < 3) return "Use: dream search [keyword]";
+                    string keyword = args[2].ToLower();
+                    return SearchDreams(keyword);
+
+                case "arcana":
+                    if (args.Length < 3) return "Use: dream arcana [arcana_id]";
+                    return GetDreamsByArcana(args[2]);
+
+                case "export":
+                    string path = DreamJournal.Instance.ExportToText();
+                    return string.IsNullOrEmpty(path) ? 
+                        "Export failed." : 
+                        $"Dreams exported to:\n{path}";
+
+                case "echo":
+                    return GetDreamEcho();
+
+                default:
+                    return @"Dream Journal Commands:
+  dream              - Show recent dreams
+  dream last         - View most recent dream
+  dream view [n|id]  - View dream by number or ID
+  dream symbols      - List tracked symbols
+  dream patterns     - Show detected patterns
+  dream stats        - Dream statistics
+  dream search [word] - Search in dreams
+  dream arcana [name] - Dreams with specific arcana
+  dream export       - Export journal to text
+  dream echo         - Receive an echo from past dreams";
+            }
+        }
+
+        private string HandleDreamsCommand(string[] args)
+        {
+            if (DreamJournal.Instance == null)
+            {
+                return "Dream journal not initialized.";
+            }
+
+            var dreams = DreamJournal.Instance.GetAllDreams().ToList();
+            
+            if (dreams.Count == 0)
+            {
+                return "No dreams recorded yet. Enter the labyrinth to dream.";
+            }
+
+            int count = Math.Min(5, dreams.Count);
+            var lines = new List<string>
+            {
+                $"=== DREAM LOG ({dreams.Count} total) ==="
+            };
+
+            for (int i = 0; i < count; i++)
+            {
+                var dream = dreams[dreams.Count - 1 - i]; // Most recent first
+                int num = dreams.Count - i;
+                lines.Add($"  [{num}] {dream.GetDisplayTitle()}");
+                lines.Add($"      {dream.duration / 60f:F1}min | {dream.roomsVisited} rooms | {FormatDate(dream.StartTime)}");
+            }
+
+            if (dreams.Count > count)
+            {
+                lines.Add($"\n  Use 'dream view [n]' to see more...");
+            }
+
+            return string.Join("\n", lines);
+        }
+
+        private string HandleSymbolsCommand(string[] args)
+        {
+            if (DreamSymbolTracker.Instance == null)
+            {
+                return "Symbol tracker not initialized.";
+            }
+
+            var symbols = DreamSymbolTracker.Instance.GetAllSymbols().ToList();
+            
+            if (symbols.Count == 0)
+            {
+                return "No symbols tracked yet. Dream deeper.";
+            }
+
+            var lines = new List<string>
+            {
+                $"=== TRACKED SYMBOLS ({symbols.Count}) ==="
+            };
+
+            // Group by category
+            var byCategory = symbols.GroupBy(s => s.Category).OrderBy(g => g.Key);
+
+            foreach (var group in byCategory)
+            {
+                lines.Add($"\n[{group.Key.ToString().ToUpper()}]");
+                foreach (var sym in group.OrderByDescending(s => s.Significance).Take(5))
+                {
+                    string bar = GetSignificanceBar(sym.Significance);
+                    lines.Add($"  {sym.Symbol,-20} {bar} x{sym.Encounters}");
+                }
+            }
+
+            return string.Join("\n", lines);
+        }
+
+        private string HandlePatternsCommand(string[] args)
+        {
+            if (DreamSymbolTracker.Instance == null)
+            {
+                return "Symbol tracker not initialized.";
+            }
+
+            var patterns = DreamSymbolTracker.Instance.GetDetectedPatterns().ToList();
+            
+            if (patterns.Count == 0)
+            {
+                return "No symbolic patterns detected yet.\nContinue dreaming to reveal hidden connections.";
+            }
+
+            var lines = new List<string>
+            {
+                $"=== DETECTED PATTERNS ({patterns.Count}) ==="
+            };
+
+            foreach (var pattern in patterns)
+            {
+                lines.Add($"\n  ◆ {pattern.PatternId.Replace("_", " ").ToUpper()}");
+                lines.Add($"    {pattern.Description}");
+                lines.Add($"    Strength: {pattern.Strength:F2} | First: {FormatDate(pattern.FirstDetected)}");
+            }
+
+            return string.Join("\n", lines);
+        }
+
+        private string HandleDreamStatsCommand(string[] args)
+        {
+            var stats = DreamJournal.Instance?.GetStatistics();
+            
+            if (stats == null || stats.TotalDreams == 0)
+            {
+                return "No dream statistics available yet.";
+            }
+
+            var lines = new List<string>
+            {
+                "=== DREAM STATISTICS ===",
+                $"  Total Dreams: {stats.TotalDreams}",
+                $"  Total Time: {stats.TotalDurationMinutes:F1} minutes",
+                $"  Average Duration: {stats.AverageDurationMinutes:F1} minutes",
+                $"  Total Rooms: {stats.TotalRoomsExplored}",
+                $"  Total Symbols: {stats.TotalSymbolsCollected}",
+                ""
+            };
+
+            if (stats.ArcanaBreakdown.Count > 0)
+            {
+                lines.Add("  ARCANA PRESENCE:");
+                foreach (var kvp in stats.ArcanaBreakdown.OrderByDescending(k => k.Value).Take(5))
+                {
+                    lines.Add($"    {kvp.Key}: {kvp.Value} dreams");
+                }
+            }
+
+            return string.Join("\n", lines);
+        }
+
+        private string SearchDreams(string keyword)
+        {
+            var dreams = DreamJournal.Instance.GetAllDreams()
+                .Where(d => 
+                    d.Narratives.Any(n => n.Text.ToLower().Contains(keyword)) ||
+                    d.Symbols.Any(s => s.Symbol.ToLower().Contains(keyword)) ||
+                    d.Theme.ToLower().Contains(keyword))
+                .ToList();
+
+            if (dreams.Count == 0)
+            {
+                return $"No dreams found containing '{keyword}'.";
+            }
+
+            var lines = new List<string>
+            {
+                $"=== DREAMS WITH '{keyword.ToUpper()}' ({dreams.Count}) ==="
+            };
+
+            foreach (var dream in dreams.Take(5))
+            {
+                lines.Add($"\n  ◇ {dream.GetDisplayTitle()}");
+                
+                // Show matching fragment
+                var matchingNarrative = dream.Narratives.FirstOrDefault(n => 
+                    n.Text.ToLower().Contains(keyword));
+                if (matchingNarrative != null)
+                {
+                    string fragment = matchingNarrative.Text.Length > 60 ? 
+                        matchingNarrative.Text.Substring(0, 60) + "..." :
+                        matchingNarrative.Text;
+                    lines.Add($"    \"{fragment}\"");
+                }
+            }
+
+            return string.Join("\n", lines);
+        }
+
+        private string GetDreamsByArcana(string arcanaId)
+        {
+            // TODO: Fix when DreamJournal API is updated
+            return $"Dream search by arcana '{arcanaId}' - feature pending.";
+        }
+
+        private string GetDreamEcho()
+        {
+            // TODO: Fix when DreamJournal API is updated
+            return "=== DREAM ECHO ===\nThe void whispers... but no dreams have been recorded yet.";
+        }
+
+        private string FormatDreamDetail(DreamRecord dream)
+        {
+            var lines = new List<string>
+            {
+                $"=== {dream.GetDisplayTitle().ToUpper()} ===",
+                $"Theme: {dream.Theme ?? "Unknown"}",
+                $"Duration: {dream.duration:F1} seconds",
+                $"Rooms: {dream.roomsVisited}",
+                ""
+            };
+
+            // Narratives
+            if (dream.Narratives.Count > 0)
+            {
+                lines.Add("FRAGMENTS:");
+                foreach (var narrative in dream.Narratives.Take(5))
+                {
+                    lines.Add($"  \"{narrative.Text}\"");
+                }
+                lines.Add("");
+            }
+
+            // Symbols
+            if (dream.Symbols.Count > 0)
+            {
+                lines.Add("SYMBOLS:");
+                var symbolStr = string.Join(", ", dream.Symbols.Take(8).Select(s => s.Symbol));
+                lines.Add($"  {symbolStr}");
+            }
+
+            return string.Join("\n", lines);
+        }
+
+        private string FormatDate(string dateStr)
+        {
+            if (!DateTime.TryParse(dateStr, out var date)) return dateStr;
+            var diff = DateTime.Now - date;
+            if (diff.TotalMinutes < 60) return $"{(int)diff.TotalMinutes}m ago";
+            if (diff.TotalHours < 24) return $"{(int)diff.TotalHours}h ago";
+            if (diff.TotalDays < 7) return $"{(int)diff.TotalDays}d ago";
+            return date.ToString("MMM dd");
+        }
+
+        private string GetSignificanceBar(float significance)
+        {
+            int filled = Mathf.RoundToInt(significance * 10);
+            return new string('█', filled) + new string('░', 10 - filled);
+        }
+
+        private string HandleHelpCommand(string[] args)
+        {
+            return @"CRISTAL Terminal Commands:
+  set theme [name]     - Change visual theme
+  set glitch [0-1]     - Set glitch intensity
+  set scanlines [on|off]
+  set crt [simple|advanced]
+  
+  themes               - List available themes
+  status               - Show system status
+  
+  dream                - Dream journal overview
+  dream last           - View most recent dream
+  dream view [n]       - View dream by number
+  dream symbols        - Show tracked symbols
+  dream patterns       - Show detected patterns
+  dream stats          - Dream statistics
+  dream echo           - Echo from past dreams
+  
+  debug state [name]   - Force state transition
+  debug arcana [name]  - Force arcana invocation
+  debug unbound        - Trigger UNBOUND
+  debug glitch         - Trigger glitch effect
+  debug reset          - Reset to defaults";
+        }
+
+        #endregion
+
+        private void OnDestroy()
+        {
+            if (Instance == this)
+            {
+                Instance = null;
+            }
+        }
+    }
+}

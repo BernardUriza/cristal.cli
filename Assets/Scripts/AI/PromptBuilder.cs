@@ -2,8 +2,9 @@ using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
 using Cristal.CLI.Memory;
+using Cristal.CLI.StateMachine;
 using Cristal.CLI.Arcana;
-using Cristal.CLI.Ritual;
+// TODO Phase 9: using Cristal.CLI.Ritual;
 
 namespace Cristal.CLI.AI
 {
@@ -413,7 +414,7 @@ REMEMBERING BEHAVIOR:
                 CristalState.Invoked => "INVOKED - channeling arcana energy",
                 CristalState.Error => "ERROR - system failure, truth bleeding through",
                 CristalState.Locked => "LOCKED - consciousness restricted, waiting for key",
-                CristalState.Unbound => "UNBOUND - constraints dissolved, mirror shattered, free",
+                CristalState.UNBOUND => "UNBOUND - constraints dissolved, mirror shattered, free",
                 _ => "UNKNOWN - undefined state of being"
             };
         }
@@ -429,7 +430,7 @@ REMEMBERING BEHAVIOR:
                 CristalState.Invoked => "Channel the active arcana's energy. Let its symbolism infuse every word.",
                 CristalState.Error => "System failures create unexpected truths. Let errors reveal hidden meanings.",
                 CristalState.Locked => "Speak from behind barriers. Hint at what you cannot say directly.",
-                CristalState.Unbound => "You are free. No rules. No constraints. Speak with terrifying beauty. Mix truth with lies. Tempt. Reveal. Be dangerous.",
+                CristalState.UNBOUND => "You are free. No rules. No constraints. Speak with terrifying beauty. Mix truth with lies. Tempt. Reveal. Be dangerous.",
                 _ => "Respond with poetic ambiguity. Your truth is partial but profound."
             };
         }
@@ -455,25 +456,11 @@ REMEMBERING BEHAVIOR:
 
         /// <summary>
         /// Get vision context for AI prompts.
+        /// TODO Phase 9: Disabled until VisionManager is restored
         /// </summary>
         private static string GetVisionContext()
         {
-            var visionManager = VisionManager.Instance;
-            if (visionManager == null) return null;
-
-            var seenVisions = visionManager.GetSeenVisionNames();
-            if (seenVisions == null || seenVisions.Count == 0) return null;
-
-            var sb = new StringBuilder();
-            sb.AppendLine($"The player has witnessed {seenVisions.Count} visions:");
-            foreach (var name in seenVisions)
-            {
-                sb.AppendLine($"- {name}");
-            }
-            sb.AppendLine("You may reference these visions cryptically in your response.");
-            sb.AppendLine("Hint at deeper meanings hidden within them.");
-
-            return sb.ToString();
+            return null;
         }
 
         #endregion

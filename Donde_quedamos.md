@@ -2,64 +2,62 @@
 
 ## Estado Actual: Phase 6.3 - Terminal 2D Refinement
 
-### Completado Phase 6.2+
-- [x] Phase 1-5: Terminal, Memory, StateMachine, Arcana, AI, Vision system
-- [x] Scene cleanup: Solo `Labyrinth.unity` (3D) y `CrystalCLI.unity` (2D)
-- [x] URP configurado con Universal Renderer 3D (`UniversalRenderer3D.asset`)
-- [x] Prefabs creados:
-  - `Assets/Prefabs/Labyrinth/Player/RitualOperator.prefab` - Jugador con CharacterController
-  - `Assets/Prefabs/Labyrinth/Console/TerminalConsole.prefab` - Consola interactiva
-- [x] Scripts del jugador:
-  - `PlayerController.cs` - Movimiento third-person
-  - `PlayerInputHandler.cs` - Input System
-  - `PlayerInteraction.cs` - Sistema de interaccion E
-  - `PlayerCamera.cs` - Camara third-person
-- [x] Input System configurado en `Assets/Resources/InputSystem_Actions.inputactions`
-- [x] Mixamo MCP instalado (`com.mixamo.mcp` package)
-- [x] Mixamo MCP server agregado a Claude Code (`.mcp.json`)
+**Version:** 0.6.3
+**Ultima actualizacion:** 2026-01-07
 
-### Completado Phase 6.3 (2026-01-06)
-- [x] **Terminal 2D Independiente**: Editor setup menu `CRISTAL/Setup 2D Terminal Scene`
-- [x] **UI Visual Refinements**:
-  - `TerminalVisualConfig.cs` - ScriptableObject para configurar colores/estilos
-  - `ScanlineEffect.cs` - Efecto CRT scanlines
-  - `TerminalFrame.cs` - Border/frame visual con pulse effect
-- [x] **Refactor para Unit Tests**:
-  - `ITerminalUI.cs` - Interface para UI testable
-  - `IInputProcessor.cs` - Interface para procesamiento de input
-  - `IStateContext.cs` - Interface para estado testable
-  - `TestableStateMachine.cs` - State machine sin Unity dependencies
-  - `TestableStates.cs` - Implementaciones de estados testables
-  - `TestableResponseBuilder.cs` - Generador de respuestas testable
-- [x] **Sistema SVG Export**:
-  - `SVGExporter.cs` - Core modular de exportacion
-  - `SVGExportManager.cs` - Unity integration
-  - `SVGExportWindow.cs` - Editor window (`CRISTAL/SVG Export Window`)
-  - Glyphs: Cursor, Crystal, Eye, Arcana, Fragment, Portal
-- [x] **Floating Interact Prompt (Senior Architecture)**:
-  - `InteractPromptConfig.cs` - ScriptableObject con configuración completa
-  - `PromptState.cs` - Struct inmutable para gestión de estado
-  - `IPromptAnimator.cs` - Interface estrategia de animación
-  - `FloatingInteractPrompt.cs` - Componente refactorizado con arquitectura limpia
-  - `LabyrinthUISetup.cs` - Editor tools mejorado con menús:
-    - `CRISTAL/Floating Prompt/Create Complete Setup`
-    - `CRISTAL/Floating Prompt/Create Config Only`
-    - `CRISTAL/Floating Prompt/Create Prefab Only`
-    - `CRISTAL/Floating Prompt/Setup on Player`
+---
 
-### En Progreso
-- [ ] **Reiniciar Claude Code** para cargar Mixamo MCP
-- [ ] Descargar personaje Y Bot de Mixamo
+## Completado
+
+### Phase 1-6.3
+- [x] Terminal, Memory, StateMachine, Arcana, AI, Vision system
+- [x] Scene cleanup: `Labyrinth.unity` (3D) y `CrystalCLI.unity` (2D)
+- [x] URP configurado con Universal Renderer 3D
+- [x] Prefabs: RitualOperator, TerminalConsole
+- [x] Player scripts: Controller, Camera, Interaction, InputHandler
+- [x] Input System configurado
+- [x] Terminal Visual Config, ScanlineEffect, TerminalFrame
+- [x] SVG Export system
+- [x] Floating Interact Prompt (arquitectura senior)
+
+### Fixes 2026-01-07
+- [x] **Compilacion arreglada** - Errores de Phase 7-9 resueltos
+- [x] **Phase 7-9 preservado** en `Backup_Phase789/` para restauracion futura
+- [x] **Chrome DevTools MCP** agregado a `.mcp.json`
+
+---
+
+## Backup Phase 7-9
+
+Codigo incompleto movido a `Backup_Phase789/`:
+- `Labyrinth/` - Sistema de laberinto 3D
+- `Ritual/` - Sistema de rituales
+- `Editor_Dream/` - Editor tools de sueños
+
+Archivos con `// TODO Phase 9` para reactivar:
+- `TerminalCore.cs` - RitualSystem, VisionManager
+- `CristalBootstrap.cs` - RitualSystem, VisionManager
+- `PromptBuilder.cs` - GetVisionContext()
+
+---
+
+## En Progreso
+
+- [ ] Configurar Chrome DevTools MCP (reiniciar Claude Code)
+- [ ] Descargar Y Bot de Mixamo via Chrome DevTools
 - [ ] Descargar animaciones: Idle, Walk, Run, Jump
 - [ ] Configurar Animator Controller
+- [ ] Reemplazar capsula del jugador con avatar
 
-### Pendiente Phase 6
-- [ ] Mejorar visual del jugador (reemplazar capsula con avatar Mixamo)
-- [ ] Sistema de interaccion con consola (E key)
-- [ ] Rooms simbolicos con ProBuilder
-- [ ] Gates reactivos a estados
-- [ ] Hologram projectors para visiones
-- [ ] UNBOUND transformation
+---
+
+## MCP Servers
+
+| Server | Estado | Uso |
+|--------|--------|-----|
+| `mcp-unity` | Puerto 8090 | Control Unity Editor |
+| `chrome-devtools` | npx | Navegacion web, descargas |
+| `mixamo` | Inestable | (Deprecado - usar Chrome DevTools) |
 
 ---
 
@@ -69,117 +67,49 @@
 - `Assets/Scenes/Labyrinth.unity` - Escena principal 3D
 - `Assets/Scenes/CrystalCLI.unity` - Escena terminal 2D
 
-### Configuracion URP
+### Configuracion
 - `Assets/Settings/UniversalRP.asset` - Pipeline principal
-- `Assets/Settings/UniversalRenderer3D.asset` - Renderer 3D (nuevo)
-- `Assets/Settings/Renderer2D.asset` - Renderer 2D original
+- `Assets/Settings/UniversalRenderer3D.asset` - Renderer 3D
+- `.mcp.json` - Configuracion MCP servers
 
-### Scripts Terminal (nuevos)
+### Scripts Core
 ```
-Assets/Scripts/Terminal/
-├── Core/                       # Interfaces testables
-│   ├── ITerminalUI.cs
-│   └── IInputProcessor.cs
-├── UI/                         # Visual components
-│   ├── TerminalVisualConfig.cs
-│   ├── ScanlineEffect.cs
-│   └── TerminalFrame.cs
-└── Editor/
-    └── Terminal2DSetup.cs
-
-Assets/Scripts/StateMachine/
-├── Core/                       # Testable state machine
-│   ├── IStateContext.cs
-│   ├── TestableStateMachine.cs
-│   └── TestableStates.cs
-
-Assets/Scripts/Response/
-└── Core/
-    └── TestableResponseBuilder.cs
-
-Assets/Scripts/Export/          # SVG export system
-├── SVGExporter.cs
-├── SVGExportManager.cs
-└── Editor/
-    └── SVGExportWindow.cs
-
-Assets/Scripts/Labyrinth/       # Labyrinth world
-├── Core/
-│   ├── LabyrinthManager.cs
-│   └── IInteractable.cs
-├── Player/
-│   ├── PlayerController.cs
-│   ├── PlayerCamera.cs
-│   ├── PlayerInteraction.cs
-│   └── PlayerInputHandler.cs
-├── Console/
-│   ├── InWorldConsole.cs
-│   └── ConsoleUIBridge.cs
-├── UI/                         # Floating prompts (refactored)
-│   ├── InteractPromptConfig.cs
-│   ├── PromptState.cs
-│   ├── IPromptAnimator.cs
-│   └── FloatingInteractPrompt.cs
-└── Editor/
-    └── LabyrinthUISetup.cs
-```
-
-### MCP Servers
-- `mcp-unity` - Control de Unity Editor (puerto 8090)
-- `mixamo` - Descarga de Mixamo (recien agregado, requiere restart)
-
----
-
-## Comandos Unity Editor (CRISTAL Menu)
-
-```
-CRISTAL > Setup 2D Terminal Scene           # Configura escena 2D completa
-CRISTAL > SVG Export Window                 # Exportar glyphs/simbolos a SVG
-CRISTAL > Create Terminal Visual Config     # Crear ScriptableObject de config
-CRISTAL > Floating Prompt >
-    ├── Create Complete Setup               # Prefab + Config en un paso
-    ├── Create Config Only                  # Solo InteractPromptConfig.asset
-    ├── Create Prefab Only                  # Solo FloatingInteractPrompt.prefab
-    └── Setup on Player                     # Instanciar en escena actual
-CRISTAL > Start Play Mode
-CRISTAL > Stop Play Mode
+Assets/Scripts/
+├── Terminal/          # Sistema CLI
+├── Memory/            # Memoria persistente
+├── StateMachine/      # Estados del juego
+├── Arcana/            # Sistema de arcanos
+├── AI/                # Integracion Ollama/Qwen
+├── Core/              # Bootstrap, ServiceLocator
+└── Symbolic/          # Sistema simbolico
 ```
 
 ---
 
-## Proximos Pasos Inmediatos
+## Comandos Unity Editor
 
-1. **Reiniciar Claude Code** en el proyecto
-2. Verificar que Mixamo MCP este conectado
-3. Usar `mixamo-search` para buscar personaje
-4. Descargar Y Bot + animaciones basicas
-5. Configurar Humanoid rig y Animator Controller
-6. Reemplazar capsula del jugador con avatar
-
----
-
-## Comandos Utiles
-
-```bash
-# Unity MCP
-Tools > MCP Unity > Server Window
-
-# Mixamo MCP
-Window > Mixamo MCP > Settings
-
-# ProBuilder
-Tools > ProBuilder > Editors > Create Shape
-
-# Play Mode
-CRISTAL > Start Play Mode
+```
+CRISTAL > Setup 2D Terminal Scene
+CRISTAL > SVG Export Window
+CRISTAL > Create Terminal Visual Config
+CRISTAL > Floating Prompt > ...
+CRISTAL > Start/Stop Play Mode
 ```
 
 ---
 
-## Token Mixamo (expira en ~10 dias)
-Obtenido de mixamo.com console: `localStorage.access_token`
-Guardado en: Unity > Window > Mixamo MCP > Settings
+## Proximos Pasos
+
+1. Reiniciar Claude Code (cargar Chrome DevTools MCP)
+2. Navegar a mixamo.com con Chrome DevTools
+3. Descargar Y Bot + animaciones
+4. Configurar Humanoid rig y Animator
+5. Integrar avatar al jugador
 
 ---
 
-*Ultima actualizacion: 2026-01-06*
+## Notas
+
+- Unity 6 (6000.3.2f1) con URP
+- Ollama local para AI (qwen3:8b)
+- Git: commits atomicos, mensajes claros

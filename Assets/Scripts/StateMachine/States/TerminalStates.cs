@@ -463,7 +463,7 @@ namespace Cristal.CLI.StateMachine.States
     /// </summary>
     public class UnboundState : BaseState
     {
-        public override CristalState StateId => CristalState.Unbound;
+        public override CristalState StateId => CristalState.UNBOUND;
         public override string DisplayName => "U̸̧N̷̨B̶͜O̸̕U̵̢N̸̛D̷̕";
 
         private float _unboundTime = 0f;

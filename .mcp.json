@@ -5,6 +5,10 @@
       "command": "C:\\Users\\buo45\\AppData\\Local\\MixamoMCP\\mixamo-mcp.exe",
       "args": [],
       "env": {}
+    },
+    "chrome-devtools": {
+      "command": "npx",
+      "args": ["chrome-devtools-mcp@latest"]
     }
   }
 }

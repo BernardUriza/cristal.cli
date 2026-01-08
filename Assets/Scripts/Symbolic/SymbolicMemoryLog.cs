@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using Cristal.CLI.Core.Events;
-using Cristal.CLI.Memory;
+using Cristal.CLI.StateMachine;
 
 namespace Cristal.CLI.Symbolic
 {

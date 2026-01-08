@@ -1,0 +1,442 @@
+using System;
+using System.Collections;
+using System.Text;
+using UnityEngine;
+using Cristal.CLI.Core;
+using Cristal.CLI.Memory;
+using Cristal.CLI.Arcana;
+using Cristal.CLI.StateMachine;
+
+namespace Cristal.CLI.AI.Dreams
+{
+    /// <summary>
+    /// AI Oracle for dream content generation.
+    /// Interacts with Qwen3/Ollama to generate:
+    /// - Room names and descriptions
+    /// - Floating text / wall inscriptions
+    /// - Symbolic imagery prompts
+    /// - Narrative fragments
+    /// </summary>
+    public class DreamAIOracle : MonoBehaviour
+    {
+        public static DreamAIOracle Instance { get; private set; }
+
+        [Header("Generation Settings")]
+        [SerializeField] private float _generationTimeout = 30f;
+        [SerializeField] private bool _cacheResponses = true;
+        [SerializeField] private int _maxCacheSize = 50;
+
+        [Header("Dream Prompt Templates")]
+        [SerializeField, TextArea(3, 8)] private string _roomNamePrompt = 
+            "Generate a single evocative name for a dream chamber. Context: {context}. " +
+            "Style: poetic, symbolic, 2-4 words. Examples: 'Hall of Forgotten Echoes', 'The Shattered Mirror Room'. " +
+            "Respond with ONLY the name, nothing else.";
+
+        [SerializeField, TextArea(3, 8)] private string _wallInscriptionPrompt = 
+            "Generate a cryptic inscription for a dream wall. Context: {context}. " +
+            "Style: prophetic, fragmented, 1-2 sentences max. Include glitch characters (▓▒░█) if emotionally intense. " +
+            "Respond with ONLY the inscription, nothing else.";
+
+        [SerializeField, TextArea(3, 8)] private string _narrativeFragmentPrompt = 
+            "Generate a dream narrative fragment. Context: {context}. " +
+            "Style: surreal, symbolic, personal. 2-4 lines. Speaks directly to the dreamer. " +
+            "Respond with ONLY the fragment, nothing else.";
+
+        [SerializeField, TextArea(3, 8)] private string _symbolDescriptionPrompt = 
+            "Describe a symbolic image for a dream. Context: {context}. " +
+            "Style: simple geometric shapes that convey meaning. 1 sentence describing the symbol. " +
+            "Example: 'A cracked hourglass with sand flowing upward.' " +
+            "Respond with ONLY the description, nothing else.";
+
+        // Events
+        public event Action<string> OnRoomNameGenerated;
+        public event Action<string> OnInscriptionGenerated;
+        public event Action<string> OnNarrativeGenerated;
+        public event Action<string> OnSymbolDescriptionGenerated;
+        public event Action<string> OnGenerationError;
+
+        // Cache
+        private System.Collections.Generic.Dictionary<string, string> _responseCache = 
+            new System.Collections.Generic.Dictionary<string, string>();
+
+        // State
+        private bool _isGenerating;
+        private OllamaClient _ollamaClient;
+        private DreamMemoryBridge _memoryBridge;
+
+        public bool IsGenerating => _isGenerating;
+
+        #region Unity Lifecycle
+
+        private void Awake()
+        {
+            if (Instance != null && Instance != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
+            Instance = this;
+            ServiceLocator.RegisterMono(this);
+        }
+
+        private void Start()
+        {
+            _ollamaClient = ServiceLocator.TryGet<OllamaClient>();
+            _memoryBridge = DreamMemoryBridge.Instance;
+
+            if (_ollamaClient == null)
+            {
+                CristalLog.Warning("DreamAIOracle", "OllamaClient not found - AI generation disabled");
+            }
+        }
+
+        private void OnDestroy()
+        {
+            ServiceLocator.Unregister<DreamAIOracle>();
+            if (Instance == this) Instance = null;
+        }
+
+        #endregion
+
+        #region Public API
+
+        /// <summary>
+        /// Generate a dream room name based on current context.
+        /// </summary>
+        public void GenerateRoomName(DreamContext context, Action<string> onComplete)
+        {
+            GenerateContent(DreamContentType.RoomName, context, onComplete);
+        }
+
+        /// <summary>
+        /// Generate a wall inscription for the dream.
+        /// </summary>
+        public void GenerateWallInscription(DreamContext context, Action<string> onComplete)
+        {
+            GenerateContent(DreamContentType.WallInscription, context, onComplete);
+        }
+
+        /// <summary>
+        /// Generate a narrative fragment for the dream.
+        /// </summary>
+        public void GenerateNarrativeFragment(DreamContext context, Action<string> onComplete)
+        {
+            GenerateContent(DreamContentType.NarrativeFragment, context, onComplete);
+        }
+
+        /// <summary>
+        /// Generate a symbol description for SVG projection.
+        /// </summary>
+        public void GenerateSymbolDescription(DreamContext context, Action<string> onComplete)
+        {
+            GenerateContent(DreamContentType.SymbolDescription, context, onComplete);
+        }
+
+        /// <summary>
+        /// Generate content asynchronously (coroutine version).
+        /// </summary>
+        public IEnumerator GenerateContentAsync(DreamContentType type, DreamContext context, Action<string> onComplete)
+        {
+            bool completed = false;
+            string result = null;
+
+            GenerateContent(type, context, (response) =>
+            {
+                result = response;
+                completed = true;
+            });
+
+            float elapsed = 0f;
+            while (!completed && elapsed < _generationTimeout)
+            {
+                elapsed += Time.deltaTime;
+                yield return null;
+            }
+
+            onComplete?.Invoke(result);
+        }
+
+        /// <summary>
+        /// Clear the response cache.
+        /// </summary>
+        public void ClearCache()
+        {
+            _responseCache.Clear();
+        }
+
+        #endregion
+
+        #region Generation
+
+        private void GenerateContent(DreamContentType type, DreamContext context, Action<string> onComplete)
+        {
+            // Check cache first
+            string cacheKey = GetCacheKey(type, context);
+            if (_cacheResponses && _responseCache.TryGetValue(cacheKey, out string cached))
+            {
+                onComplete?.Invoke(cached);
+                FireEvent(type, cached);
+                return;
+            }
+
+            // Check if Ollama is available
+            if (_ollamaClient == null || _ollamaClient.IsRequestPending)
+            {
+                // Fallback to procedural generation
+                string fallback = GenerateFallback(type, context);
+                onComplete?.Invoke(fallback);
+                return;
+            }
+
+            _isGenerating = true;
+
+            string prompt = BuildPrompt(type, context);
+
+            _ollamaClient.Generate(prompt,
+                onSuccess: (response) =>
+                {
+                    _isGenerating = false;
+                    string cleaned = CleanResponse(response);
+
+                    // Cache the response
+                    if (_cacheResponses)
+                    {
+                        CacheResponse(cacheKey, cleaned);
+                    }
+
+                    onComplete?.Invoke(cleaned);
+                    FireEvent(type, cleaned);
+                },
+                onError: (error) =>
+                {
+                    _isGenerating = false;
+                    CristalLog.Warning("DreamAIOracle", $"Generation failed: {error}");
+                    OnGenerationError?.Invoke(error);
+
+                    // Fallback
+                    string fallback = GenerateFallback(type, context);
+                    onComplete?.Invoke(fallback);
+                }
+            );
+        }
+
+        private string BuildPrompt(DreamContentType type, DreamContext context)
+        {
+            string template = type switch
+            {
+                DreamContentType.RoomName => _roomNamePrompt,
+                DreamContentType.WallInscription => _wallInscriptionPrompt,
+                DreamContentType.NarrativeFragment => _narrativeFragmentPrompt,
+                DreamContentType.SymbolDescription => _symbolDescriptionPrompt,
+                _ => _roomNamePrompt
+            };
+
+            string contextString = BuildContextString(context);
+            return template.Replace("{context}", contextString);
+        }
+
+        private string BuildContextString(DreamContext context)
+        {
+            var sb = new StringBuilder();
+
+            sb.Append($"State: {context.CurrentState}. ");
+
+            if (context.ActiveArcana != null)
+            {
+                sb.Append($"Arcana: {context.ActiveArcana.name} ({context.ActiveArcana.description}). ");
+            }
+
+            if (!string.IsNullOrEmpty(context.DominantEmotion))
+            {
+                sb.Append($"Emotion: {context.DominantEmotion}. ");
+            }
+
+            if (context.CorruptionLevel > 0.3f)
+            {
+                sb.Append($"Corruption: {context.CorruptionLevel:P0}. ");
+            }
+
+            if (context.RecentKeywords?.Count > 0)
+            {
+                sb.Append($"Keywords: {string.Join(", ", context.RecentKeywords)}. ");
+            }
+
+            if (!string.IsNullOrEmpty(context.DreamTheme))
+            {
+                sb.Append($"Theme: {context.DreamTheme}. ");
+            }
+
+            return sb.ToString();
+        }
+
+        private void FireEvent(DreamContentType type, string content)
+        {
+            switch (type)
+            {
+                case DreamContentType.RoomName:
+                    OnRoomNameGenerated?.Invoke(content);
+                    break;
+                case DreamContentType.WallInscription:
+                    OnInscriptionGenerated?.Invoke(content);
+                    break;
+                case DreamContentType.NarrativeFragment:
+                    OnNarrativeGenerated?.Invoke(content);
+                    break;
+                case DreamContentType.SymbolDescription:
+                    OnSymbolDescriptionGenerated?.Invoke(content);
+                    break;
+            }
+        }
+
+        #endregion
+
+        #region Fallback Generation
+
+        private string GenerateFallback(DreamContentType type, DreamContext context)
+        {
+            return type switch
+            {
+                DreamContentType.RoomName => GenerateFallbackRoomName(context),
+                DreamContentType.WallInscription => GenerateFallbackInscription(context),
+                DreamContentType.NarrativeFragment => GenerateFallbackNarrative(context),
+                DreamContentType.SymbolDescription => GenerateFallbackSymbol(context),
+                _ => "The Unnamed Space"
+            };
+        }
+
+        private string GenerateFallbackRoomName(DreamContext context)
+        {
+            string[] prefixes = { "Hall of", "Chamber of", "The", "Corridor of", "Sanctum of" };
+            string[] nouns = { "Forgotten Echoes", "Shattered Mirrors", "Lost Memories", 
+                               "Fractured Light", "Silent Whispers", "Broken Time" };
+
+            if (context.ActiveArcana != null)
+            {
+                return $"The {context.ActiveArcana.name}'s Domain";
+            }
+
+            return $"{prefixes[UnityEngine.Random.Range(0, prefixes.Length)]} {nouns[UnityEngine.Random.Range(0, nouns.Length)]}";
+        }
+
+        private string GenerateFallbackInscription(DreamContext context)
+        {
+            string[] inscriptions = {
+                "what you seek ▓▒░ seeks you in return",
+                "the mirror remembers // even when you forget",
+                "here, time is ░▒▓ a suggestion",
+                "you have been here before █▓▒░ haven't you?",
+                "the truth waits in the ▓▓▓ static",
+                "memory is not a record // it is a wound"
+            };
+
+            return inscriptions[UnityEngine.Random.Range(0, inscriptions.Length)];
+        }
+
+        private string GenerateFallbackNarrative(DreamContext context)
+        {
+            string[] narratives = {
+                "You stand at the threshold.\nThe threshold does not move.\nYou are not certain who is waiting.",
+                "This is not a dream.\nThis is a memory wearing the mask of a dream.\nLook closer.",
+                "The walls remember your name.\nThey whisper it wrong.\nThey whisper it right.",
+                "Somewhere, a version of you\nhas already solved this puzzle.\nThey are watching."
+            };
+
+            return narratives[UnityEngine.Random.Range(0, narratives.Length)];
+        }
+
+        private string GenerateFallbackSymbol(DreamContext context)
+        {
+            string[] symbols = {
+                "A cracked hourglass with sand flowing upward.",
+                "An eye surrounded by concentric circles.",
+                "A key with no teeth, only questions.",
+                "A mirror reflecting a door that isn't there.",
+                "A spiral consuming itself at both ends."
+            };
+
+            return symbols[UnityEngine.Random.Range(0, symbols.Length)];
+        }
+
+        #endregion
+
+        #region Cache
+
+        private string GetCacheKey(DreamContentType type, DreamContext context)
+        {
+            return $"{type}_{context.CurrentState}_{context.ActiveArcana?.id ?? 0}_{context.DominantEmotion}";
+        }
+
+        private void CacheResponse(string key, string response)
+        {
+            if (_responseCache.Count >= _maxCacheSize)
+            {
+                // Remove random entry
+                var enumerator = _responseCache.Keys.GetEnumerator();
+                if (enumerator.MoveNext())
+                {
+                    _responseCache.Remove(enumerator.Current);
+                }
+            }
+
+            _responseCache[key] = response;
+        }
+
+        private string CleanResponse(string response)
+        {
+            if (string.IsNullOrEmpty(response)) return response;
+
+            // Remove common AI artifacts
+            response = response.Trim();
+            response = response.TrimStart('"').TrimEnd('"');
+            response = response.Replace("\"", "");
+
+            // Remove thinking tags if Qwen3 uses them
+            int thinkEnd = response.IndexOf("</think>");
+            if (thinkEnd >= 0)
+            {
+                response = response.Substring(thinkEnd + 8).Trim();
+            }
+
+            return response;
+        }
+
+        #endregion
+    }
+
+    #region Supporting Types
+
+    public enum DreamContentType
+    {
+        RoomName,
+        WallInscription,
+        NarrativeFragment,
+        SymbolDescription
+    }
+
+    [System.Serializable]
+    public class DreamContext
+    {
+        public CristalState CurrentState;
+        public ArcanaDefinition ActiveArcana;
+        public string DominantEmotion;
+        public float CorruptionLevel;
+        public System.Collections.Generic.List<string> RecentKeywords;
+        public string DreamTheme;
+        public float EmotionalIntensity;
+
+        public static DreamContext FromMemory(CristalMemoryData memory, ArcanaDefinition activeArcana = null)
+        {
+            return new DreamContext
+            {
+                CurrentState = memory?.stateFlags.lastState ?? CristalState.Waiting,
+                ActiveArcana = activeArcana,
+                DominantEmotion = memory?.stateFlags.dominantEmotion ?? "neutral",
+                CorruptionLevel = memory?.stateFlags.corruptionLevel ?? 0f,
+                RecentKeywords = memory?.GetRecentKeywords(5),
+                EmotionalIntensity = memory?.GetEmotionalWeight() ?? 0f
+            };
+        }
+    }
+
+    #endregion
+}

@@ -335,6 +335,8 @@ namespace Cristal.CLI.Terminal.UI
             }
         }
 
+        #endregion
+
 #if UNITY_EDITOR
         private void OnValidate()
         {

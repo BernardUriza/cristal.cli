@@ -1,0 +1,741 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using TMPro;
+using Cristal.CLI.StateMachine;
+using Cristal.CLI.Labyrinth.Dream;
+
+namespace Cristal.CLI.Labyrinth.UI
+{
+    /// <summary>
+    /// Manages narrative display during dream sequences.
+    /// Handles wall text, floating text, whispers, and terminal output.
+    /// </summary>
+    public class DreamNarrativeManager : MonoBehaviour
+    {
+        public static DreamNarrativeManager Instance { get; private set; }
+
+        [Header("Display Containers")]
+        [SerializeField] private Transform _worldTextContainer;
+        [SerializeField] private Canvas _overlayCanvas;
+        [SerializeField] private RectTransform _whisperContainer;
+        [SerializeField] private RectTransform _flashContainer;
+
+        [Header("Prefabs")]
+        [SerializeField] private GameObject _worldTextPrefab;
+        [SerializeField] private GameObject _floatingTextPrefab;
+        [SerializeField] private GameObject _whisperTextPrefab;
+
+        [Header("Settings")]
+        [SerializeField] private float _worldTextLifetime = 0f; // 0 = permanent
+        [SerializeField] private float _floatingTextLifetime = 8f;
+        [SerializeField] private float _whisperLifetime = 4f;
+        [SerializeField] private float _flashDuration = 0.3f;
+
+        [Header("Animation")]
+        [SerializeField] private AnimationCurve _fadeInCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
+        [SerializeField] private AnimationCurve _fadeOutCurve = AnimationCurve.EaseInOut(0, 1, 1, 0);
+        [SerializeField] private float _typewriterSpeed = 0.05f;
+
+        [Header("Audio")]
+        [SerializeField] private AudioClip _whisperSound;
+        [SerializeField] private AudioClip _flashSound;
+        [SerializeField] private AudioClip _wallTextAppearSound;
+        [SerializeField] private AudioSource _narrativeAudioSource;
+
+        [Header("Inner Voice")]
+        [SerializeField] private bool _enableInnerVoice = true;
+        [SerializeField] private float _innerVoiceInterval = 30f;
+
+        // State
+        private List<ActiveNarrative> _activeNarratives = new List<ActiveNarrative>();
+        private Queue<DreamNarrativeFragment> _pendingFragments = new Queue<DreamNarrativeFragment>();
+        private bool _isProcessing;
+        private float _lastInnerVoiceTime;
+        private Camera _mainCamera;
+
+        // Events
+        public event Action<string> OnInnerVoiceSpoken;
+        public event Action<DreamNarrativeFragment> OnNarrativeDisplayed;
+        public event Action<DreamNarrativeFragment> OnNarrativeDismissed;
+
+        #region Unity Lifecycle
+
+        private void Awake()
+        {
+            if (Instance != null && Instance != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
+            Instance = this;
+
+            InitializeContainers();
+        }
+
+        private void Start()
+        {
+            _mainCamera = Camera.main;
+
+            // Subscribe to dream system
+            var dreamSystem = DreamTunnelSystem.Instance;
+            if (dreamSystem != null)
+            {
+                dreamSystem.OnNarrativeFragment += HandleNarrativeFragment;
+                dreamSystem.OnDreamEntered += HandleDreamEntered;
+                dreamSystem.OnDreamExited += HandleDreamExited;
+            }
+
+            // Subscribe to AI dream content
+            var aiDream = AI.AIIntegrationDream.Instance;
+            if (aiDream != null)
+            {
+                aiDream.OnDreamContentGenerated += HandleAIContent;
+            }
+        }
+
+        private void OnDestroy()
+        {
+            var dreamSystem = DreamTunnelSystem.Instance;
+            if (dreamSystem != null)
+            {
+                dreamSystem.OnNarrativeFragment -= HandleNarrativeFragment;
+                dreamSystem.OnDreamEntered -= HandleDreamEntered;
+                dreamSystem.OnDreamExited -= HandleDreamExited;
+            }
+
+            var aiDream = AI.AIIntegrationDream.Instance;
+            if (aiDream != null)
+            {
+                aiDream.OnDreamContentGenerated -= HandleAIContent;
+            }
+
+            if (Instance == this)
+            {
+                Instance = null;
+            }
+        }
+
+        private void Update()
+        {
+            if (!_isProcessing && _pendingFragments.Count > 0)
+            {
+                StartCoroutine(ProcessNextFragment());
+            }
+
+            UpdateActiveNarratives();
+            UpdateInnerVoice();
+        }
+
+        #endregion
+
+        #region Initialization
+
+        private void InitializeContainers()
+        {
+            // Create world text container if missing
+            if (_worldTextContainer == null)
+            {
+                var containerObj = new GameObject("WorldTextContainer");
+                containerObj.transform.SetParent(transform);
+                _worldTextContainer = containerObj.transform;
+            }
+
+            // Create overlay canvas if missing
+            if (_overlayCanvas == null)
+            {
+                var canvasObj = new GameObject("NarrativeOverlay");
+                canvasObj.transform.SetParent(transform);
+                _overlayCanvas = canvasObj.AddComponent<Canvas>();
+                _overlayCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
+                _overlayCanvas.sortingOrder = 100;
+
+                canvasObj.AddComponent<UnityEngine.UI.CanvasScaler>();
+                canvasObj.AddComponent<UnityEngine.UI.GraphicRaycaster>();
+            }
+
+            // Create whisper container
+            if (_whisperContainer == null)
+            {
+                var whisperObj = new GameObject("WhisperContainer");
+                whisperObj.transform.SetParent(_overlayCanvas.transform);
+                _whisperContainer = whisperObj.AddComponent<RectTransform>();
+                _whisperContainer.anchorMin = new Vector2(0.5f, 0.3f);
+                _whisperContainer.anchorMax = new Vector2(0.5f, 0.3f);
+                _whisperContainer.sizeDelta = new Vector2(600, 100);
+            }
+
+            // Create flash container
+            if (_flashContainer == null)
+            {
+                var flashObj = new GameObject("FlashContainer");
+                flashObj.transform.SetParent(_overlayCanvas.transform);
+                _flashContainer = flashObj.AddComponent<RectTransform>();
+                _flashContainer.anchorMin = Vector2.zero;
+                _flashContainer.anchorMax = Vector2.one;
+                _flashContainer.sizeDelta = Vector2.zero;
+            }
+        }
+
+        #endregion
+
+        #region Event Handlers
+
+        private void HandleNarrativeFragment(DreamNarrativeFragment fragment)
+        {
+            _pendingFragments.Enqueue(fragment);
+        }
+
+        private void HandleAIContent(AI.DreamAIResponse response)
+        {
+            var fragment = new DreamNarrativeFragment
+            {
+                text = response.content,
+                displayType = response.requestType switch
+                {
+                    AI.DreamRequestType.WallText => NarrativeDisplayType.WallText,
+                    AI.DreamRequestType.Whisper => NarrativeDisplayType.Whisper,
+                    _ => NarrativeDisplayType.FloatingText
+                },
+                isAIGenerated = response.isAIGenerated
+            };
+
+            _pendingFragments.Enqueue(fragment);
+        }
+
+        private void HandleDreamEntered(DreamTunnel tunnel)
+        {
+            // Clear any existing narratives
+            ClearAllNarratives();
+        }
+
+        private void HandleDreamExited(DreamTunnel tunnel)
+        {
+            // Fade out all narratives
+            StartCoroutine(FadeOutAllNarratives(1f));
+        }
+
+        #endregion
+
+        #region Fragment Processing
+
+        private IEnumerator ProcessNextFragment()
+        {
+            if (_pendingFragments.Count == 0) yield break;
+
+            _isProcessing = true;
+            var fragment = _pendingFragments.Dequeue();
+
+            switch (fragment.displayType)
+            {
+                case NarrativeDisplayType.WallText:
+                    yield return DisplayWallText(fragment);
+                    break;
+
+                case NarrativeDisplayType.FloatingText:
+                    yield return DisplayFloatingText(fragment);
+                    break;
+
+                case NarrativeDisplayType.Whisper:
+                    yield return DisplayWhisper(fragment);
+                    break;
+
+                case NarrativeDisplayType.TerminalOutput:
+                    yield return DisplayTerminalOutput(fragment);
+                    break;
+
+                case NarrativeDisplayType.ScreenFlash:
+                    yield return DisplayScreenFlash(fragment);
+                    break;
+            }
+
+            OnNarrativeDisplayed?.Invoke(fragment);
+            _isProcessing = false;
+        }
+
+        #endregion
+
+        #region Display Methods
+
+        private IEnumerator DisplayWallText(DreamNarrativeFragment fragment)
+        {
+            GameObject textObj;
+
+            if (_worldTextPrefab != null)
+            {
+                textObj = Instantiate(_worldTextPrefab, _worldTextContainer);
+            }
+            else
+            {
+                textObj = CreateDefaultWorldText();
+            }
+
+            textObj.transform.position = fragment.worldPosition;
+            textObj.transform.LookAt(_mainCamera?.transform ?? textObj.transform);
+            textObj.transform.Rotate(0, 180f, 0); // Face camera
+
+            var tmp = textObj.GetComponentInChildren<TextMeshPro>();
+            if (tmp != null)
+            {
+                tmp.text = "";
+                tmp.color = fragment.textColor;
+
+                // Play sound
+                PlayNarrativeSound(_wallTextAppearSound);
+
+                // Typewriter effect
+                yield return StartCoroutine(TypewriterEffect(tmp, fragment.text));
+            }
+
+            // Register as active
+            var narrative = new ActiveNarrative
+            {
+                fragment = fragment,
+                gameObject = textObj,
+                startTime = Time.time,
+                lifetime = _worldTextLifetime
+            };
+            _activeNarratives.Add(narrative);
+        }
+
+        private IEnumerator DisplayFloatingText(DreamNarrativeFragment fragment)
+        {
+            GameObject textObj;
+
+            if (_floatingTextPrefab != null)
+            {
+                textObj = Instantiate(_floatingTextPrefab, _worldTextContainer);
+            }
+            else
+            {
+                textObj = CreateDefaultFloatingText();
+            }
+
+            // Position near player but visible
+            var playerPos = _mainCamera?.transform.position ?? Vector3.zero;
+            var randomOffset = new Vector3(
+                UnityEngine.Random.Range(-3f, 3f),
+                UnityEngine.Random.Range(1f, 3f),
+                UnityEngine.Random.Range(2f, 5f)
+            );
+            textObj.transform.position = playerPos + _mainCamera.transform.TransformDirection(randomOffset);
+
+            var tmp = textObj.GetComponentInChildren<TextMeshPro>();
+            if (tmp != null)
+            {
+                tmp.text = fragment.text;
+                tmp.color = new Color(fragment.textColor.r, fragment.textColor.g, fragment.textColor.b, 0f);
+
+                // Fade in
+                yield return StartCoroutine(FadeText(tmp, 0f, 1f, 1f));
+            }
+
+            // Add floating behavior
+            var floater = textObj.AddComponent<NarrativeFloater>();
+            floater.Initialize();
+
+            // Register as active
+            var narrative = new ActiveNarrative
+            {
+                fragment = fragment,
+                gameObject = textObj,
+                startTime = Time.time,
+                lifetime = _floatingTextLifetime
+            };
+            _activeNarratives.Add(narrative);
+        }
+
+        private IEnumerator DisplayWhisper(DreamNarrativeFragment fragment)
+        {
+            GameObject whisperObj;
+
+            if (_whisperTextPrefab != null)
+            {
+                whisperObj = Instantiate(_whisperTextPrefab, _whisperContainer);
+            }
+            else
+            {
+                whisperObj = CreateDefaultWhisperText();
+            }
+
+            var tmp = whisperObj.GetComponentInChildren<TextMeshProUGUI>();
+            if (tmp != null)
+            {
+                tmp.text = fragment.text;
+                tmp.color = new Color(1f, 1f, 1f, 0f);
+
+                // Play whisper sound
+                PlayNarrativeSound(_whisperSound, 0.3f);
+
+                // Fade in
+                yield return StartCoroutine(FadeUIText(tmp, 0f, 0.8f, 0.5f));
+
+                // Hold
+                yield return new WaitForSeconds(_whisperLifetime - 1f);
+
+                // Fade out
+                yield return StartCoroutine(FadeUIText(tmp, 0.8f, 0f, 0.5f));
+            }
+
+            Destroy(whisperObj);
+            OnNarrativeDismissed?.Invoke(fragment);
+        }
+
+        private IEnumerator DisplayTerminalOutput(DreamNarrativeFragment fragment)
+        {
+            // Send to terminal system if available
+            var terminal = TerminalStateMachine.Instance;
+            if (terminal != null)
+            {
+                // This would integrate with your terminal output system
+                OnInnerVoiceSpoken?.Invoke(fragment.text);
+            }
+
+            yield return new WaitForSeconds(0.1f);
+        }
+
+        private IEnumerator DisplayScreenFlash(DreamNarrativeFragment fragment)
+        {
+            var flashImage = CreateFlashOverlay();
+            var image = flashImage.GetComponent<UnityEngine.UI.Image>();
+
+            if (image != null)
+            {
+                image.color = new Color(
+                    fragment.textColor.r,
+                    fragment.textColor.g,
+                    fragment.textColor.b,
+                    0f
+                );
+
+                // Play sound
+                PlayNarrativeSound(_flashSound);
+
+                // Flash in
+                float elapsed = 0f;
+                while (elapsed < _flashDuration * 0.3f)
+                {
+                    elapsed += Time.deltaTime;
+                    float t = elapsed / (_flashDuration * 0.3f);
+                    image.color = new Color(image.color.r, image.color.g, image.color.b, t * 0.8f);
+                    yield return null;
+                }
+
+                // Flash out
+                elapsed = 0f;
+                while (elapsed < _flashDuration * 0.7f)
+                {
+                    elapsed += Time.deltaTime;
+                    float t = elapsed / (_flashDuration * 0.7f);
+                    image.color = new Color(image.color.r, image.color.g, image.color.b, (1f - t) * 0.8f);
+                    yield return null;
+                }
+            }
+
+            Destroy(flashImage);
+        }
+
+        #endregion
+
+        #region Inner Voice
+
+        private void UpdateInnerVoice()
+        {
+            if (!_enableInnerVoice) return;
+
+            var dreamSystem = DreamTunnelSystem.Instance;
+            if (dreamSystem == null || !dreamSystem.IsInDream) return;
+
+            if (Time.time - _lastInnerVoiceTime >= _innerVoiceInterval)
+            {
+                _lastInnerVoiceTime = Time.time;
+                TriggerInnerVoice();
+            }
+        }
+
+        private void TriggerInnerVoice()
+        {
+            // Generate or select inner voice message
+            var message = GenerateInnerVoiceMessage();
+
+            OnInnerVoiceSpoken?.Invoke(message);
+
+            // Also display as whisper
+            var fragment = new DreamNarrativeFragment
+            {
+                text = message,
+                displayType = NarrativeDisplayType.Whisper,
+                textColor = new Color(0.7f, 0.5f, 0.9f)
+            };
+
+            _pendingFragments.Enqueue(fragment);
+        }
+
+        private string GenerateInnerVoiceMessage()
+        {
+            var messages = new string[]
+            {
+                "something is watching",
+                "you've been here before",
+                "don't look back",
+                "the walls are listening",
+                "remember to breathe",
+                "is this real",
+                "who are you",
+                "time is slipping",
+                "the door is closing",
+                "wake up"
+            };
+
+            return messages[UnityEngine.Random.Range(0, messages.Length)];
+        }
+
+        #endregion
+
+        #region Narrative Management
+
+        private void UpdateActiveNarratives()
+        {
+            for (int i = _activeNarratives.Count - 1; i >= 0; i--)
+            {
+                var narrative = _activeNarratives[i];
+
+                // Skip permanent narratives
+                if (narrative.lifetime <= 0) continue;
+
+                float elapsed = Time.time - narrative.startTime;
+                if (elapsed >= narrative.lifetime)
+                {
+                    // Fade out and remove
+                    StartCoroutine(FadeOutNarrative(narrative));
+                    _activeNarratives.RemoveAt(i);
+                }
+            }
+        }
+
+        private IEnumerator FadeOutNarrative(ActiveNarrative narrative)
+        {
+            var tmp = narrative.gameObject.GetComponentInChildren<TextMeshPro>();
+            if (tmp != null)
+            {
+                yield return StartCoroutine(FadeText(tmp, tmp.color.a, 0f, 1f));
+            }
+
+            Destroy(narrative.gameObject);
+            OnNarrativeDismissed?.Invoke(narrative.fragment);
+        }
+
+        private IEnumerator FadeOutAllNarratives(float duration)
+        {
+            var coroutines = new List<Coroutine>();
+
+            foreach (var narrative in _activeNarratives)
+            {
+                var tmp = narrative.gameObject.GetComponentInChildren<TextMeshPro>();
+                if (tmp != null)
+                {
+                    coroutines.Add(StartCoroutine(FadeText(tmp, tmp.color.a, 0f, duration)));
+                }
+            }
+
+            yield return new WaitForSeconds(duration);
+
+            foreach (var narrative in _activeNarratives)
+            {
+                if (narrative.gameObject != null)
+                {
+                    Destroy(narrative.gameObject);
+                }
+            }
+
+            _activeNarratives.Clear();
+        }
+
+        public void ClearAllNarratives()
+        {
+            foreach (var narrative in _activeNarratives)
+            {
+                if (narrative.gameObject != null)
+                {
+                    Destroy(narrative.gameObject);
+                }
+            }
+
+            _activeNarratives.Clear();
+            _pendingFragments.Clear();
+        }
+
+        #endregion
+
+        #region Helpers
+
+        private IEnumerator TypewriterEffect(TextMeshPro tmp, string text)
+        {
+            tmp.text = "";
+            foreach (char c in text)
+            {
+                tmp.text += c;
+                yield return new WaitForSeconds(_typewriterSpeed);
+            }
+        }
+
+        private IEnumerator FadeText(TextMeshPro tmp, float from, float to, float duration)
+        {
+            float elapsed = 0f;
+            Color color = tmp.color;
+
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                float t = _fadeInCurve.Evaluate(elapsed / duration);
+                color.a = Mathf.Lerp(from, to, t);
+                tmp.color = color;
+                yield return null;
+            }
+
+            color.a = to;
+            tmp.color = color;
+        }
+
+        private IEnumerator FadeUIText(TextMeshProUGUI tmp, float from, float to, float duration)
+        {
+            float elapsed = 0f;
+            Color color = tmp.color;
+
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                float t = elapsed / duration;
+                color.a = Mathf.Lerp(from, to, t);
+                tmp.color = color;
+                yield return null;
+            }
+
+            color.a = to;
+            tmp.color = color;
+        }
+
+        private void PlayNarrativeSound(AudioClip clip, float volume = 0.5f)
+        {
+            if (clip == null) return;
+
+            if (_narrativeAudioSource != null)
+            {
+                _narrativeAudioSource.PlayOneShot(clip, volume);
+            }
+            else
+            {
+                AudioSource.PlayClipAtPoint(clip, _mainCamera?.transform.position ?? Vector3.zero, volume);
+            }
+        }
+
+        private GameObject CreateDefaultWorldText()
+        {
+            var obj = new GameObject("WallText");
+            obj.transform.SetParent(_worldTextContainer);
+
+            var tmp = obj.AddComponent<TextMeshPro>();
+            tmp.fontSize = 2f;
+            tmp.alignment = TextAlignmentOptions.Center;
+            tmp.fontStyle = FontStyles.Bold;
+
+            return obj;
+        }
+
+        private GameObject CreateDefaultFloatingText()
+        {
+            var obj = new GameObject("FloatingText");
+            obj.transform.SetParent(_worldTextContainer);
+
+            var tmp = obj.AddComponent<TextMeshPro>();
+            tmp.fontSize = 1.5f;
+            tmp.alignment = TextAlignmentOptions.Center;
+            tmp.fontStyle = FontStyles.Italic;
+
+            return obj;
+        }
+
+        private GameObject CreateDefaultWhisperText()
+        {
+            var obj = new GameObject("WhisperText");
+            obj.transform.SetParent(_whisperContainer);
+
+            var rect = obj.AddComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0.5f, 0.5f);
+            rect.anchorMax = new Vector2(0.5f, 0.5f);
+            rect.sizeDelta = new Vector2(500, 50);
+
+            var tmp = obj.AddComponent<TextMeshProUGUI>();
+            tmp.fontSize = 24f;
+            tmp.alignment = TextAlignmentOptions.Center;
+            tmp.fontStyle = FontStyles.Italic;
+
+            return obj;
+        }
+
+        private GameObject CreateFlashOverlay()
+        {
+            var obj = new GameObject("FlashOverlay");
+            obj.transform.SetParent(_flashContainer);
+
+            var rect = obj.AddComponent<RectTransform>();
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.sizeDelta = Vector2.zero;
+            rect.anchoredPosition = Vector2.zero;
+
+            var image = obj.AddComponent<UnityEngine.UI.Image>();
+            image.color = Color.clear;
+            image.raycastTarget = false;
+
+            return obj;
+        }
+
+        #endregion
+    }
+
+    #region Helper Classes
+
+    public class ActiveNarrative
+    {
+        public DreamNarrativeFragment fragment;
+        public GameObject gameObject;
+        public float startTime;
+        public float lifetime;
+    }
+
+    public class NarrativeFloater : MonoBehaviour
+    {
+        private Vector3 _startPosition;
+        private float _frequency;
+        private float _amplitude;
+        private float _timeOffset;
+        private Transform _cameraTransform;
+
+        public void Initialize()
+        {
+            _startPosition = transform.position;
+            _frequency = UnityEngine.Random.Range(0.5f, 1f);
+            _amplitude = UnityEngine.Random.Range(0.1f, 0.3f);
+            _timeOffset = UnityEngine.Random.Range(0f, Mathf.PI * 2f);
+            _cameraTransform = Camera.main?.transform;
+        }
+
+        private void Update()
+        {
+            // Float up and down
+            float yOffset = Mathf.Sin((Time.time + _timeOffset) * _frequency) * _amplitude;
+            transform.position = _startPosition + Vector3.up * yOffset;
+
+            // Face camera
+            if (_cameraTransform != null)
+            {
+                transform.LookAt(_cameraTransform);
+                transform.Rotate(0, 180f, 0);
+            }
+        }
+    }
+
+    #endregion
+}

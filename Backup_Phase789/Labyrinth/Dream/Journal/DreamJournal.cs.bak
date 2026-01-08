@@ -1,0 +1,652 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using UnityEngine;
+using Cristal.CLI.Memory;
+using Cristal.CLI.Arcana;
+
+namespace Cristal.CLI.Labyrinth.Dream.Journal
+{
+    /// <summary>
+    /// Persistent journal of all dream experiences.
+    /// Saves/loads dreams, provides access for replay and AI echo generation.
+    /// </summary>
+    public class DreamJournal : MonoBehaviour
+    {
+        public static DreamJournal Instance { get; private set; }
+
+        [Header("Persistence")]
+        [SerializeField] private string _journalFileName = "dreamJournal.json";
+        [SerializeField] private bool _autoSave = true;
+        [SerializeField] private float _autoSaveInterval = 30f;
+
+        [Header("Limits")]
+        [SerializeField] private int _maxStoredDreams = 100;
+        [SerializeField] private bool _keepUnboundDreamsForever = true;
+
+        // Events
+        public event Action<DreamRecord> OnDreamRecorded;
+        public event Action<DreamRecord> OnDreamDeleted;
+        public event Action OnJournalLoaded;
+        public event Action OnJournalSaved;
+
+        // Data
+        private DreamJournalData _data;
+        private DreamRecord _currentRecording;
+        private float _recordingStartTime;
+        private float _lastAutoSave;
+        private string _journalPath;
+
+        // Properties
+        public IReadOnlyList<DreamRecord> AllDreams => _data?.dreams ?? new List<DreamRecord>();
+        public int DreamCount => _data?.dreams?.Count ?? 0;
+        public DreamRecord CurrentRecording => _currentRecording;
+        public bool IsRecording => _currentRecording != null;
+
+        // Method alias for backward compatibility
+        public IReadOnlyList<DreamRecord> GetAllDreams() => AllDreams;
+
+        #region Unity Lifecycle
+
+        private void Awake()
+        {
+            if (Instance != null && Instance != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
+            Instance = this;
+
+            _journalPath = Path.Combine(Application.persistentDataPath, _journalFileName);
+            LoadJournal();
+        }
+
+        private void Start()
+        {
+            // Subscribe to dream events
+            var dreamSystem = DreamTunnelSystem.Instance;
+            if (dreamSystem != null)
+            {
+                dreamSystem.OnDreamEntered += HandleDreamEntered;
+                dreamSystem.OnDreamExited += HandleDreamExited;
+                dreamSystem.OnNarrativeFragment += HandleNarrativeFragment;
+            }
+        }
+
+        private void Update()
+        {
+            // Update current recording
+            if (_currentRecording != null)
+            {
+                UpdateRecording();
+            }
+
+            // Auto-save
+            if (_autoSave && Time.time - _lastAutoSave >= _autoSaveInterval)
+            {
+                SaveJournal();
+                _lastAutoSave = Time.time;
+            }
+        }
+
+        private void OnDestroy()
+        {
+            var dreamSystem = DreamTunnelSystem.Instance;
+            if (dreamSystem != null)
+            {
+                dreamSystem.OnDreamEntered -= HandleDreamEntered;
+                dreamSystem.OnDreamExited -= HandleDreamExited;
+                dreamSystem.OnNarrativeFragment -= HandleNarrativeFragment;
+            }
+
+            // Final save
+            if (_currentRecording != null)
+            {
+                FinalizeRecording(DreamExitReason.Forced);
+            }
+            SaveJournal();
+
+            if (Instance == this)
+            {
+                Instance = null;
+            }
+        }
+
+        private void OnApplicationPause(bool pauseStatus)
+        {
+            if (pauseStatus)
+            {
+                SaveJournal();
+            }
+        }
+
+        #endregion
+
+        #region Recording
+
+        private void HandleDreamEntered(DreamTunnel tunnel)
+        {
+            StartRecording(tunnel);
+        }
+
+        private void HandleDreamExited(DreamTunnel tunnel)
+        {
+            if (_currentRecording != null)
+            {
+                FinalizeRecording(DreamExitReason.PlayerExited);
+            }
+        }
+
+        private void HandleNarrativeFragment(DreamNarrativeFragment fragment)
+        {
+            if (_currentRecording == null) return;
+
+            var record = new DreamNarrativeRecord
+            {
+                text = fragment.text,
+                displayType = fragment.displayType,
+                displayTime = Time.time - _recordingStartTime,
+                wasAIGenerated = fragment.isAIGenerated,
+                textColor = fragment.textColor
+            };
+
+            _currentRecording.narratives.Add(record);
+
+            // Track by type
+            switch (fragment.displayType)
+            {
+                case NarrativeDisplayType.WallText:
+                    _currentRecording.wallTexts.Add(fragment.text);
+                    break;
+                case NarrativeDisplayType.Whisper:
+                    _currentRecording.whispers.Add(fragment.text);
+                    break;
+            }
+
+            if (fragment.isAIGenerated)
+            {
+                _currentRecording.aiFragmentsGenerated++;
+                _currentRecording.hadAIContent = true;
+            }
+        }
+
+        /// <summary>
+        /// Start recording a new dream.
+        /// </summary>
+        public void StartRecording(DreamTunnel tunnel)
+        {
+            if (_currentRecording != null)
+            {
+                Debug.LogWarning("[DreamJournal] Already recording a dream, finalizing previous");
+                FinalizeRecording(DreamExitReason.Forced);
+            }
+
+            _currentRecording = new DreamRecord(tunnel, tunnel.Config);
+            _recordingStartTime = Time.time;
+
+            // Capture entry context
+            var memory = CristalMemory.Instance?.Data;
+            if (memory != null)
+            {
+                _currentRecording.entryEmotionalWeight = memory.GetEmotionalWeight();
+                _currentRecording.dominantEmotionDuring = memory.stateFlags.dominantEmotion;
+                _currentRecording.triggerEmotion = memory.stateFlags.dominantEmotion;
+                _currentRecording.triggerEmotionalIntensity = Mathf.Abs(memory.GetEmotionalWeight());
+            }
+
+            // Capture arcana info
+            if (tunnel.Config.triggerType == DreamTriggerType.Arcana)
+            {
+                var arcana = ArcanaSystem.Instance?.GetArcana(tunnel.Config.sourceId);
+                if (arcana != null)
+                {
+                    _currentRecording.sourceArcanaName = arcana.name;
+                }
+            }
+
+            // Initialize room records
+            foreach (var room in tunnel.Rooms)
+            {
+                _currentRecording.rooms.Add(new DreamRoomRecord
+                {
+                    index = room.RoomIndex,
+                    roomType = room.RoomType,
+                    wasVisited = false
+                });
+            }
+
+            Debug.Log($"[DreamJournal] Started recording: {_currentRecording.GetDisplayTitle()}");
+        }
+
+        /// <summary>
+        /// Update the current recording with real-time data.
+        /// </summary>
+        private void UpdateRecording()
+        {
+            _currentRecording.duration = Time.time - _recordingStartTime;
+            _currentRecording.timeSpentExploring = _currentRecording.duration;
+
+            // Track dream progress
+            var dreamSystem = DreamTunnelSystem.Instance;
+            if (dreamSystem?.CurrentDream != null)
+            {
+                _currentRecording.completionPercentage = dreamSystem.CurrentDream.DreamProgress;
+            }
+        }
+
+        /// <summary>
+        /// Finalize and save the current recording.
+        /// </summary>
+        public void FinalizeRecording(DreamExitReason exitReason)
+        {
+            if (_currentRecording == null) return;
+
+            _currentRecording.exitReason = exitReason;
+            _currentRecording.duration = Time.time - _recordingStartTime;
+
+            // Capture exit context
+            var memory = CristalMemory.Instance?.Data;
+            if (memory != null)
+            {
+                _currentRecording.exitEmotionalWeight = memory.GetEmotionalWeight();
+            }
+
+            // Count visited rooms
+            foreach (var room in _currentRecording.rooms)
+            {
+                if (room.wasVisited)
+                {
+                    _currentRecording.roomsVisited++;
+                }
+            }
+
+            // Check if reached core
+            if (_currentRecording.rooms.Count > 0)
+            {
+                var lastRoom = _currentRecording.rooms[_currentRecording.rooms.Count - 1];
+                _currentRecording.reachedCore = lastRoom.wasVisited && lastRoom.roomType == DreamRoomType.Core;
+            }
+
+            // Add to journal
+            AddDream(_currentRecording);
+
+            Debug.Log($"[DreamJournal] Finalized recording: {_currentRecording.GetDisplayTitle()} ({_currentRecording.duration:F1}s)");
+
+            _currentRecording = null;
+        }
+
+        /// <summary>
+        /// Mark a room as visited in current recording.
+        /// </summary>
+        public void MarkRoomVisited(int roomIndex)
+        {
+            if (_currentRecording == null) return;
+
+            if (roomIndex >= 0 && roomIndex < _currentRecording.rooms.Count)
+            {
+                _currentRecording.rooms[roomIndex].wasVisited = true;
+            }
+        }
+
+        /// <summary>
+        /// Record a symbol encounter during dream.
+        /// </summary>
+        public void RecordSymbol(DreamSymbolRecord symbol)
+        {
+            if (_currentRecording == null) return;
+
+            // Check if symbol already encountered
+            var existing = _currentRecording.symbolsEncountered.Find(s => s.symbolId == symbol.symbolId);
+            if (existing != null)
+            {
+                existing.encounterCount++;
+                existing.significance = Mathf.Min(1f, existing.significance + 0.1f);
+            }
+            else
+            {
+                symbol.wasNewDiscovery = !HasEncounteredSymbol(symbol.symbolId);
+                _currentRecording.symbolsEncountered.Add(symbol);
+            }
+        }
+
+        /// <summary>
+        /// Record an emotional moment during dream.
+        /// </summary>
+        public void RecordEmotionalMoment(string emotion, float intensity, string trigger)
+        {
+            if (_currentRecording == null) return;
+
+            _currentRecording.emotionalMoments.Add(new EmotionalMoment
+            {
+                timestamp = Time.time - _recordingStartTime,
+                emotion = emotion,
+                intensity = intensity,
+                trigger = trigger
+            });
+        }
+
+        #endregion
+
+        #region Journal Access
+
+        /// <summary>
+        /// Add a completed dream to the journal.
+        /// </summary>
+        private void AddDream(DreamRecord dream)
+        {
+            _data.dreams.Insert(0, dream); // Most recent first
+            _data.totalDreams++;
+            _data.lastUpdated = DateTime.UtcNow.ToString("o");
+
+            // Enforce limit
+            while (_data.dreams.Count > _maxStoredDreams)
+            {
+                // Remove oldest non-unbound dream
+                for (int i = _data.dreams.Count - 1; i >= 0; i--)
+                {
+                    if (!_keepUnboundDreamsForever || !_data.dreams[i].wasUnbound)
+                    {
+                        _data.dreams.RemoveAt(i);
+                        break;
+                    }
+                }
+            }
+
+            OnDreamRecorded?.Invoke(dream);
+            SaveJournal();
+        }
+
+        /// <summary>
+        /// Get a dream by ID.
+        /// </summary>
+        public DreamRecord GetDream(string id)
+        {
+            return _data?.dreams?.Find(d => d.id == id);
+        }
+
+        /// <summary>
+        /// Get the most recent dream.
+        /// </summary>
+        public DreamRecord GetMostRecentDream()
+        {
+            if (_data?.dreams == null || _data.dreams.Count == 0) return null;
+            return _data.dreams[0];
+        }
+
+        /// <summary>
+        /// Get dreams triggered by a specific arcana.
+        /// </summary>
+        public List<DreamRecord> GetDreamsByArcana(int arcanaId)
+        {
+            return _data?.dreams?.FindAll(d => d.sourceArcanaId == arcanaId) ?? new List<DreamRecord>();
+        }
+
+        /// <summary>
+        /// Get all UNBOUND dreams.
+        /// </summary>
+        public List<DreamRecord> GetUnboundDreams()
+        {
+            return _data?.dreams?.FindAll(d => d.wasUnbound) ?? new List<DreamRecord>();
+        }
+
+        /// <summary>
+        /// Get dreams containing a specific symbol.
+        /// </summary>
+        public List<DreamRecord> GetDreamsWithSymbol(string symbolId)
+        {
+            return _data?.dreams?.FindAll(d =>
+                d.symbolsEncountered.Exists(s => s.symbolId == symbolId)
+            ) ?? new List<DreamRecord>();
+        }
+
+        /// <summary>
+        /// Get dreams matching an emotional profile.
+        /// </summary>
+        public List<DreamRecord> GetDreamsByEmotion(string emotion)
+        {
+            return _data?.dreams?.FindAll(d =>
+                d.dominantEmotionDuring == emotion || d.triggerEmotion == emotion
+            ) ?? new List<DreamRecord>();
+        }
+
+        /// <summary>
+        /// Check if a symbol has ever been encountered.
+        /// </summary>
+        public bool HasEncounteredSymbol(string symbolId)
+        {
+            if (_data?.dreams == null) return false;
+
+            foreach (var dream in _data.dreams)
+            {
+                if (dream.symbolsEncountered.Exists(s => s.symbolId == symbolId))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Get all unique symbols encountered across all dreams.
+        /// </summary>
+        public List<DreamSymbolRecord> GetAllEncounteredSymbols()
+        {
+            var symbols = new Dictionary<string, DreamSymbolRecord>();
+
+            if (_data?.dreams != null)
+            {
+                foreach (var dream in _data.dreams)
+                {
+                    foreach (var symbol in dream.symbolsEncountered)
+                    {
+                        if (symbols.TryGetValue(symbol.symbolId, out var existing))
+                        {
+                            existing.encounterCount += symbol.encounterCount;
+                            existing.significance = Mathf.Max(existing.significance, symbol.significance);
+                        }
+                        else
+                        {
+                            symbols[symbol.symbolId] = new DreamSymbolRecord
+                            {
+                                symbolId = symbol.symbolId,
+                                symbolName = symbol.symbolName,
+                                category = symbol.category,
+                                encounterCount = symbol.encounterCount,
+                                significance = symbol.significance
+                            };
+                        }
+                    }
+                }
+            }
+
+            var result = new List<DreamSymbolRecord>(symbols.Values);
+            result.Sort((a, b) => b.significance.CompareTo(a.significance));
+            return result;
+        }
+
+        /// <summary>
+        /// Get statistics about all dreams.
+        /// </summary>
+        public DreamStatistics GetStatistics()
+        {
+            var stats = new DreamStatistics();
+
+            if (_data?.dreams == null || _data.dreams.Count == 0)
+            {
+                return stats;
+            }
+
+            stats.totalDreams = _data.dreams.Count;
+
+            foreach (var dream in _data.dreams)
+            {
+                stats.totalDuration += dream.duration;
+                stats.totalRoomsExplored += dream.roomsVisited;
+
+                if (dream.wasUnbound) stats.unboundDreams++;
+                if (dream.reachedCore) stats.coresReached++;
+                if (dream.hadAIContent) stats.dreamsWithAI++;
+
+                stats.totalSymbolsEncountered += dream.symbolsEncountered.Count;
+                stats.totalNarratives += dream.narratives.Count;
+
+                // Track arcana
+                if (dream.sourceArcanaId >= 0)
+                {
+                    if (!stats.arcanaDreamCounts.ContainsKey(dream.sourceArcanaId))
+                    {
+                        stats.arcanaDreamCounts[dream.sourceArcanaId] = 0;
+                    }
+                    stats.arcanaDreamCounts[dream.sourceArcanaId]++;
+                }
+            }
+
+            stats.averageDuration = stats.totalDuration / stats.totalDreams;
+
+            return stats;
+        }
+
+        /// <summary>
+        /// Delete a dream from the journal.
+        /// </summary>
+        public void DeleteDream(string id)
+        {
+            var dream = GetDream(id);
+            if (dream != null)
+            {
+                _data.dreams.Remove(dream);
+                OnDreamDeleted?.Invoke(dream);
+                SaveJournal();
+            }
+        }
+
+        #endregion
+
+        #region Persistence
+
+        /// <summary>
+        /// Load journal from disk.
+        /// </summary>
+        public void LoadJournal()
+        {
+            try
+            {
+                if (File.Exists(_journalPath))
+                {
+                    string json = File.ReadAllText(_journalPath);
+                    _data = JsonUtility.FromJson<DreamJournalData>(json);
+                    Debug.Log($"[DreamJournal] Loaded {_data.dreams.Count} dreams from journal");
+                }
+                else
+                {
+                    _data = new DreamJournalData();
+                    Debug.Log("[DreamJournal] Created new journal");
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[DreamJournal] Failed to load journal: {e.Message}");
+                _data = new DreamJournalData();
+            }
+
+            OnJournalLoaded?.Invoke();
+        }
+
+        /// <summary>
+        /// Save journal to disk.
+        /// </summary>
+        public void SaveJournal()
+        {
+            try
+            {
+                _data.lastUpdated = DateTime.UtcNow.ToString("o");
+                string json = JsonUtility.ToJson(_data, true);
+                File.WriteAllText(_journalPath, json);
+                _lastAutoSave = Time.time;
+                OnJournalSaved?.Invoke();
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[DreamJournal] Failed to save journal: {e.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Export journal to a readable text format.
+        /// </summary>
+        public string ExportToText()
+        {
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine("=== CRISTAL DREAM JOURNAL ===");
+            sb.AppendLine($"Total Dreams: {_data.dreams.Count}");
+            sb.AppendLine($"Last Updated: {_data.lastUpdated}");
+            sb.AppendLine();
+
+            foreach (var dream in _data.dreams)
+            {
+                sb.AppendLine($"--- {dream.GetDisplayTitle()} ---");
+                sb.AppendLine($"Date: {dream.timestamp}");
+                sb.AppendLine($"Duration: {dream.duration:F1} seconds");
+                sb.AppendLine($"Summary: {dream.GetSummary()}");
+
+                if (dream.wallTexts.Count > 0)
+                {
+                    sb.AppendLine("Wall Texts:");
+                    foreach (var text in dream.wallTexts)
+                    {
+                        sb.AppendLine($"  \"{text}\"");
+                    }
+                }
+
+                if (dream.symbolsEncountered.Count > 0)
+                {
+                    sb.AppendLine("Symbols:");
+                    foreach (var symbol in dream.symbolsEncountered)
+                    {
+                        sb.AppendLine($"  - {symbol.symbolName} ({symbol.category})");
+                    }
+                }
+
+                sb.AppendLine();
+            }
+
+            return sb.ToString();
+        }
+
+        #endregion
+    }
+
+    #region Data Structures
+
+    [Serializable]
+    public class DreamJournalData
+    {
+        public string version = "1.0";
+        public string createdAt;
+        public string lastUpdated;
+        public int totalDreams;
+        public List<DreamRecord> dreams = new List<DreamRecord>();
+
+        public DreamJournalData()
+        {
+            createdAt = DateTime.UtcNow.ToString("o");
+            lastUpdated = createdAt;
+        }
+    }
+
+    public class DreamStatistics
+    {
+        public int totalDreams;
+        public int unboundDreams;
+        public int coresReached;
+        public int dreamsWithAI;
+        public float totalDuration;
+        public float averageDuration;
+        public int totalRoomsExplored;
+        public int totalSymbolsEncountered;
+        public int totalNarratives;
+        public Dictionary<int, int> arcanaDreamCounts = new Dictionary<int, int>();
+    }
+
+    #endregion
+}
