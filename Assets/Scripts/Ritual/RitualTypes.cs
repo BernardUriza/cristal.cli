@@ -3,16 +3,8 @@ using System;
 namespace Cristal.CLI.Ritual
 {
     /// <summary>
-    /// Stub types for Ritual system - TODO: Restore from Phase 7 when ready
+    /// Ritual phase types. RitualState is in RitualExecutor.cs.
     /// </summary>
-    
-    public enum RitualState
-    {
-        NotStarted,
-        InProgress,
-        Completed,
-        Failed
-    }
     
     public enum RitualPhase
     {

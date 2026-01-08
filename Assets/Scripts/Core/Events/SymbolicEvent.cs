@@ -1,5 +1,6 @@
 using System;
 using Cristal.CLI.StateMachine;
+using Cristal.CLI.Symbolic;
 
 namespace Cristal.CLI.Core.Events
 {
@@ -100,6 +101,9 @@ namespace Cristal.CLI.Core.Events
         /// <summary>Source system that emitted this event.</summary>
         public readonly string Source;
 
+        /// <summary>Optional archetype associated with this event.</summary>
+        public readonly SymbolicArchetype Archetype;
+
         /// <summary>
         /// Create a new symbolic event.
         /// </summary>
@@ -108,7 +112,8 @@ namespace Cristal.CLI.Core.Events
             CristalState sourceState = CristalState.Bootstrap,
             int intensity = 50,
             object payload = null,
-            string source = null)
+            string source = null,
+            SymbolicArchetype archetype = SymbolicArchetype.None)
         {
             Signal = signal;
             SourceState = sourceState;
@@ -116,6 +121,7 @@ namespace Cristal.CLI.Core.Events
             Payload = payload;
             Timestamp = UnityEngine.Time.time;
             Source = source ?? "Unknown";
+            Archetype = archetype;
         }
 
         /// <summary>Quick factory for state transitions.</summary>

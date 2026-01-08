@@ -23,7 +23,7 @@ namespace Cristal.CLI.Ritual
         public event Action OnUnboundEnded;
 
         // State
-        private RitualState _currentState = RitualState.NotStarted;
+        private RitualState _currentState = RitualState.Inactive;
         private RitualPhase _currentPhase = RitualPhase.Preparation;
 
         public RitualState CurrentState => _currentState;

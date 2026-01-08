@@ -344,6 +344,15 @@ namespace Cristal.CLI.Memory
             return _data.stateFlags.cumulativeEmotionalWeight / _data.stateFlags.totalCommands;
         }
 
+        /// <summary>
+        /// Get average intensity (0-100) based on emotional weight.
+        /// Used by RitualExecutor for condition checks.
+        /// </summary>
+        public int GetAverageIntensity()
+        {
+            return Mathf.Clamp((int)(GetEmotionalAverage() * 100f), 0, 100);
+        }
+
         #endregion
 
         #region State Flags

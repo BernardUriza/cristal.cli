@@ -37,8 +37,10 @@ namespace Cristal.CLI.Symbolic
     /// </summary>
     public enum SymbolicArchetype
     {
+        None = -1,
+        
         // Tarot Major Arcana
-        TheFool,
+        TheFool = 0,
         TheMagician,
         TheHighPriestess,
         TheEmpress,

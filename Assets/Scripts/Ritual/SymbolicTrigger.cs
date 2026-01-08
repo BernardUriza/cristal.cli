@@ -1,0 +1,599 @@
+using System;
+using UnityEngine;
+using Cristal.CLI.Core;
+using Cristal.CLI.Core.Events;
+using Cristal.CLI.StateMachine;
+using Cristal.CLI.Symbolic;
+using Cristal.CLI.Labyrinth;
+
+namespace Cristal.CLI.Ritual
+{
+    /// <summary>
+    /// Trigger type for symbolic events.
+    /// </summary>
+    public enum SymbolicTriggerType
+    {
+        Interact,           // E key interaction
+        Proximity,          // Enter radius
+        LookAt,             // Gaze for duration
+        StateDependent,     // Specific CristalState
+        TimeBasedLoop,      // Repeating timer
+        OneShot             // Single use then disabled
+    }
+
+    /// <summary>
+    /// Component that generates symbolic events when triggered.
+    /// 
+    /// Place on world objects (altars, glyphs, consoles, etc.)
+    /// to create interactive ritual elements.
+    /// </summary>
+    [RequireComponent(typeof(Collider))]
+    public class SymbolicTrigger : MonoBehaviour, IInteractable
+    {
+        [Header("Trigger Configuration")]
+        [SerializeField] private SymbolicTriggerType _triggerType = SymbolicTriggerType.Interact;
+        [SerializeField] private SymbolicArchetype _archetype = SymbolicArchetype.TheFragment;
+        [SerializeField] private SymbolicSignalType _signalType = SymbolicSignalType.ArcanaInvoked;
+
+        [Header("Intensity")]
+        [SerializeField, Range(0, 100)] private int _baseIntensity = 50;
+        [SerializeField] private bool _scaleWithProximity = false;
+        [SerializeField] private float _maxProximityDistance = 5f;
+
+        [Header("Conditions")]
+        [SerializeField] private CristalState[] _requiredStates;
+        [SerializeField] private SymbolicArchetype[] _prerequisiteArchetypes;
+        [SerializeField] private bool _requiresActiveRitual = false;
+        [SerializeField] private string _specificRitualId;
+
+        [Header("Timing")]
+        [SerializeField] private float _cooldownSeconds = 2f;
+        [SerializeField] private float _proximityDelay = 1f;
+        [SerializeField] private float _lookAtDuration = 2f;
+        [SerializeField] private float _loopInterval = 10f;
+
+        [Header("Interaction")]
+        [SerializeField] private string _interactionPrompt = "Invoke";
+        [SerializeField] private string _lockedPrompt = "Sealed";
+        [SerializeField] private bool _consumeOnUse = false;
+
+        [Header("Visual Feedback")]
+        [SerializeField] private bool _projectSymbolOnTrigger = true;
+        [SerializeField] private Transform _projectionPoint;
+        [SerializeField] private ParticleSystem _idleParticles;
+        [SerializeField] private ParticleSystem _activationParticles;
+        [SerializeField] private Renderer _glyphRenderer;
+        [SerializeField] private string _emissionColorProperty = "_EmissionColor";
+
+        [Header("Audio")]
+        [SerializeField] private AudioSource _audioSource;
+        [SerializeField] private AudioClip _activateSound;
+        [SerializeField] private AudioClip _lockedSound;
+        [SerializeField] private AudioClip _ambientLoop;
+
+        [Header("Debug")]
+        [SerializeField] private bool _debugMode = false;
+
+        // Events
+        public event Action<SymbolicTrigger> OnTriggered;
+        public event Action<SymbolicTrigger> OnLocked;
+
+        // State
+        private bool _isEnabled = true;
+        private bool _isInProximity = false;
+        private bool _isBeingLookedAt = false;
+        private float _lastTriggerTime = -999f;
+        private float _proximityEnterTime;
+        private float _lookAtStartTime;
+        private float _nextLoopTime;
+        private int _triggerCount = 0;
+        private Transform _playerTransform;
+
+        // Dependencies
+        private RitualExecutor _ritualExecutor;
+        private SymbolicForge _forge;
+        private MaterialPropertyBlock _propBlock;
+
+        #region Properties
+
+        public bool IsEnabled => _isEnabled;
+        public bool IsOnCooldown => Time.time - _lastTriggerTime < _cooldownSeconds;
+        public SymbolicArchetype Archetype => _archetype;
+        public int TriggerCount => _triggerCount;
+
+        // IInteractable implementation
+        public string InteractionPrompt => CheckCanInteract() ? _interactionPrompt : _lockedPrompt;
+        string IInteractable.InteractPrompt => InteractionPrompt;
+        bool IInteractable.CanInteract => CheckCanInteract();
+        public bool CheckCanInteract() => _isEnabled && !IsOnCooldown && MeetsConditions();
+
+        void IInteractable.OnInteract(PlayerInteraction player) => OnInteract();
+        void IInteractable.OnFocus() => OnFocusInternal();
+        void IInteractable.OnUnfocus() => OnUnfocusInternal();
+
+        #endregion
+
+        #region Unity Lifecycle
+
+        private void Awake()
+        {
+            _ritualExecutor = ServiceLocator.TryGet<RitualExecutor>();
+            _forge = ServiceLocator.TryGet<SymbolicForge>();
+            _propBlock = new MaterialPropertyBlock();
+
+            if (_projectionPoint == null)
+            {
+                _projectionPoint = transform;
+            }
+
+            SetupCollider();
+        }
+
+        private void Start()
+        {
+            if (_ambientLoop != null && _audioSource != null)
+            {
+                _audioSource.clip = _ambientLoop;
+                _audioSource.loop = true;
+                _audioSource.Play();
+            }
+
+            if (_triggerType == SymbolicTriggerType.TimeBasedLoop)
+            {
+                _nextLoopTime = Time.time + _loopInterval;
+            }
+
+            UpdateVisualState();
+        }
+
+        private void Update()
+        {
+            switch (_triggerType)
+            {
+                case SymbolicTriggerType.Proximity:
+                    UpdateProximityTrigger();
+                    break;
+
+                case SymbolicTriggerType.LookAt:
+                    UpdateLookAtTrigger();
+                    break;
+
+                case SymbolicTriggerType.TimeBasedLoop:
+                    UpdateLoopTrigger();
+                    break;
+
+                case SymbolicTriggerType.StateDependent:
+                    UpdateStateTrigger();
+                    break;
+            }
+        }
+
+        private void OnTriggerEnter(Collider other)
+        {
+            if (other.CompareTag("Player"))
+            {
+                _isInProximity = true;
+                _proximityEnterTime = Time.time;
+                _playerTransform = other.transform;
+                Log("Player entered proximity");
+            }
+        }
+
+        private void OnTriggerExit(Collider other)
+        {
+            if (other.CompareTag("Player"))
+            {
+                _isInProximity = false;
+                _playerTransform = null;
+                Log("Player exited proximity");
+            }
+        }
+
+        #endregion
+
+        #region Setup
+
+        private void SetupCollider()
+        {
+            var collider = GetComponent<Collider>();
+            if (collider != null)
+            {
+                // For proximity triggers, ensure it's a trigger
+                if (_triggerType == SymbolicTriggerType.Proximity)
+                {
+                    collider.isTrigger = true;
+                }
+            }
+        }
+
+        #endregion
+
+        #region Trigger Updates
+
+        private void UpdateProximityTrigger()
+        {
+            if (!_isInProximity || !CheckCanInteract()) return;
+
+            if (Time.time - _proximityEnterTime >= _proximityDelay)
+            {
+                Trigger();
+                _proximityEnterTime = Time.time + 999f; // Prevent re-trigger until exit/enter
+            }
+        }
+
+        private void UpdateLookAtTrigger()
+        {
+            if (!_isInProximity || _playerTransform == null || !CheckCanInteract()) return;
+
+            // Check if player is looking at us
+            Vector3 toTrigger = (transform.position - _playerTransform.position).normalized;
+            float dot = Vector3.Dot(_playerTransform.forward, toTrigger);
+
+            bool isLooking = dot > 0.9f; // ~25 degree cone
+
+            if (isLooking && !_isBeingLookedAt)
+            {
+                _isBeingLookedAt = true;
+                _lookAtStartTime = Time.time;
+            }
+            else if (!isLooking)
+            {
+                _isBeingLookedAt = false;
+            }
+
+            if (_isBeingLookedAt && Time.time - _lookAtStartTime >= _lookAtDuration)
+            {
+                Trigger();
+                _isBeingLookedAt = false;
+            }
+        }
+
+        private void UpdateLoopTrigger()
+        {
+            if (!_isEnabled) return;
+
+            if (Time.time >= _nextLoopTime)
+            {
+                if (MeetsConditions())
+                {
+                    Trigger();
+                }
+                _nextLoopTime = Time.time + _loopInterval;
+            }
+        }
+
+        private void UpdateStateTrigger()
+        {
+            if (!_isEnabled || IsOnCooldown) return;
+
+            var currentState = GetCurrentState();
+            foreach (var state in _requiredStates)
+            {
+                if (state == currentState)
+                {
+                    Trigger();
+                    break;
+                }
+            }
+        }
+
+        #endregion
+
+        #region Interaction
+
+        /// <summary>
+        /// IInteractable: Called when player presses interact key.
+        /// </summary>
+        public void OnInteract()
+        {
+            if (_triggerType != SymbolicTriggerType.Interact) return;
+
+            if (CheckCanInteract())
+            {
+                Trigger();
+            }
+            else
+            {
+                OnLockedInteraction();
+            }
+        }
+
+        /// <summary>
+        /// Called when player focuses on this trigger.
+        /// </summary>
+        private void OnFocusInternal()
+        {
+            if (_debugMode) CristalLog.Info("SymbolicTrigger", $"Focused: {name}");
+        }
+
+        /// <summary>
+        /// Called when player stops focusing on this trigger.
+        /// </summary>
+        private void OnUnfocusInternal()
+        {
+            if (_debugMode) CristalLog.Info("SymbolicTrigger", $"Unfocused: {name}");
+        }
+
+        /// <summary>
+        /// Force trigger this symbolic element.
+        /// </summary>
+        public void Trigger()
+        {
+            if (!_isEnabled) return;
+
+            _lastTriggerTime = Time.time;
+            _triggerCount++;
+
+            // Calculate intensity
+            int intensity = _baseIntensity;
+            if (_scaleWithProximity && _playerTransform != null)
+            {
+                float distance = Vector3.Distance(transform.position, _playerTransform.position);
+                float normalized = 1f - Mathf.Clamp01(distance / _maxProximityDistance);
+                intensity = Mathf.RoundToInt(_baseIntensity * normalized);
+            }
+
+            // Publish event
+            var evt = new SymbolicEvent(
+                _signalType,
+                GetCurrentState(),
+                intensity,
+                _archetype,
+                gameObject.name
+            );
+
+            ReactiveSystemBus.Publish(evt);
+
+            // Visual/audio feedback
+            PlayActivationFeedback();
+
+            // Project symbol
+            if (_projectSymbolOnTrigger && _forge != null)
+            {
+                // Forge will receive the event and handle projection
+            }
+
+            // Notify listeners
+            OnTriggered?.Invoke(this);
+
+            Log($"Triggered: {_archetype} @ intensity {intensity}");
+
+            // Consume if one-shot
+            if (_consumeOnUse || _triggerType == SymbolicTriggerType.OneShot)
+            {
+                _isEnabled = false;
+                UpdateVisualState();
+            }
+        }
+
+        private void OnLockedInteraction()
+        {
+            // Play locked sound
+            if (_lockedSound != null && _audioSource != null)
+            {
+                _audioSource.PlayOneShot(_lockedSound);
+            }
+
+            OnLocked?.Invoke(this);
+            Log("Interaction blocked - conditions not met");
+        }
+
+        #endregion
+
+        #region Conditions
+
+        private bool MeetsConditions()
+        {
+            // Check state
+            if (_requiredStates != null && _requiredStates.Length > 0)
+            {
+                var currentState = GetCurrentState();
+                bool stateMatch = false;
+                foreach (var state in _requiredStates)
+                {
+                    if (state == currentState) { stateMatch = true; break; }
+                }
+                if (!stateMatch) return false;
+            }
+
+            // Check prerequisites
+            if (_prerequisiteArchetypes != null && _prerequisiteArchetypes.Length > 0)
+            {
+                // Would check SymbolicMemoryLog or RitualExecutor._seenArchetypes
+                // For now, assume true
+            }
+
+            // Check ritual requirement
+            if (_requiresActiveRitual && _ritualExecutor != null)
+            {
+                if (_ritualExecutor.ActiveRitualCount == 0) return false;
+
+                if (!string.IsNullOrEmpty(_specificRitualId))
+                {
+                    bool found = false;
+                    foreach (var ritual in _ritualExecutor.ActiveRituals)
+                    {
+                        if (ritual.Definition.ritualId == _specificRitualId)
+                        {
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) return false;
+                }
+            }
+
+            return true;
+        }
+
+        #endregion
+
+        #region Visual Feedback
+
+        private void PlayActivationFeedback()
+        {
+            // Audio
+            if (_activateSound != null && _audioSource != null)
+            {
+                _audioSource.PlayOneShot(_activateSound);
+            }
+
+            // Particles
+            if (_activationParticles != null)
+            {
+                _activationParticles.Play();
+            }
+
+            // Glyph flash
+            if (_glyphRenderer != null)
+            {
+                StartCoroutine(FlashGlyph());
+            }
+        }
+
+        private System.Collections.IEnumerator FlashGlyph()
+        {
+            Color archetypeColor = GetArchetypeColor();
+
+            _glyphRenderer.GetPropertyBlock(_propBlock);
+            _propBlock.SetColor(_emissionColorProperty, archetypeColor * 3f);
+            _glyphRenderer.SetPropertyBlock(_propBlock);
+
+            yield return new WaitForSeconds(0.2f);
+
+            float duration = 0.5f;
+            float elapsed = 0f;
+
+            while (elapsed < duration)
+            {
+                float t = elapsed / duration;
+                Color color = Color.Lerp(archetypeColor * 3f, archetypeColor, t);
+
+                _glyphRenderer.GetPropertyBlock(_propBlock);
+                _propBlock.SetColor(_emissionColorProperty, color);
+                _glyphRenderer.SetPropertyBlock(_propBlock);
+
+                elapsed += Time.deltaTime;
+                yield return null;
+            }
+        }
+
+        private void UpdateVisualState()
+        {
+            if (_idleParticles != null)
+            {
+                if (_isEnabled)
+                {
+                    if (!_idleParticles.isPlaying) _idleParticles.Play();
+                }
+                else
+                {
+                    _idleParticles.Stop();
+                }
+            }
+
+            if (_glyphRenderer != null)
+            {
+                Color color = _isEnabled ? GetArchetypeColor() : Color.gray * 0.3f;
+                _glyphRenderer.GetPropertyBlock(_propBlock);
+                _propBlock.SetColor(_emissionColorProperty, color);
+                _glyphRenderer.SetPropertyBlock(_propBlock);
+            }
+        }
+
+        private Color GetArchetypeColor()
+        {
+            // Map archetypes to colors
+            return _archetype switch
+            {
+                SymbolicArchetype.TheMoon => new Color(0.6f, 0.8f, 1f),
+                SymbolicArchetype.TheSun => new Color(1f, 0.9f, 0.4f),
+                SymbolicArchetype.TheHighPriestess => new Color(0.5f, 0.3f, 0.8f),
+                SymbolicArchetype.Death => new Color(0.2f, 0.2f, 0.2f),
+                SymbolicArchetype.TheDevil => new Color(0.8f, 0.2f, 0.2f),
+                SymbolicArchetype.TheTower => new Color(0.9f, 0.4f, 0.1f),
+                SymbolicArchetype.TheCorruption => new Color(0.4f, 0f, 0.3f),
+                SymbolicArchetype.TheMemory => new Color(0f, 0.8f, 0.6f),
+                SymbolicArchetype.TheUnbound => new Color(1f, 1f, 1f),
+                SymbolicArchetype.TheVoid => new Color(0.1f, 0f, 0.2f),
+                SymbolicArchetype.TheFragment => new Color(0.5f, 0.5f, 0.5f),
+                SymbolicArchetype.TheEcho => new Color(0.3f, 0.5f, 0.7f),
+                _ => new Color(0f, 0.8f, 0.4f) // Default CRISTAL green
+            };
+        }
+
+        #endregion
+
+        #region Helpers
+
+        private CristalState GetCurrentState()
+        {
+            var stateMachine = ServiceLocator.TryGet<TerminalStateMachine>();
+            return stateMachine?.CurrentStateId ?? CristalState.Waiting;
+        }
+
+        private void Log(string message)
+        {
+            if (_debugMode)
+            {
+                Debug.Log($"[SymbolicTrigger:{gameObject.name}] {message}");
+            }
+        }
+
+        #endregion
+
+        #region Public API
+
+        /// <summary>
+        /// Enable or disable this trigger.
+        /// </summary>
+        public void SetEnabled(bool enabled)
+        {
+            _isEnabled = enabled;
+            UpdateVisualState();
+        }
+
+        /// <summary>
+        /// Reset trigger state (for reuse).
+        /// </summary>
+        public void Reset()
+        {
+            _isEnabled = true;
+            _triggerCount = 0;
+            _lastTriggerTime = -999f;
+            UpdateVisualState();
+        }
+
+        /// <summary>
+        /// Change archetype at runtime.
+        /// </summary>
+        public void SetArchetype(SymbolicArchetype archetype)
+        {
+            _archetype = archetype;
+            UpdateVisualState();
+        }
+
+        #endregion
+
+        #region Editor
+
+        private void OnDrawGizmosSelected()
+        {
+            Gizmos.color = new Color(0.5f, 0f, 1f, 0.3f);
+
+            if (_triggerType == SymbolicTriggerType.Proximity)
+            {
+                Gizmos.DrawWireSphere(transform.position, _maxProximityDistance);
+            }
+
+            if (_projectionPoint != null && _projectionPoint != transform)
+            {
+                Gizmos.color = Color.cyan;
+                Gizmos.DrawLine(transform.position, _projectionPoint.position);
+                Gizmos.DrawWireSphere(_projectionPoint.position, 0.2f);
+            }
+        }
+
+        #endregion
+    }
+}
