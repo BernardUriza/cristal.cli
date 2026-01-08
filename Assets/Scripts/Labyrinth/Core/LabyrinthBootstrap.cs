@@ -255,7 +255,7 @@ namespace Cristal.CLI.Labyrinth
             }
 
             // Find console by component
-            var console = FindFirstObjectByType<Console.InWorldConsole>();
+            var console = FindFirstObjectByType<InWorldConsole>();
             if (console != null)
             {
                 _consoleTransform = console.transform;

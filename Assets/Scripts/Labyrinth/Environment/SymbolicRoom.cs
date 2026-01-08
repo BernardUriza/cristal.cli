@@ -1,7 +1,6 @@
 using UnityEngine;
 using Cristal.CLI.Memory;
 using Cristal.CLI.StateMachine;
-using Cristal.CLI.Labyrinth.Console;
 
 namespace Cristal.CLI.Labyrinth
 {
