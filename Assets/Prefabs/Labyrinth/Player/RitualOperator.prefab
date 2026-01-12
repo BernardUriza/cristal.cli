@@ -16,6 +16,7 @@ GameObject:
   - component: {fileID: 114000000000005}
   - component: {fileID: 114000000000006}
   - component: {fileID: 114000000000007}
+  - component: {fileID: 114000000000008}
   m_Layer: 0
   m_Name: RitualOperator
   m_TagString: Player
@@ -134,7 +135,7 @@ Animator:
   m_GameObject: {fileID: 1000000000000000}
   m_Enabled: 1
   m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 2f69b44073497fd439e6cfdee969e920, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
@@ -175,10 +176,38 @@ MonoBehaviour:
   _modelRoot: {fileID: 4000000000000001}
   _modelOffset: {x: 0, y: 0, z: 0}
   _modelRotation: {x: 0, y: 0, z: 0}
-  _defaultAnimatorController: {fileID: 0}
+  _defaultAnimatorController: {fileID: 9100000, guid: 2f69b44073497fd439e6cfdee969e920, type: 2}
   _defaultAvatar: {fileID: 0}
   _audioSource: {fileID: 0}
   _debugMode: 0
+--- !u!114 &114000000000008
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1000000000000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a434f76832f382a449a155fcd2b475d2, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  _speedParameter: Speed
+  _motionSpeedParameter: MotionSpeed
+  _isGroundedParameter: IsGrounded
+  _isCrouchingParameter: IsCrouching
+  _jumpTrigger: Jump
+  _landTrigger: Land
+  _freeFallParameter: FreeFall
+  _idleThreshold: 0.1
+  _walkThreshold: 3
+  _runThreshold: 5
+  _animationSmoothTime: 0.1
+  _freeFallThreshold: 0.5
+  _debugMode: 0
+  _animator: {fileID: 95000000000000}
+  _controller: {fileID: 114000000000002}
+  _inputHandler: {fileID: 114000000000001}
 --- !u!1 &1000000000000001
 GameObject:
   m_ObjectHideFlags: 0

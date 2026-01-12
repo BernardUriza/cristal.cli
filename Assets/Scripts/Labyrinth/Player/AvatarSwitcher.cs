@@ -128,42 +128,63 @@ namespace Cristal.CLI.Labyrinth.Player
 
         private void ConfigureAnimator(GameObject modelInstance)
         {
-            // Find Animator on model
-            var modelAnimator = modelInstance.GetComponent<Animator>();
+            // Always use player's animator, just get Avatar from model FBX
+            if (_defaultAnimatorController != null)
+            {
+                _animator.runtimeAnimatorController = _defaultAnimatorController;
+            }
 
+            // Try to get Avatar (humanoid rig) from model
+            Avatar modelAvatar = null;
+
+            // Check if model has Animator with Avatar
+            var modelAnimator = modelInstance.GetComponent<Animator>();
             if (modelAnimator != null)
             {
-                // Transfer animator controller to player's animator
-                if (modelAnimator.runtimeAnimatorController != null)
-                {
-                    _animator.runtimeAnimatorController = modelAnimator.runtimeAnimatorController;
-                }
-                else if (_defaultAnimatorController != null)
-                {
-                    _animator.runtimeAnimatorController = _defaultAnimatorController;
-                }
-
-                // Transfer avatar (for humanoid retargeting)
                 if (modelAnimator.avatar != null && modelAnimator.avatar.isHuman)
                 {
-                    _animator.avatar = modelAnimator.avatar;
+                    modelAvatar = modelAnimator.avatar;
                 }
-                else if (_defaultAvatar != null)
-                {
-                    _animator.avatar = _defaultAvatar;
-                }
-
-                // Disable model's animator, use player's animator instead
+                // Disable model's animator - we use player's animator
                 modelAnimator.enabled = false;
+            }
 
-                if (_debugMode)
+            // If no Animator on model, try to find Avatar asset from FBX
+            if (modelAvatar == null)
+            {
+                // Get SkinnedMeshRenderer to find avatar
+                var skinnedMesh = modelInstance.GetComponentInChildren<SkinnedMeshRenderer>();
+                if (skinnedMesh != null && skinnedMesh.rootBone != null)
                 {
-                    CristalLog.Info("AvatarSwitcher", "Animator configured and transferred to player");
+                    // Avatar might be on root bone's GameObject
+                    var rootAnimator = skinnedMesh.rootBone.GetComponentInParent<Animator>();
+                    if (rootAnimator != null && rootAnimator.avatar != null && rootAnimator.avatar.isHuman)
+                    {
+                        modelAvatar = rootAnimator.avatar;
+                    }
                 }
             }
-            else if (_debugMode)
+
+            // Apply avatar to player's animator
+            if (modelAvatar != null)
             {
-                CristalLog.Warning("AvatarSwitcher", "Model has no Animator component");
+                _animator.avatar = modelAvatar;
+                if (_debugMode)
+                {
+                    CristalLog.Info("AvatarSwitcher", $"Avatar configured: {modelAvatar.name}");
+                }
+            }
+            else if (_defaultAvatar != null)
+            {
+                _animator.avatar = _defaultAvatar;
+                if (_debugMode)
+                {
+                    CristalLog.Warning("AvatarSwitcher", "Using default avatar (model has no humanoid rig)");
+                }
+            }
+            else
+            {
+                CristalLog.Warning("AvatarSwitcher", "No Avatar found - animations may not work correctly");
             }
         }
 
