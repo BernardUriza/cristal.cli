@@ -11,6 +11,7 @@ namespace Cristal.CLI.Labyrinth.Player.Editor
     public static class AvatarDataCreator
     {
         private const string MODELS_PATH = "Assets/Models/Characters";
+        private const string MIXAMO_SOURCE_PATH = "Mixamo";
         private const string AVATARS_RESOURCE_PATH = "Assets/Resources/Avatars";
         private const string PREFABS_PATH = "Assets/Prefabs/Labyrinth/Player/Avatars";
 
@@ -18,17 +19,15 @@ namespace Cristal.CLI.Labyrinth.Player.Editor
         public static void CreateAvatarDatabase()
         {
             // Ensure directories exist
-            if (!AssetDatabase.IsValidFolder(AVATARS_RESOURCE_PATH))
-            {
-                Directory.CreateDirectory(AVATARS_RESOURCE_PATH);
-                AssetDatabase.Refresh();
-            }
+            EnsureDirectoryExists(MODELS_PATH);
+            EnsureDirectoryExists(AVATARS_RESOURCE_PATH);
+            EnsureDirectoryExists(PREFABS_PATH);
 
-            if (!AssetDatabase.IsValidFolder(PREFABS_PATH))
-            {
-                Directory.CreateDirectory(PREFABS_PATH);
-                AssetDatabase.Refresh();
-            }
+            // Import FBX files from Mixamo/ to Assets/Models/Characters/
+            ImportMixamoModels();
+
+            AssetDatabase.Refresh();
+            AssetDatabase.SaveAssets();
 
             // Define avatar configs
             var avatarConfigs = new[]
@@ -161,6 +160,50 @@ namespace Cristal.CLI.Labyrinth.Player.Editor
 
             Debug.Log($"[AvatarDataCreator] Created/Updated: {avatarDataPath}");
             return true;
+        }
+
+        private static void EnsureDirectoryExists(string path)
+        {
+            if (!Directory.Exists(path))
+            {
+                Directory.CreateDirectory(path);
+                Debug.Log($"[AvatarDataCreator] Created directory: {path}");
+            }
+        }
+
+        private static void ImportMixamoModels()
+        {
+            if (!Directory.Exists(MIXAMO_SOURCE_PATH))
+            {
+                Debug.LogWarning($"[AvatarDataCreator] Mixamo source folder not found: {MIXAMO_SOURCE_PATH}");
+                return;
+            }
+
+            string[] fbxFiles = Directory.GetFiles(MIXAMO_SOURCE_PATH, "*.fbx");
+            if (fbxFiles.Length == 0)
+            {
+                Debug.LogWarning("[AvatarDataCreator] No FBX files found in Mixamo folder");
+                return;
+            }
+
+            int copied = 0;
+            foreach (string sourcePath in fbxFiles)
+            {
+                string fileName = Path.GetFileName(sourcePath);
+                string destPath = Path.Combine(MODELS_PATH, fileName);
+
+                if (!File.Exists(destPath))
+                {
+                    File.Copy(sourcePath, destPath);
+                    copied++;
+                    Debug.Log($"[AvatarDataCreator] Copied: {fileName}");
+                }
+            }
+
+            if (copied > 0)
+            {
+                Debug.Log($"[AvatarDataCreator] Imported {copied} FBX models from Mixamo");
+            }
         }
 
         private struct AvatarConfig
