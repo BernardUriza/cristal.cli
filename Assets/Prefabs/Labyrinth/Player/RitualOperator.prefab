@@ -10,9 +10,12 @@ GameObject:
   m_Component:
   - component: {fileID: 4000000000000000}
   - component: {fileID: 143000000000000}
+  - component: {fileID: 95000000000000}
   - component: {fileID: 114000000000001}
   - component: {fileID: 114000000000002}
   - component: {fileID: 114000000000005}
+  - component: {fileID: 114000000000006}
+  - component: {fileID: 114000000000007}
   m_Layer: 0
   m_Name: RitualOperator
   m_TagString: Player
@@ -121,6 +124,61 @@ MonoBehaviour:
   _orbitingSpheres: 3
   _orbitRadius: 0.8
   _orbitSpeed: 60
+--- !u!95 &95000000000000
+Animator:
+  serializedVersion: 5
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1000000000000000}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 0}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_WarningMessage:
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &114000000000006
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1000000000000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4e00396692a53742975e0e7569e78f0, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  _availableAvatars: []
+  _resourcesPath: Avatars
+  _currentAvatarId:
+--- !u!114 &114000000000007
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1000000000000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1824bb7c9297a114c86cbf0d7b5fabc5, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  _modelRoot: {fileID: 4000000000000001}
+  _modelOffset: {x: 0, y: 0, z: 0}
+  _modelRotation: {x: 0, y: 0, z: 0}
+  _defaultAnimatorController: {fileID: 0}
+  _defaultAvatar: {fileID: 0}
+  _audioSource: {fileID: 0}
+  _debugMode: 0
 --- !u!1 &1000000000000001
 GameObject:
   m_ObjectHideFlags: 0
