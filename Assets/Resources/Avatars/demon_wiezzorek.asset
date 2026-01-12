@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2d9bf572eb011b341990e17483717d82, type: 3}
+  m_Name: demon_wiezzorek
+  m_EditorClassIdentifier: Assembly-CSharp::Cristal.CLI.Labyrinth.Player.AvatarData
+  _avatarId: demon_wiezzorek
+  _displayName: El Atormentado
+  _description: Demonio que cuestiona su propia naturaleza
+  _flavorText: "\"\xBFSoy malvado porque as\xED nac\xED, o porque as\xED me nombraron?\""
+  _archetype: 2
+  _modelPrefab: {fileID: 919132149155446097, guid: 3bc7d3bff1fb20348aae62aaf5eb16e0, type: 3}
+  _themeColor: {r: 0.8, g: 0.3, b: 0.1, a: 1}
+  _overrideMaterial: {fileID: 0}
+  _selectionSound: {fileID: 0}

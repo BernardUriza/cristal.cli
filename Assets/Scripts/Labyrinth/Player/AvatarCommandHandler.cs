@@ -1,6 +1,7 @@
 using Cristal.CLI.Input;
 using Cristal.CLI.Response;
 using Cristal.CLI.Core;
+using Cristal.CLI.Memory;
 
 namespace Cristal.CLI.Labyrinth.Player
 {
@@ -41,7 +42,7 @@ namespace Cristal.CLI.Labyrinth.Player
             }
 
             // No arguments: list all avatars
-            if (!command.HasArguments)
+            if (command.ArgumentCount == 0)
             {
                 string list = avatarManager.FormatAvatarList();
                 return BuildSuccessResponse(list);
@@ -95,8 +96,8 @@ namespace Cristal.CLI.Labyrinth.Player
         {
             return new BuiltResponse
             {
-                Text = text,
-                ResponseType = ResponseType.System,
+                Lines = new System.Collections.Generic.List<string> { text },
+                Level = ResponseLevel.Literal,
                 ApplyGlitch = false
             };
         }
@@ -105,8 +106,8 @@ namespace Cristal.CLI.Labyrinth.Player
         {
             return new BuiltResponse
             {
-                Text = text,
-                ResponseType = ResponseType.Error,
+                Lines = new System.Collections.Generic.List<string> { text },
+                Level = ResponseLevel.Literal,
                 ApplyGlitch = false
             };
         }

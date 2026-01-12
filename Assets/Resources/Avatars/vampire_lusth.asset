@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2d9bf572eb011b341990e17483717d82, type: 3}
+  m_Name: vampire_lusth
+  m_EditorClassIdentifier: Assembly-CSharp::Cristal.CLI.Labyrinth.Player.AvatarData
+  _avatarId: vampire_lusth
+  _displayName: El Nosferatu
+  _description: "Vampiro ancestral, testigo de \xE9pocas olvidadas"
+  _flavorText: '"La inmortalidad no es un regalo. Es una condena a recordar todo
+    lo que has perdido."'
+  _archetype: 2
+  _modelPrefab: {fileID: 919132149155446097, guid: 373688bf03be01b42b70972c4ca0348e, type: 3}
+  _themeColor: {r: 0.6, g: 0.1, b: 0.2, a: 1}
+  _overrideMaterial: {fileID: 0}
+  _selectionSound: {fileID: 0}

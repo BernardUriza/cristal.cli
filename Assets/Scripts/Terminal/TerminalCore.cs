@@ -280,14 +280,11 @@ namespace Cristal.CLI
             {
                 builtResponse = _arcanaSystem?.HandleInvokeCommand(command);
             }
-            // Check for avatar commands - TEMPORARILY DISABLED FOR COMPILATION
-            // TODO: Re-enable after avatar system compiles
-            /*
+            // Check for avatar commands
             else if (command.IsCommand && (command.Command == "avatar" || command.Command == "avatars"))
             {
                 builtResponse = Cristal.CLI.Labyrinth.Player.AvatarCommandHandler.TryProcessCommand(command);
             }
-            */
             else
             {
                 // Determine if we should use AI based on current state
