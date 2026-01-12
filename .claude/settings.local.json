@@ -16,7 +16,9 @@
       "Bash(powershell -Command:*)",
       "Bash(tasklist:*)",
       "Bash(findstr:*)",
-      "Bash(dir \"C:\\\\Users\\\\buo45\\\\cristal.cli\\\\Temp\" /b)"
+      "Bash(dir \"C:\\\\Users\\\\buo45\\\\cristal.cli\\\\Temp\" /b)",
+      "Bash(mkdir:*)",
+      "mcp__chrome-devtools__list_pages"
     ]
   },
   "enableAllProjectMcpServers": true,
