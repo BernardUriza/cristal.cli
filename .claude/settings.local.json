@@ -48,7 +48,8 @@
       "Bash(git reset:*)",
       "mcp__chrome-devtools__new_page",
       "mcp__chrome-devtools__wait_for",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(start \"\" \"C:\\\\Program Files\\\\Unity\\\\Hub\\\\Editor\\\\6000.3.2f1\\\\Editor\\\\Unity.exe\" -projectPath \"C:\\\\Users\\\\buo45\\\\cristal.cli\")"
     ]
   },
   "enableAllProjectMcpServers": true,

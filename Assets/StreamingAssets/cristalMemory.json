@@ -2,7 +2,7 @@
     "version": "2.0",
     "sessionId": "FRACTURE_00_G81",
     "createdAt": "2026-01-06T07:31:20.1451776Z",
-    "lastModified": "2026-01-12T05:38:47.3336847Z",
+    "lastModified": "2026-01-13T04:10:16.3245468Z",
     "commands": [
         {
             "input": "hello brother",
@@ -139,7 +139,7 @@
         "majorEvents": [],
         "endingsSeen": [],
         "totalPlayTime": 0.0,
-        "sessionCount": 14
+        "sessionCount": 17
     },
     "ritual": {
         "hasVisitedRemembering": false,
