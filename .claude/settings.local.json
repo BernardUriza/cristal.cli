@@ -43,7 +43,12 @@
       "Bash(ls:*)",
       "Bash(ping:*)",
       "Bash(git add:*)",
-      "Bash(git commit -m \"$\\(cat <<''EOF''\nchore: Eliminado Backup_Phase789 - arquitectura obsoleta\n\nAnálisis determinó que archivos en backup fueron reemplazados por nueva arquitectura:\n- Dream/Journal system → DreamTunnelSystem + DreamMemoryBridge \\(Phase 6.7\\)\n- Vision stub actual es intencional \\(TODO para Phase 7\\)\n- Resto de archivos: duplicados .bak ya restaurados\n\nBackup ya no necesario, arquitectura actual superior.\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nchore: Eliminado Backup_Phase789 - arquitectura obsoleta\n\nAnálisis determinó que archivos en backup fueron reemplazados por nueva arquitectura:\n- Dream/Journal system → DreamTunnelSystem + DreamMemoryBridge \\(Phase 6.7\\)\n- Vision stub actual es intencional \\(TODO para Phase 7\\)\n- Resto de archivos: duplicados .bak ya restaurados\n\nBackup ya no necesario, arquitectura actual superior.\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git commit:*)",
+      "Bash(git reset:*)",
+      "mcp__chrome-devtools__new_page",
+      "mcp__chrome-devtools__wait_for",
+      "Bash(find:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
