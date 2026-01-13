@@ -9,8 +9,17 @@ Updated: 2026-01-06
 ## Current State
 
 **Dual Mode:**
-- `CrystalCLI.unity` - Terminal 2D
-- `Labyrinth.unity` - Mundo 3D explorable
+- `CrystalCLI.unity` - Terminal 2D (demo/testing)
+- `Labyrinth.unity` - Mundo 3D explorable (escena principal)
+
+**Integración 3D-Terminal:**
+El terminal NO es un overlay sino objetos interactivos en el mundo 3D:
+- `InWorldConsole` - Consolas interactivas en el laberinto (world-space canvas)
+- `ConsoleUIBridge` - Conecta world-space UI con TerminalCore
+- `LabyrinthManager.GameMode` - Cambia entre Exploration/Console/Transition
+- Player presiona `E` en consola → LabyrinthManager.EnterConsoleMode()
+- Terminal aparece como objeto 3D, usa mismo TerminalCore compartido
+- Player presiona `ESC` → ExitConsoleMode(), vuelve a exploración
 
 **Session:** Ver `Donde_quedamos.md`
 
@@ -172,6 +181,19 @@ State Machine:
 Prompt System (3D Labyrinth):
   PromptVocabulary.asset → PromptContextResolver → FloatingPromptController
   → FloatingInteractPrompt (urgency: Normal/Warning/Critical)
+
+In-World Console Integration (3D Terminal):
+  Player explores → finds InWorldConsole → presses E
+  → LabyrinthManager.EnterConsoleMode()
+  → GameMode: Exploration → Console
+  → ConsoleUIBridge.AttachToCLI() connects world-space UI to TerminalCore
+  → Player types in 3D terminal (shared TerminalCore logic)
+  → Player presses ESC → ExitConsoleMode() → GameMode: Console → Exploration
+
+  Components:
+    InWorldConsole     : IInteractable 3D object with world-space Canvas
+    ConsoleUIBridge    : Bridges world-space UI to TerminalCore
+    LabyrinthManager   : Manages GameMode (Exploration/Console/Transition)
 ```
 
 ---
@@ -405,6 +427,12 @@ memory.FormatForAI();
 var resolver = ServiceLocator.Get<PromptContextResolver>();
 var context = resolver.Resolve(interactable, targetTransform);
 // context.ActionText, context.KeyText, context.Urgency
+
+// LabyrinthManager (3D World & Console Integration)
+var labyrinth = ServiceLocator.Get<LabyrinthManager>();
+labyrinth.EnterConsoleMode(inWorldConsole);
+labyrinth.ExitConsoleMode();
+labyrinth.CurrentGameMode; // Exploration, Console, Transition
 ```
 
 ---
