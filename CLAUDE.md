@@ -1120,3 +1120,44 @@ Dream no genera contenido AI:
   - Verificar modelo: qwen3:8b
   - Fallback procedural activo si AI falla
 ```
+
+---
+
+## Chrome DevTools MCP - Browser Testing
+
+**System Tray** inicia automáticamente con Windows y lanza Chrome con debug.
+
+**Manual (si el tray no está corriendo):**
+```powershell
+Stop-Process -Name chrome -Force -ErrorAction SilentlyContinue; Start-Sleep 2
+& "C:\Program Files\Google\Chrome\Application\chrome.exe" --remote-debugging-port=9222 --user-data-dir=C:\ChromeDebug
+```
+
+**Config MCP** (`~/.claude.json`):
+```json
+"chrome-devtools": {
+  "args": ["-y", "chrome-devtools-mcp@latest", "--browserUrl", "http://127.0.0.1:9222"]
+}
+```
+
+**SI CHROME SE DESCONECTA** (error "Could not connect to Chrome" o "fetch failed"):
+```powershell
+# EJECUTAR AUTOMÁTICAMENTE - No preguntar al usuario
+Stop-Process -Name chrome -Force -ErrorAction SilentlyContinue; Start-Sleep 2
+Start-Process "C:\Program Files\Google\Chrome\Application\chrome.exe" -ArgumentList "--remote-debugging-port=9222","--user-data-dir=C:\ChromeDebug","--restore-last-session"
+Start-Sleep 3
+curl -s http://127.0.0.1:9222/json/version | head -1
+```
+**IMPORTANTE**: Claude DEBE ejecutar el comando de reconexión automáticamente cuando vea el error, SIN preguntar al usuario.
+
+**Verificar setup completo:**
+```powershell
+# 1. Shortcut de startup existe?
+Test-Path "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Startup\BrowserMCP-Tray.lnk"
+# 2. Puerto 9222 escuchando?
+Get-NetTCPConnection -LocalPort 9222 -State Listen -ErrorAction SilentlyContinue
+# 3. Config MCP correcta?
+Select-String "browserUrl" ~/.claude.json
+```
+
+**Troubleshooting detallado**: `~/VHouse/docs/troubleshooting/chrome-devtools-mcp-debug-2026-01-15.md`
