@@ -1,20 +1,24 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useFBX, useGLTF, useAnimations } from "@react-three/drei";
+import { clone as skeletonClone } from "three/examples/jsm/utils/SkeletonUtils.js";
 import * as THREE from "three";
 
 // Which character/animation files to load from /public/models.
 //
-// IMPORTANT — model format:
-//   three.js's FBXLoader only supports FBX 7.x. The Mixamo files in /Mixamo are
-//   the legacy 6100 format (FBX 2010) and will NOT load — re-export them from
-//   mixamo.com as "FBX Binary (.fbx)" (now 7.4), or better, convert to .glb
-//   (the recommended web format) and point these constants at the .glb files.
+// character.glb is the committed, web-ready model: it was converted from the
+// Mixamo "Rumba Dancing.fbx" (which ships mesh + skeleton + animation) with
+// FBX2glTF — see scripts/convert-character.mjs. The legacy /Mixamo FBX files are
+// version 6100 (FBX 2010), which three.js's FBXLoader cannot read, hence the
+// conversion. The FBX path below remains as a fallback for 7.x FBX exports.
 //
 // Skinning note: there is no `material.skinning` flag in modern three.js (it was
 // removed in r125). A SkinnedMesh + skeleton skins automatically, so plain
 // MeshStandardMaterial just works — which is what GLTFLoader/FBXLoader produce.
-const CHARACTER_FILE = "character.fbx";
+const CHARACTER_FILE = "character.glb";
 const ANIM_FILE = "Rumba Dancing.fbx";
+
+// Mixamo-via-FBX2glTF arrives ~3.8 units tall; normalise to roughly 1.8m.
+const TARGET_HEIGHT = 1.8;
 
 const CHARACTER_URL = `/models/${CHARACTER_FILE}`;
 const ANIM_URL = `/models/${ANIM_FILE}`;
@@ -58,7 +62,7 @@ function FBXCharacter({ moving }: CharacterProps) {
   const base = useFBX(CHARACTER_URL);
   const anim = useFBX(ANIM_URL);
   const model = useMemo(() => {
-    const clone = base.clone(true);
+    const clone = skeletonClone(base);
     prepare(clone);
     return clone;
   }, [base]);
@@ -74,14 +78,23 @@ function FBXCharacter({ moving }: CharacterProps) {
 function GLBCharacter({ moving }: CharacterProps) {
   const gltf = useGLTF(CHARACTER_URL);
   const model = useMemo(() => {
-    const clone = gltf.scene.clone(true);
+    const clone = skeletonClone(gltf.scene);
     prepare(clone);
     return clone;
   }, [gltf]);
+
+  // Normalise size + drop feet to y=0 from the bind-pose bounding box.
+  const { scale, yOffset } = useMemo(() => {
+    const box = new THREE.Box3().setFromObject(model);
+    const height = box.max.y - box.min.y;
+    const s = height > 0.001 ? TARGET_HEIGHT / height : 1;
+    return { scale: s, yOffset: -box.min.y * s };
+  }, [model]);
+
   const groupRef = useRef<THREE.Group>(null);
   useClipPlayer(groupRef, gltf.animations, moving);
   return (
-    <group ref={groupRef}>
+    <group ref={groupRef} scale={scale} position={[0, yOffset, 0]}>
       <primitive object={model} />
     </group>
   );
