@@ -10,6 +10,8 @@ interface GameState {
   activeConsoleId: string | null;
   /** id of the console the player is currently close enough to interact with */
   nearbyConsoleId: string | null;
+  /** id of the ritual glyph the player is currently close enough to invoke */
+  nearbyGlyphId: string | null;
   /** current locomotion clip, mirrored from the Player for the debug HUD */
   locomotion: Locomotion;
   /** most recent symbolic event, surfaced in the debug HUD */
@@ -18,6 +20,7 @@ interface GameState {
   enterConsoleMode: (consoleId: string) => void;
   exitConsoleMode: () => void;
   setNearbyConsole: (consoleId: string | null) => void;
+  setNearbyGlyph: (glyphId: string | null) => void;
   setLocomotion: (locomotion: Locomotion) => void;
   setLastSymbol: (event: SymbolicEvent) => void;
 }
@@ -28,6 +31,7 @@ export const useGame = create<GameState>((set, get) => ({
   mode: GameMode.Exploration,
   activeConsoleId: null,
   nearbyConsoleId: null,
+  nearbyGlyphId: null,
   locomotion: "idle",
   lastSymbol: null,
 
@@ -53,6 +57,8 @@ export const useGame = create<GameState>((set, get) => ({
   },
 
   setNearbyConsole: (consoleId) => set({ nearbyConsoleId: consoleId }),
+
+  setNearbyGlyph: (glyphId) => set({ nearbyGlyphId: glyphId }),
 
   setLocomotion: (locomotion) => set({ locomotion }),
 

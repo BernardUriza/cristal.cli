@@ -3,11 +3,23 @@ import * as THREE from "three";
 import { Labyrinth } from "./Labyrinth";
 import { InWorldConsole } from "./InWorldConsole";
 import { Player, type ConsoleRef } from "./Player";
+import { RitualGlyph, type GlyphRef } from "./RitualGlyph";
 import { cellCenter, generateMaze } from "./maze";
+import type { SymbolicArchetype } from "./symbolicBus";
 
 const MAZE_COLS = 8;
 const MAZE_ROWS = 8;
 const MAZE_SEED = 1337;
+
+const GLYPH_COLORS: Record<SymbolicArchetype, string> = {
+  fragment: "#9bff7d",
+  echo: "#7dffd0",
+  corruption: "#ff5a3d",
+  memory: "#ffd23d",
+  moon: "#7db8ff",
+  gate: "#b0b0c0",
+  vision: "#c879ff",
+};
 
 export function Scene() {
   const maze = useMemo(() => generateMaze(MAZE_COLS, MAZE_ROWS, MAZE_SEED), []);
@@ -37,6 +49,25 @@ export function Scene() {
     [maze, consolePlacements]
   );
 
+  // Ritual glyphs — invocations of the corrupted liturgy, one archetype each.
+  const glyphPlacements = useMemo(
+    () => [
+      { id: "glyph_moon", cell: [2, 5] as const, archetype: "moon" as SymbolicArchetype },
+      { id: "glyph_vision", cell: [5, 1] as const, archetype: "vision" as SymbolicArchetype },
+      { id: "glyph_corruption", cell: [7, 3] as const, archetype: "corruption" as SymbolicArchetype },
+    ],
+    []
+  );
+
+  const glyphs = useMemo<GlyphRef[]>(
+    () =>
+      glyphPlacements.map((g) => {
+        const [x, z] = cellCenter(maze, g.cell[0], g.cell[1]);
+        return { id: g.id, position: new THREE.Vector3(x, 0, z), archetype: g.archetype };
+      }),
+    [maze, glyphPlacements]
+  );
+
   return (
     <>
       <color attach="background" args={["#02050a"]} />
@@ -63,7 +94,20 @@ export function Scene() {
         return <InWorldConsole key={c.id} id={c.id} position={[x, 0, z]} />;
       })}
 
-      <Player maze={maze} spawn={spawn} consoles={consoles} />
+      {glyphPlacements.map((g) => {
+        const [x, z] = cellCenter(maze, g.cell[0], g.cell[1]);
+        return (
+          <RitualGlyph
+            key={g.id}
+            id={g.id}
+            position={[x, 0, z]}
+            archetype={g.archetype}
+            color={GLYPH_COLORS[g.archetype]}
+          />
+        );
+      })}
+
+      <Player maze={maze} spawn={spawn} consoles={consoles} glyphs={glyphs} />
     </>
   );
 }

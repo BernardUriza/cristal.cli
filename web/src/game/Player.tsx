@@ -7,6 +7,8 @@ import { GameMode, type Locomotion } from "./types";
 import { useGame } from "./store";
 import { isWalkable, type Maze } from "./maze";
 import { useKeyboard } from "./input/useKeyboard";
+import { symbolicBus } from "./symbolicBus";
+import type { GlyphRef } from "./RitualGlyph";
 
 const WALK_SPEED = 4;
 const SPRINT_SPEED = 7;
@@ -28,12 +30,14 @@ interface PlayerProps {
   maze: Maze;
   spawn: [number, number, number];
   consoles: ConsoleRef[];
+  glyphs: GlyphRef[];
 }
 
-export function Player({ maze, spawn, consoles }: PlayerProps) {
+export function Player({ maze, spawn, consoles, glyphs }: PlayerProps) {
   const { camera, gl } = useThree();
   const mode = useGame((s) => s.mode);
   const setNearbyConsole = useGame((s) => s.setNearbyConsole);
+  const setNearbyGlyph = useGame((s) => s.setNearbyGlyph);
   const enterConsoleMode = useGame((s) => s.enterConsoleMode);
 
   const group = useRef<THREE.Group>(null);
@@ -72,24 +76,33 @@ export function Player({ maze, spawn, consoles }: PlayerProps) {
     };
   }, [gl, mode]);
 
-  // E to enter the nearby console.
+  // E invokes a nearby ritual glyph, else enters a nearby console.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.code !== "KeyE") return;
-      const { mode: m, nearbyConsoleId } = useGame.getState();
-      if (m === GameMode.Exploration && nearbyConsoleId) {
+      const { mode: m, nearbyConsoleId, nearbyGlyphId } = useGame.getState();
+      if (m !== GameMode.Exploration) return;
+      if (nearbyGlyphId) {
+        const glyph = glyphs.find((g) => g.id === nearbyGlyphId);
+        if (glyph) symbolicBus.emit({ signal: "invoked", archetype: glyph.archetype, intensity: 60 });
+      } else if (nearbyConsoleId) {
         enterConsoleMode(nearbyConsoleId);
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [enterConsoleMode]);
+  }, [enterConsoleMode, glyphs]);
 
   const tmpForward = useMemo(() => new THREE.Vector3(), []);
   const tmpRight = useMemo(() => new THREE.Vector3(), []);
   const tmpMove = useMemo(() => new THREE.Vector3(), []);
   const desiredCam = useMemo(() => new THREE.Vector3(), []);
   const lookTarget = useMemo(() => new THREE.Vector3(), []);
+
+  if (import.meta.env.DEV) {
+    (window as unknown as { __player: typeof pos; __glyphs: GlyphRef[] }).__player = pos;
+    (window as unknown as { __player: typeof pos; __glyphs: GlyphRef[] }).__glyphs = glyphs;
+  }
 
   useFrame((_, dtRaw) => {
     const dt = Math.min(dtRaw, 0.05); // clamp big frame gaps
@@ -156,6 +169,17 @@ export function Player({ maze, spawn, consoles }: PlayerProps) {
         }
       }
       if (nearest !== useGame.getState().nearbyConsoleId) setNearbyConsole(nearest);
+
+      let nearestGlyph: string | null = null;
+      let nearestGlyphDist = INTERACT_RANGE;
+      for (const g of glyphs) {
+        const d = g.position.distanceTo(pos.current);
+        if (d < nearestGlyphDist) {
+          nearestGlyphDist = d;
+          nearestGlyph = g.id;
+        }
+      }
+      if (nearestGlyph !== useGame.getState().nearbyGlyphId) setNearbyGlyph(nearestGlyph);
 
       if (!moving.current) loco.current = "idle";
     } else {
