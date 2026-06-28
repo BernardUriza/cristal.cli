@@ -3,6 +3,7 @@ import { Canvas } from "@react-three/fiber";
 import { Scene } from "./game/Scene";
 import { InteractPrompt } from "./ui/InteractPrompt";
 import { ConsoleOverlay } from "./ui/ConsoleOverlay";
+import { DebugHUD } from "./ui/DebugHUD";
 import { useGame } from "./game/store";
 import { GameMode } from "./game/types";
 
@@ -38,6 +39,7 @@ export function App() {
       <div className="hud">
         <ModeBadge />
         <InteractPrompt />
+        <DebugHUD />
       </div>
       <ConsoleOverlay />
     </>

@@ -3,18 +3,17 @@ import { useFrame } from "@react-three/fiber";
 import { useGLTF, useAnimations } from "@react-three/drei";
 import { clone as skeletonClone } from "three/examples/jsm/utils/SkeletonUtils.js";
 import * as THREE from "three";
+import type { Locomotion } from "./types";
 
 const CHARACTER_URL = "/models/character.glb";
-const CLIP_URLS = {
+const CLIP_URLS: Record<Locomotion, string> = {
   idle: "/models/idle.glb",
   walk: "/models/walking.glb",
   run: "/models/running.glb",
-} as const;
+};
 
 const TARGET_HEIGHT = 1.8;
 const FADE = 0.25;
-
-export type Locomotion = keyof typeof CLIP_URLS;
 
 interface CharacterProps {
   loco: React.MutableRefObject<Locomotion>;

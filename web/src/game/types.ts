@@ -4,3 +4,5 @@ export enum GameMode {
   Console = "Console",
   Transition = "Transition",
 }
+
+export type Locomotion = "idle" | "walk" | "run";

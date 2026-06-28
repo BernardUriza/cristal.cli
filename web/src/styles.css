@@ -145,3 +145,27 @@ canvas {
   color: var(--term-dim);
   letter-spacing: 2px;
 }
+
+.debug-hud {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  display: flex;
+  gap: 14px;
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: var(--term-dim);
+}
+
+.debug-hud b {
+  color: var(--term-cyan);
+  font-weight: 600;
+}
+
+.debug-hud .loco-run b {
+  color: #ff8a3d;
+}
+
+.debug-hud .loco-walk b {
+  color: var(--term-fg);
+}

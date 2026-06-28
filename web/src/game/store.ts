@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { GameMode } from "./types";
+import { GameMode, type Locomotion } from "./types";
 
 // Central runtime state, the React/Three.js analogue of LabyrinthManager.
 // EnterConsoleMode / ExitConsoleMode drive the same Exploration <-> Console
@@ -9,10 +9,13 @@ interface GameState {
   activeConsoleId: string | null;
   /** id of the console the player is currently close enough to interact with */
   nearbyConsoleId: string | null;
+  /** current locomotion clip, mirrored from the Player for the debug HUD */
+  locomotion: Locomotion;
 
   enterConsoleMode: (consoleId: string) => void;
   exitConsoleMode: () => void;
   setNearbyConsole: (consoleId: string | null) => void;
+  setLocomotion: (locomotion: Locomotion) => void;
 }
 
 const TRANSITION_MS = 500; // matches _modeTransitionDuration
@@ -21,6 +24,7 @@ export const useGame = create<GameState>((set, get) => ({
   mode: GameMode.Exploration,
   activeConsoleId: null,
   nearbyConsoleId: null,
+  locomotion: "idle",
 
   enterConsoleMode: (consoleId) => {
     if (get().mode !== GameMode.Exploration) return;
@@ -44,6 +48,8 @@ export const useGame = create<GameState>((set, get) => ({
   },
 
   setNearbyConsole: (consoleId) => set({ nearbyConsoleId: consoleId }),
+
+  setLocomotion: (locomotion) => set({ locomotion }),
 }));
 
 // Dev-only handle for debugging the mode flow from the console / tests.

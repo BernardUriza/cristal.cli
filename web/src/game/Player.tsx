@@ -1,9 +1,9 @@
 import { Suspense, useEffect, useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
-import { CapsuleAvatar, MixamoCharacter, type Locomotion } from "./Character";
+import { CapsuleAvatar, MixamoCharacter } from "./Character";
 import { ErrorBoundary } from "../ui/ErrorBoundary";
-import { GameMode } from "./types";
+import { GameMode, type Locomotion } from "./types";
 import { useGame } from "./store";
 import { isWalkable, type Maze } from "./maze";
 import { useKeyboard } from "./input/useKeyboard";
@@ -44,6 +44,8 @@ export function Player({ maze, spawn, consoles }: PlayerProps) {
   const grounded = useRef(true);
   const moving = useRef(false);
   const loco = useRef<Locomotion>("idle");
+  const lastLoco = useRef<Locomotion>("idle");
+  const setLocomotion = useGame((s) => s.setLocomotion);
 
   const input = useKeyboard(mode === GameMode.Exploration);
 
@@ -159,6 +161,11 @@ export function Player({ maze, spawn, consoles }: PlayerProps) {
     } else {
       moving.current = false;
       loco.current = "idle";
+    }
+
+    if (loco.current !== lastLoco.current) {
+      lastLoco.current = loco.current;
+      setLocomotion(loco.current);
     }
 
     // Apply transform to the visual group.
