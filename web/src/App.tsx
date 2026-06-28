@@ -6,6 +6,7 @@ import { ConsoleOverlay } from "./ui/ConsoleOverlay";
 import { DebugHUD } from "./ui/DebugHUD";
 import { useGame } from "./game/store";
 import { GameMode } from "./game/types";
+import { symbolicBus } from "./game/symbolicBus";
 
 function ModeBadge() {
   const mode = useGame((s) => s.mode);
@@ -23,6 +24,8 @@ export function App() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
+
+  useEffect(() => symbolicBus.subscribe(useGame.getState().setLastSymbol), []);
 
   return (
     <>
