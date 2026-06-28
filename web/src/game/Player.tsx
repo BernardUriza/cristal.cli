@@ -99,9 +99,11 @@ export function Player({ maze, spawn, consoles, glyphs }: PlayerProps) {
   const desiredCam = useMemo(() => new THREE.Vector3(), []);
   const lookTarget = useMemo(() => new THREE.Vector3(), []);
 
+  const { scene } = useThree();
   if (import.meta.env.DEV) {
-    (window as unknown as { __player: typeof pos; __glyphs: GlyphRef[] }).__player = pos;
-    (window as unknown as { __player: typeof pos; __glyphs: GlyphRef[] }).__glyphs = glyphs;
+    (window as unknown as { __player: typeof pos; __glyphs: GlyphRef[]; __scene: THREE.Scene }).__player = pos;
+    (window as unknown as { __player: typeof pos; __glyphs: GlyphRef[]; __scene: THREE.Scene }).__glyphs = glyphs;
+    (window as unknown as { __player: typeof pos; __glyphs: GlyphRef[]; __scene: THREE.Scene }).__scene = scene;
   }
 
   useFrame((_, dtRaw) => {

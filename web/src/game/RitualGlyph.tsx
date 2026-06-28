@@ -1,9 +1,56 @@
-import { useRef } from "react";
+import { useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { useGame } from "./store";
 import { GameMode } from "./types";
 import type { SymbolicArchetype } from "./symbolicBus";
+import { glyphSvgDataUri } from "./glyphSvg";
+
+const PROJECTION_DURATION = 4;
+
+function GlyphProjection({ archetype, color }: { archetype: SymbolicArchetype; color: string }) {
+  const lastSymbol = useGame((s) => s.lastSymbol);
+  const spriteRef = useRef<THREE.Sprite>(null);
+  const matRef = useRef<THREE.SpriteMaterial>(null);
+
+  const texture = useMemo(() => {
+    const t = new THREE.TextureLoader().load(glyphSvgDataUri(archetype, color));
+    t.colorSpace = THREE.SRGBColorSpace;
+    return t;
+  }, [archetype, color]);
+
+  useFrame(() => {
+    const sprite = spriteRef.current;
+    const mat = matRef.current;
+    if (!sprite || !mat) return;
+    const invokedAt = lastSymbol?.archetype === archetype ? lastSymbol.at : -Infinity;
+    const t = (performance.now() - invokedAt) / 1000;
+    if (!isFinite(t) || t > PROJECTION_DURATION) {
+      sprite.visible = false;
+      return;
+    }
+    sprite.visible = true;
+    const fadeIn = Math.min(t / 0.3, 1);
+    const fadeOut = t > PROJECTION_DURATION - 1.5 ? Math.max(0, (PROJECTION_DURATION - t) / 1.5) : 1;
+    mat.opacity = fadeIn * fadeOut;
+    sprite.position.y = 3.0 + Math.sin(t * 2) * 0.07;
+    sprite.scale.setScalar(3.2 + t * 0.2);
+  });
+
+  return (
+    <sprite ref={spriteRef} position={[0, 3.0, 0]} visible={false}>
+      <spriteMaterial
+        ref={matRef}
+        map={texture}
+        transparent
+        opacity={0}
+        depthWrite={false}
+        blending={THREE.AdditiveBlending}
+        toneMapped={false}
+      />
+    </sprite>
+  );
+}
 
 export interface GlyphRef {
   id: string;
@@ -37,9 +84,9 @@ export function RitualGlyph({ id, position, archetype, color }: RitualGlyphProps
     const near = nearbyId === id && mode === GameMode.Exploration;
     const invokedAt = lastSymbol?.archetype === archetype ? lastSymbol.at : -Infinity;
     const sinceInvoke = (performance.now() - invokedAt) / 1000;
-    const flare = sinceInvoke < 1 ? (1 - sinceInvoke) * 4 : 0;
+    const flare = sinceInvoke < 0.8 ? (0.8 - sinceInvoke) * 1.6 : 0;
 
-    const base = near ? 2.4 : 1.0;
+    const base = near ? 1.8 : 0.9;
     const pulse = 0.25 * Math.sin(t * 3) + 1;
     mat.emissiveIntensity = base * pulse + flare;
   });
@@ -59,6 +106,7 @@ export function RitualGlyph({ id, position, archetype, color }: RitualGlyphProps
           flatShading
         />
       </mesh>
+      <GlyphProjection archetype={archetype} color={color} />
     </group>
   );
 }
