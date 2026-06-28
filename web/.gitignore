@@ -8,3 +8,6 @@ dist-ssr
 # The converted character.glb IS committed so the app works out of the box.
 public/models/*
 !public/models/character.glb
+!public/models/idle.glb
+!public/models/walking.glb
+!public/models/running.glb

@@ -1,31 +1,23 @@
 import { useEffect, useMemo, useRef } from "react";
-import { useFBX, useGLTF, useAnimations } from "@react-three/drei";
+import { useFrame } from "@react-three/fiber";
+import { useGLTF, useAnimations } from "@react-three/drei";
 import { clone as skeletonClone } from "three/examples/jsm/utils/SkeletonUtils.js";
 import * as THREE from "three";
 
-// Which character/animation files to load from /public/models.
-//
-// character.glb is the committed, web-ready model: it was converted from the
-// Mixamo "Rumba Dancing.fbx" (which ships mesh + skeleton + animation) with
-// FBX2glTF — see scripts/convert-character.mjs. The legacy /Mixamo FBX files are
-// version 6100 (FBX 2010), which three.js's FBXLoader cannot read, hence the
-// conversion. The FBX path below remains as a fallback for 7.x FBX exports.
-//
-// Skinning note: there is no `material.skinning` flag in modern three.js (it was
-// removed in r125). A SkinnedMesh + skeleton skins automatically, so plain
-// MeshStandardMaterial just works — which is what GLTFLoader/FBXLoader produce.
-const CHARACTER_FILE = "character.glb";
-const ANIM_FILE = "Rumba Dancing.fbx";
+const CHARACTER_URL = "/models/character.glb";
+const CLIP_URLS = {
+  idle: "/models/idle.glb",
+  walk: "/models/walking.glb",
+  run: "/models/running.glb",
+} as const;
 
-// Mixamo-via-FBX2glTF arrives ~3.8 units tall; normalise to roughly 1.8m.
 const TARGET_HEIGHT = 1.8;
+const FADE = 0.25;
 
-const CHARACTER_URL = `/models/${CHARACTER_FILE}`;
-const ANIM_URL = `/models/${ANIM_FILE}`;
+export type Locomotion = keyof typeof CLIP_URLS;
 
 interface CharacterProps {
-  /** drives animation playback speed; locomotion clips can replace this later */
-  moving: boolean;
+  loco: React.MutableRefObject<Locomotion>;
 }
 
 function prepare(root: THREE.Object3D) {
@@ -34,56 +26,23 @@ function prepare(root: THREE.Object3D) {
     if (mesh.isMesh) {
       mesh.castShadow = true;
       mesh.receiveShadow = true;
-      mesh.frustumCulled = false; // skinned bounds can be misreported
+      mesh.frustumCulled = false;
     }
   });
 }
 
-function useClipPlayer(
-  groupRef: React.RefObject<THREE.Object3D>,
-  clips: THREE.AnimationClip[],
-  moving: boolean
-) {
-  const { actions, names } = useAnimations(clips, groupRef);
-  useEffect(() => {
-    const action = actions[names[0]];
-    if (action) action.reset().fadeIn(0.2).play();
-    return () => {
-      action?.fadeOut(0.2);
-    };
-  }, [actions, names]);
-  useEffect(() => {
-    const action = actions[names[0]];
-    if (action) action.timeScale = moving ? 1.4 : 1.0;
-  }, [moving, actions, names]);
-}
-
-function FBXCharacter({ moving }: CharacterProps) {
-  const base = useFBX(CHARACTER_URL);
-  const anim = useFBX(ANIM_URL);
-  const model = useMemo(() => {
-    const clone = skeletonClone(base);
-    prepare(clone);
-    return clone;
-  }, [base]);
-  const groupRef = useRef<THREE.Group>(null);
-  useClipPlayer(groupRef, anim.animations, moving);
-  return (
-    <group ref={groupRef} scale={0.01}>
-      <primitive object={model} />
-    </group>
-  );
-}
-
-function GLBCharacter({ moving }: CharacterProps) {
+function GLBCharacter({ loco }: CharacterProps) {
   const gltf = useGLTF(CHARACTER_URL);
+  const idleGlb = useGLTF(CLIP_URLS.idle);
+  const walkGlb = useGLTF(CLIP_URLS.walk);
+  const runGlb = useGLTF(CLIP_URLS.run);
+
   const model = useMemo(() => {
-    const clone = skeletonClone(gltf.scene);
-    prepare(clone);
-    return clone;
+    const c = skeletonClone(gltf.scene);
+    prepare(c);
+    return c;
   }, [gltf]);
 
-  // Normalise size + drop feet to y=0 from the bind-pose bounding box.
   const { scale, yOffset } = useMemo(() => {
     const box = new THREE.Box3().setFromObject(model);
     const height = box.max.y - box.min.y;
@@ -91,8 +50,33 @@ function GLBCharacter({ moving }: CharacterProps) {
     return { scale: s, yOffset: -box.min.y * s };
   }, [model]);
 
+  const clips = useMemo(() => {
+    const named = (g: typeof idleGlb, name: Locomotion) => {
+      const clip = g.animations[0].clone();
+      clip.name = name;
+      return clip;
+    };
+    return [named(idleGlb, "idle"), named(walkGlb, "walk"), named(runGlb, "run")];
+  }, [idleGlb, walkGlb, runGlb]);
+
   const groupRef = useRef<THREE.Group>(null);
-  useClipPlayer(groupRef, gltf.animations, moving);
+  const { actions } = useAnimations(clips, groupRef);
+  const current = useRef<Locomotion>("idle");
+
+  useEffect(() => {
+    actions.idle?.reset().fadeIn(FADE).play();
+  }, [actions]);
+
+  useFrame(() => {
+    const want = loco.current;
+    if (want === current.current) return;
+    const next = actions[want];
+    if (!next) return;
+    actions[current.current]?.fadeOut(FADE);
+    next.reset().setEffectiveWeight(1).fadeIn(FADE).play();
+    current.current = want;
+  });
+
   return (
     <group ref={groupRef} scale={scale} position={[0, yOffset, 0]}>
       <primitive object={model} />
@@ -100,17 +84,11 @@ function GLBCharacter({ moving }: CharacterProps) {
   );
 }
 
-/** Mixamo character as a SkinnedMesh (auto-skinned, no material.skinning flag). */
 export function MixamoCharacter(props: CharacterProps) {
-  return CHARACTER_FILE.endsWith(".glb") || CHARACTER_FILE.endsWith(".gltf") ? (
-    <GLBCharacter {...props} />
-  ) : (
-    <FBXCharacter {...props} />
-  );
+  return <GLBCharacter {...props} />;
 }
 
-/** Procedural fallback shown if the character model can't be loaded yet. */
-export function CapsuleAvatar({ moving }: CharacterProps) {
+export function CapsuleAvatar({ moving }: { moving: boolean }) {
   return (
     <group position={[0, 0.9, 0]}>
       <mesh castShadow>
@@ -125,3 +103,8 @@ export function CapsuleAvatar({ moving }: CharacterProps) {
     </group>
   );
 }
+
+useGLTF.preload(CHARACTER_URL);
+useGLTF.preload(CLIP_URLS.idle);
+useGLTF.preload(CLIP_URLS.walk);
+useGLTF.preload(CLIP_URLS.run);

@@ -1,7 +1,7 @@
 import { Suspense, useEffect, useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
-import { CapsuleAvatar, MixamoCharacter } from "./Character";
+import { CapsuleAvatar, MixamoCharacter, type Locomotion } from "./Character";
 import { ErrorBoundary } from "../ui/ErrorBoundary";
 import { GameMode } from "./types";
 import { useGame } from "./store";
@@ -43,8 +43,7 @@ export function Player({ maze, spawn, consoles }: PlayerProps) {
   const pitch = useRef(0.25);
   const grounded = useRef(true);
   const moving = useRef(false);
-  // reactive flag passed to the character for animation tuning
-  const movingState = useRef(false);
+  const loco = useRef<Locomotion>("idle");
 
   const input = useKeyboard(mode === GameMode.Exploration);
 
@@ -107,8 +106,10 @@ export function Player({ maze, spawn, consoles }: PlayerProps) {
       if (moving.current) {
         tmpMove.normalize();
         let speed = WALK_SPEED;
-        if (i.sprint && !i.crouch) speed = SPRINT_SPEED;
+        const sprinting = i.sprint && !i.crouch;
+        if (sprinting) speed = SPRINT_SPEED;
         else if (i.crouch) speed = CROUCH_SPEED;
+        loco.current = sprinting ? "run" : "walk";
 
         // Resolve axes independently so we slide along walls.
         const nextX = pos.current.x + tmpMove.x * speed * dt;
@@ -153,11 +154,12 @@ export function Player({ maze, spawn, consoles }: PlayerProps) {
         }
       }
       if (nearest !== useGame.getState().nearbyConsoleId) setNearbyConsole(nearest);
+
+      if (!moving.current) loco.current = "idle";
     } else {
       moving.current = false;
+      loco.current = "idle";
     }
-
-    if (movingState.current !== moving.current) movingState.current = moving.current;
 
     // Apply transform to the visual group.
     if (group.current) group.current.position.copy(pos.current);
@@ -205,8 +207,8 @@ export function Player({ maze, spawn, consoles }: PlayerProps) {
       {/* torch so the player is always lit, even in dark corridors */}
       <pointLight position={[0, 2.2, 0]} intensity={6} distance={12} decay={2} color="#7dffc4" />
       <Suspense fallback={<CapsuleAvatar moving={false} />}>
-        <ErrorBoundary fallback={<CapsuleAvatar moving={movingState.current} />}>
-          <MixamoCharacter moving={movingState.current} />
+        <ErrorBoundary fallback={<CapsuleAvatar moving={false} />}>
+          <MixamoCharacter loco={loco} />
         </ErrorBoundary>
       </Suspense>
     </group>
