@@ -1,34 +1,52 @@
 import { useEffect, useRef, useState } from "react";
 import { useGame } from "../game/store";
 import { GameMode } from "../game/types";
+import { getTerminalCore } from "../terminal/terminalCore";
+import { ResponseType, TerminalResponse } from "../terminal/types";
 
 interface Line {
   text: string;
-  system?: boolean;
+  cls: string;
 }
 
-const BOOT: Line[] = [
-  { text: "CRISTAL.CLI // consola in-world", system: true },
-  { text: "escribe lo que SIENTES, no lo que sabes.", system: true },
-  { text: "[ESC] para desconectar", system: true },
-];
+const TYPE_CLASS: Record<ResponseType, string> = {
+  [ResponseType.System]: "system",
+  [ResponseType.Memory]: "mem",
+  [ResponseType.Identity]: "identity",
+  [ResponseType.Emotional]: "emo",
+  [ResponseType.Error]: "err",
+  [ResponseType.Default]: "out",
+  [ResponseType.AI]: "out",
+};
 
-/**
- * Placeholder for the shared TerminalCore. The full port (state machine,
- * arcana, memory, AI responses) lands in a later phase; for now it echoes
- * input so the Exploration <-> Console flow is verifiable end to end.
- */
+function toLines(res: TerminalResponse): Line[] {
+  const cls = TYPE_CLASS[res.responseType] ?? "out";
+  return res.lines.map((text) => ({ text, cls }));
+}
+
+/** In-world console driven by the ported TerminalCore (state machine, patterns,
+ *  memory, arcana). Replaces the earlier echo placeholder. */
 export function ConsoleOverlay() {
   const mode = useGame((s) => s.mode);
   const activeId = useGame((s) => s.activeConsoleId);
   const exitConsoleMode = useGame((s) => s.exitConsoleMode);
 
-  const [lines, setLines] = useState<Line[]>(BOOT);
+  const core = getTerminalCore();
+  const [lines, setLines] = useState<Line[]>([]);
   const [value, setValue] = useState("");
+  const [booted, setBooted] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const linesRef = useRef<HTMLDivElement>(null);
 
   const visible = mode === GameMode.Console || (mode === GameMode.Transition && activeId !== null);
+
+  // Boot banner the first time the console is opened this page-load.
+  useEffect(() => {
+    if (visible && !booted) {
+      setLines(toLines(core.welcome()));
+      setBooted(true);
+    }
+  }, [visible, booted, core]);
 
   useEffect(() => {
     if (visible) inputRef.current?.focus();
@@ -43,10 +61,11 @@ export function ConsoleOverlay() {
   const submit = () => {
     const trimmed = value.trim();
     if (!trimmed) return;
+    const res = core.processInput(trimmed);
     setLines((prev) => [
       ...prev,
-      { text: `> ${trimmed}` },
-      { text: "// el cristal escucha...", system: true },
+      { text: `> ${trimmed}`, cls: "echo" },
+      ...(res ? toLines(res) : []),
     ]);
     setValue("");
   };
@@ -55,8 +74,8 @@ export function ConsoleOverlay() {
     <div className="console-overlay">
       <div className="lines" ref={linesRef}>
         {lines.map((l, i) => (
-          <div key={i} className={l.system ? "line system" : "line"}>
-            {l.text}
+          <div key={i} className={`line ${l.cls}`}>
+            {l.text || " "}
           </div>
         ))}
       </div>
@@ -70,12 +89,14 @@ export function ConsoleOverlay() {
             if (e.key === "Enter") submit();
             else if (e.key === "Escape") exitConsoleMode();
           }}
-          placeholder="..."
+          placeholder="escribe lo que sientes..."
           autoComplete="off"
           spellCheck={false}
         />
       </div>
-      <div className="hint">enter: enviar · esc: desconectar</div>
+      <div className="hint">
+        {core.sessionId} · {core.currentState} · enter: enviar · esc: desconectar · prueba: help · status · invoke arcana 18
+      </div>
     </div>
   );
 }

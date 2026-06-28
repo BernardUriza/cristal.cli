@@ -81,6 +81,25 @@ canvas {
 .console-overlay .line.system {
   color: var(--term-cyan);
 }
+.console-overlay .line.out {
+  color: var(--term-fg);
+}
+.console-overlay .line.echo {
+  color: var(--term-dim);
+}
+.console-overlay .line.mem {
+  color: #b48cff;
+}
+.console-overlay .line.identity {
+  color: #ffcf5c;
+}
+.console-overlay .line.emo {
+  color: #ff7ab8;
+}
+.console-overlay .line.err {
+  color: #ff5c5c;
+  text-shadow: 0 0 6px #5c0000;
+}
 
 .console-overlay .input-row {
   display: flex;

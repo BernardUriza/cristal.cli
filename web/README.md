@@ -44,7 +44,21 @@ npm run typecheck
 | `LabyrinthLayout` / rooms       | `src/game/maze.ts` + `Labyrinth.tsx`  |
 | `InWorldConsole` / `ConsoleUIBridge` | `src/game/InWorldConsole.tsx` + `ui/ConsoleOverlay.tsx` |
 | `FloatingInteractPrompt`        | `src/ui/InteractPrompt.tsx`           |
-| `TerminalCore` (lógica)         | _pendiente_ — placeholder en `ConsoleOverlay.tsx` |
+| `TerminalCore` + `ResponseEngine` + `StateMachine` | `src/terminal/*` |
+| `InputParser` / `PatternMatcher` / `ResponseBuilder` | `terminal/inputParser.ts`, `patterns.ts`, `responses.ts`, `responseEngine.ts` |
+| `CristalMemory` (subset)        | `terminal/memory.ts` (localStorage)   |
+| `ArcanaSystem` (invoke)         | tabla en `terminal/terminalCore.ts`   |
+
+### Terminal (TerminalCore portado)
+
+La consola in-world está conectada al port del `TerminalCore`:
+máquina de estados (`CristalState`), parser semántico, pattern matching
+(`patterns.json`), generación de respuestas por niveles (literal/narrative/ritual),
+modificadores por estado (prefijos, glitch, mayúsculas), memoria persistente
+(conteo, keywords, corrupción, emoción dominante) e `invoke arcana [n|nombre]`.
+
+Comandos de prueba: `help`, `status`, `who am i`, `invoke arcana 18`,
+`corrupt the system`, o cualquier frase emocional (`tengo miedo`).
 
 ## Personaje Mixamo y skinning
 
@@ -75,6 +89,6 @@ El loader ya prefiere `.glb` si el nombre termina en `.glb`/`.gltf`.
 
 ## Pendiente (siguientes fases)
 
-- Port del `TerminalCore` (máquina de estados, arcana, memoria, respuestas IA).
+- Respuestas IA dinámicas (Claude API) para los estados conversacionales.
 - Clips de locomoción (idle/walk/run) para el blend del personaje.
 - Sistemas: Symbolic Forge, Rituals, Dream Tunnels.
