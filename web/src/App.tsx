@@ -4,6 +4,7 @@ import { Scene } from "./game/Scene";
 import { InteractPrompt } from "./ui/InteractPrompt";
 import { ConsoleOverlay } from "./ui/ConsoleOverlay";
 import { DebugHUD } from "./ui/DebugHUD";
+import { RoomPanel } from "./ui/RoomPanel";
 import { useGame } from "./game/store";
 import { GameMode } from "./game/types";
 import { symbolicBus } from "./game/symbolicBus";
@@ -44,6 +45,7 @@ export function App() {
         <InteractPrompt />
         <DebugHUD />
       </div>
+      <RoomPanel />
       <ConsoleOverlay />
     </>
   );
