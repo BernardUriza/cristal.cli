@@ -1,0 +1,8 @@
+node_modules
+dist
+dist-ssr
+*.local
+*.tsbuildinfo
+
+# Synced Mixamo binaries (run `npm run sync-assets` to regenerate from ../Mixamo)
+public/models/
