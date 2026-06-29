@@ -8,6 +8,15 @@ import { generateRoom, seedForExit, type Room } from "./roomApi";
 // (not in the store) so reads never trigger React re-renders.
 const roomCache = new Map<number, Room>();
 
+const HISTORY_LIMIT = 8;
+
+// Where the player stood in the maze when they entered a room, so leaving a room
+// drops them back exactly where they were instead of the maze centre.
+export interface MazePose {
+  pos: [number, number, number];
+  yaw: number;
+}
+
 // Central runtime state, the React/Three.js analogue of LabyrinthManager.
 // EnterConsoleMode / ExitConsoleMode drive the same Exploration <-> Console
 // flow as the Unity coordinator, including the brief Transition state.
@@ -32,6 +41,12 @@ interface GameState {
   roomError: string | null;
   /** how many rooms have been rewritten this session — feeds generation depth */
   depth: number;
+  /** seed of the room the current one was entered from (null at a descent root) */
+  parentSeed: number | null;
+  /** rooms visited this descent, oldest first — drives the breadcrumb HUD */
+  roomHistory: Room[];
+  /** player's maze stance, captured on entering a room and restored on leaving */
+  mazePose: MazePose | null;
 
   enterConsoleMode: (consoleId: string) => void;
   exitConsoleMode: () => void;
@@ -40,6 +55,7 @@ interface GameState {
   setNearbyExit: (index: number | null) => void;
   setLocomotion: (locomotion: Locomotion) => void;
   setLastSymbol: (event: SymbolicEvent) => void;
+  setMazePose: (pose: MazePose) => void;
   /** glyph pressed in the world — opens the first room of a descent */
   invokeGlyph: (archetype: SymbolicArchetype, glyphId: string) => void;
   /** cross exit[index] of the current room — load/generate the next one */
@@ -53,21 +69,43 @@ export const useGame = create<GameState>((set, get) => {
   // Single source of truth for loading a room by seed: cache hit -> instant and
   // free; miss -> generate via the LLM server and cache the result. Shared by
   // the glyph-invoke entry point and every door crossing.
+  const pushHistory = (history: Room[], room: Room): Room[] => {
+    const next = [...history.filter((r) => r.seed !== room.seed), room];
+    return next.slice(-HISTORY_LIMIT);
+  };
+
   const loadRoom = (
     seed: number,
     archetype: SymbolicArchetype,
-    fragments: string[]
+    fragments: string[],
+    parentSeed: number | null
   ) => {
     const cached = roomCache.get(seed);
     if (cached) {
-      set({ room: cached, roomArchetype: archetype, roomLoading: false, roomError: null, mode: GameMode.Room });
+      set((s) => ({
+        room: cached,
+        roomArchetype: archetype,
+        roomLoading: false,
+        roomError: null,
+        mode: GameMode.Room,
+        parentSeed,
+        roomHistory: pushHistory(s.roomHistory, cached),
+      }));
       return;
     }
     set({ roomLoading: true, roomError: null, roomArchetype: archetype });
     generateRoom({ seed, archetype, depth: get().depth, fragments })
       .then((room) => {
         roomCache.set(seed, room);
-        set((s) => ({ room, roomLoading: false, roomError: null, depth: s.depth + 1, mode: GameMode.Room }));
+        set((s) => ({
+          room,
+          roomLoading: false,
+          roomError: null,
+          depth: s.depth + 1,
+          mode: GameMode.Room,
+          parentSeed,
+          roomHistory: pushHistory(s.roomHistory, room),
+        }));
       })
       .catch((e) => set({ roomLoading: false, roomError: String(e) }));
   };
@@ -85,6 +123,9 @@ export const useGame = create<GameState>((set, get) => {
   roomLoading: false,
   roomError: null,
   depth: 0,
+  parentSeed: null,
+  roomHistory: [],
+  mazePose: null,
 
   enterConsoleMode: (consoleId) => {
     if (get().mode !== GameMode.Exploration) return;
@@ -117,17 +158,21 @@ export const useGame = create<GameState>((set, get) => {
 
   setLastSymbol: (lastSymbol) => set({ lastSymbol }),
 
+  setMazePose: (mazePose) => set({ mazePose }),
+
   invokeGlyph: (archetype, glyphId) => {
     if (get().roomLoading) return;
     const seed = seedForExit((get().depth + 1) * 0x9e3779b1, glyphId.length + archetype.length);
-    loadRoom(seed, archetype, []);
+    // a glyph opens a fresh descent — clear the previous breadcrumb trail
+    set({ roomHistory: [] });
+    loadRoom(seed, archetype, [], null);
   },
 
   takeExit: (index) => {
     const { room, roomArchetype, roomLoading } = get();
     if (!room || roomLoading || !roomArchetype) return;
     if (index < 0 || index >= room.exits.length) return;
-    loadRoom(seedForExit(room.seed, index), roomArchetype, [room.inscription]);
+    loadRoom(seedForExit(room.seed, index), roomArchetype, [room.inscription], room.seed);
   },
 
   dismissRoom: () =>
@@ -136,6 +181,8 @@ export const useGame = create<GameState>((set, get) => {
       roomError: null,
       roomArchetype: null,
       nearbyExit: null,
+      parentSeed: null,
+      roomHistory: [],
       mode: s.mode === GameMode.Room ? GameMode.Exploration : s.mode,
     })),
   };

@@ -41,12 +41,13 @@ function atmosphere(dread: number) {
   const base = new THREE.Color("#06140d");
   const terror = new THREE.Color("#1a0604");
   const fogColor = base.clone().lerp(terror, t);
-  const wallColor = new THREE.Color("#16271d").lerp(new THREE.Color("#2a1310"), t);
-  const fogNear = 4 + (1 - t) * 6;
-  const fogFar = 20 + (1 - t) * 30;
-  // backrooms fluorescence: the room stays evenly lit and visible; dread only
-  // dims and reddens it, never plunges it to a black void.
-  const ambient = 1.0 - t * 0.35;
+  const wallColor = new THREE.Color("#1c3024").lerp(new THREE.Color("#42241d"), t);
+  const fogNear = 5 + (1 - t) * 6;
+  const fogFar = 22 + (1 - t) * 30;
+  // backrooms fluorescence: the room stays evenly lit and legible at any dread —
+  // dread only dims and reddens it, never plunges it to a black void. The floor
+  // keeps a hard minimum so a high-dread room is oppressive, not unreadable.
+  const ambient = Math.max(0.72, 1.1 - t * 0.3);
   return { fogColor, wallColor, fogNear, fogFar, ambient };
 }
 
@@ -54,6 +55,28 @@ interface DoorSpec {
   index: number;
   position: [number, number, number];
   rotationY: number;
+}
+
+// In-world door label as a canvas texture — no external font fetch, works
+// offline. The door's full sinister phrase stays in the HUD; the world shows
+// the crossing key.
+function makeLabelTexture(label: string): THREE.CanvasTexture {
+  const size = 128;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d")!;
+  ctx.clearRect(0, 0, size, size);
+  ctx.fillStyle = "#7dffd0";
+  ctx.font = "bold 88px ui-monospace, monospace";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.shadowColor = "#33ffcc";
+  ctx.shadowBlur = 18;
+  ctx.fillText(label, size / 2, size / 2 + 4);
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
 }
 
 // Distribute exits across the four walls (front/back/left/right), each door set
@@ -84,6 +107,7 @@ function Door({
 }) {
   const frameRef = useRef<THREE.MeshStandardMaterial>(null);
   const glowRef = useRef<THREE.MeshBasicMaterial>(null);
+  const labelTex = useMemo(() => makeLabelTexture(String(spec.index + 1)), [spec.index]);
 
   useFrame(({ clock }) => {
     const pulse = 0.3 * Math.sin(clock.elapsedTime * 2.5) + 1;
@@ -120,6 +144,11 @@ function Door({
       <mesh position={[0, 0, 0.12]}>
         <planeGeometry args={[DOOR_W, DOOR_H]} />
         <meshBasicMaterial color="#01030a" side={THREE.DoubleSide} toneMapped={false} />
+      </mesh>
+      {/* crossing-key label above the frame */}
+      <mesh position={[0, DOOR_H / 2 + 0.5, 0.14]}>
+        <planeGeometry args={[0.7, 0.7]} />
+        <meshBasicMaterial map={labelTex} transparent depthWrite={false} toneMapped={false} />
       </mesh>
     </group>
   );

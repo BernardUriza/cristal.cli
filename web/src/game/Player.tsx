@@ -41,10 +41,21 @@ export function Player({ maze, spawn, consoles, glyphs }: PlayerProps) {
   const enterConsoleMode = useGame((s) => s.enterConsoleMode);
 
   const group = useRef<THREE.Group>(null);
-  const pos = useRef(new THREE.Vector3(...spawn));
+  const savedPose = useGame.getState().mazePose;
+  const pos = useRef(new THREE.Vector3(...(savedPose?.pos ?? spawn)));
   const velY = useRef(0);
-  const yaw = useRef(0);
+  const yaw = useRef(savedPose?.yaw ?? 0);
   const pitch = useRef(0.25);
+
+  // Remember where we stood so leaving a room returns us here, not the centre.
+  useEffect(() => {
+    return () => {
+      useGame.getState().setMazePose({
+        pos: [pos.current.x, pos.current.y, pos.current.z],
+        yaw: yaw.current,
+      });
+    };
+  }, []);
   const grounded = useRef(true);
   const moving = useRef(false);
   const loco = useRef<Locomotion>("idle");

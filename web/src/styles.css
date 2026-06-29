@@ -327,6 +327,29 @@ canvas {
   color: var(--term-cyan);
 }
 
+.room-breadcrumb {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  margin: 0 0 8px;
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--term-dim);
+}
+
+.room-trail {
+  margin: 10px 0 0;
+  font-size: 11px;
+  color: var(--term-dim);
+  opacity: 0.8;
+}
+
+.room-trail em {
+  color: var(--term-cyan);
+  font-style: normal;
+}
+
 .room-dread {
   display: flex;
   align-items: center;
