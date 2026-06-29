@@ -127,7 +127,9 @@ export function Player({ maze, spawn, consoles, glyphs }: PlayerProps) {
     if (exploring) {
       const i = input.current;
       tmpForward.set(Math.sin(yaw.current), 0, Math.cos(yaw.current)).normalize();
-      tmpRight.set(Math.cos(yaw.current), 0, -Math.sin(yaw.current)).normalize();
+      // screen-right = cross(forward, up); the old (cos,-sin) was its negative,
+      // which made A/D strafe the wrong way.
+      tmpRight.set(-Math.cos(yaw.current), 0, Math.sin(yaw.current)).normalize();
 
       const ix = (i.right ? 1 : 0) - (i.left ? 1 : 0);
       const iz = (i.forward ? 1 : 0) - (i.back ? 1 : 0);

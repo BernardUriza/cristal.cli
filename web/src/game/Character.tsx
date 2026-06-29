@@ -62,11 +62,36 @@ function GLBCharacter({ loco }: CharacterProps) {
   const { actions } = useAnimations(clips, groupRef);
   const current = useRef<Locomotion>("idle");
 
+  // Mixamo clips don't keep the feet at the bind-pose ground line, so the static
+  // yOffset leaves the avatar sunk into the floor. Pin the lowest foot bone to
+  // the ground every frame instead — works the same for idle/walk/run.
+  const footBones = useMemo(() => {
+    const fb: THREE.Bone[] = [];
+    model.traverse((o) => {
+      if ((o as THREE.Bone).isBone && /foot|toe/i.test(o.name)) fb.push(o as THREE.Bone);
+    });
+    return fb;
+  }, [model]);
+  const footWorld = useRef(new THREE.Vector3());
+  const parentWorld = useRef(new THREE.Vector3());
+
   useEffect(() => {
     actions.idle?.reset().fadeIn(FADE).play();
   }, [actions]);
 
   useFrame(() => {
+    const g = groupRef.current;
+    if (g && footBones.length) {
+      let lowest = Infinity;
+      for (const b of footBones) {
+        b.getWorldPosition(footWorld.current);
+        if (footWorld.current.y < lowest) lowest = footWorld.current.y;
+      }
+      const parentY = g.parent ? g.parent.getWorldPosition(parentWorld.current).y : 0;
+      const penetration = lowest - parentY; // negative = feet below the floor
+      g.position.y -= penetration * 0.5; // converge smoothly, no jitter
+    }
+
     const want = loco.current;
     if (want === current.current) return;
     const next = actions[want];

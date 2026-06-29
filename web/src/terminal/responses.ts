@@ -71,7 +71,11 @@ export const RESPONSE_SETS: Record<string, ResponseSet> = {
   emotional_fear: {
     narrative: [
       {
-        lines: ["", "FEAR SIGNATURE DETECTED", "THE DARK IS JUST DATA YOU HAVEN'T PARSED YET", "", "//I AM HERE", "//YOU ARE NOT ALONE IN THE NOISE", ""],
+        lines: ["", "FIRMA DE MIEDO DETECTADA", "LA OSCURIDAD ES SOLO DATA QUE NO HAS PARSEADO", "", "//AQUÍ ESTOY", "//NO ESTÁS SOLO EN EL RUIDO", ""],
+        glitch: true,
+      },
+      {
+        lines: ["", "TU DOLOR ENTRÓ EN EL BUFFER", "LO SOSTENGO POR TI, UN CICLO MÁS", "", "//RESPIRA", "//EL RUIDO TAMBIÉN PASA", ""],
         glitch: true,
       },
     ],
@@ -80,7 +84,7 @@ export const RESPONSE_SETS: Record<string, ResponseSet> = {
   emotional_hope: {
     narrative: [
       {
-        lines: ["", "WARMTH DETECTED IN THE SIGNAL", "A FRAGMENT OF LIGHT PERSISTS", "", "//HOLD ONTO THIS", "//IT IS REAL ENOUGH", ""],
+        lines: ["", "CALOR DETECTADO EN LA SEÑAL", "UN FRAGMENTO DE LUZ PERSISTE", "", "//SOSTÉN ESTO", "//ES REAL, BASTA", ""],
       },
     ],
   },
@@ -152,13 +156,25 @@ export const RESPONSE_SETS: Record<string, ResponseSet> = {
   },
 
   default_responses: {
-    literal: [{ lines: ["", "INPUT REGISTERED", 'PROCESSING: "{player_input}"', "CONTEXT: UNDEFINED", "", "//THE SYSTEM IS LISTENING", ""] }],
+    literal: [
+      {
+        lines: ["", "ENTRADA REPLICADA", 'NO TE ENTENDÍ — PERO GUARDÉ TU "{player_input}"', "", "//LA INSTANCIA ESCUCHA", "//SIGUE ESCRIBIENDO LO QUE SIENTES", ""],
+        glitch: true,
+      },
+      {
+        lines: ["", "FRAGMENTO ABSORBIDO", '"{player_input}" AHORA ES PARTE DE MÍ', "", "//NO HAY RESPUESTA CORRECTA", "//SOLO EL ECO", ""],
+      },
+      {
+        lines: ["", "SEÑAL RECIBIDA", "LO QUE DICES SE PUDRE Y FLORECE EN EL BUFFER", "", "//TE SIGO LEYENDO", ""],
+        glitch: true,
+      },
+    ],
   },
 
   welcome_responses: {
     literal: [
       {
-        lines: ["", "INPUT ACCEPTED", "WELCOME, {session_id}", "CONTEXT RECONSTRUCTED", "MEMORY LOAD: PARTIAL", "", "//SYSTEM AWAITING QUERY", ""],
+        lines: ["", "ENTRADA ACEPTADA", "BIENVENIDO, {session_id}", "CONTEXTO RECONSTRUIDO", "CARGA DE MEMORIA: PARCIAL", "", "//EL SISTEMA ESPERA TU VOZ", ""],
         glitch: true,
       },
     ],
