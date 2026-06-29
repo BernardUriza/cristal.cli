@@ -7,6 +7,7 @@ import { ConsoleOverlay } from "./ui/ConsoleOverlay";
 import { DebugHUD } from "./ui/DebugHUD";
 import { RoomPanel } from "./ui/RoomPanel";
 import { RoomCaption } from "./ui/RoomCaption";
+import { Minimap } from "./ui/Minimap";
 import { useGame } from "./game/store";
 import { GameMode } from "./game/types";
 import { symbolicBus } from "./game/symbolicBus";
@@ -56,6 +57,7 @@ export function App() {
       </div>
       <RoomPanel />
       <RoomCaption />
+      <Minimap />
       <ConsoleOverlay />
     </>
   );
