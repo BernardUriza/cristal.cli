@@ -3,6 +3,7 @@ import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { useGame } from "./store";
 import { useKeyboard } from "./input/useKeyboard";
+import { playEnterDrone, playCross } from "./audio";
 import type { RoomShape } from "./types";
 import type { Room } from "./roomApi";
 
@@ -49,6 +50,60 @@ function atmosphere(dread: number) {
   // keeps a hard minimum so a high-dread room is oppressive, not unreadable.
   const ambient = Math.max(0.72, 1.1 - t * 0.3);
   return { fogColor, wallColor, fogNear, fogFar, ambient };
+}
+
+// Each shape wears a different surface so the form reads by material, not just
+// proportion: chamber concrete, corridor brushed metal, shaft wet stone, void
+// matte nothing.
+function surfaceForShape(shape: RoomShape): { roughness: number; metalness: number } {
+  switch (shape) {
+    case "corridor":
+      return { roughness: 0.42, metalness: 0.6 };
+    case "shaft":
+      return { roughness: 0.55, metalness: 0.25 };
+    case "void":
+      return { roughness: 0.98, metalness: 0.0 };
+    case "chamber":
+    default:
+      return { roughness: 0.9, metalness: 0.06 };
+  }
+}
+
+// Inscription rendered onto a canvas texture, wrapped to fit the wall — the
+// prophet's line, carved where the player faces on entering.
+function makeInscriptionTexture(text: string): THREE.CanvasTexture {
+  const w = 1024;
+  const h = 256;
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext("2d")!;
+  ctx.clearRect(0, 0, w, h);
+  ctx.fillStyle = "#8af5cf";
+  ctx.font = "italic 46px ui-monospace, monospace";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.shadowColor = "#33ffcc";
+  ctx.shadowBlur = 16;
+  const words = text.split(" ");
+  const lines: string[] = [];
+  let line = "";
+  for (const word of words) {
+    const test = line ? `${line} ${word}` : word;
+    if (ctx.measureText(test).width > w - 80 && line) {
+      lines.push(line);
+      line = word;
+    } else {
+      line = test;
+    }
+  }
+  if (line) lines.push(line);
+  const lh = 56;
+  const startY = h / 2 - ((lines.length - 1) * lh) / 2;
+  lines.forEach((ln, i) => ctx.fillText(ln, w / 2, startY + i * lh));
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
 }
 
 interface DoorSpec {
@@ -107,27 +162,31 @@ function Door({
 }) {
   const frameRef = useRef<THREE.MeshStandardMaterial>(null);
   const glowRef = useRef<THREE.MeshBasicMaterial>(null);
+  const spiritRef = useRef<THREE.Group>(null);
   const labelTex = useMemo(() => makeLabelTexture(String(spec.index + 1)), [spec.index]);
 
   useFrame(({ clock }) => {
-    const pulse = 0.3 * Math.sin(clock.elapsedTime * 2.5) + 1;
+    const time = clock.elapsedTime + spec.index * 1.7; // phase-offset per door
+    const pulse = 0.3 * Math.sin(time * 2.5) + 1;
     if (frameRef.current) frameRef.current.emissiveIntensity = (active ? 2.6 : 1.1) * pulse;
     if (glowRef.current) glowRef.current.opacity = (active ? 0.5 : 0.22) * pulse;
+    // idle breathing: the portal's glow + label drift and swell
+    if (spiritRef.current) {
+      spiritRef.current.position.y = Math.sin(time * 1.3) * 0.06;
+      const s = 1 + Math.sin(time * 1.9) * 0.03;
+      spiritRef.current.scale.set(s, s, 1);
+    }
   });
 
   const take = (e: { stopPropagation: () => void }) => {
     e.stopPropagation();
+    playCross();
     useGame.getState().takeExit(spec.index);
   };
 
   return (
     <group position={spec.position} rotation={[0, spec.rotationY, 0]} onClick={take}>
       <pointLight position={[0, 0, 0.4]} intensity={active ? 2.2 : 1} distance={4} decay={2} color={color} />
-      {/* portal glow */}
-      <mesh position={[0, 0, 0.02]}>
-        <planeGeometry args={[DOOR_W, DOOR_H]} />
-        <meshBasicMaterial ref={glowRef} color={color} transparent opacity={0.22} side={THREE.DoubleSide} toneMapped={false} />
-      </mesh>
       {/* frame */}
       <mesh>
         <boxGeometry args={[DOOR_W + 0.3, DOOR_H + 0.3, 0.18]} />
@@ -145,11 +204,17 @@ function Door({
         <planeGeometry args={[DOOR_W, DOOR_H]} />
         <meshBasicMaterial color="#01030a" side={THREE.DoubleSide} toneMapped={false} />
       </mesh>
-      {/* crossing-key label above the frame */}
-      <mesh position={[0, DOOR_H / 2 + 0.5, 0.14]}>
-        <planeGeometry args={[0.7, 0.7]} />
-        <meshBasicMaterial map={labelTex} transparent depthWrite={false} toneMapped={false} />
-      </mesh>
+      {/* breathing portal spirit: glow + crossing-key label */}
+      <group ref={spiritRef}>
+        <mesh position={[0, 0, 0.02]}>
+          <planeGeometry args={[DOOR_W, DOOR_H]} />
+          <meshBasicMaterial ref={glowRef} color={color} transparent opacity={0.22} side={THREE.DoubleSide} toneMapped={false} />
+        </mesh>
+        <mesh position={[0, DOOR_H / 2 + 0.5, 0.14]}>
+          <planeGeometry args={[0.7, 0.7]} />
+          <meshBasicMaterial map={labelTex} transparent depthWrite={false} toneMapped={false} />
+        </mesh>
+      </group>
     </group>
   );
 }
@@ -194,7 +259,10 @@ function FirstPersonController({ dims }: { dims: Dims }) {
     const onKey = (e: KeyboardEvent) => {
       if (e.code !== "KeyE") return;
       const idx = useGame.getState().nearbyExit;
-      if (idx !== null) useGame.getState().takeExit(idx);
+      if (idx !== null) {
+        playCross();
+        useGame.getState().takeExit(idx);
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -251,6 +319,31 @@ function FirstPersonController({ dims }: { dims: Dims }) {
   return <pointLight ref={torch} intensity={5} distance={Math.max(dims.w, dims.d) * 0.9} decay={2} color="#9ff5cf" />;
 }
 
+// Ceiling fluorescence that pulses; high dread makes it flicker faster and more
+// erratically, like a failing tube.
+function CeilingLight({ dims, dread, color }: { dims: Dims; dread: number; color: THREE.Color }) {
+  const ref = useRef<THREE.PointLight>(null);
+  const t = Math.max(0, Math.min(100, dread)) / 100;
+  useFrame(({ clock }) => {
+    if (!ref.current) return;
+    const time = clock.elapsedTime;
+    const slow = Math.sin(time * (1 + t * 3));
+    const flicker = t > 0.5 ? Math.sin(time * 37) * (t - 0.5) * 0.5 : 0;
+    ref.current.intensity = 2.0 + slow * (0.3 + t * 0.6) + flicker;
+  });
+  return (
+    <pointLight
+      ref={ref}
+      position={[0, dims.h - 0.6, 0]}
+      intensity={2.2}
+      distance={dims.w + dims.d}
+      decay={2}
+      color={color}
+      castShadow
+    />
+  );
+}
+
 export function RoomScene() {
   const room = useGame((s) => s.room);
   const nearbyExit = useGame((s) => s.nearbyExit);
@@ -258,22 +351,35 @@ export function RoomScene() {
   const dims = useMemo(() => (room ? dimsForShape(room.shape) : dimsForShape("chamber")), [room]);
   const atmo = useMemo(() => atmosphere(room?.dread ?? 0), [room]);
   const doors = useMemo(() => (room ? buildDoors(room, dims) : []), [room, dims]);
+  const surface = useMemo(() => surfaceForShape(room?.shape ?? "chamber"), [room]);
+  const inscriptionTex = useMemo(
+    () => (room ? makeInscriptionTexture(room.inscription) : null),
+    [room]
+  );
 
   const wallMat = useMemo(
     () =>
       new THREE.MeshStandardMaterial({
         color: atmo.wallColor,
         emissive: atmo.wallColor.clone().multiplyScalar(0.6),
-        roughness: 0.9,
-        metalness: 0.05,
+        roughness: surface.roughness,
+        metalness: surface.metalness,
         side: THREE.BackSide,
       }),
-    [atmo.wallColor]
+    [atmo.wallColor, surface.roughness, surface.metalness]
   );
+
+  // Drone on entering a room (and whenever the room is rewritten).
+  const seed = room?.seed;
+  const dread = room?.dread ?? 0;
+  useEffect(() => {
+    if (seed !== undefined) playEnterDrone(dread);
+  }, [seed, dread]);
 
   if (!room) return null;
 
   const doorColor = new THREE.Color("#7dffd0");
+  const ceilingColor = atmo.fogColor.clone().offsetHSL(0, 0, 0.4);
 
   return (
     <>
@@ -281,7 +387,7 @@ export function RoomScene() {
       <fog attach="fog" args={[atmo.fogColor, atmo.fogNear, atmo.fogFar]} />
 
       <ambientLight intensity={atmo.ambient} color={atmo.fogColor.clone().offsetHSL(0, 0, 0.3)} />
-      <pointLight position={[0, dims.h - 0.6, 0]} intensity={2.2} distance={dims.w + dims.d} decay={2} color="#aef5d0" castShadow />
+      <CeilingLight dims={dims} dread={room.dread} color={ceilingColor} />
 
       {/* shell: floor, ceiling, four walls as one inside-out box */}
       <mesh position={[0, dims.h / 2, 0]} material={wallMat}>
@@ -291,6 +397,14 @@ export function RoomScene() {
         <planeGeometry args={[dims.w, dims.d]} />
         <meshStandardMaterial color={atmo.wallColor.clone().multiplyScalar(0.7)} roughness={0.95} />
       </mesh>
+
+      {/* inscription carved on the front wall, above the player's entry gaze */}
+      {inscriptionTex && (
+        <mesh position={[0, dims.h * 0.66, -dims.d / 2 + 0.08]}>
+          <planeGeometry args={[Math.min(dims.w * 0.8, 7), Math.min(dims.w * 0.8, 7) / 4]} />
+          <meshBasicMaterial map={inscriptionTex} transparent depthWrite={false} toneMapped={false} />
+        </mesh>
+      )}
 
       {doors.map((d) => (
         <Door key={d.index} spec={d} color={doorColor} active={nearbyExit === d.index} />
