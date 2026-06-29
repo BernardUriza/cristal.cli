@@ -1,6 +1,7 @@
 import { useGame } from "../game/store";
 import { RoomMemoryIndex } from "../game/RoomMemoryIndex";
 import { profileRoomDanger } from "../game/RoomDangerProfiler";
+import { parseInscription } from "../game/InscriptionParser";
 
 const PHOSPHOR = "#39ff14";
 
@@ -11,7 +12,9 @@ export function RoomJournal() {
   const index = new RoomMemoryIndex();
   history.forEach((room, i) => {
     const { dangerScore, tags } = profileRoomDanger(room, 100, history.slice(0, i));
-    index.addRoom({ room, dangerScore, tags });
+    const { mood, symbols } = parseInscription(room.inscription);
+    const enriched = [...tags, ...(mood !== "neutral" ? [mood] : []), ...symbols];
+    index.addRoom({ room, dangerScore, tags: enriched });
   });
 
   const recent = index.recent(5);
@@ -34,12 +37,16 @@ export function RoomJournal() {
       }}
     >
       <div style={{ opacity: 0.7 }}>JOURNAL · {index.summarizeTrail()}</div>
-      {recent.map((r) => (
-        <div key={r.room.seed} style={{ marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-          {worst && r.room.seed === worst.room.seed ? "☠ " : "· "}
-          {r.room.name} <span style={{ opacity: 0.6 }}>({r.dangerScore})</span>
-        </div>
-      ))}
+      {recent.map((r) => {
+        const { symbols } = parseInscription(r.room.inscription);
+        return (
+          <div key={r.room.seed} style={{ marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            {worst && r.room.seed === worst.room.seed ? "☠ " : "· "}
+            {r.room.name} <span style={{ opacity: 0.6 }}>({r.dangerScore})</span>
+            {symbols.length > 0 && <span style={{ opacity: 0.45 }}> {symbols.join(",")}</span>}
+          </div>
+        );
+      })}
     </div>
   );
 }
