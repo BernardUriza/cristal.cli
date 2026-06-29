@@ -290,6 +290,43 @@ canvas {
   font-style: italic;
 }
 
+.room-caption {
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  transform: translateX(-50%);
+  width: min(560px, 80vw);
+  padding: 14px 18px;
+  background: rgba(2, 8, 6, 0.78);
+  border: 1px solid var(--term-dim);
+  border-radius: 6px;
+  color: var(--term-fg);
+  text-align: center;
+  text-shadow: 0 0 6px rgba(51, 255, 153, 0.25);
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.6);
+  z-index: 20;
+  pointer-events: none;
+}
+
+.room-caption .room-name {
+  margin: 0 0 4px;
+}
+
+.room-caption .room-inscription {
+  margin: 0 0 10px;
+}
+
+.room-caption .room-dread {
+  justify-content: center;
+}
+
+.room-caption-hint {
+  margin: 10px 0 0;
+  font-size: 12px;
+  letter-spacing: 1px;
+  color: var(--term-cyan);
+}
+
 .room-dread {
   display: flex;
   align-items: center;

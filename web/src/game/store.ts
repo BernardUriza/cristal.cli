@@ -18,6 +18,8 @@ interface GameState {
   nearbyConsoleId: string | null;
   /** id of the ritual glyph the player is currently close enough to invoke */
   nearbyGlyphId: string | null;
+  /** index of the room door the player is currently close enough to cross */
+  nearbyExit: number | null;
   /** current locomotion clip, mirrored from the Player for the debug HUD */
   locomotion: Locomotion;
   /** most recent symbolic event, surfaced in the debug HUD */
@@ -35,6 +37,7 @@ interface GameState {
   exitConsoleMode: () => void;
   setNearbyConsole: (consoleId: string | null) => void;
   setNearbyGlyph: (glyphId: string | null) => void;
+  setNearbyExit: (index: number | null) => void;
   setLocomotion: (locomotion: Locomotion) => void;
   setLastSymbol: (event: SymbolicEvent) => void;
   /** glyph pressed in the world — opens the first room of a descent */
@@ -57,14 +60,14 @@ export const useGame = create<GameState>((set, get) => {
   ) => {
     const cached = roomCache.get(seed);
     if (cached) {
-      set({ room: cached, roomArchetype: archetype, roomLoading: false, roomError: null });
+      set({ room: cached, roomArchetype: archetype, roomLoading: false, roomError: null, mode: GameMode.Room });
       return;
     }
     set({ roomLoading: true, roomError: null, roomArchetype: archetype });
     generateRoom({ seed, archetype, depth: get().depth, fragments })
       .then((room) => {
         roomCache.set(seed, room);
-        set((s) => ({ room, roomLoading: false, roomError: null, depth: s.depth + 1 }));
+        set((s) => ({ room, roomLoading: false, roomError: null, depth: s.depth + 1, mode: GameMode.Room }));
       })
       .catch((e) => set({ roomLoading: false, roomError: String(e) }));
   };
@@ -74,6 +77,7 @@ export const useGame = create<GameState>((set, get) => {
   activeConsoleId: null,
   nearbyConsoleId: null,
   nearbyGlyphId: null,
+  nearbyExit: null,
   locomotion: "idle",
   lastSymbol: null,
   room: null,
@@ -107,6 +111,8 @@ export const useGame = create<GameState>((set, get) => {
 
   setNearbyGlyph: (glyphId) => set({ nearbyGlyphId: glyphId }),
 
+  setNearbyExit: (index) => set({ nearbyExit: index }),
+
   setLocomotion: (locomotion) => set({ locomotion }),
 
   setLastSymbol: (lastSymbol) => set({ lastSymbol }),
@@ -124,7 +130,14 @@ export const useGame = create<GameState>((set, get) => {
     loadRoom(seedForExit(room.seed, index), roomArchetype, [room.inscription]);
   },
 
-  dismissRoom: () => set({ room: null, roomError: null, roomArchetype: null }),
+  dismissRoom: () =>
+    set((s) => ({
+      room: null,
+      roomError: null,
+      roomArchetype: null,
+      nearbyExit: null,
+      mode: s.mode === GameMode.Room ? GameMode.Exploration : s.mode,
+    })),
   };
 });
 
