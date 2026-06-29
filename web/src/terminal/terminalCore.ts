@@ -161,15 +161,11 @@ export class TerminalCore {
 
   private finalize(built: BuiltResponse): TerminalResponse {
     // Text is never garbled at the data layer — corruption is a visual/decode
-    // effect in the UI, so the message always stays readable. glitchLevel just
-    // tells the UI how hard to lean into the effect.
+    // effect in the UI, so the message always stays readable.
     return {
       lines: built.lines,
       responseType: responseTypeFor(built.responseSet, built.level),
       applyGlitch: built.applyGlitch,
-      glitchLevel: built.applyGlitch
-        ? Math.max(1, this.stateMachine.getModifier().glitchMultiplier)
-        : 0,
     };
   }
 
