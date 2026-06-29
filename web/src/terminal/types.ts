@@ -104,6 +104,8 @@ export interface BuiltResponse {
   stateTransition?: CristalState | null;
   patternId?: string;
   responseSet?: string;
+  /** psychological tone of a stance reply — the arbiter protects it from state effects */
+  psychTone?: "mirror" | "interrupt" | "soften" | "press" | "ritual";
 }
 
 /** Final response handed to the UI. */
