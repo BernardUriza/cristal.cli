@@ -7,6 +7,7 @@ import { ResponseType, TerminalResponse } from "../terminal/types";
 interface Line {
   text: string;
   cls: string;
+  scramble: boolean;
 }
 
 const TYPE_CLASS: Record<ResponseType, string> = {
@@ -19,13 +20,52 @@ const TYPE_CLASS: Record<ResponseType, string> = {
   [ResponseType.AI]: "out",
 };
 
+const SCRAMBLE_CHARS = "▓▒░#@%&*!?/\\|<>=+ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".split("");
+
 function toLines(res: TerminalResponse): Line[] {
   const cls = TYPE_CLASS[res.responseType] ?? "out";
-  return res.lines.map((text) => ({ text, cls }));
+  return res.lines.map((text) => ({ text, cls, scramble: res.applyGlitch }));
 }
 
-/** In-world console driven by the ported TerminalCore (state machine, patterns,
- *  memory, arcana). Replaces the earlier echo placeholder. */
+const randGlyph = () => SCRAMBLE_CHARS[Math.floor(Math.random() * SCRAMBLE_CHARS.length)];
+
+// Decode-on-reveal: a glitch line arrives as corrupt glyphs and resolves to its
+// real text left-to-right. It always settles 100% readable — the corruption is
+// in the timing, never baked into the data.
+function ConsoleLine({ text, cls, scramble }: Line) {
+  const [display, setDisplay] = useState(() => {
+    if (!scramble) return text;
+    return [...text].map((c) => (c === " " ? " " : randGlyph())).join("");
+  });
+
+  useEffect(() => {
+    if (!scramble) {
+      setDisplay(text);
+      return;
+    }
+    const chars = [...text];
+    let frame = 0;
+    const id = window.setInterval(() => {
+      frame++;
+      const revealed = frame; // ~one glyph resolved per 40ms tick
+      setDisplay(
+        chars
+          .map((c, i) => (c === " " ? " " : i < revealed ? c : randGlyph()))
+          .join("")
+      );
+      if (revealed >= chars.length) {
+        window.clearInterval(id);
+        setDisplay(text);
+      }
+    }, 40);
+    return () => window.clearInterval(id);
+  }, [text, scramble]);
+
+  return <div className={`line ${cls}`}>{display || " "}</div>;
+}
+
+/** In-world console driven by the ported TerminalCore. Corruption is visual
+ *  (CRT skin + decode-on-reveal), never garbled into the text itself. */
 export function ConsoleOverlay() {
   const mode = useGame((s) => s.mode);
   const activeId = useGame((s) => s.activeConsoleId);
@@ -40,7 +80,6 @@ export function ConsoleOverlay() {
 
   const visible = mode === GameMode.Console || (mode === GameMode.Transition && activeId !== null);
 
-  // Boot banner the first time the console is opened this page-load.
   useEffect(() => {
     if (visible && !booted) {
       setLines(toLines(core.welcome()));
@@ -64,19 +103,17 @@ export function ConsoleOverlay() {
     const res = core.processInput(trimmed);
     setLines((prev) => [
       ...prev,
-      { text: `> ${trimmed}`, cls: "echo" },
+      { text: `> ${trimmed}`, cls: "echo", scramble: false },
       ...(res ? toLines(res) : []),
     ]);
     setValue("");
   };
 
   return (
-    <div className="console-overlay">
+    <div className="console-overlay crt">
       <div className="lines" ref={linesRef}>
         {lines.map((l, i) => (
-          <div key={i} className={`line ${l.cls}`}>
-            {l.text || " "}
-          </div>
+          <ConsoleLine key={i} text={l.text} cls={l.cls} scramble={l.scramble} />
         ))}
       </div>
       <div className="input-row">

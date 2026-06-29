@@ -44,21 +44,6 @@ const ARCANA: Arcana[] = [
   { number: 21, name: "THE WORLD", description: "THE LOOP COMPLETES. THE FRACTURE, WHOLE FOR AN INSTANT.", duration: 180 },
 ];
 
-const GLITCH_CHARS = "▓▒░#@%&*!?/\\|<>".split("");
-
-function applyGlitch(line: string, chance: number): string {
-  if (chance <= 0) return line;
-  let out = "";
-  for (const ch of line) {
-    if (ch !== " " && Math.random() < chance) {
-      out += GLITCH_CHARS[Math.floor(Math.random() * GLITCH_CHARS.length)];
-    } else {
-      out += ch;
-    }
-  }
-  return out;
-}
-
 function responseTypeFor(set: string | undefined, level: ResponseLevel): ResponseType {
   if (!set) {
     return level === ResponseLevel.Ritual
@@ -175,15 +160,16 @@ export class TerminalCore {
   }
 
   private finalize(built: BuiltResponse): TerminalResponse {
-    let lines = built.lines;
-    if (built.applyGlitch) {
-      const chance = Math.min(0.12, 0.04 * Math.max(1, this.stateMachine.getModifier().glitchMultiplier));
-      lines = lines.map((l) => applyGlitch(l, chance));
-    }
+    // Text is never garbled at the data layer — corruption is a visual/decode
+    // effect in the UI, so the message always stays readable. glitchLevel just
+    // tells the UI how hard to lean into the effect.
     return {
-      lines,
+      lines: built.lines,
       responseType: responseTypeFor(built.responseSet, built.level),
       applyGlitch: built.applyGlitch,
+      glitchLevel: built.applyGlitch
+        ? Math.max(1, this.stateMachine.getModifier().glitchMultiplier)
+        : 0,
     };
   }
 

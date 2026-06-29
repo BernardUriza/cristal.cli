@@ -78,6 +78,54 @@ canvas {
   line-height: 1.5;
 }
 
+/* CRT corruption skin — visual only; the text underneath is never altered, so
+   every message stays 100% readable. RGB fringe via text-shadow, scanlines and
+   a soft flicker overlay. Disabled under prefers-reduced-motion. */
+.console-overlay.crt .lines {
+  animation: crt-aberration 2.4s steps(1) infinite;
+}
+
+@keyframes crt-aberration {
+  0% { text-shadow: 0.5px 0 1px rgba(0, 229, 255, 0.35), -0.5px 0 1px rgba(255, 0, 90, 0.3); }
+  25% { text-shadow: 1.3px 0 1px rgba(0, 229, 255, 0.35), -1.3px 0 1px rgba(255, 0, 90, 0.3); }
+  50% { text-shadow: 0.3px 0 1px rgba(0, 229, 255, 0.35), -0.3px 0 1px rgba(255, 0, 90, 0.3); }
+  75% { text-shadow: 1.7px 0 1px rgba(0, 229, 255, 0.35), -1.7px 0 1px rgba(255, 0, 90, 0.3); }
+  100% { text-shadow: 0.5px 0 1px rgba(0, 229, 255, 0.35), -0.5px 0 1px rgba(255, 0, 90, 0.3); }
+}
+
+.console-overlay.crt::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+  background: linear-gradient(rgba(0, 0, 0, 0) 50%, rgba(0, 0, 0, 0.18) 50%);
+  background-size: 100% 3px;
+}
+
+.console-overlay.crt::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+  background: rgba(18, 28, 22, 0.05);
+  opacity: 0.1;
+  animation: crt-flicker 3s steps(1) infinite;
+}
+
+@keyframes crt-flicker {
+  0%, 48%, 52%, 100% { opacity: 0.1; }
+  50% { opacity: 0.34; }
+  86% { opacity: 0.2; }
+  88% { opacity: 0.05; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .console-overlay.crt .lines { animation: none; }
+  .console-overlay.crt::after { animation: none; opacity: 0.08; }
+}
+
 .console-overlay .line.system {
   color: var(--term-cyan);
 }

@@ -111,4 +111,6 @@ export interface TerminalResponse {
   lines: string[];
   responseType: ResponseType;
   applyGlitch: boolean;
+  /** how unstable the system is — drives the visual/decode corruption, 1 = calm */
+  glitchLevel: number;
 }
