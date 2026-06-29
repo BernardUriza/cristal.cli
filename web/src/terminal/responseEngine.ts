@@ -13,6 +13,7 @@ import { RESPONSE_SETS } from "./responses";
 import { CristalMemory } from "./memory";
 import { StateMachine, stateTransitionFromString } from "./stateMachine";
 import { generateCristalPsychReply } from "./psych/PsychologicalResponseEngine";
+import { arbitrate } from "./psych/ToneArbitrator";
 
 const VARIABLE_PATTERN = /\{(\w+)\}/g;
 const NARRATIVE_THRESHOLD = 0.3;
@@ -62,6 +63,7 @@ export class ResponseEngine {
       level: ResponseLevel.Narrative,
       applyGlitch: true,
       responseSet: "emotional_psych",
+      psychTone: reply.tone,
     };
     this.applyStateModifiers(response);
     return response;
@@ -182,7 +184,9 @@ export class ResponseEngine {
   }
 
   private applyStateModifiers(response: BuiltResponse) {
-    const m = this.state.getModifier();
+    // Psychology rules over the visual state effect: a tender reply is never
+    // shouted or shattered, whatever state the machine is in.
+    const m = arbitrate(response.psychTone, this.state.getModifier());
 
     if (m.glitchMultiplier > 1 && !response.applyGlitch) {
       response.applyGlitch = Math.random() < m.glitchMultiplier - 1;
