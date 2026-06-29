@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useGame } from "../game/store";
 import { GameMode } from "../game/types";
 import { getTerminalCore } from "../terminal/terminalCore";
+import { getPsychPressure } from "../terminal/psych/PsychologicalResponseEngine";
 import { ResponseType, TerminalResponse } from "../terminal/types";
 
 interface Line {
@@ -132,7 +133,11 @@ export function ConsoleOverlay() {
         />
       </div>
       <div className="hint">
-        {core.sessionId} · {core.currentState} · enter: enviar · esc: desconectar · prueba: help · status · invoke arcana 18
+        {core.sessionId} · {core.currentState} · {(() => {
+          const p = getPsychPressure();
+          const last = p.recent[p.recent.length - 1];
+          return `presión ${Math.round(p.pressure * 100)}%${last ? ` · ${last}` : ""}`;
+        })()} · enter: enviar · esc: desconectar
       </div>
     </div>
   );

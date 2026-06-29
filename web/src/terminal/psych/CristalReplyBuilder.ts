@@ -7,6 +7,11 @@ export interface RoomContext {
   depth?: number;
 }
 
+export interface PressureContext {
+  level: number;
+  repeatingStance: Stance | null;
+}
+
 export interface CristalReply {
   text: string;
   tone: "mirror" | "interrupt" | "soften" | "press" | "ritual";
@@ -30,6 +35,14 @@ const ASKS_BODY: Record<Stance, boolean> = {
   anesthesia: true,
   deflection: false,
   ritualization: true,
+};
+
+const REPEAT_CALLOUT: Record<Stance, string> = {
+  confession: "",
+  intellectualization: "Sigues explicándolo. ",
+  deflection: "Otra vez te desvías. ",
+  anesthesia: "Vuelves a apagarte. ",
+  ritualization: "Más símbolos para no tocarlo. ",
 };
 
 const TEMPLATES: Record<Stance, string[]> = {
@@ -72,13 +85,24 @@ function hash(s: string): number {
 export function buildResponse(
   stance: StanceProfile,
   input: string,
-  _roomContext?: RoomContext
+  _roomContext?: RoomContext,
+  pressure?: PressureContext
 ): CristalReply {
   const variants = TEMPLATES[stance.stance];
-  const text = variants[hash(input) % variants.length];
+  let text = variants[hash(input) % variants.length];
+  let tone = TONE[stance.stance];
+
+  // C2: when the player keeps hiding the same way, name the pattern and press —
+  // sustaining the transference instead of answering each turn from scratch.
+  const repeating = pressure?.repeatingStance === stance.stance;
+  if (repeating && REPEAT_CALLOUT[stance.stance]) {
+    text = REPEAT_CALLOUT[stance.stance] + text;
+    tone = "press";
+  }
+
   return {
     text,
-    tone: TONE[stance.stance],
+    tone,
     asksForBody: ASKS_BODY[stance.stance],
     forbiddenPhrasePresent: FORBIDDEN.test(text),
   };

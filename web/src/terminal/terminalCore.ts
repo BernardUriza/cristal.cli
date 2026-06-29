@@ -9,6 +9,7 @@ import { parse, getArgument } from "./inputParser";
 import { CristalMemory } from "./memory";
 import { StateMachine } from "./stateMachine";
 import { ResponseEngine } from "./responseEngine";
+import { resetPsychSession } from "./psych/PsychologicalResponseEngine";
 
 // Minimal arcana table (22 Major Arcana) for the `invoke arcana` command.
 // In Unity this lived in ArcanaSystem/ArcanaData; here it is enough to drive
@@ -171,6 +172,7 @@ export class TerminalCore {
 
   reset() {
     this.memory.reset();
+    resetPsychSession();
     this.firstInput = true;
     this.setState(CristalState.Waiting);
   }
