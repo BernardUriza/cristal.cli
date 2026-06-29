@@ -5,11 +5,8 @@ import { InWorldConsole } from "./InWorldConsole";
 import { Player, type ConsoleRef } from "./Player";
 import { RitualGlyph, type GlyphRef } from "./RitualGlyph";
 import { cellCenter, generateMaze } from "./maze";
+import { MAZE_COLS, MAZE_ROWS, MAZE_SEED } from "./mazeConfig";
 import type { SymbolicArchetype } from "./symbolicBus";
-
-const MAZE_COLS = 8;
-const MAZE_ROWS = 8;
-const MAZE_SEED = 1337;
 
 const GLYPH_COLORS: Record<SymbolicArchetype, string> = {
   fragment: "#9bff7d",

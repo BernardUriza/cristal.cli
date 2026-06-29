@@ -6,6 +6,7 @@ import { ErrorBoundary } from "../ui/ErrorBoundary";
 import { GameMode, type Locomotion } from "./types";
 import { useGame } from "./store";
 import { isWalkable, type Maze } from "./maze";
+import { publishPlayerPose } from "./playerPositionBus";
 import { useKeyboard } from "./input/useKeyboard";
 import { symbolicBus } from "./symbolicBus";
 import type { GlyphRef } from "./RitualGlyph";
@@ -43,6 +44,7 @@ export function Player({ maze, spawn, consoles, glyphs }: PlayerProps) {
   const group = useRef<THREE.Group>(null);
   const savedPose = useGame.getState().mazePose;
   const pos = useRef(new THREE.Vector3(...(savedPose?.pos ?? spawn)));
+  const posPubAccum = useRef(0);
   const velY = useRef(0);
   const yaw = useRef(savedPose?.yaw ?? 0);
   const pitch = useRef(0.25);
@@ -212,6 +214,13 @@ export function Player({ maze, spawn, consoles, glyphs }: PlayerProps) {
 
     // Apply transform to the visual group.
     if (group.current) group.current.position.copy(pos.current);
+
+    // Publish the live pose for the 2D minimap at ~12Hz (never via the store).
+    posPubAccum.current += dt;
+    if (posPubAccum.current >= 1 / 12) {
+      posPubAccum.current = 0;
+      publishPlayerPose({ x: pos.current.x, z: pos.current.z, heading: yaw.current });
+    }
 
     // Camera: follow in exploration, focus on console otherwise.
     if (exploring) {
