@@ -2,14 +2,30 @@ import { create } from "zustand";
 import { GameMode, type Locomotion } from "./types";
 import type { SymbolicArchetype, SymbolicEvent } from "./symbolicBus";
 import { generateRoom, seedForExit, type Room } from "./roomApi";
+import { StabilityEngine } from "./StabilityEngine";
 
 // Rooms are deterministic by seed, so a session cache makes re-crossing a door
 // you already opened instant and free — no second LLM call. Kept at module scope
-// (not in the store) so reads never trigger React re-renders.
+// (not in the store) so reads never trigger React re-renders. Bounded FIFO so an
+// endless descent can't grow the cache without limit.
+const ROOM_CACHE_LIMIT = 64;
 const roomCache = new Map<number, Room>();
 
+function cacheRoom(seed: number, room: Room): void {
+  roomCache.set(seed, room);
+  if (roomCache.size > ROOM_CACHE_LIMIT) {
+    const oldest = roomCache.keys().next().value;
+    if (oldest !== undefined) roomCache.delete(oldest);
+  }
+}
+
 const HISTORY_LIMIT = 8;
-const FAKE_PENALTY = 45; // stability lost to a false door
+
+// The room's integrity runtime lives in the canonical pure StabilityEngine (decay
+// math, false-door penalty, safe-door reward, eviction). The store holds the
+// engine for the active descent and mirrors its value into `stability` for the
+// HUD. Module scope (not reactive state) so the per-frame tick never re-renders.
+let stabilityEngine: StabilityEngine | null = null;
 
 // One door per room is a trap, chosen deterministically from the seed so the
 // same room always lies the same way. Rooms with a single exit are never traps
@@ -68,7 +84,8 @@ interface GameState {
   setLocomotion: (locomotion: Locomotion) => void;
   setLastSymbol: (event: SymbolicEvent) => void;
   setMazePose: (pose: MazePose) => void;
-  setStability: (value: number) => void;
+  /** advance the room's integrity decay by dt seconds; collapses at zero */
+  tickStability: (dt: number) => void;
   /** glyph pressed in the world — opens the first room of a descent */
   invokeGlyph: (archetype: SymbolicArchetype, glyphId: string) => void;
   /** cross exit[index] of the current room — load/generate the next one */
@@ -89,11 +106,23 @@ export const useGame = create<GameState>((set, get) => {
     return next.slice(-HISTORY_LIMIT);
   };
 
+  // A fresh descent (glyph) starts a new engine at full integrity; crossing a
+  // door carries the engine forward, only re-pointing it at the new room's dread.
+  const enterStability = (room: Room, freshDescent: boolean): number => {
+    if (freshDescent || !stabilityEngine) {
+      stabilityEngine = new StabilityEngine({ dread: room.dread });
+    } else {
+      stabilityEngine.setDread(room.dread);
+    }
+    return stabilityEngine.state.stability;
+  };
+
   const loadRoom = (
     seed: number,
     archetype: SymbolicArchetype,
     fragments: string[],
-    parentSeed: number | null
+    parentSeed: number | null,
+    freshDescent: boolean
   ) => {
     const cached = roomCache.get(seed);
     if (cached) {
@@ -105,14 +134,14 @@ export const useGame = create<GameState>((set, get) => {
         mode: GameMode.Room,
         parentSeed,
         roomHistory: pushHistory(s.roomHistory, cached),
-        stability: 100,
+        stability: enterStability(cached, freshDescent),
       }));
       return;
     }
     set({ roomLoading: true, roomError: null, roomArchetype: archetype });
     generateRoom({ seed, archetype, depth: get().depth, fragments })
       .then((room) => {
-        roomCache.set(seed, room);
+        cacheRoom(seed, room);
         set((s) => ({
           room,
           roomLoading: false,
@@ -121,7 +150,7 @@ export const useGame = create<GameState>((set, get) => {
           mode: GameMode.Room,
           parentSeed,
           roomHistory: pushHistory(s.roomHistory, room),
-          stability: 100,
+          stability: enterStability(room, freshDescent),
         }));
       })
       .catch((e) => set({ roomLoading: false, roomError: String(e) }));
@@ -179,14 +208,21 @@ export const useGame = create<GameState>((set, get) => {
 
   setMazePose: (mazePose) => set({ mazePose }),
 
-  setStability: (value) => set({ stability: Math.max(0, Math.min(100, value)) }),
+  tickStability: (dt) => {
+    // don't drain integrity while the next room is still being generated — that
+    // would punish the player for server latency, not for lingering.
+    if (!stabilityEngine || get().mode !== GameMode.Room || get().roomLoading) return;
+    stabilityEngine.tick(dt);
+    set({ stability: stabilityEngine.state.stability });
+    if (stabilityEngine.isEvicted) get().collapseRoom();
+  },
 
   invokeGlyph: (archetype, glyphId) => {
     if (get().roomLoading) return;
     const seed = seedForExit((get().depth + 1) * 0x9e3779b1, glyphId.length + archetype.length);
     // a glyph opens a fresh descent — clear the previous breadcrumb trail
     set({ roomHistory: [] });
-    loadRoom(seed, archetype, [], null);
+    loadRoom(seed, archetype, [], null, true);
   },
 
   takeExit: (index) => {
@@ -195,19 +231,23 @@ export const useGame = create<GameState>((set, get) => {
     if (index < 0 || index >= room.exits.length) return;
     // a false door bites: it costs stability and brands the room, it never leads on
     if (index === fakeExitForRoom(room)) {
+      stabilityEngine?.falseDoorPenalty();
       set((s) => ({
-        stability: Math.max(0, s.stability - FAKE_PENALTY),
+        stability: stabilityEngine ? stabilityEngine.state.stability : s.stability,
         dangerousSeeds: s.dangerousSeeds.includes(room.seed)
           ? s.dangerousSeeds
           : [...s.dangerousSeeds, room.seed],
       }));
-      if (get().stability <= 0) get().collapseRoom();
+      if (stabilityEngine?.isEvicted) get().collapseRoom();
       return;
     }
-    loadRoom(seedForExit(room.seed, index), roomArchetype, [room.inscription], room.seed);
+    // a true door rewards a sliver of integrity, then carries the engine forward
+    stabilityEngine?.safeDoorReward();
+    loadRoom(seedForExit(room.seed, index), roomArchetype, [room.inscription], room.seed, false);
   },
 
-  collapseRoom: () =>
+  collapseRoom: () => {
+    stabilityEngine = null;
     set((s) => ({
       room: null,
       roomError: null,
@@ -221,9 +261,11 @@ export const useGame = create<GameState>((set, get) => {
           ? [...s.dangerousSeeds, s.room.seed]
           : s.dangerousSeeds,
       mode: s.mode === GameMode.Room ? GameMode.Exploration : s.mode,
-    })),
+    }));
+  },
 
-  dismissRoom: () =>
+  dismissRoom: () => {
+    stabilityEngine = null;
     set((s) => ({
       room: null,
       roomError: null,
@@ -233,7 +275,8 @@ export const useGame = create<GameState>((set, get) => {
       roomHistory: [],
       stability: 100,
       mode: s.mode === GameMode.Room ? GameMode.Exploration : s.mode,
-    })),
+    }));
+  },
   };
 });
 

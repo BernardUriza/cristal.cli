@@ -166,6 +166,9 @@ function Door({
   const glowRef = useRef<THREE.MeshBasicMaterial>(null);
   const spiritRef = useRef<THREE.Group>(null);
   const labelTex = useMemo(() => makeLabelTexture(String(spec.index + 1)), [spec.index]);
+  // free the GPU texture when the door changes or unmounts — r3f never disposes
+  // a material's map, so without this every room crossing leaks textures.
+  useEffect(() => () => labelTex.dispose(), [labelTex]);
 
   useFrame(({ clock }) => {
     const time = clock.elapsedTime + spec.index * 1.7; // phase-offset per door
@@ -330,21 +333,13 @@ function FirstPersonController({ dims }: { dims: Dims }) {
     // the player carries light, same as the maze torch
     if (torch.current) torch.current.position.copy(pos.current);
 
-    // stability decay — write a few times a second, collapse the room at zero
+    // room integrity decay — batched a few times a second through the engine
     tickAcc.current += dt;
     if (tickAcc.current >= STABILITY_TICK) {
-      const st = useGame.getState();
-      const dr = (st.room?.dread ?? 0) / 100;
-      const rate = 2.2 + dr * 5.5; // points lost per second
-      const next = st.stability - rate * tickAcc.current;
+      const beforeRoom = useGame.getState().room;
+      useGame.getState().tickStability(tickAcc.current);
       tickAcc.current = 0;
-      if (next <= 0) {
-        st.setStability(0);
-        playAlarm();
-        st.collapseRoom();
-      } else {
-        st.setStability(next);
-      }
+      if (beforeRoom && !useGame.getState().room) playAlarm(); // collapsed
     }
   });
 
@@ -400,6 +395,11 @@ export function RoomScene() {
       }),
     [atmo.wallColor, surface.roughness, surface.metalness]
   );
+
+  // Free GPU resources when the room changes / RoomScene unmounts; r3f does not
+  // dispose imperatively-created textures or materials.
+  useEffect(() => () => inscriptionTex?.dispose(), [inscriptionTex]);
+  useEffect(() => () => wallMat.dispose(), [wallMat]);
 
   // Drone on entering a room (and whenever the room is rewritten).
   const seed = room?.seed;
