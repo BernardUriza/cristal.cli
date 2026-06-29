@@ -12,6 +12,7 @@ import { matchPattern } from "./patterns";
 import { RESPONSE_SETS } from "./responses";
 import { CristalMemory } from "./memory";
 import { StateMachine, stateTransitionFromString } from "./stateMachine";
+import { generateCristalPsychReply } from "./psych/PsychologicalResponseEngine";
 
 const VARIABLE_PATTERN = /\{(\w+)\}/g;
 const NARRATIVE_THRESHOLD = 0.3;
@@ -41,17 +42,27 @@ export class ResponseEngine {
     this.memory.logCommand(input, command.keywords, command.emotionalWeight);
 
     const pattern = matchPattern(command);
-    const level = this.determineLevel(command, pattern);
 
-    let response: BuiltResponse;
-    if (pattern) {
-      response = this.build(pattern, command, level);
+    // Scripted commands (help / status / read / invoke) keep their canned
+    // responses; everything else is a feeling and goes through the psychological
+    // stance engine instead of keyword-bucket matching. The state machine still
+    // reacts to keywords separately (TerminalCore), so this only swaps the words.
+    if (pattern && pattern.command) {
+      const level = this.determineLevel(command, pattern);
+      const response = this.build(pattern, command, level);
       const transition = stateTransitionFromString(pattern.stateTransition);
       if (transition) this.state.transitionTo(transition);
-    } else {
-      response = this.buildFallback(command);
+      this.applyStateModifiers(response);
+      return response;
     }
 
+    const reply = generateCristalPsychReply(input);
+    const response: BuiltResponse = {
+      lines: ["", reply.text, ""],
+      level: ResponseLevel.Narrative,
+      applyGlitch: true,
+      responseSet: "emotional_psych",
+    };
     this.applyStateModifiers(response);
     return response;
   }
