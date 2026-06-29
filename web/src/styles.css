@@ -350,6 +350,31 @@ canvas {
   font-style: normal;
 }
 
+.room-stability {
+  margin-top: 6px;
+}
+
+.room-stability-low {
+  background: linear-gradient(90deg, #ff6b3d, #ff2d2d) !important;
+  animation: room-stability-pulse 0.7s steps(2) infinite;
+}
+
+@keyframes room-stability-pulse {
+  50% {
+    opacity: 0.55;
+  }
+}
+
+.room-caption-danger {
+  border-color: #ff6b3d;
+  box-shadow: 0 0 40px rgba(255, 60, 40, 0.3);
+}
+
+.room-danger-tag {
+  color: #ff6b3d;
+  font-weight: bold;
+}
+
 .room-dread {
   display: flex;
   align-items: center;

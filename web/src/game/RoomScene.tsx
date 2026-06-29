@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
-import { useGame } from "./store";
+import { useGame, fakeExitForRoom } from "./store";
 import { useKeyboard } from "./input/useKeyboard";
-import { playEnterDrone, playCross } from "./audio";
+import { playEnterDrone, playCross, playAlarm } from "./audio";
 import type { RoomShape } from "./types";
 import type { Room } from "./roomApi";
+
+const STABILITY_TICK = 0.25; // seconds between stability writes
 
 const EYE_HEIGHT = 1.6;
 const MOVE_SPEED = 4;
@@ -180,7 +182,11 @@ function Door({
 
   const take = (e: { stopPropagation: () => void }) => {
     e.stopPropagation();
-    playCross();
+    // doors require real proximity — a click from across the room does nothing
+    const { nearbyExit, room } = useGame.getState();
+    if (nearbyExit !== spec.index) return;
+    if (room && spec.index === fakeExitForRoom(room)) playAlarm();
+    else playCross();
     useGame.getState().takeExit(spec.index);
   };
 
@@ -258,15 +264,23 @@ function FirstPersonController({ dims }: { dims: Dims }) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.code !== "KeyE") return;
-      const idx = useGame.getState().nearbyExit;
+      const { nearbyExit: idx, room } = useGame.getState();
       if (idx !== null) {
-        playCross();
+        if (room && idx === fakeExitForRoom(room)) playAlarm();
+        else playCross();
         useGame.getState().takeExit(idx);
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
+
+  // Room integrity decays with time, faster the higher the dread. At zero the
+  // room collapses and the player is thrown back to the maze.
+  const tickAcc = useRef(0);
+  useEffect(() => {
+    tickAcc.current = 0;
+  }, [seed]);
 
   const fwd = useMemo(() => new THREE.Vector3(), []);
   const right = useMemo(() => new THREE.Vector3(), []);
@@ -276,7 +290,8 @@ function FirstPersonController({ dims }: { dims: Dims }) {
     const dt = Math.min(dtRaw, 0.05);
     const i = input.current;
     fwd.set(Math.sin(yaw.current), 0, Math.cos(yaw.current)).normalize();
-    right.set(Math.cos(yaw.current), 0, -Math.sin(yaw.current)).normalize();
+    // screen-right = cross(forward, up); the negative form inverted A/D strafe.
+    right.set(-Math.cos(yaw.current), 0, Math.sin(yaw.current)).normalize();
     const iz = (i.forward ? 1 : 0) - (i.back ? 1 : 0);
     const ix = (i.right ? 1 : 0) - (i.left ? 1 : 0);
     move.set(0, 0, 0).addScaledVector(fwd, iz).addScaledVector(right, ix);
@@ -314,6 +329,23 @@ function FirstPersonController({ dims }: { dims: Dims }) {
 
     // the player carries light, same as the maze torch
     if (torch.current) torch.current.position.copy(pos.current);
+
+    // stability decay — write a few times a second, collapse the room at zero
+    tickAcc.current += dt;
+    if (tickAcc.current >= STABILITY_TICK) {
+      const st = useGame.getState();
+      const dr = (st.room?.dread ?? 0) / 100;
+      const rate = 2.2 + dr * 5.5; // points lost per second
+      const next = st.stability - rate * tickAcc.current;
+      tickAcc.current = 0;
+      if (next <= 0) {
+        st.setStability(0);
+        playAlarm();
+        st.collapseRoom();
+      } else {
+        st.setStability(next);
+      }
+    }
   });
 
   return <pointLight ref={torch} intensity={5} distance={Math.max(dims.w, dims.d) * 0.9} decay={2} color="#9ff5cf" />;

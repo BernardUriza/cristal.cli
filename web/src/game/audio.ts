@@ -84,3 +84,24 @@ export function playCross(): void {
   noise.start(t);
   noise.stop(t + 0.3);
 }
+
+// Harsh dissonant cluster for a false door or a collapsing room — it bites.
+export function playAlarm(): void {
+  const ac = getCtx();
+  if (!ac) return;
+  const t = ac.currentTime;
+  const gain = ac.createGain();
+  gain.gain.setValueAtTime(0.0001, t);
+  gain.gain.linearRampToValueAtTime(0.16, t + 0.03);
+  gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.9);
+  gain.connect(ac.destination);
+  for (const f of [110, 116, 164]) {
+    const osc = ac.createOscillator();
+    osc.type = "square";
+    osc.frequency.setValueAtTime(f, t);
+    osc.frequency.exponentialRampToValueAtTime(f * 0.5, t + 0.85);
+    osc.connect(gain);
+    osc.start(t);
+    osc.stop(t + 0.9);
+  }
+}

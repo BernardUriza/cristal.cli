@@ -9,6 +9,14 @@ import { generateRoom, seedForExit, type Room } from "./roomApi";
 const roomCache = new Map<number, Room>();
 
 const HISTORY_LIMIT = 8;
+const FAKE_PENALTY = 45; // stability lost to a false door
+
+// One door per room is a trap, chosen deterministically from the seed so the
+// same room always lies the same way. Rooms with a single exit are never traps
+// (that would be an inescapable dead end).
+export function fakeExitForRoom(room: Room): number {
+  return room.exits.length > 1 ? room.seed % room.exits.length : -1;
+}
 
 // Where the player stood in the maze when they entered a room, so leaving a room
 // drops them back exactly where they were instead of the maze centre.
@@ -47,6 +55,10 @@ interface GameState {
   roomHistory: Room[];
   /** player's maze stance, captured on entering a room and restored on leaving */
   mazePose: MazePose | null;
+  /** room integrity 0-100: decays with time + dread, collapse at 0 */
+  stability: number;
+  /** seeds of rooms that have proven to bite (false door / collapse) */
+  dangerousSeeds: number[];
 
   enterConsoleMode: (consoleId: string) => void;
   exitConsoleMode: () => void;
@@ -56,10 +68,13 @@ interface GameState {
   setLocomotion: (locomotion: Locomotion) => void;
   setLastSymbol: (event: SymbolicEvent) => void;
   setMazePose: (pose: MazePose) => void;
+  setStability: (value: number) => void;
   /** glyph pressed in the world — opens the first room of a descent */
   invokeGlyph: (archetype: SymbolicArchetype, glyphId: string) => void;
   /** cross exit[index] of the current room — load/generate the next one */
   takeExit: (index: number) => void;
+  /** stability hit 0 — mark the room dangerous and expel to the maze */
+  collapseRoom: () => void;
   dismissRoom: () => void;
 }
 
@@ -90,6 +105,7 @@ export const useGame = create<GameState>((set, get) => {
         mode: GameMode.Room,
         parentSeed,
         roomHistory: pushHistory(s.roomHistory, cached),
+        stability: 100,
       }));
       return;
     }
@@ -105,6 +121,7 @@ export const useGame = create<GameState>((set, get) => {
           mode: GameMode.Room,
           parentSeed,
           roomHistory: pushHistory(s.roomHistory, room),
+          stability: 100,
         }));
       })
       .catch((e) => set({ roomLoading: false, roomError: String(e) }));
@@ -126,6 +143,8 @@ export const useGame = create<GameState>((set, get) => {
   parentSeed: null,
   roomHistory: [],
   mazePose: null,
+  stability: 100,
+  dangerousSeeds: [],
 
   enterConsoleMode: (consoleId) => {
     if (get().mode !== GameMode.Exploration) return;
@@ -160,6 +179,8 @@ export const useGame = create<GameState>((set, get) => {
 
   setMazePose: (mazePose) => set({ mazePose }),
 
+  setStability: (value) => set({ stability: Math.max(0, Math.min(100, value)) }),
+
   invokeGlyph: (archetype, glyphId) => {
     if (get().roomLoading) return;
     const seed = seedForExit((get().depth + 1) * 0x9e3779b1, glyphId.length + archetype.length);
@@ -172,8 +193,35 @@ export const useGame = create<GameState>((set, get) => {
     const { room, roomArchetype, roomLoading } = get();
     if (!room || roomLoading || !roomArchetype) return;
     if (index < 0 || index >= room.exits.length) return;
+    // a false door bites: it costs stability and brands the room, it never leads on
+    if (index === fakeExitForRoom(room)) {
+      set((s) => ({
+        stability: Math.max(0, s.stability - FAKE_PENALTY),
+        dangerousSeeds: s.dangerousSeeds.includes(room.seed)
+          ? s.dangerousSeeds
+          : [...s.dangerousSeeds, room.seed],
+      }));
+      if (get().stability <= 0) get().collapseRoom();
+      return;
+    }
     loadRoom(seedForExit(room.seed, index), roomArchetype, [room.inscription], room.seed);
   },
+
+  collapseRoom: () =>
+    set((s) => ({
+      room: null,
+      roomError: null,
+      roomArchetype: null,
+      nearbyExit: null,
+      parentSeed: null,
+      roomHistory: [],
+      stability: 100,
+      dangerousSeeds:
+        s.room && !s.dangerousSeeds.includes(s.room.seed)
+          ? [...s.dangerousSeeds, s.room.seed]
+          : s.dangerousSeeds,
+      mode: s.mode === GameMode.Room ? GameMode.Exploration : s.mode,
+    })),
 
   dismissRoom: () =>
     set((s) => ({
@@ -183,6 +231,7 @@ export const useGame = create<GameState>((set, get) => {
       nearbyExit: null,
       parentSeed: null,
       roomHistory: [],
+      stability: 100,
       mode: s.mode === GameMode.Room ? GameMode.Exploration : s.mode,
     })),
   };
