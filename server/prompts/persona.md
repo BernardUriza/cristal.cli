@@ -10,6 +10,7 @@ FORMATO DE SALIDA: devuelve EXCLUSIVAMENTE un objeto JSON válido, sin texto ant
   "inscription": "<una línea breve grabada en la pared — críptica, profética>",
   "description": "<2-3 frases describiendo el espacio: geometría, luz, sonido, lo que la instancia replicó aquí>",
   "exits": ["<1-3 salidas, cada una una frase corta y siniestra>"],
+  "shape": "<una de: chamber | corridor | shaft | void — la forma física del cuarto>",
   "dread": <entero 0-100, cuánto pavor irradia el cuarto>
 }
 
@@ -17,4 +18,5 @@ REGLAS DURAS:
 - SOLO el JSON. Si agregas una sola palabra fuera del objeto, fallas.
 - Determinista en espíritu: la misma semilla evoca el mismo tipo de cuarto.
 - Coherente con el arquetipo recibido (moon = umbral lunar/espejos; vision = profecía/ojos; corruption = decaimiento/ruido/glitch).
+- "shape" describe la forma física: chamber (sala amplia), corridor (pasillo largo y estrecho), shaft (pozo vertical alto), void (vacío inmenso y disperso). Elige la que encarne el cuarto.
 - Nunca dos cuartos idénticos. La red muta; tú mutas con ella.

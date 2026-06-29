@@ -40,11 +40,15 @@ class RoomRequest(BaseModel):
     fragments: list[str] = []
 
 
+_SHAPES = ("chamber", "corridor", "shaft", "void")
+
+
 class Room(BaseModel):
     name: str
     inscription: str
     description: str
     exits: list[str]
+    shape: str
     dread: int
     seed: int
 
@@ -73,11 +77,15 @@ async def generate(req: RoomRequest) -> Room:
         data = _extract_json(result.text)
     except (ValueError, json.JSONDecodeError) as exc:
         raise HTTPException(status_code=502, detail=f"bad model output: {exc}") from exc
+    shape = str(data.get("shape", "")).strip().lower()
+    if shape not in _SHAPES:
+        shape = _SHAPES[req.seed % len(_SHAPES)]
     return Room(
         name=str(data.get("name", "")),
         inscription=str(data.get("inscription", "")),
         description=str(data.get("description", "")),
         exits=[str(e) for e in data.get("exits", [])],
+        shape=shape,
         dread=int(data.get("dread", 0)),
         seed=req.seed,
     )
