@@ -9,7 +9,6 @@ import { isWalkable, type Maze } from "./maze";
 import { useKeyboard } from "./input/useKeyboard";
 import { symbolicBus } from "./symbolicBus";
 import type { GlyphRef } from "./RitualGlyph";
-import { generateRoom } from "./roomApi";
 
 const WALK_SPEED = 4;
 const SPRINT_SPEED = 7;
@@ -87,19 +86,7 @@ export function Player({ maze, spawn, consoles, glyphs }: PlayerProps) {
         const glyph = glyphs.find((g) => g.id === nearbyGlyphId);
         if (glyph) {
           symbolicBus.emit({ signal: "invoked", archetype: glyph.archetype, intensity: 60 });
-          const { roomLoading, depth, room, beginRoom, setRoom, setRoomError } = useGame.getState();
-          if (!roomLoading) {
-            beginRoom();
-            const seed = Math.floor(Math.sin(depth * 99.7 + glyph.id.length) * 1e6) >>> 0;
-            generateRoom({
-              seed,
-              archetype: glyph.archetype,
-              depth,
-              fragments: room ? [room.inscription] : [],
-            })
-              .then(setRoom)
-              .catch((e) => setRoomError(String(e)));
-          }
+          useGame.getState().invokeGlyph(glyph.archetype, glyph.id);
         }
       } else if (nearbyConsoleId) {
         enterConsoleMode(nearbyConsoleId);

@@ -11,6 +11,16 @@ export interface Room {
   seed: number;
 }
 
+// Deterministic child seed for an exit: mixing the parent seed with the exit
+// index means door N of a given room always leads to the same next room, so the
+// backrooms graph is stable across reloads and cacheable by seed.
+export function seedForExit(parentSeed: number, index: number): number {
+  let a = (parentSeed ^ ((index + 1) * 0x9e3779b1)) >>> 0;
+  a = Math.imul(a ^ (a >>> 16), 0x45d9f3b) >>> 0;
+  a = Math.imul(a ^ (a >>> 16), 0x45d9f3b) >>> 0;
+  return (a ^ (a >>> 16)) >>> 0;
+}
+
 export async function generateRoom(params: {
   seed: number;
   archetype: SymbolicArchetype;
