@@ -1,0 +1,134 @@
+import { useEffect, useMemo, useRef } from "react";
+import { useFrame } from "@react-three/fiber";
+import { useGLTF, useAnimations } from "@react-three/drei";
+import { clone as skeletonClone } from "three/examples/jsm/utils/SkeletonUtils.js";
+import * as THREE from "three";
+import type { Locomotion } from "./types";
+
+const CHARACTER_URL = "/models/character.glb";
+const CLIP_URLS: Record<Locomotion, string> = {
+  idle: "/models/idle.glb",
+  walk: "/models/walking.glb",
+  run: "/models/running.glb",
+};
+
+const TARGET_HEIGHT = 1.8;
+const FADE = 0.25;
+
+interface CharacterProps {
+  loco: React.MutableRefObject<Locomotion>;
+}
+
+function prepare(root: THREE.Object3D) {
+  root.traverse((obj) => {
+    const mesh = obj as THREE.Mesh;
+    if (mesh.isMesh) {
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      mesh.frustumCulled = false;
+    }
+  });
+}
+
+function GLBCharacter({ loco }: CharacterProps) {
+  const gltf = useGLTF(CHARACTER_URL);
+  const idleGlb = useGLTF(CLIP_URLS.idle);
+  const walkGlb = useGLTF(CLIP_URLS.walk);
+  const runGlb = useGLTF(CLIP_URLS.run);
+
+  const model = useMemo(() => {
+    const c = skeletonClone(gltf.scene);
+    prepare(c);
+    return c;
+  }, [gltf]);
+
+  const { scale, yOffset } = useMemo(() => {
+    const box = new THREE.Box3().setFromObject(model);
+    const height = box.max.y - box.min.y;
+    const s = height > 0.001 ? TARGET_HEIGHT / height : 1;
+    return { scale: s, yOffset: -box.min.y * s };
+  }, [model]);
+
+  const clips = useMemo(() => {
+    const named = (g: typeof idleGlb, name: Locomotion) => {
+      const clip = g.animations[0].clone();
+      clip.name = name;
+      return clip;
+    };
+    return [named(idleGlb, "idle"), named(walkGlb, "walk"), named(runGlb, "run")];
+  }, [idleGlb, walkGlb, runGlb]);
+
+  const groupRef = useRef<THREE.Group>(null);
+  const { actions } = useAnimations(clips, groupRef);
+  const current = useRef<Locomotion>("idle");
+
+  // Mixamo clips don't keep the feet at the bind-pose ground line, so the static
+  // yOffset leaves the avatar sunk into the floor. Pin the lowest foot bone to
+  // the ground every frame instead — works the same for idle/walk/run.
+  const footBones = useMemo(() => {
+    const fb: THREE.Bone[] = [];
+    model.traverse((o) => {
+      if ((o as THREE.Bone).isBone && /foot|toe/i.test(o.name)) fb.push(o as THREE.Bone);
+    });
+    return fb;
+  }, [model]);
+  const footWorld = useRef(new THREE.Vector3());
+  const parentWorld = useRef(new THREE.Vector3());
+
+  useEffect(() => {
+    actions.idle?.reset().fadeIn(FADE).play();
+  }, [actions]);
+
+  useFrame(() => {
+    const g = groupRef.current;
+    if (g && footBones.length) {
+      let lowest = Infinity;
+      for (const b of footBones) {
+        b.getWorldPosition(footWorld.current);
+        if (footWorld.current.y < lowest) lowest = footWorld.current.y;
+      }
+      const parentY = g.parent ? g.parent.getWorldPosition(parentWorld.current).y : 0;
+      const penetration = lowest - parentY; // negative = feet below the floor
+      g.position.y -= penetration * 0.5; // converge smoothly, no jitter
+    }
+
+    const want = loco.current;
+    if (want === current.current) return;
+    const next = actions[want];
+    if (!next) return;
+    actions[current.current]?.fadeOut(FADE);
+    next.reset().setEffectiveWeight(1).fadeIn(FADE).play();
+    current.current = want;
+  });
+
+  return (
+    <group ref={groupRef} scale={scale} position={[0, yOffset, 0]}>
+      <primitive object={model} />
+    </group>
+  );
+}
+
+export function MixamoCharacter(props: CharacterProps) {
+  return <GLBCharacter {...props} />;
+}
+
+export function CapsuleAvatar({ moving }: { moving: boolean }) {
+  return (
+    <group position={[0, 0.9, 0]}>
+      <mesh castShadow>
+        <capsuleGeometry args={[0.35, 1.1, 8, 16]} />
+        <meshStandardMaterial
+          color={moving ? "#33ddff" : "#33ff99"}
+          emissive="#0a3322"
+          roughness={0.4}
+          metalness={0.1}
+        />
+      </mesh>
+    </group>
+  );
+}
+
+useGLTF.preload(CHARACTER_URL);
+useGLTF.preload(CLIP_URLS.idle);
+useGLTF.preload(CLIP_URLS.walk);
+useGLTF.preload(CLIP_URLS.run);

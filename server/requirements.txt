@@ -1,0 +1,6 @@
+fastapi>=0.110
+uvicorn[standard]>=0.29
+# fi-runner is not published to a registry yet — install editable from the
+# free-intelligence monorepo checkout (the Claude Code backend + auth extras):
+#   pip install -e /Users/bernardurizaorozco/Documents/free-intelligence/apps/packages/fi-runner[claude]
+# (fi-core is pulled in transitively.)

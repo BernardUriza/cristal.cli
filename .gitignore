@@ -82,3 +82,7 @@ Thumbs.db
 *.swo
 *~
 tmpclaude-*
+
+# Local env (coagent id, secrets) — never commit
+.env
+.env.local

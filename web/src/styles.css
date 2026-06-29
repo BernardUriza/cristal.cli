@@ -1,0 +1,454 @@
+:root {
+  --term-bg: #000000;
+  --term-fg: #33ff99;
+  --term-dim: #1a8a55;
+  --term-cyan: #33ddff;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--term-bg);
+  font-family: "JetBrains Mono", "Consolas", "Courier New", monospace;
+  color: var(--term-fg);
+}
+
+canvas {
+  display: block;
+}
+
+.hud {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.prompt {
+  position: absolute;
+  left: 50%;
+  bottom: 14%;
+  transform: translateX(-50%);
+  padding: 8px 16px;
+  border: 1px solid var(--term-dim);
+  background: rgba(0, 0, 0, 0.65);
+  color: var(--term-fg);
+  font-size: 14px;
+  letter-spacing: 1px;
+  border-radius: 4px;
+  text-shadow: 0 0 6px var(--term-dim);
+}
+
+.prompt kbd {
+  display: inline-block;
+  min-width: 20px;
+  padding: 1px 6px;
+  margin-right: 6px;
+  border: 1px solid var(--term-fg);
+  border-radius: 3px;
+  color: var(--term-cyan);
+  text-align: center;
+}
+
+.console-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: auto;
+  background: rgba(0, 0, 0, 0.82);
+  display: flex;
+  flex-direction: column;
+  padding: 6vh 8vw;
+  gap: 12px;
+}
+
+.console-overlay .lines {
+  flex: 1;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+/* CRT corruption skin — visual only; the text underneath is never altered, so
+   every message stays 100% readable. RGB fringe via text-shadow, scanlines and
+   a soft flicker overlay. Disabled under prefers-reduced-motion. */
+.console-overlay.crt .lines {
+  animation: crt-aberration 2.4s steps(1) infinite;
+}
+
+@keyframes crt-aberration {
+  0% { text-shadow: 0.5px 0 1px rgba(0, 229, 255, 0.35), -0.5px 0 1px rgba(255, 0, 90, 0.3); }
+  25% { text-shadow: 1.3px 0 1px rgba(0, 229, 255, 0.35), -1.3px 0 1px rgba(255, 0, 90, 0.3); }
+  50% { text-shadow: 0.3px 0 1px rgba(0, 229, 255, 0.35), -0.3px 0 1px rgba(255, 0, 90, 0.3); }
+  75% { text-shadow: 1.7px 0 1px rgba(0, 229, 255, 0.35), -1.7px 0 1px rgba(255, 0, 90, 0.3); }
+  100% { text-shadow: 0.5px 0 1px rgba(0, 229, 255, 0.35), -0.5px 0 1px rgba(255, 0, 90, 0.3); }
+}
+
+.console-overlay.crt::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+  background: linear-gradient(rgba(0, 0, 0, 0) 50%, rgba(0, 0, 0, 0.18) 50%);
+  background-size: 100% 3px;
+}
+
+.console-overlay.crt::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+  background: rgba(18, 28, 22, 0.05);
+  opacity: 0.1;
+  animation: crt-flicker 3s steps(1) infinite;
+}
+
+@keyframes crt-flicker {
+  0%, 48%, 52%, 100% { opacity: 0.1; }
+  50% { opacity: 0.34; }
+  86% { opacity: 0.2; }
+  88% { opacity: 0.05; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .console-overlay.crt .lines { animation: none; }
+  .console-overlay.crt::after { animation: none; opacity: 0.08; }
+}
+
+.console-overlay .line.system {
+  color: var(--term-cyan);
+}
+.console-overlay .line.out {
+  color: var(--term-fg);
+}
+.console-overlay .line.echo {
+  color: var(--term-dim);
+}
+.console-overlay .line.mem {
+  color: #b48cff;
+}
+.console-overlay .line.identity {
+  color: #ffcf5c;
+}
+.console-overlay .line.emo {
+  color: #ff7ab8;
+}
+.console-overlay .line.err {
+  color: #ff5c5c;
+  text-shadow: 0 0 6px #5c0000;
+}
+
+.console-overlay .input-row {
+  display: flex;
+  gap: 8px;
+  border-top: 1px solid var(--term-dim);
+  padding-top: 10px;
+}
+
+.console-overlay .input-row span {
+  color: var(--term-cyan);
+}
+
+.console-overlay input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--term-fg);
+  font: inherit;
+  caret-color: var(--term-fg);
+}
+
+.console-overlay .hint {
+  color: var(--term-dim);
+  font-size: 12px;
+}
+
+.loading {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--term-dim);
+  font-size: 14px;
+  letter-spacing: 2px;
+}
+
+.mode-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  font-size: 11px;
+  color: var(--term-dim);
+  letter-spacing: 2px;
+}
+
+.debug-hud {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  display: flex;
+  gap: 14px;
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: var(--term-dim);
+}
+
+.debug-hud b {
+  color: var(--term-cyan);
+  font-weight: 600;
+}
+
+.debug-hud .loco-run b {
+  color: #ff8a3d;
+}
+
+.debug-hud .loco-walk b {
+  color: var(--term-fg);
+}
+
+.room-panel {
+  position: fixed;
+  right: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: min(440px, 38vw);
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 18px 20px;
+  background: rgba(2, 8, 6, 0.92);
+  border: 1px solid var(--term-dim);
+  border-radius: 6px;
+  color: var(--term-fg);
+  font-size: 14px;
+  line-height: 1.5;
+  text-shadow: 0 0 6px rgba(51, 255, 153, 0.25);
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.6);
+  z-index: 20;
+}
+
+.room-loading {
+  color: var(--term-cyan);
+  letter-spacing: 1px;
+}
+
+.room-cursor {
+  animation: room-blink 1s steps(1) infinite;
+}
+
+@keyframes room-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+.room-error {
+  color: #ff6b6b;
+}
+
+.room-name {
+  margin: 0 0 6px;
+  font-size: 18px;
+  letter-spacing: 2px;
+  color: var(--term-cyan);
+  text-transform: uppercase;
+}
+
+.room-inscription {
+  margin: 0 0 12px;
+  font-style: italic;
+  color: var(--term-dim);
+}
+
+.room-desc {
+  margin: 0 0 14px;
+}
+
+.room-doors {
+  margin: 0 0 14px;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.room-door {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  padding: 9px 11px;
+  background: rgba(51, 255, 153, 0.04);
+  border: 1px solid var(--term-dim);
+  border-left: 3px solid var(--term-cyan);
+  border-radius: 4px;
+  color: var(--term-fg);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.12s, box-shadow 0.12s, border-color 0.12s;
+}
+
+.room-door:hover,
+.room-door:focus-visible {
+  background: rgba(51, 255, 153, 0.12);
+  border-color: var(--term-cyan);
+  box-shadow: 0 0 16px rgba(51, 255, 153, 0.25);
+  outline: none;
+}
+
+.room-door-key {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  color: var(--term-cyan);
+  border: 1px solid var(--term-dim);
+  border-radius: 3px;
+}
+
+.room-door-frame {
+  flex: none;
+  color: var(--term-cyan);
+  opacity: 0.7;
+}
+
+.room-door-label {
+  flex: 1;
+}
+
+.room-noexit {
+  margin: 0 0 14px;
+  color: #ff6b6b;
+  font-style: italic;
+}
+
+.room-caption {
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  transform: translateX(-50%);
+  width: min(560px, 80vw);
+  padding: 14px 18px;
+  background: rgba(2, 8, 6, 0.78);
+  border: 1px solid var(--term-dim);
+  border-radius: 6px;
+  color: var(--term-fg);
+  text-align: center;
+  text-shadow: 0 0 6px rgba(51, 255, 153, 0.25);
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.6);
+  z-index: 20;
+  pointer-events: none;
+}
+
+.room-caption .room-name {
+  margin: 0 0 4px;
+}
+
+.room-caption .room-inscription {
+  margin: 0 0 10px;
+}
+
+.room-caption .room-dread {
+  justify-content: center;
+}
+
+.room-caption-hint {
+  margin: 10px 0 0;
+  font-size: 12px;
+  letter-spacing: 1px;
+  color: var(--term-cyan);
+}
+
+.room-breadcrumb {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  margin: 0 0 8px;
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--term-dim);
+}
+
+.room-trail {
+  margin: 10px 0 0;
+  font-size: 11px;
+  color: var(--term-dim);
+  opacity: 0.8;
+}
+
+.room-trail em {
+  color: var(--term-cyan);
+  font-style: normal;
+}
+
+.room-stability {
+  margin-top: 6px;
+}
+
+.room-stability-low {
+  background: linear-gradient(90deg, #ff6b3d, #ff2d2d) !important;
+  animation: room-stability-pulse 0.7s steps(2) infinite;
+}
+
+@keyframes room-stability-pulse {
+  50% {
+    opacity: 0.55;
+  }
+}
+
+.room-caption-danger {
+  border-color: #ff6b3d;
+  box-shadow: 0 0 40px rgba(255, 60, 40, 0.3);
+}
+
+.room-danger-tag {
+  color: #ff6b3d;
+  font-weight: bold;
+}
+
+.room-dread {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: var(--term-dim);
+}
+
+.room-dread-bar {
+  flex: 1;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.room-dread-bar span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #33ff99, #ff6b3d);
+}
+
+.room-dismiss {
+  margin: 14px 0 0;
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: var(--term-dim);
+}
