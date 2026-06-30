@@ -1,18 +1,8 @@
 import type { SymbolicArchetype } from "./symbolicBus";
+import { coerceRoom } from "./RoomContractValidator";
 import type { RoomShape } from "./types";
 
 const BASE_URL = import.meta.env.VITE_CRISTAL_LLM_URL ?? "http://localhost:8131";
-
-const SHAPES: RoomShape[] = ["chamber", "corridor", "shaft", "void"];
-
-// The prophet may omit or mangle the shape; fall back deterministically so a
-// given seed always renders the same geometry even when the model misbehaves.
-function normalizeShape(value: unknown, seed: number): RoomShape {
-  if (typeof value === "string" && SHAPES.includes(value as RoomShape)) {
-    return value as RoomShape;
-  }
-  return SHAPES[seed % SHAPES.length];
-}
 
 export interface Room {
   name: string;
@@ -53,6 +43,5 @@ export async function generateRoom(params: {
   if (!res.ok) {
     throw new Error(`/generate ${res.status}: ${await res.text()}`);
   }
-  const data = (await res.json()) as Room;
-  return { ...data, shape: normalizeShape(data.shape, data.seed ?? params.seed) };
+  return coerceRoom(await res.json(), params.seed);
 }
