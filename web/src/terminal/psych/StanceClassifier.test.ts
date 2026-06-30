@@ -23,6 +23,15 @@ describe("classifyStance", () => {
     );
   });
 
+  it("reads explicit Spanish topic changes as deflection", () => {
+    expect(classifyStance("siguiente. no. paso. cambia de tema ya.").stance).toBe(
+      "deflection"
+    );
+    expect(classifyStance("jaja que pregunta rara, cambiemos de tema").stance).toBe(
+      "deflection"
+    );
+  });
+
   it("reads symbolic self-myth as ritualization", () => {
     expect(classifyStance("soy un arcano roto bajo la luna").stance).toBe(
       "ritualization"

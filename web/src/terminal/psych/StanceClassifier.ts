@@ -43,8 +43,10 @@ const ABSTRACTION_TERMS = [
 
 const HUMOR_META_TERMS = [
   "jaja", "jeje", "jiji", "jajaja", "lol", "xd", "que profundo", "siguiente pregunta",
-  "cambiando de tema", "en fin", "como sea", "bla bla", "tipico", "obvio", "ironia",
-  "sarcasm", "meta", "filosofia barata", "ya que estamos",
+  "siguiente", "cambiando de tema", "cambia de tema", "cambiemos de tema",
+  "cambiar de tema", "pasemos a otra cosa", "otra cosa", "no quiero responder",
+  "no quiero hablar", "no hablemos", "en fin", "como sea", "bla bla", "tipico",
+  "obvio", "ironia", "sarcasm", "meta", "filosofia barata", "ya que estamos",
 ];
 
 const SYMBOLIC_TERMS = [
