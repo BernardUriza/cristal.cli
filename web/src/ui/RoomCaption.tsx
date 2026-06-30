@@ -14,6 +14,7 @@ export function RoomCaption() {
   const history = useGame((s) => s.roomHistory);
   const stability = useGame((s) => s.stability);
   const dangerousSeeds = useGame((s) => s.dangerousSeeds);
+  const whisper = useGame((s) => s.lastRoomWhisper);
   const dismissRoom = useGame((s) => s.dismissRoom);
 
   const inRoom = mode === GameMode.Room && !!room;
@@ -70,6 +71,7 @@ export function RoomCaption() {
           <em>{room.name}</em>
         </p>
       )}
+      {whisper && <p className="room-trail room-whisper">{whisper}</p>}
       <p className="room-caption-hint">
         {exitText
           ? `[E] cruzar — ${exitText}`

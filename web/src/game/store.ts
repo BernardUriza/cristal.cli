@@ -3,6 +3,11 @@ import { GameMode, type Locomotion } from "./types";
 import type { SymbolicArchetype, SymbolicEvent } from "./symbolicBus";
 import { generateRoom, seedForExit, type Room } from "./roomApi";
 import { StabilityEngine } from "./StabilityEngine";
+import {
+  resolveFalseDoorConsequences,
+  type FalseDoorAnnotation,
+} from "./FalseDoorConsequences";
+import { recordEnvironmentalDeflection } from "../terminal/psych/PsychologicalResponseEngine";
 
 // Rooms are deterministic by seed, so a session cache makes re-crossing a door
 // you already opened instant and free — no second LLM call. Kept at module scope
@@ -20,6 +25,7 @@ function cacheRoom(seed: number, room: Room): void {
 }
 
 const HISTORY_LIMIT = 8;
+const FALSE_DOOR_HISTORY_LIMIT = 12;
 
 // The room's integrity runtime lives in the canonical pure StabilityEngine (decay
 // math, false-door penalty, safe-door reward, eviction). The store holds the
@@ -75,6 +81,12 @@ interface GameState {
   stability: number;
   /** psychological pressure 0-1 mirrored from the terminal stance tracker */
   psychologicalPressure: number;
+  /** short-lived room pressure shock caused by embodied events such as false exits */
+  roomPressureSpike: number;
+  /** recent emotional annotations produced by room traversal */
+  falseDoorAnnotations: FalseDoorAnnotation[];
+  /** subtle room text surfaced after an avoidance-shaped crossing */
+  lastRoomWhisper: string | null;
   /** seeds of rooms that have proven to bite (false door / collapse) */
   dangerousSeeds: number[];
 
@@ -178,6 +190,9 @@ export const useGame = create<GameState>((set, get) => {
   mazePose: null,
   stability: 100,
   psychologicalPressure: 0,
+  roomPressureSpike: 0,
+  falseDoorAnnotations: [],
+  lastRoomWhisper: null,
   dangerousSeeds: [],
 
   enterConsoleMode: (consoleId) => {
@@ -221,7 +236,10 @@ export const useGame = create<GameState>((set, get) => {
     // would punish the player for server latency, not for lingering.
     if (!stabilityEngine || get().mode !== GameMode.Room || get().roomLoading) return;
     stabilityEngine.tick(dt);
-    set({ stability: stabilityEngine.state.stability });
+    set((s) => ({
+      stability: stabilityEngine ? stabilityEngine.state.stability : s.stability,
+      roomPressureSpike: Math.max(0, s.roomPressureSpike - dt * 0.14),
+    }));
     if (stabilityEngine.isEvicted) get().collapseRoom();
   },
 
@@ -239,9 +257,23 @@ export const useGame = create<GameState>((set, get) => {
     if (index < 0 || index >= room.exits.length) return;
     // a false door bites: it costs stability and brands the room, it never leads on
     if (index === fakeExitForRoom(room)) {
+      const consequence = resolveFalseDoorConsequences({
+        roomSeed: room.seed,
+        exitIndex: index,
+        pressureBefore: get().psychologicalPressure,
+        priorFalseDoors: get().falseDoorAnnotations.length,
+      });
+      const pressure = recordEnvironmentalDeflection();
       stabilityEngine?.falseDoorPenalty();
       set((s) => ({
         stability: stabilityEngine ? stabilityEngine.state.stability : s.stability,
+        psychologicalPressure: pressure.pressure,
+        roomPressureSpike: Math.max(s.roomPressureSpike, consequence.atmosphereSpike),
+        falseDoorAnnotations: [
+          ...s.falseDoorAnnotations,
+          { ...consequence.annotation, timestamp: Date.now() },
+        ].slice(-FALSE_DOOR_HISTORY_LIMIT),
+        lastRoomWhisper: consequence.whisper,
         dangerousSeeds: s.dangerousSeeds.includes(room.seed)
           ? s.dangerousSeeds
           : [...s.dangerousSeeds, room.seed],
@@ -251,6 +283,7 @@ export const useGame = create<GameState>((set, get) => {
     }
     // a true door rewards a sliver of integrity, then carries the engine forward
     stabilityEngine?.safeDoorReward();
+    set({ lastRoomWhisper: null });
     loadRoom(seedForExit(room.seed, index), roomArchetype, [room.inscription], room.seed, false);
   },
 
@@ -264,6 +297,8 @@ export const useGame = create<GameState>((set, get) => {
       parentSeed: null,
       roomHistory: [],
       stability: 100,
+      roomPressureSpike: 0,
+      lastRoomWhisper: null,
       dangerousSeeds:
         s.room && !s.dangerousSeeds.includes(s.room.seed)
           ? [...s.dangerousSeeds, s.room.seed]
@@ -282,6 +317,8 @@ export const useGame = create<GameState>((set, get) => {
       parentSeed: null,
       roomHistory: [],
       stability: 100,
+      roomPressureSpike: 0,
+      lastRoomWhisper: null,
       mode: s.mode === GameMode.Room ? GameMode.Exploration : s.mode,
     }));
   },

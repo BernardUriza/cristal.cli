@@ -30,9 +30,10 @@ function World() {
 function PressureVignette() {
   const inRoom = useGame((s) => s.mode === GameMode.Room);
   const pressure = useGame((s) => s.psychologicalPressure);
+  const spike = useGame((s) => s.roomPressureSpike);
   if (!inRoom) return null;
 
-  const { vignetteAmount } = resolveRoomPressureAtmosphere({ pressure });
+  const { vignetteAmount } = resolveRoomPressureAtmosphere({ pressure: pressure + spike });
   return (
     <div
       aria-hidden

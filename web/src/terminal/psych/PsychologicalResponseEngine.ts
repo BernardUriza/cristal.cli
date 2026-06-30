@@ -38,6 +38,11 @@ export function getPsychPressure(): PressureState {
   return tracker.state;
 }
 
+export function recordEnvironmentalDeflection(): PressureState {
+  tracker.record("deflection");
+  return tracker.state;
+}
+
 export function resetPsychSession(): void {
   tracker.reset();
 }
