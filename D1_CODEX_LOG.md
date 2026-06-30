@@ -315,3 +315,11 @@
 - Supporting unit coverage: `web/src/terminal/psych/StanceClassifier.test.ts` now locks the two Spanish playtest phrases as `deflection`.
 - Typecheck after fix commit: `cd web && npx tsc -b --noEmit` clean.
 - Vitest after fix commit: `cd web && npx vitest run` clean, 37 files / 142 tests.
+
+## D1 MusicDirector Soundtrack Integration
+- Date: 2026-06-30
+- SHA: this entry is committed with the MusicDirector integration.
+- Files: `web/src/game/MusicDirector.ts`, `web/src/game/MusicDirector.test.ts`, `web/src/game/audio.ts`, `web/src/App.tsx`, `D1_CODEX_LOG.md`
+- Runtime mapping: Exploration -> `explore`, Console -> `terminal`, high pressure over 0.70 in maze/console -> `pressure`, current Room/dream state -> `dream`, active pressure ending -> `ending`.
+- Audio boundary: soundtrack reuses the existing lazy WebAudio `getCtx()` accessor, starts only after a user gesture, crossfades HTML audio tracks through per-track gains into one master gain, and exposes minimal music mute helpers.
+- Verification: `cd web && npx tsc -b --noEmit` clean; `cd web && npx vitest run` clean, 39 files / 152 tests; `cd web && npx vite build` clean with the existing chunk-size warning.

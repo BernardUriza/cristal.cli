@@ -5,7 +5,7 @@
 
 let ctx: AudioContext | null = null;
 
-function getCtx(): AudioContext | null {
+export function getCtx(): AudioContext | null {
   if (typeof window === "undefined") return null;
   if (!ctx) {
     const AC =

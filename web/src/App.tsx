@@ -12,6 +12,7 @@ import { RoomCaption } from "./ui/RoomCaption";
 import { Minimap } from "./ui/Minimap";
 import { DangerBadge } from "./ui/DangerBadge";
 import { RoomJournal } from "./ui/RoomJournal";
+import { MusicDirector } from "./game/MusicDirector";
 import { useGame } from "./game/store";
 import { GameMode } from "./game/types";
 import { symbolicBus } from "./game/symbolicBus";
@@ -116,6 +117,7 @@ export function App() {
       <RoomJournal />
       <PressureVignette />
       <ConsoleOverlay />
+      <MusicDirector />
     </>
   );
 }
