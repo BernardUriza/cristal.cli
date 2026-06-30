@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { GameMode } from "./types";
 import { useGame } from "./store";
+import { resetPsychSession } from "../terminal/psych/PsychologicalResponseEngine";
+import type { Room } from "./roomApi";
 
 function responseWithJson(payload: unknown): Response {
   return {
@@ -21,6 +23,7 @@ async function waitForRoom(): Promise<void> {
 describe("game store pressure ending", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
+    resetPsychSession();
     useGame.setState(useGame.getInitialState(), true);
   });
 
@@ -74,5 +77,54 @@ describe("game store pressure ending", () => {
     expect(fetchRoom).toHaveBeenCalledTimes(1);
     expect(useGame.getState().mode).toBe(GameMode.Room);
     expect(useGame.getState().pressureEnding?.active).toBe(true);
+  });
+});
+
+describe("game store pressure normalization", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    resetPsychSession();
+    useGame.setState(useGame.getInitialState(), true);
+  });
+
+  it("uses normalized pressure for pressure endings and emotional history", () => {
+    const room: Room = {
+      name: "Measured Room",
+      inscription: "",
+      description: "",
+      exits: ["north"],
+      dread: 0,
+      shape: "chamber",
+      seed: 12,
+    };
+    useGame.setState({ mode: GameMode.Room, room });
+
+    useGame.getState().setPsychologicalPressure(100, "deflection");
+
+    expect(useGame.getState().psychologicalPressure).toBe(1);
+    expect(useGame.getState().pressureEnding?.active).toBe(true);
+    const history = useGame.getState().emotionalHistory;
+    expect(history[history.length - 1]?.pressure).toBe(1);
+  });
+
+  it("records false-door stance from the consequence contract", () => {
+    const room: Room = {
+      name: "Forked Room",
+      inscription: "",
+      description: "",
+      exits: ["north", "east"],
+      dread: 0,
+      shape: "corridor",
+      seed: 5,
+    };
+    useGame.setState({ mode: GameMode.Room, room, roomArchetype: "echo" });
+
+    useGame.getState().takeExit(1);
+
+    expect(useGame.getState().psychologicalStance).toBe("deflection");
+    const history = useGame.getState().emotionalHistory;
+    const annotations = useGame.getState().falseDoorAnnotations;
+    expect(history[history.length - 1]?.stance).toBe("deflection");
+    expect(annotations[annotations.length - 1]?.kind).toBe("false-door-avoidance");
   });
 });

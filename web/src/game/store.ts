@@ -19,7 +19,7 @@ import {
   type PressureEndingState,
 } from "./PressureEnding";
 import type { Stance } from "../terminal/psych/StanceClassifier";
-import { recordEnvironmentalDeflection } from "../terminal/psych/PsychologicalResponseEngine";
+import { recordEnvironmentalStance } from "../terminal/psych/PsychologicalResponseEngine";
 
 // Rooms are deterministic by seed, so a session cache makes re-crossing a door
 // you already opened instant and free — no second LLM call. Kept at module scope
@@ -281,26 +281,29 @@ export const useGame = create<GameState>((set, get) => {
   setMazePose: (mazePose) => set({ mazePose }),
 
   setPsychologicalPressure: (pressure, stance) =>
-    set((s) => ({
-      psychologicalPressure: clamp01(pressure),
-      psychologicalStance: stance !== undefined ? stance : s.psychologicalStance,
-      pressureEnding:
-        s.pressureEnding ??
-        resolvePressureEnding({
-          pressure,
-          inRoom: s.mode === GameMode.Room && !!s.room,
-          now: Date.now(),
-        }),
-      emotionalHistory:
-        s.room && stance
-          ? appendEmotionalHistory(s.emotionalHistory, {
-              room: { seed: s.room.seed, name: s.room.name },
-              stance,
-              pressure,
-              timestamp: Date.now(),
-            })
-          : s.emotionalHistory,
-    })),
+    set((s) => {
+      const normalizedPressure = clamp01(pressure);
+      return {
+        psychologicalPressure: normalizedPressure,
+        psychologicalStance: stance !== undefined ? stance : s.psychologicalStance,
+        pressureEnding:
+          s.pressureEnding ??
+          resolvePressureEnding({
+            pressure: normalizedPressure,
+            inRoom: s.mode === GameMode.Room && !!s.room,
+            now: Date.now(),
+          }),
+        emotionalHistory:
+          s.room && stance
+            ? appendEmotionalHistory(s.emotionalHistory, {
+                room: { seed: s.room.seed, name: s.room.name },
+                stance,
+                pressure: normalizedPressure,
+                timestamp: Date.now(),
+              })
+            : s.emotionalHistory,
+      };
+    }),
 
   tickStability: (dt) => {
     // don't drain integrity while the next room is still being generated — that
@@ -352,12 +355,12 @@ export const useGame = create<GameState>((set, get) => {
         pressureBefore: get().psychologicalPressure,
         priorFalseDoors: get().falseDoorAnnotations.length,
       });
-      const pressure = recordEnvironmentalDeflection();
+      const pressure = recordEnvironmentalStance(consequence.pressureStance);
       stabilityEngine?.falseDoorPenalty();
       set((s) => ({
         stability: stabilityEngine ? stabilityEngine.state.stability : s.stability,
         psychologicalPressure: pressure.pressure,
-        psychologicalStance: "deflection",
+        psychologicalStance: consequence.pressureStance,
         pressureEnding:
           s.pressureEnding ??
           resolvePressureEnding({
@@ -372,7 +375,7 @@ export const useGame = create<GameState>((set, get) => {
         ].slice(-FALSE_DOOR_HISTORY_LIMIT),
         emotionalHistory: appendEmotionalHistory(s.emotionalHistory, {
           room: { seed: room.seed, name: room.name },
-          stance: "deflection",
+          stance: consequence.pressureStance,
           pressure: pressure.pressure,
           timestamp: Date.now(),
         }),

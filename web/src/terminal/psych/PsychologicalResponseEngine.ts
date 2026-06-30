@@ -1,4 +1,4 @@
-import { classifyStance } from "./StanceClassifier";
+import { classifyStance, type Stance } from "./StanceClassifier";
 import { buildResponse, type RoomContext, type CristalReply } from "./CristalReplyBuilder";
 import { StancePressureTracker, type PressureState } from "./StancePressureTracker";
 
@@ -38,9 +38,13 @@ export function getPsychPressure(): PressureState {
   return tracker.state;
 }
 
-export function recordEnvironmentalDeflection(): PressureState {
-  tracker.record("deflection");
+export function recordEnvironmentalStance(stance: Stance): PressureState {
+  tracker.record(stance);
   return tracker.state;
+}
+
+export function recordEnvironmentalDeflection(): PressureState {
+  return recordEnvironmentalStance("deflection");
 }
 
 export function resetPsychSession(): void {
