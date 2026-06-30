@@ -84,9 +84,18 @@ function core(color: string) {
   return `<circle cx="${C}" cy="${C}" r="30" fill="${color}" opacity="0.18" filter="url(#glow)"/>`;
 }
 
+function assertNever(value: never): never {
+  throw new Error(`Unhandled glyph archetype: ${value}`);
+}
+
 function body(archetype: SymbolicArchetype, color: string, accent: string, rng: () => number): string {
   switch (archetype) {
     case "vision":
+      return (
+        core(color) +
+        flowerOfLife(C, C, 96, 3, color, 3.0) +
+        polygon(C, C, 110, 3, accent, 3.4)
+      );
     case "memory":
       return (
         core(color) +
@@ -99,15 +108,35 @@ function body(archetype: SymbolicArchetype, color: string, accent: string, rng: 
         polygon(C, C, 110, 4, color, 3.6, Math.PI / 4) +
         polygon(C, C, 78, 4, accent, 2.6)
       );
+    case "fragment":
+      return (
+        core(color) +
+        polygon(C, C, 104, 5, color, 3.4, Math.PI / 5) +
+        polygon(C - 10, C + 8, 64, 3, accent, 2.7, rng() * Math.PI) +
+        glitchPattern(C, C, 92, rng, color, accent, 2, 0.45)
+      );
+    case "gate":
+      return (
+        core(color) +
+        concentricCircles(C, C, 108, 4, color, 3.4) +
+        polygon(C, C, 96, 4, accent, 3.5, Math.PI / 4) +
+        polygon(C, C, 62, 4, color, 2.4, Math.PI / 4)
+      );
     case "moon":
+      return (
+        core(color) +
+        concentricCircles(C, C, 100, 5, color, 3.2) +
+        polygon(C, C, 72, 6, accent, 3.2)
+      );
     case "echo":
-    default:
       return (
         core(color) +
         concentricCircles(C, C, 100, 5, color, 3.2) +
         radialLines(C, C, 100, 12, color, 2.0) +
         polygon(C, C, 72, 6, accent, 3.2)
       );
+    default:
+      return assertNever(archetype);
   }
 }
 

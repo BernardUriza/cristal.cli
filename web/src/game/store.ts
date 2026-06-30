@@ -116,7 +116,7 @@ interface GameState {
   emotionalHistory: EmotionalHistoryEntry[];
   /** subtle room text surfaced after an avoidance-shaped crossing */
   lastRoomWhisper: string | null;
-  /** pressure-100 surrender sequence; not a failure state */
+  /** full-pressure (1.0) surrender sequence; not a failure state */
   pressureEnding: PressureEndingState | null;
   /** seeds of rooms that have proven to bite (false door / collapse) */
   dangerousSeeds: number[];
