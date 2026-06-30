@@ -7,6 +7,8 @@ import {
   resolveFalseDoorConsequences,
   type FalseDoorAnnotation,
 } from "./FalseDoorConsequences";
+import { resolveSafeExit } from "./SafeExitResolver";
+import type { Stance } from "../terminal/psych/StanceClassifier";
 import { recordEnvironmentalDeflection } from "../terminal/psych/PsychologicalResponseEngine";
 
 // Rooms are deterministic by seed, so a session cache makes re-crossing a door
@@ -81,6 +83,8 @@ interface GameState {
   stability: number;
   /** psychological pressure 0-1 mirrored from the terminal stance tracker */
   psychologicalPressure: number;
+  /** most recent terminal/environment stance mirrored into gameplay */
+  psychologicalStance: Stance | null;
   /** short-lived room pressure shock caused by embodied events such as false exits */
   roomPressureSpike: number;
   /** recent emotional annotations produced by room traversal */
@@ -101,7 +105,7 @@ interface GameState {
   /** advance the room's integrity decay by dt seconds; collapses at zero */
   tickStability: (dt: number) => void;
   /** mirror terminal stance pressure into gameplay/rendering without a second store */
-  setPsychologicalPressure: (pressure: number) => void;
+  setPsychologicalPressure: (pressure: number, stance?: Stance | null) => void;
   /** glyph pressed in the world — opens the first room of a descent */
   invokeGlyph: (archetype: SymbolicArchetype, glyphId: string) => void;
   /** cross exit[index] of the current room — load/generate the next one */
@@ -190,6 +194,7 @@ export const useGame = create<GameState>((set, get) => {
   mazePose: null,
   stability: 100,
   psychologicalPressure: 0,
+  psychologicalStance: null,
   roomPressureSpike: 0,
   falseDoorAnnotations: [],
   lastRoomWhisper: null,
@@ -228,8 +233,11 @@ export const useGame = create<GameState>((set, get) => {
 
   setMazePose: (mazePose) => set({ mazePose }),
 
-  setPsychologicalPressure: (pressure) =>
-    set({ psychologicalPressure: Math.max(0, Math.min(1, pressure)) }),
+  setPsychologicalPressure: (pressure, stance) =>
+    set((s) => ({
+      psychologicalPressure: Math.max(0, Math.min(1, pressure)),
+      psychologicalStance: stance !== undefined ? stance : s.psychologicalStance,
+    })),
 
   tickStability: (dt) => {
     // don't drain integrity while the next room is still being generated — that
@@ -254,7 +262,13 @@ export const useGame = create<GameState>((set, get) => {
   takeExit: (index) => {
     const { room, roomArchetype, roomLoading } = get();
     if (!room || roomLoading || !roomArchetype) return;
-    if (index < 0 || index >= room.exits.length) return;
+    if (index < 0) return;
+    const safeExit = resolveSafeExit({
+      stance: get().psychologicalStance,
+      pressure: get().psychologicalPressure,
+      room,
+    });
+    if (index >= room.exits.length && index !== safeExit?.index) return;
     // a false door bites: it costs stability and brands the room, it never leads on
     if (index === fakeExitForRoom(room)) {
       const consequence = resolveFalseDoorConsequences({
@@ -268,6 +282,7 @@ export const useGame = create<GameState>((set, get) => {
       set((s) => ({
         stability: stabilityEngine ? stabilityEngine.state.stability : s.stability,
         psychologicalPressure: pressure.pressure,
+        psychologicalStance: "deflection",
         roomPressureSpike: Math.max(s.roomPressureSpike, consequence.atmosphereSpike),
         falseDoorAnnotations: [
           ...s.falseDoorAnnotations,
@@ -279,6 +294,12 @@ export const useGame = create<GameState>((set, get) => {
           : [...s.dangerousSeeds, room.seed],
       }));
       if (stabilityEngine?.isEvicted) get().collapseRoom();
+      return;
+    }
+    if (safeExit && index === safeExit.index) {
+      stabilityEngine?.safeDoorReward();
+      set({ lastRoomWhisper: "La puerta no se abre: deja de defenderse." });
+      loadRoom(safeExit.seed, roomArchetype, [room.inscription, "confession opened a stable path"], room.seed, false);
       return;
     }
     // a true door rewards a sliver of integrity, then carries the engine forward

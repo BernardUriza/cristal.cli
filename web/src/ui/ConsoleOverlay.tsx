@@ -102,7 +102,10 @@ export function ConsoleOverlay() {
     const trimmed = value.trim();
     if (!trimmed) return;
     const res = core.processInput(trimmed);
-    useGame.getState().setPsychologicalPressure(getPsychPressure().pressure);
+    const pressure = getPsychPressure();
+    useGame
+      .getState()
+      .setPsychologicalPressure(pressure.pressure, pressure.recent[pressure.recent.length - 1] ?? null);
     setLines((prev) => [
       ...prev,
       { text: `> ${trimmed}`, cls: "echo", scramble: false },

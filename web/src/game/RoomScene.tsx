@@ -5,6 +5,7 @@ import { useGame, fakeExitForRoom } from "./store";
 import { useKeyboard } from "./input/useKeyboard";
 import { playEnterDrone, playCross, playAlarm } from "./audio";
 import { resolveRoomPressureAtmosphere, type RoomPressureAtmosphere } from "./RoomPressureController";
+import { resolveSafeExit, type SafeExit } from "./SafeExitResolver";
 import type { RoomShape } from "./types";
 import type { Room } from "./roomApi";
 
@@ -113,6 +114,7 @@ interface DoorSpec {
   index: number;
   position: [number, number, number];
   rotationY: number;
+  safe: boolean;
 }
 
 // In-world door label as a canvas texture — no external font fetch, works
@@ -139,19 +141,22 @@ function makeLabelTexture(label: string): THREE.CanvasTexture {
 
 // Distribute exits across the four walls (front/back/left/right), each door set
 // into its wall and facing inward.
-function buildDoors(room: Room, dims: Dims): DoorSpec[] {
+function buildDoors(room: Room, dims: Dims, safeExit: SafeExit | null = null): DoorSpec[] {
   const hw = dims.w / 2;
   const hd = dims.d / 2;
   const y = DOOR_H / 2;
-  const slots: Omit<DoorSpec, "index">[] = [
+  const slots: Omit<DoorSpec, "index" | "safe">[] = [
     { position: [0, y, -hd + 0.05], rotationY: 0 },
     { position: [0, y, hd - 0.05], rotationY: Math.PI },
     { position: [-hw + 0.05, y, 0], rotationY: Math.PI / 2 },
     { position: [hw - 0.05, y, 0], rotationY: -Math.PI / 2 },
   ];
-  return room.exits
-    .slice(0, slots.length)
-    .map((_, i) => ({ index: i, ...slots[i] }));
+  const count = Math.min(slots.length, room.exits.length + (safeExit ? 1 : 0));
+  return Array.from({ length: count }, (_, i) => ({
+    ...slots[i],
+    index: i,
+    safe: safeExit?.index === i,
+  }));
 }
 
 function Door({
@@ -159,11 +164,13 @@ function Door({
   color,
   active,
   pressure,
+  safeExit,
 }: {
   spec: DoorSpec;
   color: THREE.Color;
   active: boolean;
   pressure: RoomPressureAtmosphere;
+  safeExit: SafeExit | null;
 }) {
   const frameRef = useRef<THREE.MeshStandardMaterial>(null);
   const glowRef = useRef<THREE.MeshBasicMaterial>(null);
@@ -175,13 +182,14 @@ function Door({
 
   useFrame(({ clock }) => {
     const time = clock.elapsedTime + spec.index * 1.7; // phase-offset per door
-    const pulseSpeed = 2.5 + pressure.lightInstability * 3;
+    const pulseSpeed = spec.safe && safeExit ? 2.5 * safeExit.pulseScale : 2.5 + pressure.lightInstability * 3;
     const pulse = 0.3 * Math.sin(time * pulseSpeed) + 1;
+    const stability = spec.safe && safeExit ? safeExit.portalStability : pressure.portalGlow;
     if (frameRef.current) {
-      frameRef.current.emissiveIntensity = (active ? 2.6 : 1.1) * pulse * pressure.portalGlow;
+      frameRef.current.emissiveIntensity = (active ? 2.6 : 1.1) * pulse * stability;
     }
     if (glowRef.current) {
-      glowRef.current.opacity = (active ? 0.5 : 0.22) * pulse * pressure.portalGlow;
+      glowRef.current.opacity = (active ? 0.5 : 0.22) * pulse * stability;
     }
     // idle breathing: the portal's glow + label drift and swell
     if (spiritRef.current) {
@@ -245,7 +253,20 @@ function FirstPersonController({ dims }: { dims: Dims }) {
   const input = useKeyboard(true);
   const room = useGame((s) => s.room);
   const setNearbyExit = useGame((s) => s.setNearbyExit);
-  const doors = useMemo(() => (room ? buildDoors(room, dims) : []), [room, dims]);
+  const psychologicalPressure = useGame((s) => s.psychologicalPressure);
+  const psychologicalStance = useGame((s) => s.psychologicalStance);
+  const safeExit = useMemo(
+    () =>
+      room
+        ? resolveSafeExit({
+            stance: psychologicalStance,
+            pressure: psychologicalPressure,
+            room,
+          })
+        : null,
+    [room, psychologicalPressure, psychologicalStance]
+  );
+  const doors = useMemo(() => (room ? buildDoors(room, dims, safeExit) : []), [room, dims, safeExit]);
   const seed = room?.seed;
 
   // Respawn at the entrance whenever the room itself changes.
@@ -416,6 +437,7 @@ export function RoomScene() {
   const room = useGame((s) => s.room);
   const nearbyExit = useGame((s) => s.nearbyExit);
   const psychologicalPressure = useGame((s) => s.psychologicalPressure);
+  const psychologicalStance = useGame((s) => s.psychologicalStance);
   const roomPressureSpike = useGame((s) => s.roomPressureSpike);
 
   const dims = useMemo(() => (room ? dimsForShape(room.shape) : dimsForShape("chamber")), [room]);
@@ -424,7 +446,18 @@ export function RoomScene() {
     () => resolveRoomPressureAtmosphere({ pressure: psychologicalPressure + roomPressureSpike }),
     [psychologicalPressure, roomPressureSpike]
   );
-  const doors = useMemo(() => (room ? buildDoors(room, dims) : []), [room, dims]);
+  const safeExit = useMemo(
+    () =>
+      room
+        ? resolveSafeExit({
+            stance: psychologicalStance,
+            pressure: psychologicalPressure,
+            room,
+          })
+        : null,
+    [room, psychologicalPressure, psychologicalStance]
+  );
+  const doors = useMemo(() => (room ? buildDoors(room, dims, safeExit) : []), [room, dims, safeExit]);
   const surface = useMemo(() => surfaceForShape(room?.shape ?? "chamber"), [room]);
   const inscriptionTex = useMemo(
     () => (room ? makeInscriptionTexture(room.inscription) : null),
@@ -459,6 +492,7 @@ export function RoomScene() {
 
   const pressureColor = new THREE.Color(pressure.ambientColor);
   const doorColor = new THREE.Color("#7dffd0").lerp(new THREE.Color("#ffd1a6"), pressure.pressure * 0.35);
+  const safeDoorColor = new THREE.Color("#ffd1a6").lerp(new THREE.Color("#fff1cc"), safeExit?.warmth ?? 0);
   const ceilingColor = atmo.fogColor.clone().lerp(pressureColor, pressure.pressure).offsetHSL(0, 0, 0.4);
   const fogColor = atmo.fogColor.clone().lerp(pressureColor, pressure.pressure * 0.7);
   const fogNear = Math.max(1.5, atmo.fogNear - pressure.fogDensity * 4);
@@ -491,7 +525,14 @@ export function RoomScene() {
       )}
 
       {doors.map((d) => (
-        <Door key={d.index} spec={d} color={doorColor} active={nearbyExit === d.index} pressure={pressure} />
+        <Door
+          key={d.index}
+          spec={d}
+          color={d.safe ? safeDoorColor : doorColor}
+          active={nearbyExit === d.index}
+          pressure={pressure}
+          safeExit={safeExit}
+        />
       ))}
 
       <FirstPersonController dims={dims} />

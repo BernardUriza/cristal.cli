@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useGame } from "../game/store";
 import { GameMode } from "../game/types";
+import { resolveSafeExit } from "../game/SafeExitResolver";
 
 // In-room HUD: the prophet's caption, breadcrumb, stability gauge, and the
 // cross/exit prompts. Crossing is proximity-only (walk to a door + E); ESC
@@ -15,6 +16,8 @@ export function RoomCaption() {
   const stability = useGame((s) => s.stability);
   const dangerousSeeds = useGame((s) => s.dangerousSeeds);
   const whisper = useGame((s) => s.lastRoomWhisper);
+  const pressure = useGame((s) => s.psychologicalPressure);
+  const stance = useGame((s) => s.psychologicalStance);
   const dismissRoom = useGame((s) => s.dismissRoom);
 
   const inRoom = mode === GameMode.Room && !!room;
@@ -30,7 +33,13 @@ export function RoomCaption() {
 
   if (!inRoom || !room) return null;
 
-  const exitText = nearbyExit !== null ? room.exits[nearbyExit] : null;
+  const safeExit = resolveSafeExit({ stance, pressure, room });
+  const exitText =
+    nearbyExit !== null
+      ? nearbyExit === safeExit?.index
+        ? safeExit.label
+        : room.exits[nearbyExit]
+      : null;
   const dread = Math.max(0, Math.min(100, room.dread));
   const stab = Math.max(0, Math.min(100, stability));
   const hex = (n: number) => n.toString(16).padStart(8, "0");
