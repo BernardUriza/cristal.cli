@@ -4,6 +4,7 @@ import * as THREE from "three";
 import { useGame, fakeExitForRoom } from "./store";
 import { useKeyboard } from "./input/useKeyboard";
 import { playEnterDrone, playCross, playAlarm } from "./audio";
+import { resolveRoomPressureAtmosphere, type RoomPressureAtmosphere } from "./RoomPressureController";
 import type { RoomShape } from "./types";
 import type { Room } from "./roomApi";
 
@@ -157,10 +158,12 @@ function Door({
   spec,
   color,
   active,
+  pressure,
 }: {
   spec: DoorSpec;
   color: THREE.Color;
   active: boolean;
+  pressure: RoomPressureAtmosphere;
 }) {
   const frameRef = useRef<THREE.MeshStandardMaterial>(null);
   const glowRef = useRef<THREE.MeshBasicMaterial>(null);
@@ -172,9 +175,14 @@ function Door({
 
   useFrame(({ clock }) => {
     const time = clock.elapsedTime + spec.index * 1.7; // phase-offset per door
-    const pulse = 0.3 * Math.sin(time * 2.5) + 1;
-    if (frameRef.current) frameRef.current.emissiveIntensity = (active ? 2.6 : 1.1) * pulse;
-    if (glowRef.current) glowRef.current.opacity = (active ? 0.5 : 0.22) * pulse;
+    const pulseSpeed = 2.5 + pressure.lightInstability * 3;
+    const pulse = 0.3 * Math.sin(time * pulseSpeed) + 1;
+    if (frameRef.current) {
+      frameRef.current.emissiveIntensity = (active ? 2.6 : 1.1) * pulse * pressure.portalGlow;
+    }
+    if (glowRef.current) {
+      glowRef.current.opacity = (active ? 0.5 : 0.22) * pulse * pressure.portalGlow;
+    }
     // idle breathing: the portal's glow + label drift and swell
     if (spiritRef.current) {
       spiritRef.current.position.y = Math.sin(time * 1.3) * 0.06;
@@ -348,7 +356,17 @@ function FirstPersonController({ dims }: { dims: Dims }) {
 
 // Ceiling fluorescence that pulses; high dread makes it flicker faster and more
 // erratically, like a failing tube.
-function CeilingLight({ dims, dread, color }: { dims: Dims; dread: number; color: THREE.Color }) {
+function CeilingLight({
+  dims,
+  dread,
+  color,
+  pressure,
+}: {
+  dims: Dims;
+  dread: number;
+  color: THREE.Color;
+  pressure: RoomPressureAtmosphere;
+}) {
   const ref = useRef<THREE.PointLight>(null);
   const t = Math.max(0, Math.min(100, dread)) / 100;
   useFrame(({ clock }) => {
@@ -356,7 +374,9 @@ function CeilingLight({ dims, dread, color }: { dims: Dims; dread: number; color
     const time = clock.elapsedTime;
     const slow = Math.sin(time * (1 + t * 3));
     const flicker = t > 0.5 ? Math.sin(time * 37) * (t - 0.5) * 0.5 : 0;
-    ref.current.intensity = 2.0 + slow * (0.3 + t * 0.6) + flicker;
+    const pressureFlicker = Math.sin(time * 29) * pressure.lightInstability * 0.45;
+    ref.current.intensity =
+      2.0 + slow * (0.3 + t * 0.6 + pressure.wallPulse * 0.35) + flicker + pressureFlicker;
   });
   return (
     <pointLight
@@ -371,12 +391,38 @@ function CeilingLight({ dims, dread, color }: { dims: Dims; dread: number; color
   );
 }
 
+function RoomShell({
+  dims,
+  material,
+  pressure,
+}: {
+  dims: Dims;
+  material: THREE.MeshStandardMaterial;
+  pressure: RoomPressureAtmosphere;
+}) {
+  useFrame(({ clock }) => {
+    const breath = (Math.sin(clock.elapsedTime * (1.1 + pressure.wallPulse * 2.4)) + 1) / 2;
+    material.emissiveIntensity = 0.45 + breath * pressure.wallPulse;
+  });
+
+  return (
+    <mesh position={[0, dims.h / 2, 0]} material={material}>
+      <boxGeometry args={[dims.w, dims.h, dims.d]} />
+    </mesh>
+  );
+}
+
 export function RoomScene() {
   const room = useGame((s) => s.room);
   const nearbyExit = useGame((s) => s.nearbyExit);
+  const psychologicalPressure = useGame((s) => s.psychologicalPressure);
 
   const dims = useMemo(() => (room ? dimsForShape(room.shape) : dimsForShape("chamber")), [room]);
   const atmo = useMemo(() => atmosphere(room?.dread ?? 0), [room]);
+  const pressure = useMemo(
+    () => resolveRoomPressureAtmosphere({ pressure: psychologicalPressure }),
+    [psychologicalPressure]
+  );
   const doors = useMemo(() => (room ? buildDoors(room, dims) : []), [room, dims]);
   const surface = useMemo(() => surfaceForShape(room?.shape ?? "chamber"), [room]);
   const inscriptionTex = useMemo(
@@ -410,21 +456,26 @@ export function RoomScene() {
 
   if (!room) return null;
 
-  const doorColor = new THREE.Color("#7dffd0");
-  const ceilingColor = atmo.fogColor.clone().offsetHSL(0, 0, 0.4);
+  const pressureColor = new THREE.Color(pressure.ambientColor);
+  const doorColor = new THREE.Color("#7dffd0").lerp(new THREE.Color("#ffd1a6"), pressure.pressure * 0.35);
+  const ceilingColor = atmo.fogColor.clone().lerp(pressureColor, pressure.pressure).offsetHSL(0, 0, 0.4);
+  const fogColor = atmo.fogColor.clone().lerp(pressureColor, pressure.pressure * 0.7);
+  const fogNear = Math.max(1.5, atmo.fogNear - pressure.fogDensity * 4);
+  const fogFar = Math.max(fogNear + 5, atmo.fogFar - pressure.fogDensity * 16);
 
   return (
     <>
-      <color attach="background" args={[atmo.fogColor]} />
-      <fog attach="fog" args={[atmo.fogColor, atmo.fogNear, atmo.fogFar]} />
+      <color attach="background" args={[fogColor]} />
+      <fog attach="fog" args={[fogColor, fogNear, fogFar]} />
 
-      <ambientLight intensity={atmo.ambient} color={atmo.fogColor.clone().offsetHSL(0, 0, 0.3)} />
-      <CeilingLight dims={dims} dread={room.dread} color={ceilingColor} />
+      <ambientLight
+        intensity={Math.max(0.52, atmo.ambient - pressure.fogDensity * 0.2)}
+        color={pressureColor.clone().lerp(atmo.fogColor, 0.35).offsetHSL(0, 0, 0.22)}
+      />
+      <CeilingLight dims={dims} dread={room.dread} color={ceilingColor} pressure={pressure} />
 
       {/* shell: floor, ceiling, four walls as one inside-out box */}
-      <mesh position={[0, dims.h / 2, 0]} material={wallMat}>
-        <boxGeometry args={[dims.w, dims.h, dims.d]} />
-      </mesh>
+      <RoomShell dims={dims} material={wallMat} pressure={pressure} />
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]} receiveShadow>
         <planeGeometry args={[dims.w, dims.d]} />
         <meshStandardMaterial color={atmo.wallColor.clone().multiplyScalar(0.7)} roughness={0.95} />
@@ -439,7 +490,7 @@ export function RoomScene() {
       )}
 
       {doors.map((d) => (
-        <Door key={d.index} spec={d} color={doorColor} active={nearbyExit === d.index} />
+        <Door key={d.index} spec={d} color={doorColor} active={nearbyExit === d.index} pressure={pressure} />
       ))}
 
       <FirstPersonController dims={dims} />

@@ -13,6 +13,7 @@ import { RoomJournal } from "./ui/RoomJournal";
 import { useGame } from "./game/store";
 import { GameMode } from "./game/types";
 import { symbolicBus } from "./game/symbolicBus";
+import { resolveRoomPressureAtmosphere } from "./game/RoomPressureController";
 
 function ModeBadge() {
   const mode = useGame((s) => s.mode);
@@ -24,6 +25,29 @@ function ModeBadge() {
 function World() {
   const inRoom = useGame((s) => s.mode === GameMode.Room);
   return inRoom ? <RoomScene /> : <Scene />;
+}
+
+function PressureVignette() {
+  const inRoom = useGame((s) => s.mode === GameMode.Room);
+  const pressure = useGame((s) => s.psychologicalPressure);
+  if (!inRoom) return null;
+
+  const { vignetteAmount } = resolveRoomPressureAtmosphere({ pressure });
+  return (
+    <div
+      aria-hidden
+      style={{
+        position: "fixed",
+        inset: 0,
+        pointerEvents: "none",
+        opacity: vignetteAmount,
+        background:
+          "radial-gradient(circle at center, rgba(0,0,0,0) 44%, rgba(20,2,2,0.42) 74%, rgba(0,0,0,0.88) 100%)",
+        transition: "opacity 260ms linear",
+        zIndex: 2,
+      }}
+    />
+  );
 }
 
 export function App() {
@@ -62,6 +86,7 @@ export function App() {
       <RoomCaption />
       <Minimap />
       <RoomJournal />
+      <PressureVignette />
       <ConsoleOverlay />
     </>
   );

@@ -73,6 +73,8 @@ interface GameState {
   mazePose: MazePose | null;
   /** room integrity 0-100: decays with time + dread, collapse at 0 */
   stability: number;
+  /** psychological pressure 0-1 mirrored from the terminal stance tracker */
+  psychologicalPressure: number;
   /** seeds of rooms that have proven to bite (false door / collapse) */
   dangerousSeeds: number[];
 
@@ -86,6 +88,8 @@ interface GameState {
   setMazePose: (pose: MazePose) => void;
   /** advance the room's integrity decay by dt seconds; collapses at zero */
   tickStability: (dt: number) => void;
+  /** mirror terminal stance pressure into gameplay/rendering without a second store */
+  setPsychologicalPressure: (pressure: number) => void;
   /** glyph pressed in the world — opens the first room of a descent */
   invokeGlyph: (archetype: SymbolicArchetype, glyphId: string) => void;
   /** cross exit[index] of the current room — load/generate the next one */
@@ -173,6 +177,7 @@ export const useGame = create<GameState>((set, get) => {
   roomHistory: [],
   mazePose: null,
   stability: 100,
+  psychologicalPressure: 0,
   dangerousSeeds: [],
 
   enterConsoleMode: (consoleId) => {
@@ -207,6 +212,9 @@ export const useGame = create<GameState>((set, get) => {
   setLastSymbol: (lastSymbol) => set({ lastSymbol }),
 
   setMazePose: (mazePose) => set({ mazePose }),
+
+  setPsychologicalPressure: (pressure) =>
+    set({ psychologicalPressure: Math.max(0, Math.min(1, pressure)) }),
 
   tickStability: (dt) => {
     // don't drain integrity while the next room is still being generated — that
