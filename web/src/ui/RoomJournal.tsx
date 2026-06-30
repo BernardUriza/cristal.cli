@@ -2,11 +2,13 @@ import { useGame } from "../game/store";
 import { RoomMemoryIndex } from "../game/RoomMemoryIndex";
 import { profileRoomDanger } from "../game/RoomDangerProfiler";
 import { parseInscription } from "../game/InscriptionParser";
+import { summarizeEmotionalHistory } from "../game/EmotionalHistory";
 
 const PHOSPHOR = "#39ff14";
 
 export function RoomJournal() {
   const history = useGame((s) => s.roomHistory);
+  const emotionalHistory = useGame((s) => s.emotionalHistory);
   if (history.length === 0) return null;
 
   const index = new RoomMemoryIndex();
@@ -19,6 +21,7 @@ export function RoomJournal() {
 
   const recent = index.recent(5);
   const worst = index.mostDangerous(1)[0];
+  const emotional = summarizeEmotionalHistory(emotionalHistory);
 
   return (
     <div
@@ -37,6 +40,7 @@ export function RoomJournal() {
       }}
     >
       <div style={{ opacity: 0.7 }}>JOURNAL · {index.summarizeTrail()}</div>
+      <div style={{ opacity: 0.65, marginTop: 2 }}>{emotional.summary}</div>
       {recent.map((r) => {
         const { symbols } = parseInscription(r.room.inscription);
         return (

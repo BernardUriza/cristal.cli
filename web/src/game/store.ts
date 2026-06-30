@@ -8,6 +8,10 @@ import {
   type FalseDoorAnnotation,
 } from "./FalseDoorConsequences";
 import { resolveSafeExit } from "./SafeExitResolver";
+import {
+  appendEmotionalHistory,
+  type EmotionalHistoryEntry,
+} from "./EmotionalHistory";
 import type { Stance } from "../terminal/psych/StanceClassifier";
 import { recordEnvironmentalDeflection } from "../terminal/psych/PsychologicalResponseEngine";
 
@@ -89,6 +93,8 @@ interface GameState {
   roomPressureSpike: number;
   /** recent emotional annotations produced by room traversal */
   falseDoorAnnotations: FalseDoorAnnotation[];
+  /** room-linked stance and pressure history */
+  emotionalHistory: EmotionalHistoryEntry[];
   /** subtle room text surfaced after an avoidance-shaped crossing */
   lastRoomWhisper: string | null;
   /** seeds of rooms that have proven to bite (false door / collapse) */
@@ -154,6 +160,14 @@ export const useGame = create<GameState>((set, get) => {
         mode: GameMode.Room,
         parentSeed,
         roomHistory: pushHistory(s.roomHistory, cached),
+        emotionalHistory: s.psychologicalStance
+          ? appendEmotionalHistory(s.emotionalHistory, {
+              room: { seed: cached.seed, name: cached.name },
+              stance: s.psychologicalStance,
+              pressure: s.psychologicalPressure,
+              timestamp: Date.now(),
+            })
+          : s.emotionalHistory,
         stability: enterStability(cached, freshDescent),
       }));
       return;
@@ -170,6 +184,14 @@ export const useGame = create<GameState>((set, get) => {
           mode: GameMode.Room,
           parentSeed,
           roomHistory: pushHistory(s.roomHistory, room),
+          emotionalHistory: s.psychologicalStance
+            ? appendEmotionalHistory(s.emotionalHistory, {
+                room: { seed: room.seed, name: room.name },
+                stance: s.psychologicalStance,
+                pressure: s.psychologicalPressure,
+                timestamp: Date.now(),
+              })
+            : s.emotionalHistory,
           stability: enterStability(room, freshDescent),
         }));
       })
@@ -197,6 +219,7 @@ export const useGame = create<GameState>((set, get) => {
   psychologicalStance: null,
   roomPressureSpike: 0,
   falseDoorAnnotations: [],
+  emotionalHistory: [],
   lastRoomWhisper: null,
   dangerousSeeds: [],
 
@@ -237,6 +260,15 @@ export const useGame = create<GameState>((set, get) => {
     set((s) => ({
       psychologicalPressure: Math.max(0, Math.min(1, pressure)),
       psychologicalStance: stance !== undefined ? stance : s.psychologicalStance,
+      emotionalHistory:
+        s.room && stance
+          ? appendEmotionalHistory(s.emotionalHistory, {
+              room: { seed: s.room.seed, name: s.room.name },
+              stance,
+              pressure,
+              timestamp: Date.now(),
+            })
+          : s.emotionalHistory,
     })),
 
   tickStability: (dt) => {
@@ -288,6 +320,12 @@ export const useGame = create<GameState>((set, get) => {
           ...s.falseDoorAnnotations,
           { ...consequence.annotation, timestamp: Date.now() },
         ].slice(-FALSE_DOOR_HISTORY_LIMIT),
+        emotionalHistory: appendEmotionalHistory(s.emotionalHistory, {
+          room: { seed: room.seed, name: room.name },
+          stance: "deflection",
+          pressure: pressure.pressure,
+          timestamp: Date.now(),
+        }),
         lastRoomWhisper: consequence.whisper,
         dangerousSeeds: s.dangerousSeeds.includes(room.seed)
           ? s.dangerousSeeds
