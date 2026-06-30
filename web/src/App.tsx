@@ -1,5 +1,7 @@
 import { Suspense, useEffect } from "react";
+import { Environment } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
+import * as THREE from "three";
 import { Scene } from "./game/Scene";
 import { RoomScene } from "./game/RoomScene";
 import { InteractPrompt } from "./ui/InteractPrompt";
@@ -73,9 +75,29 @@ export function App() {
       <Canvas
         shadows
         camera={{ fov: 60, near: 0.1, far: 200, position: [0, 5, 10] }}
-        gl={{ antialias: true }}
+        gl={{
+          antialias: true,
+          outputColorSpace: THREE.SRGBColorSpace,
+          toneMapping: THREE.ACESFilmicToneMapping,
+          toneMappingExposure: 1.05,
+        }}
       >
         <Suspense fallback={null}>
+          <Environment frames={1} resolution={64} background={false} environmentIntensity={0.28}>
+            <color attach="background" args={["#050806"]} />
+            <mesh position={[0, 4, -6]} rotation={[0, 0, 0]}>
+              <planeGeometry args={[8, 1.4]} />
+              <meshBasicMaterial color="#bfffe1" toneMapped={false} />
+            </mesh>
+            <mesh position={[-5, 1.8, 2]} rotation={[0, Math.PI / 2, 0]}>
+              <planeGeometry args={[4, 3]} />
+              <meshBasicMaterial color="#314e3f" />
+            </mesh>
+            <mesh position={[5, 1.4, -2]} rotation={[0, -Math.PI / 2, 0]}>
+              <planeGeometry args={[4, 2.4]} />
+              <meshBasicMaterial color="#20251f" />
+            </mesh>
+          </Environment>
           <World />
         </Suspense>
       </Canvas>
