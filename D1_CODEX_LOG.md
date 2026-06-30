@@ -133,6 +133,53 @@
 - Pressure ownership centralization between zustand psychologicalPressure and StancePressureTracker was not attempted; that remains architectural. TerminalCore.reset() already calls resetPsychSession(), but resetting the zustand mirror there would introduce a terminal-to-game dependency, so it was left untouched.
 - Color/palette SSOT for #7dffd0 and PHOSPHOR #39ff14 was intentionally left for a dedicated low-priority sweep.
 
+## D3 Backrooms Furniture Visual Realism
+
+### D3.1 Canvas Tone Mapping And Environment IBL
+- SHA: RED - commit blocked; sandbox has read-only `.git` and `git commit` failed creating `.git/index.lock`.
+- Technique: explicit ACESFilmic tone mapping, sRGB output color space, tuned exposure, and a low-intensity generated drei Environment for dim image-based lighting.
+- Files: web/src/App.tsx
+- Typecheck: `npx tsc -b --noEmit` clean
+- Vitest: `npx vitest run` clean, 37 files / 142 tests
+- Build: not run for this intended commit
+- Notes: Environment uses generated in-scene light planes at `environmentIntensity={0.28}` to avoid runtime HDR asset fetches and preserve the dark Backrooms mood.
+
+### D3.2 Procedural PBR Maps
+- SHA: RED - commit blocked; sandbox has read-only `.git` and `git commit` failed creating `.git/index.lock`.
+- Technique: cached procedural noise texture utility with CanvasTexture normal and roughness maps for painted metal, bare metal, dusty plastic, cardboard, dirty carpet, smudged glass, and aged laminate.
+- Files: web/src/game/proceduralPbrTextures.ts, web/src/game/BackroomFurniture.tsx
+- Typecheck: `npx tsc -b --noEmit` clean
+- Vitest: `npx vitest run` clean, 37 files / 142 tests
+- Build: not run for this intended commit
+- Notes: Browser renders generate CanvasTextures once per profile; Node/test imports use a tiny DataTexture fallback so strict Vitest runs do not require a DOM canvas.
+
+### D3.3 Rounded Geometry And PBR Tuning
+- SHA: RED - commit blocked; sandbox has read-only `.git` and `git commit` failed creating `.git/index.lock`.
+- Technique: replaced manufactured box props with drei RoundedBox and tuned material metalness/roughness/envMapIntensity for laminate, painted metal, bare metal, plastic, cardboard, carpet, and smudged glass.
+- Files: web/src/game/BackroomFurniture.tsx
+- Typecheck: `npx tsc -b --noEmit` clean
+- Vitest: `npx vitest run` clean, 37 files / 142 tests
+- Build: not run for this intended commit
+- Notes: Flat planes such as the wet-carpet patch and vent plate remain planar; materials are cached at module scope and reused across furniture instances.
+
+### D3.4 Fluorescent Flicker And RectAreaLight
+- SHA: RED - commit blocked; sandbox has read-only `.git` and `git commit` failed creating `.git/index.lock`.
+- Technique: RectAreaLightUniformsLib one-time init, irregular bucketed noise flicker with occasional dropouts, matching point/area light intensity, and sparse deterministic RectAreaLight allocation for fluorescent fixtures.
+- Files: web/src/game/BackroomFurniture.tsx
+- Typecheck: `npx tsc -b --noEmit` clean
+- Vitest: `npx vitest run` clean, 37 files / 142 tests
+- Build: not run for this intended commit
+- Notes: RectAreaLights are capped at eight selected fluorescent placements to avoid adding an area light to every furniture instance.
+
+### D3.5 Bloom Fallback
+- SHA: RED - commit blocked; sandbox has read-only `.git` and `git commit` failed creating `.git/index.lock`.
+- Technique: additive emissive halo fallback for fluorescent tubes, exit signs, server LEDs, vending glass, and broken monitor glass.
+- Files: web/src/game/BackroomFurniture.tsx
+- Typecheck: `npx tsc -b --noEmit` clean
+- Vitest: `npx vitest run` clean, 37 files / 142 tests
+- Build: `npx vite build` clean
+- Notes: `@react-three/postprocessing` is not installed and network is restricted in this session, so the safer path was cached additive halo panels instead of adding a new dependency.
+
 ## D2 Persistent Transference - Pure Modules
 
 ### D2.1 PersistentTransference
