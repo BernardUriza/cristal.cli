@@ -4,6 +4,7 @@ import { distanceField, isFullyConnected } from "../game/mazeGraph";
 import { cellKey, nearestUnvisited, routeToRoom } from "../game/MazeRouteAdvisor";
 import { MAZE_COLS, MAZE_ROWS, MAZE_SEED, SPAWN_CELL } from "../game/mazeConfig";
 import { getPlayerPose, subscribePlayerPose, type PlayerPose } from "../game/playerPositionBus";
+import { WORLD_NODES, type WorldNode } from "../game/worldNodes";
 
 const CELL_PX = 18;
 const STROKE = "#1d4d3a";
@@ -44,15 +45,27 @@ export function Minimap() {
   const headZ = dotZ + Math.cos(pose.heading) * CELL_PX * 0.6;
 
   // Suggested exploration route: trail visited cells as the player walks, then
-  // route to the nearest cell never set foot in. Pure mazeGraph/advisor logic.
+  // route to the nearest unvisited world node before falling back to any cell.
   const visited = useRef<Set<string>>(new Set());
   const pcx = Math.max(0, Math.min(MAZE_COLS - 1, Math.round((pose.x + OFFSET_X) / CELL)));
   const pcy = Math.max(0, Math.min(MAZE_ROWS - 1, Math.round((pose.z + OFFSET_Z) / CELL)));
   visited.current.add(cellKey({ x: pcx, y: pcy }));
-  const route = useMemo(() => {
+  const { route, targetNode } = useMemo(() => {
     const from = { x: pcx, y: pcy };
+    const nodeRoutes = WORLD_NODES
+      .filter((node) => !visited.current.has(cellKey({ x: node.cell[0], y: node.cell[1] })))
+      .map((node) => ({
+        node,
+        route: routeToRoom(maze, from, { x: node.cell[0], y: node.cell[1] }),
+      }))
+      .filter((entry): entry is { node: WorldNode; route: NonNullable<ReturnType<typeof routeToRoom>> } =>
+        Boolean(entry.route)
+      )
+      .sort((a, b) => a.route.length - b.route.length);
+    if (nodeRoutes[0]) return { route: nodeRoutes[0].route, targetNode: nodeRoutes[0].node };
+
     const target = nearestUnvisited(maze, from, visited.current);
-    return target ? routeToRoom(maze, from, target) : null;
+    return { route: target ? routeToRoom(maze, from, target) : null, targetNode: null };
   }, [maze, pcx, pcy]);
 
   return (
@@ -113,11 +126,44 @@ export function Minimap() {
             strokeWidth={1.5}
           />
         )}
+        {WORLD_NODES.map((node) => {
+          const x = center(node.cell[0]);
+          const y = center(node.cell[1]);
+          const visitedNode = visited.current.has(cellKey({ x: node.cell[0], y: node.cell[1] }));
+          const activeTarget = targetNode?.id === node.id;
+          return node.kind === "glyph" ? (
+            <rect
+              key={node.id}
+              x={x - 4}
+              y={y - 4}
+              width={8}
+              height={8}
+              fill={node.accent}
+              opacity={visitedNode ? 0.4 : 0.95}
+              transform={`rotate(45 ${x} ${y})`}
+              stroke={activeTarget ? ROUTE : "none"}
+              strokeWidth={1.5}
+            />
+          ) : (
+            <rect
+              key={node.id}
+              x={x - 5}
+              y={y - 5}
+              width={10}
+              height={10}
+              fill="none"
+              stroke={node.accent}
+              strokeWidth={activeTarget ? 2 : 1.3}
+              opacity={visitedNode ? 0.45 : 0.95}
+            />
+          );
+        })}
         <line x1={dotX} y1={dotZ} x2={headX} y2={headZ} stroke={PLAYER} strokeWidth={1.5} />
         <circle cx={dotX} cy={dotZ} r={CELL_PX / 3.5} fill={PLAYER} />
       </svg>
       <div style={{ marginTop: 4 }}>
-        MAP · {connected ? "connected" : "DISJOINT"} · {route ? `→ unexplored ${route.length}` : "explored"}
+        MAP · {connected ? "connected" : "DISJOINT"} ·{" "}
+        {route ? `→ ${targetNode?.label ?? "unexplored"} ${route.length}` : "explored"}
       </div>
     </div>
   );

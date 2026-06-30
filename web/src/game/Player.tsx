@@ -24,6 +24,7 @@ const INTERACT_RANGE = 2.6;
 
 export interface ConsoleRef {
   id: string;
+  label: string;
   position: THREE.Vector3;
 }
 

@@ -6,17 +6,7 @@ import { Player, type ConsoleRef } from "./Player";
 import { RitualGlyph, type GlyphRef } from "./RitualGlyph";
 import { cellCenter, generateMaze } from "./maze";
 import { MAZE_COLS, MAZE_ROWS, MAZE_SEED } from "./mazeConfig";
-import type { SymbolicArchetype } from "./symbolicBus";
-
-const GLYPH_COLORS: Record<SymbolicArchetype, string> = {
-  fragment: "#9bff7d",
-  echo: "#7dffd0",
-  corruption: "#ff5a3d",
-  memory: "#ffd23d",
-  moon: "#7db8ff",
-  gate: "#b0b0c0",
-  vision: "#c879ff",
-};
+import { CONSOLE_NODES, GLYPH_NODES } from "./worldNodes";
 
 export function Scene() {
   const maze = useMemo(() => generateMaze(MAZE_COLS, MAZE_ROWS, MAZE_SEED), []);
@@ -27,42 +17,22 @@ export function Scene() {
     return [x, 0, z];
   }, [maze]);
 
-  // A few consoles scattered through the labyrinth.
-  const consolePlacements = useMemo(
-    () => [
-      { id: "console_alpha", cell: [3, 2] as const },
-      { id: "console_beta", cell: [6, 5] as const },
-      { id: "console_omega", cell: [1, 7] as const },
-    ],
-    []
-  );
-
   const consoles = useMemo<ConsoleRef[]>(
     () =>
-      consolePlacements.map((c) => {
+      CONSOLE_NODES.map((c) => {
         const [x, z] = cellCenter(maze, c.cell[0], c.cell[1]);
-        return { id: c.id, position: new THREE.Vector3(x, 0, z) };
+        return { id: c.id, label: c.label, position: new THREE.Vector3(x, 0, z) };
       }),
-    [maze, consolePlacements]
-  );
-
-  // Ritual glyphs — invocations of the corrupted liturgy, one archetype each.
-  const glyphPlacements = useMemo(
-    () => [
-      { id: "glyph_moon", cell: [2, 5] as const, archetype: "moon" as SymbolicArchetype },
-      { id: "glyph_vision", cell: [5, 1] as const, archetype: "vision" as SymbolicArchetype },
-      { id: "glyph_corruption", cell: [7, 3] as const, archetype: "corruption" as SymbolicArchetype },
-    ],
-    []
+    [maze]
   );
 
   const glyphs = useMemo<GlyphRef[]>(
     () =>
-      glyphPlacements.map((g) => {
+      GLYPH_NODES.map((g) => {
         const [x, z] = cellCenter(maze, g.cell[0], g.cell[1]);
         return { id: g.id, position: new THREE.Vector3(x, 0, z), archetype: g.archetype };
       }),
-    [maze, glyphPlacements]
+    [maze]
   );
 
   return (
@@ -86,12 +56,20 @@ export function Scene() {
 
       <Labyrinth maze={maze} />
 
-      {consolePlacements.map((c) => {
+      {CONSOLE_NODES.map((c) => {
         const [x, z] = cellCenter(maze, c.cell[0], c.cell[1]);
-        return <InWorldConsole key={c.id} id={c.id} position={[x, 0, z]} />;
+        return (
+          <InWorldConsole
+            key={c.id}
+            id={c.id}
+            label={c.label}
+            accent={c.accent}
+            position={[x, 0, z]}
+          />
+        );
       })}
 
-      {glyphPlacements.map((g) => {
+      {GLYPH_NODES.map((g) => {
         const [x, z] = cellCenter(maze, g.cell[0], g.cell[1]);
         return (
           <RitualGlyph
@@ -99,7 +77,7 @@ export function Scene() {
             id={g.id}
             position={[x, 0, z]}
             archetype={g.archetype}
-            color={GLYPH_COLORS[g.archetype]}
+            color={g.accent}
           />
         );
       })}
