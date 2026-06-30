@@ -5,8 +5,9 @@ import { useGame, fakeExitForRoom } from "./store";
 import { useKeyboard } from "./input/useKeyboard";
 import { playEnterDrone, playCross, playAlarm } from "./audio";
 import { resolveRoomPressureAtmosphere, type RoomPressureAtmosphere } from "./RoomPressureController";
-import { resolveSafeExit, type SafeExit } from "./SafeExitResolver";
-import { generateMicroMirrors, type MicroMirrors } from "./MicroMirrorGenerator";
+import { deriveRoomD1Results } from "./RoomD1Derivations";
+import type { MicroMirrors } from "./MicroMirrorGenerator";
+import type { SafeExit } from "./SafeExitResolver";
 import type { RoomShape } from "./types";
 import type { Room } from "./roomApi";
 
@@ -256,7 +257,15 @@ function Door({
   );
 }
 
-function FirstPersonController({ dims }: { dims: Dims }) {
+function FirstPersonController({
+  dims,
+  safeExit,
+  mirrors,
+}: {
+  dims: Dims;
+  safeExit: SafeExit | null;
+  mirrors: MicroMirrors | null;
+}) {
   const { camera, gl } = useThree();
   const torch = useRef<THREE.PointLight>(null);
   const yaw = useRef(0);
@@ -265,32 +274,6 @@ function FirstPersonController({ dims }: { dims: Dims }) {
   const input = useKeyboard(true);
   const room = useGame((s) => s.room);
   const setNearbyExit = useGame((s) => s.setNearbyExit);
-  const psychologicalPressure = useGame((s) => s.psychologicalPressure);
-  const psychologicalStance = useGame((s) => s.psychologicalStance);
-  const emotionalHistory = useGame((s) => s.emotionalHistory);
-  const falseDoorCount = useGame((s) => s.falseDoorAnnotations.length);
-  const safeExit = useMemo(
-    () =>
-      room
-        ? resolveSafeExit({
-            stance: psychologicalStance,
-            pressure: psychologicalPressure,
-            room,
-          })
-        : null,
-    [room, psychologicalPressure, psychologicalStance]
-  );
-  const mirrors = useMemo(
-    () =>
-      room
-        ? generateMicroMirrors({
-            room,
-            emotionalHistory,
-            falseDoorCount,
-          })
-        : null,
-    [room, emotionalHistory, falseDoorCount]
-  );
   const doors = useMemo(() => (room ? buildDoors(room, dims, safeExit, mirrors) : []), [room, dims, safeExit, mirrors]);
   const seed = room?.seed;
 
@@ -509,27 +492,16 @@ export function RoomScene() {
       }),
     [psychologicalPressure, pressureEnding, roomPressureSpike]
   );
-  const safeExit = useMemo(
+  const { safeExit, mirrors } = useMemo(
     () =>
-      room
-        ? resolveSafeExit({
-            stance: psychologicalStance,
-            pressure: psychologicalPressure,
-            room,
-          })
-        : null,
-    [room, psychologicalPressure, psychologicalStance]
-  );
-  const mirrors = useMemo(
-    () =>
-      room
-        ? generateMicroMirrors({
-            room,
-            emotionalHistory,
-            falseDoorCount,
-          })
-        : null,
-    [room, emotionalHistory, falseDoorCount]
+      deriveRoomD1Results({
+        room,
+        psychologicalStance,
+        psychologicalPressure,
+        emotionalHistory,
+        falseDoorCount,
+      }),
+    [room, psychologicalPressure, psychologicalStance, emotionalHistory, falseDoorCount]
   );
   const doors = useMemo(() => (room ? buildDoors(room, dims, safeExit, mirrors) : []), [room, dims, safeExit, mirrors]);
   const surface = useMemo(() => surfaceForShape(room?.shape ?? "chamber"), [room]);
@@ -617,7 +589,7 @@ export function RoomScene() {
         />
       )}
 
-      <FirstPersonController dims={dims} />
+      <FirstPersonController dims={dims} safeExit={safeExit} mirrors={mirrors} />
     </>
   );
 }
