@@ -18,6 +18,7 @@ export function RoomCaption() {
   const whisper = useGame((s) => s.lastRoomWhisper);
   const pressure = useGame((s) => s.psychologicalPressure);
   const stance = useGame((s) => s.psychologicalStance);
+  const pressureEnding = useGame((s) => s.pressureEnding);
   const dismissRoom = useGame((s) => s.dismissRoom);
 
   const inRoom = mode === GameMode.Room && !!room;
@@ -80,7 +81,11 @@ export function RoomCaption() {
           <em>{room.name}</em>
         </p>
       )}
-      {whisper && <p className="room-trail room-whisper">{whisper}</p>}
+      {pressureEnding?.active ? (
+        <p className="room-trail room-whisper">{pressureEnding.line}</p>
+      ) : (
+        whisper && <p className="room-trail room-whisper">{whisper}</p>
+      )}
       <p className="room-caption-hint">
         {exitText
           ? `[E] cruzar — ${exitText}`

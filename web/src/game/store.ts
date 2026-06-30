@@ -12,6 +12,11 @@ import {
   appendEmotionalHistory,
   type EmotionalHistoryEntry,
 } from "./EmotionalHistory";
+import {
+  pressureEndingComplete,
+  resolvePressureEnding,
+  type PressureEndingState,
+} from "./PressureEnding";
 import type { Stance } from "../terminal/psych/StanceClassifier";
 import { recordEnvironmentalDeflection } from "../terminal/psych/PsychologicalResponseEngine";
 
@@ -97,6 +102,8 @@ interface GameState {
   emotionalHistory: EmotionalHistoryEntry[];
   /** subtle room text surfaced after an avoidance-shaped crossing */
   lastRoomWhisper: string | null;
+  /** pressure-100 surrender sequence; not a failure state */
+  pressureEnding: PressureEndingState | null;
   /** seeds of rooms that have proven to bite (false door / collapse) */
   dangerousSeeds: number[];
 
@@ -221,6 +228,7 @@ export const useGame = create<GameState>((set, get) => {
   falseDoorAnnotations: [],
   emotionalHistory: [],
   lastRoomWhisper: null,
+  pressureEnding: null,
   dangerousSeeds: [],
 
   enterConsoleMode: (consoleId) => {
@@ -260,6 +268,13 @@ export const useGame = create<GameState>((set, get) => {
     set((s) => ({
       psychologicalPressure: Math.max(0, Math.min(1, pressure)),
       psychologicalStance: stance !== undefined ? stance : s.psychologicalStance,
+      pressureEnding:
+        s.pressureEnding ??
+        resolvePressureEnding({
+          pressure,
+          inRoom: s.mode === GameMode.Room && !!s.room,
+          now: Date.now(),
+        }),
       emotionalHistory:
         s.room && stance
           ? appendEmotionalHistory(s.emotionalHistory, {
@@ -275,6 +290,18 @@ export const useGame = create<GameState>((set, get) => {
     // don't drain integrity while the next room is still being generated — that
     // would punish the player for server latency, not for lingering.
     if (!stabilityEngine || get().mode !== GameMode.Room || get().roomLoading) return;
+    const ending = get().pressureEnding;
+    if (ending?.active) {
+      if (pressureEndingComplete(ending, Date.now())) {
+        get().dismissRoom();
+        return;
+      }
+      set((s) => ({
+        stability: 100,
+        roomPressureSpike: Math.max(0, s.roomPressureSpike - dt * 0.8),
+      }));
+      return;
+    }
     stabilityEngine.tick(dt);
     set((s) => ({
       stability: stabilityEngine ? stabilityEngine.state.stability : s.stability,
@@ -315,6 +342,13 @@ export const useGame = create<GameState>((set, get) => {
         stability: stabilityEngine ? stabilityEngine.state.stability : s.stability,
         psychologicalPressure: pressure.pressure,
         psychologicalStance: "deflection",
+        pressureEnding:
+          s.pressureEnding ??
+          resolvePressureEnding({
+            pressure: pressure.pressure,
+            inRoom: s.mode === GameMode.Room && !!s.room,
+            now: Date.now(),
+          }),
         roomPressureSpike: Math.max(s.roomPressureSpike, consequence.atmosphereSpike),
         falseDoorAnnotations: [
           ...s.falseDoorAnnotations,
@@ -358,6 +392,7 @@ export const useGame = create<GameState>((set, get) => {
       stability: 100,
       roomPressureSpike: 0,
       lastRoomWhisper: null,
+      pressureEnding: null,
       dangerousSeeds:
         s.room && !s.dangerousSeeds.includes(s.room.seed)
           ? [...s.dangerousSeeds, s.room.seed]
@@ -378,6 +413,7 @@ export const useGame = create<GameState>((set, get) => {
       stability: 100,
       roomPressureSpike: 0,
       lastRoomWhisper: null,
+      pressureEnding: null,
       mode: s.mode === GameMode.Room ? GameMode.Exploration : s.mode,
     }));
   },

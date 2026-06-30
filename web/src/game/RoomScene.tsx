@@ -439,12 +439,18 @@ export function RoomScene() {
   const psychologicalPressure = useGame((s) => s.psychologicalPressure);
   const psychologicalStance = useGame((s) => s.psychologicalStance);
   const roomPressureSpike = useGame((s) => s.roomPressureSpike);
+  const pressureEnding = useGame((s) => s.pressureEnding);
 
   const dims = useMemo(() => (room ? dimsForShape(room.shape) : dimsForShape("chamber")), [room]);
   const atmo = useMemo(() => atmosphere(room?.dread ?? 0), [room]);
   const pressure = useMemo(
-    () => resolveRoomPressureAtmosphere({ pressure: psychologicalPressure + roomPressureSpike }),
-    [psychologicalPressure, roomPressureSpike]
+    () =>
+      resolveRoomPressureAtmosphere({
+        pressure: pressureEnding?.active
+          ? pressureEnding.atmospherePressure
+          : psychologicalPressure + roomPressureSpike,
+      }),
+    [psychologicalPressure, pressureEnding, roomPressureSpike]
   );
   const safeExit = useMemo(
     () =>

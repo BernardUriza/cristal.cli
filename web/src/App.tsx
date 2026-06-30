@@ -31,9 +31,12 @@ function PressureVignette() {
   const inRoom = useGame((s) => s.mode === GameMode.Room);
   const pressure = useGame((s) => s.psychologicalPressure);
   const spike = useGame((s) => s.roomPressureSpike);
+  const ending = useGame((s) => s.pressureEnding);
   if (!inRoom) return null;
 
-  const { vignetteAmount } = resolveRoomPressureAtmosphere({ pressure: pressure + spike });
+  const { vignetteAmount } = resolveRoomPressureAtmosphere({
+    pressure: ending?.active ? ending.atmospherePressure : pressure + spike,
+  });
   return (
     <div
       aria-hidden
