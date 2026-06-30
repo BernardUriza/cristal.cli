@@ -16,6 +16,7 @@ import {
   createInitialSilenceState,
   type SilenceState,
 } from "./psych/SilenceEngine";
+import { getRuntimeTransference } from "../game/RuntimeTransference";
 
 // Minimal arcana table (22 Major Arcana) for the `invoke arcana` command.
 // In Unity this lived in ArcanaSystem/ArcanaData; here it is enough to drive
@@ -114,7 +115,7 @@ export class TerminalCore {
   /** Welcome banner shown when the console connects. */
   welcome(): TerminalResponse {
     const built = this.engine.generateWelcome();
-    return this.finalize(built);
+    return this.finalize(built, "welcome");
   }
 
   processInput(input: string): TerminalResponse | null {
@@ -158,7 +159,7 @@ export class TerminalCore {
     }
 
     this.setState(CristalState.Responding);
-    return this.finalize(built);
+    return this.finalize(built, "input");
   }
 
   private handleArcanaInvoke(command: ReturnType<typeof parse>): BuiltResponse {
@@ -184,15 +185,15 @@ export class TerminalCore {
     });
   }
 
-  private finalize(built: BuiltResponse): TerminalResponse {
+  private finalize(built: BuiltResponse, context: "welcome" | "input"): TerminalResponse {
     // Text is never garbled at the data layer — corruption is a visual/decode
     // effect in the UI, so the message always stays readable.
-    return {
+    return getRuntimeTransference().adaptTerminalResponse({
       lines: built.lines,
       responseType: responseTypeFor(built.responseSet, built.level),
       applyGlitch: built.applyGlitch,
       delayMs: built.delayMs,
-    };
+    }, context);
   }
 
   reset() {

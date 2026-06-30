@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { useGame, fakeExitForRoom } from "./store";
+import { shouldOfferSafeExit } from "./RuntimeTransference";
 import { useKeyboard } from "./input/useKeyboard";
 import { playEnterDrone, playCross, playAlarm } from "./audio";
 import { resolveRoomPressureAtmosphere, type RoomPressureAtmosphere } from "./RoomPressureController";
@@ -43,18 +44,19 @@ function dimsForShape(shape: RoomShape): Dims {
 
 // Dread tints the room from cold green (calm) toward dim blood-red (terror) and
 // pulls the fog in close, so a high-dread room feels claustrophobic and hostile.
-function atmosphere(dread: number) {
+function atmosphere(dread: number, lightingBias = 0.42, fogBias = 0, seasonRefusal = 0) {
   const t = Math.max(0, Math.min(100, dread)) / 100;
   const base = new THREE.Color("#06140d");
   const terror = new THREE.Color("#1a0604");
-  const fogColor = base.clone().lerp(terror, t);
-  const wallColor = new THREE.Color("#1c3024").lerp(new THREE.Color("#42241d"), t);
-  const fogNear = 5 + (1 - t) * 6;
-  const fogFar = 22 + (1 - t) * 30;
+  const listening = new THREE.Color("#10271f");
+  const fogColor = base.clone().lerp(terror, t + seasonRefusal * 0.18).lerp(listening, lightingBias * 0.18);
+  const wallColor = new THREE.Color("#1c3024").lerp(new THREE.Color("#42241d"), t + seasonRefusal * 0.12);
+  const fogNear = 5 + (1 - t) * 6 - fogBias * 2.2;
+  const fogFar = 22 + (1 - t) * 30 - fogBias * 8;
   // backrooms fluorescence: the room stays evenly lit and legible at any dread —
   // dread only dims and reddens it, never plunges it to a black void. The floor
   // keeps a hard minimum so a high-dread room is oppressive, not unreadable.
-  const ambient = Math.max(0.72, 1.1 - t * 0.3);
+  const ambient = Math.max(0.58, 0.92 + lightingBias * 0.36 - t * 0.26 - seasonRefusal * 0.08);
   return { fogColor, wallColor, fogNear, fogFar, ambient };
 }
 
@@ -480,9 +482,27 @@ export function RoomScene() {
   const pressureEnding = useGame((s) => s.pressureEnding);
   const emotionalHistory = useGame((s) => s.emotionalHistory);
   const falseDoorCount = useGame((s) => s.falseDoorAnnotations.length);
+  const transference = useGame((s) => s.transference);
 
-  const dims = useMemo(() => (room ? dimsForShape(room.shape) : dimsForShape("chamber")), [room]);
-  const atmo = useMemo(() => atmosphere(room?.dread ?? 0), [room]);
+  const dims = useMemo(() => {
+    const base = room ? dimsForShape(room.shape) : dimsForShape("chamber");
+    const drift = transference.worldBehavior?.architectureDrift ?? 0;
+    return {
+      w: base.w + drift * 2.4,
+      d: base.d + drift * 3.6,
+      h: base.h + drift * 1.2,
+    };
+  }, [room, transference.worldBehavior?.architectureDrift]);
+  const atmo = useMemo(
+    () =>
+      atmosphere(
+        room?.dread ?? 0,
+        transference.worldBehavior?.lightingBias,
+        transference.emotionalSeason.effects.refusal,
+        transference.emotionalSeason.effects.refusal
+      ),
+    [room, transference.worldBehavior?.lightingBias, transference.emotionalSeason.effects.refusal]
+  );
   const pressure = useMemo(
     () =>
       resolveRoomPressureAtmosphere({
@@ -492,17 +512,19 @@ export function RoomScene() {
       }),
     [psychologicalPressure, pressureEnding, roomPressureSpike]
   );
-  const { safeExit, mirrors } = useMemo(
-    () =>
-      deriveRoomD1Results({
+  const { safeExit, mirrors } = useMemo(() => {
+    const d1 = deriveRoomD1Results({
         room,
         psychologicalStance,
         psychologicalPressure,
         emotionalHistory,
         falseDoorCount,
-      }),
-    [room, psychologicalPressure, psychologicalStance, emotionalHistory, falseDoorCount]
-  );
+      });
+    return {
+      safeExit: room && shouldOfferSafeExit(room, d1.safeExit, transference.worldBehavior) ? d1.safeExit : null,
+      mirrors: d1.mirrors,
+    };
+  }, [room, psychologicalPressure, psychologicalStance, emotionalHistory, falseDoorCount, transference.worldBehavior]);
   const doors = useMemo(() => (room ? buildDoors(room, dims, safeExit, mirrors) : []), [room, dims, safeExit, mirrors]);
   const surface = useMemo(() => surfaceForShape(room?.shape ?? "chamber"), [room]);
   const inscriptionTex = useMemo(
@@ -541,8 +563,13 @@ export function RoomScene() {
   const safeDoorColor = new THREE.Color("#ffd1a6").lerp(new THREE.Color("#fff1cc"), safeExit?.warmth ?? 0);
   const ceilingColor = atmo.fogColor.clone().lerp(pressureColor, pressure.pressure).offsetHSL(0, 0, 0.4);
   const fogColor = atmo.fogColor.clone().lerp(pressureColor, pressure.pressure * 0.7);
-  const fogNear = Math.max(1.5, atmo.fogNear - pressure.fogDensity * 4);
-  const fogFar = Math.max(fogNear + 5, atmo.fogFar - pressure.fogDensity * 16);
+  const fogBias = transference.worldBehavior?.architectureDrift ?? 0;
+  const fogNear = Math.max(1.5, atmo.fogNear - pressure.fogDensity * 4 - fogBias * 2);
+  const fogFar = Math.max(fogNear + 5, atmo.fogFar - pressure.fogDensity * 16 - fogBias * 7);
+  const mirrorDeadCorridors = mirrors
+    ? Math.min(4 - doors.length, Math.round(mirrors.deadCorridors + (transference.worldBehavior?.mirrorIntensity ?? 0) * 1.2))
+    : 0;
+  const omitInscription = transference.absencePlan.omissions.some((item) => item.kind === "sentence");
 
   return (
     <>
@@ -563,7 +590,7 @@ export function RoomScene() {
       </mesh>
 
       {/* inscription carved on the front wall, above the player's entry gaze */}
-      {inscriptionTex && (
+      {inscriptionTex && !omitInscription && (
         <mesh position={[0, dims.h * 0.66, -dims.d / 2 + 0.08]}>
           <planeGeometry args={[Math.min(dims.w * 0.8, 7), Math.min(dims.w * 0.8, 7) / 4]} />
           <meshBasicMaterial map={inscriptionTex} transparent depthWrite={false} toneMapped={false} />
@@ -580,11 +607,11 @@ export function RoomScene() {
           safeExit={safeExit}
         />
       ))}
-      {mirrors && mirrors.deadCorridors > 0 && (
+      {mirrors && mirrorDeadCorridors > 0 && (
         <DeadCorridors
           dims={dims}
           usedDoors={doors.length}
-          count={mirrors.deadCorridors}
+          count={mirrorDeadCorridors}
           color={doorColor}
         />
       )}

@@ -20,6 +20,13 @@ import {
 } from "./PressureEnding";
 import type { Stance } from "../terminal/psych/StanceClassifier";
 import { recordEnvironmentalStance } from "../terminal/psych/PsychologicalResponseEngine";
+import {
+  getRuntimeTransference,
+  shouldFalseDoorBite,
+  shouldOfferSafeExit,
+  symbolicSeedBias,
+  type RuntimeTransferenceSnapshot,
+} from "./RuntimeTransference";
 
 // Rooms are deterministic by seed, so a session cache makes re-crossing a door
 // you already opened instant and free — no second LLM call. Kept at module scope
@@ -38,6 +45,8 @@ function cacheRoom(seed: number, room: Room): void {
 
 const HISTORY_LIMIT = 8;
 const FALSE_DOOR_HISTORY_LIMIT = 12;
+const runtimeTransference = getRuntimeTransference();
+const initialTransference = runtimeTransference.bootstrap();
 
 function resolveRoomEntryPressureEnding(state: GameState): PressureEndingState | null {
   return (
@@ -120,6 +129,8 @@ interface GameState {
   pressureEnding: PressureEndingState | null;
   /** seeds of rooms that have proven to bite (false door / collapse) */
   dangerousSeeds: number[];
+  /** D2 pure-model outputs adapted into the live runtime */
+  transference: RuntimeTransferenceSnapshot;
 
   enterConsoleMode: (consoleId: string) => void;
   exitConsoleMode: () => void;
@@ -173,7 +184,16 @@ export const useGame = create<GameState>((set, get) => {
   ) => {
     const cached = roomCache.get(seed);
     if (cached) {
-      set((s) => ({
+      set((s) => {
+        const emotionalHistory = s.psychologicalStance
+          ? appendEmotionalHistory(s.emotionalHistory, {
+              room: { seed: cached.seed, name: cached.name },
+              stance: s.psychologicalStance,
+              pressure: s.psychologicalPressure,
+              timestamp: Date.now(),
+            })
+          : s.emotionalHistory;
+        return {
         room: cached,
         roomArchetype: archetype,
         roomLoading: false,
@@ -181,24 +201,32 @@ export const useGame = create<GameState>((set, get) => {
         mode: GameMode.Room,
         parentSeed,
         roomHistory: pushHistory(s.roomHistory, cached),
-        emotionalHistory: s.psychologicalStance
-          ? appendEmotionalHistory(s.emotionalHistory, {
-              room: { seed: cached.seed, name: cached.name },
-              stance: s.psychologicalStance,
-              pressure: s.psychologicalPressure,
-              timestamp: Date.now(),
-            })
-          : s.emotionalHistory,
+        emotionalHistory,
         pressureEnding: resolveRoomEntryPressureEnding(s),
         stability: enterStability(cached, freshDescent),
-      }));
+        transference: runtimeTransference.enterRoom({
+          room: cached,
+          pressure: s.psychologicalPressure,
+          history: emotionalHistory,
+        }),
+      };
+      });
       return;
     }
     set({ roomLoading: true, roomError: null, roomArchetype: archetype });
     generateRoom({ seed, archetype, depth: get().depth, fragments })
       .then((room) => {
         cacheRoom(seed, room);
-        set((s) => ({
+        set((s) => {
+          const emotionalHistory = s.psychologicalStance
+            ? appendEmotionalHistory(s.emotionalHistory, {
+                room: { seed: room.seed, name: room.name },
+                stance: s.psychologicalStance,
+                pressure: s.psychologicalPressure,
+                timestamp: Date.now(),
+              })
+            : s.emotionalHistory;
+          return {
           room,
           roomLoading: false,
           roomError: null,
@@ -206,17 +234,16 @@ export const useGame = create<GameState>((set, get) => {
           mode: GameMode.Room,
           parentSeed,
           roomHistory: pushHistory(s.roomHistory, room),
-          emotionalHistory: s.psychologicalStance
-            ? appendEmotionalHistory(s.emotionalHistory, {
-                room: { seed: room.seed, name: room.name },
-                stance: s.psychologicalStance,
-                pressure: s.psychologicalPressure,
-                timestamp: Date.now(),
-              })
-            : s.emotionalHistory,
+          emotionalHistory,
           pressureEnding: resolveRoomEntryPressureEnding(s),
           stability: enterStability(room, freshDescent),
-        }));
+          transference: runtimeTransference.enterRoom({
+            room,
+            pressure: s.psychologicalPressure,
+            history: emotionalHistory,
+          }),
+        };
+        });
       })
       .catch((e) => set({ roomLoading: false, roomError: String(e) }));
   };
@@ -246,6 +273,7 @@ export const useGame = create<GameState>((set, get) => {
   lastRoomWhisper: null,
   pressureEnding: null,
   dangerousSeeds: [],
+  transference: initialTransference,
 
   enterConsoleMode: (consoleId) => {
     if (get().mode !== GameMode.Exploration) return;
@@ -276,13 +304,33 @@ export const useGame = create<GameState>((set, get) => {
 
   setLocomotion: (locomotion) => set({ locomotion }),
 
-  setLastSymbol: (lastSymbol) => set({ lastSymbol }),
+  setLastSymbol: (lastSymbol) =>
+    set((s) => {
+      const observed = runtimeTransference.observeSymbol(lastSymbol);
+      const transference = s.room
+        ? runtimeTransference.enterRoom({
+            room: s.room,
+            pressure: s.psychologicalPressure,
+            history: s.emotionalHistory,
+          })
+        : observed;
+      return { lastSymbol, transference };
+    }),
 
   setMazePose: (mazePose) => set({ mazePose }),
 
   setPsychologicalPressure: (pressure, stance) =>
     set((s) => {
       const normalizedPressure = clamp01(pressure);
+      const emotionalHistory =
+        s.room && stance
+          ? appendEmotionalHistory(s.emotionalHistory, {
+              room: { seed: s.room.seed, name: s.room.name },
+              stance,
+              pressure: normalizedPressure,
+              timestamp: Date.now(),
+            })
+          : s.emotionalHistory;
       return {
         psychologicalPressure: normalizedPressure,
         psychologicalStance: stance !== undefined ? stance : s.psychologicalStance,
@@ -293,15 +341,22 @@ export const useGame = create<GameState>((set, get) => {
             inRoom: s.mode === GameMode.Room && !!s.room,
             now: Date.now(),
           }),
-        emotionalHistory:
-          s.room && stance
-            ? appendEmotionalHistory(s.emotionalHistory, {
-                room: { seed: s.room.seed, name: s.room.name },
+        emotionalHistory,
+        transference:
+          stance !== undefined && stance
+            ? runtimeTransference.recordInteraction({
                 stance,
                 pressure: normalizedPressure,
-                timestamp: Date.now(),
+                room: s.room,
+                history: emotionalHistory,
               })
-            : s.emotionalHistory,
+            : s.room
+              ? runtimeTransference.enterRoom({
+                  room: s.room,
+                  pressure: normalizedPressure,
+                  history: emotionalHistory,
+                })
+              : s.transference,
       };
     }),
 
@@ -331,10 +386,14 @@ export const useGame = create<GameState>((set, get) => {
 
   invokeGlyph: (archetype, glyphId) => {
     if (get().roomLoading) return;
-    const seed = seedForExit((get().depth + 1) * 0x9e3779b1, glyphId.length + archetype.length);
+    const gravity = get().transference.ritualGravity;
+    const seed = seedForExit(
+      (get().depth + 1) * 0x9e3779b1 + symbolicSeedBias(archetype, gravity),
+      glyphId.length + archetype.length
+    );
     // a glyph opens a fresh descent — clear the previous breadcrumb trail
     set({ roomHistory: [] });
-    loadRoom(seed, archetype, [], null, true);
+    loadRoom(seed, archetype, [`ritual gravity ${gravity.archetypeBias[archetype].toFixed(2)}`], null, true);
   },
 
   takeExit: (index) => {
@@ -348,7 +407,7 @@ export const useGame = create<GameState>((set, get) => {
     });
     if (index >= room.exits.length && index !== safeExit?.index) return;
     // a false door bites: it costs stability and brands the room, it never leads on
-    if (index === fakeExitForRoom(room)) {
+    if (shouldFalseDoorBite(room, index, fakeExitForRoom(room), get().transference.worldBehavior)) {
       const consequence = resolveFalseDoorConsequences({
         roomSeed: room.seed,
         exitIndex: index,
@@ -357,7 +416,14 @@ export const useGame = create<GameState>((set, get) => {
       });
       const pressure = recordEnvironmentalStance(consequence.pressureStance);
       stabilityEngine?.falseDoorPenalty();
-      set((s) => ({
+      set((s) => {
+        const emotionalHistory = appendEmotionalHistory(s.emotionalHistory, {
+          room: { seed: room.seed, name: room.name },
+          stance: consequence.pressureStance,
+          pressure: pressure.pressure,
+          timestamp: Date.now(),
+        });
+        return {
         stability: stabilityEngine ? stabilityEngine.state.stability : s.stability,
         psychologicalPressure: pressure.pressure,
         psychologicalStance: consequence.pressureStance,
@@ -373,21 +439,24 @@ export const useGame = create<GameState>((set, get) => {
           ...s.falseDoorAnnotations,
           { ...consequence.annotation, timestamp: Date.now() },
         ].slice(-FALSE_DOOR_HISTORY_LIMIT),
-        emotionalHistory: appendEmotionalHistory(s.emotionalHistory, {
-          room: { seed: room.seed, name: room.name },
-          stance: consequence.pressureStance,
-          pressure: pressure.pressure,
-          timestamp: Date.now(),
-        }),
+        emotionalHistory,
         lastRoomWhisper: consequence.whisper,
         dangerousSeeds: s.dangerousSeeds.includes(room.seed)
           ? s.dangerousSeeds
           : [...s.dangerousSeeds, room.seed],
-      }));
+        transference: runtimeTransference.recordInteraction({
+          stance: consequence.pressureStance,
+          pressure: pressure.pressure,
+          room,
+          history: emotionalHistory,
+          revisitedRoom: true,
+        }),
+      };
+      });
       if (stabilityEngine?.isEvicted) get().collapseRoom();
       return;
     }
-    if (safeExit && index === safeExit.index) {
+    if (shouldOfferSafeExit(room, safeExit, get().transference.worldBehavior) && index === safeExit.index) {
       stabilityEngine?.safeDoorReward();
       set({ lastRoomWhisper: "La puerta no se abre: deja de defenderse." });
       loadRoom(safeExit.seed, roomArchetype, [room.inscription, "confession opened a stable path"], room.seed, false);
@@ -412,6 +481,11 @@ export const useGame = create<GameState>((set, get) => {
       roomPressureSpike: 0,
       lastRoomWhisper: null,
       pressureEnding: null,
+      transference: runtimeTransference.completeSession({
+        emotionalHistory: s.emotionalHistory,
+        falseDoorCount: s.falseDoorAnnotations.length,
+        roomDepths: s.roomHistory.map((_, i) => Math.max(0, s.depth - s.roomHistory.length + i + 1)),
+      }),
       dangerousSeeds:
         s.room && !s.dangerousSeeds.includes(s.room.seed)
           ? [...s.dangerousSeeds, s.room.seed]
@@ -433,6 +507,11 @@ export const useGame = create<GameState>((set, get) => {
       roomPressureSpike: 0,
       lastRoomWhisper: null,
       pressureEnding: null,
+      transference: runtimeTransference.completeSession({
+        emotionalHistory: s.emotionalHistory,
+        falseDoorCount: s.falseDoorAnnotations.length,
+        roomDepths: s.roomHistory.map((_, i) => Math.max(0, s.depth - s.roomHistory.length + i + 1)),
+      }),
       mode: s.mode === GameMode.Room ? GameMode.Exploration : s.mode,
     }));
   },

@@ -12,6 +12,7 @@ export function RoomJournal() {
   const emotionalHistory = useGame((s) => s.emotionalHistory);
   const falseDoorCount = useGame((s) => s.falseDoorAnnotations.length);
   const depth = useGame((s) => s.depth);
+  const transference = useGame((s) => s.transference);
   if (history.length === 0) return null;
 
   const index = new RoomMemoryIndex();
@@ -50,6 +51,12 @@ export function RoomJournal() {
       <div style={{ opacity: 0.7 }}>JOURNAL · {index.summarizeTrail()}</div>
       <div style={{ opacity: 0.65, marginTop: 2 }}>{emotional.summary}</div>
       <div style={{ opacity: 0.5, marginTop: 2 }}>WORLD · {profile.personality}</div>
+      <div style={{ opacity: 0.45, marginTop: 2 }}>
+        {transference.saveMetadata.identity} · {Math.round(transference.saveMetadata.confidence * 100)}%
+      </div>
+      {transference.narrativeReflection && (
+        <div style={{ opacity: 0.6, marginTop: 4 }}>{transference.narrativeReflection}</div>
+      )}
       {recent.map((r) => {
         const { symbols } = parseInscription(r.room.inscription);
         return (

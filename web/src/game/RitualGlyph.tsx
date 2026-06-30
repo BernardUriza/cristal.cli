@@ -63,9 +63,10 @@ interface RitualGlyphProps {
   position: [number, number, number];
   archetype: SymbolicArchetype;
   color: string;
+  gravity?: number;
 }
 
-export function RitualGlyph({ id, position, archetype, color }: RitualGlyphProps) {
+export function RitualGlyph({ id, position, archetype, color, gravity = 1 }: RitualGlyphProps) {
   const meshRef = useRef<THREE.Mesh>(null);
   const matRef = useRef<THREE.MeshStandardMaterial>(null);
   const nearbyId = useGame((s) => s.nearbyGlyphId);
@@ -86,14 +87,14 @@ export function RitualGlyph({ id, position, archetype, color }: RitualGlyphProps
     const sinceInvoke = (performance.now() - invokedAt) / 1000;
     const flare = sinceInvoke < 0.8 ? (0.8 - sinceInvoke) * 1.6 : 0;
 
-    const base = near ? 1.8 : 0.9;
+    const base = (near ? 1.8 : 0.9) * gravity;
     const pulse = 0.25 * Math.sin(t * 3) + 1;
     mat.emissiveIntensity = base * pulse + flare;
   });
 
   return (
     <group position={position}>
-      <pointLight position={[0, 1.3, 0]} intensity={1.4} distance={5} decay={2} color={color} />
+      <pointLight position={[0, 1.3, 0]} intensity={1.4 * gravity} distance={5 + (gravity - 1) * 6} decay={2} color={color} />
       <mesh ref={meshRef} position={[0, 1.3, 0]} castShadow>
         <octahedronGeometry args={[0.32, 0]} />
         <meshStandardMaterial

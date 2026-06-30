@@ -218,6 +218,57 @@
 - SHA: RED - commit blocked; sandbox has read-only `.git` and `git commit` failed creating `.git/index.lock`.
 - Files: web/src/game/IdentityDrift.ts, web/src/game/IdentityDrift.test.ts
 - Public API: IdentityDrift.currentIdentity(), update(input), snapshot(), PlayerIdentity
+
+## D3 Living Transference Runtime Integration
+
+### Verification
+- Typecheck: `cd web && npx tsc -b --noEmit` clean.
+- Vitest: `cd web && npx vitest run` clean, 38 files / 146 tests.
+- Build: `cd web && npx vite build` clean; Vite reports only the existing large chunk warning.
+- Browser receipts: not driven from this sandbox; deterministic integration seams are covered in `web/src/game/RuntimeTransference.integration.test.ts`.
+
+### Intended Commit Boundaries
+1. `feat(web): bootstrap runtime transference`
+   - Files: `web/src/game/RuntimeTransference.ts`, `web/src/game/store.ts`, `web/src/game/RuntimeTransference.integration.test.ts`
+   - Boundary: persistent profile load/merge/save, runtime snapshot publication, session completion persistence, restart preservation test.
+2. `feat(web): drive world behavior from transference`
+   - Files: `web/src/game/RuntimeTransference.ts`, `web/src/game/store.ts`, `web/src/game/RoomScene.tsx`, `web/src/ui/RoomCaption.tsx`, `web/src/game/RuntimeTransference.integration.test.ts`
+   - Boundary: WorldBehaviorResolver consumption for lighting, fog, safe-exit gating, false-door gating, terminal verbosity/silence inputs, mirror intensity, architecture drift.
+3. `feat(web): adapt relationship runtime`
+   - Files: `web/src/game/RuntimeTransference.ts`, `web/src/game/store.ts`, `web/src/terminal/terminalCore.ts`, `web/src/game/RuntimeTransference.integration.test.ts`
+   - Boundary: RelationshipTracker updates from terminal/false-door interactions and response tone pacing.
+4. `feat(web): consume memory echoes`
+   - Files: `web/src/game/RuntimeTransference.ts`, `web/src/terminal/terminalCore.ts`, `web/src/ui/RoomCaption.tsx`, `web/src/game/RuntimeTransference.integration.test.ts`
+   - Boundary: MemoryEchoEngine generation, sparse terminal echo append, sparse room echo caption.
+5. `feat(web): surface identity drift`
+   - Files: `web/src/game/RuntimeTransference.ts`, `web/src/App.tsx`, `web/src/ui/RoomCaption.tsx`, `web/src/ui/RoomJournal.tsx`, `web/src/terminal/terminalCore.ts`, `web/src/game/RuntimeTransference.integration.test.ts`
+   - Boundary: IdentityDrift consumption in terminal greeting, HUD/subtitle, room caption, save metadata.
+6. `feat(web): apply emotional seasons`
+   - Files: `web/src/game/RuntimeTransference.ts`, `web/src/game/RoomScene.tsx`, `web/src/App.tsx`, `web/src/game/RuntimeTransference.integration.test.ts`
+   - Boundary: EmotionalSeason consumption for ambient palette, fog tendency, vignette/music-intensity hook data.
+7. `feat(web): weight ritual gravity`
+   - Files: `web/src/game/RuntimeTransference.ts`, `web/src/game/store.ts`, `web/src/game/Scene.tsx`, `web/src/game/RitualGlyph.tsx`, `web/src/game/RuntimeTransference.integration.test.ts`
+   - Boundary: RitualGravity observations, glyph emissive weighting, room seed/fragments bias.
+8. `feat(web): plan runtime absences`
+   - Files: `web/src/game/RuntimeTransference.ts`, `web/src/game/Scene.tsx`, `web/src/game/RoomScene.tsx`, `web/src/ui/RoomCaption.tsx`, `web/src/game/RuntimeTransference.integration.test.ts`
+   - Boundary: AbsencePlanner omissions for consoles, glyphs, and room sentence/inscription rendering.
+9. `feat(web): reflect narrative endings`
+   - Files: `web/src/game/RuntimeTransference.ts`, `web/src/game/store.ts`, `web/src/ui/RoomCaption.tsx`, `web/src/ui/RoomJournal.tsx`, `web/src/game/RuntimeTransference.integration.test.ts`
+   - Boundary: NarrativeCompression at dismiss/collapse and paragraph surfacing.
+10. `feat(web): make terminal behavior live`
+   - Files: `web/src/game/RuntimeTransference.ts`, `web/src/terminal/terminalCore.ts`, `web/src/game/RuntimeTransference.integration.test.ts`
+   - Boundary: earlier identity greeting, longer pauses, profile/relationship phrasing, sparse waiting.
+11. `feat(web): remember symbolic bias`
+   - Files: `web/src/game/RuntimeTransference.ts`, `web/src/game/store.ts`, `web/src/game/Scene.tsx`, `web/src/game/RitualGlyph.tsx`, `web/src/game/RuntimeTransference.integration.test.ts`
+   - Boundary: persistent-symbolic-memory bias through bounded ritual observations and future glyph/room weighting.
+12. `feat(web): add world confidence`
+   - Files: `web/src/game/WorldConfidence.ts`, `web/src/game/RuntimeTransference.ts`, `web/src/terminal/terminalCore.ts`, `web/src/game/RuntimeTransference.integration.test.ts`, `D1_CODEX_LOG.md`
+   - Boundary: WorldConfidence state, ask/recognize/state terminal behavior, final log of replay boundaries.
+
+### Notes
+- D2 pure modules were consumed as-is; no D2 pure module was rewritten.
+- Runtime changes flow through `RuntimeTransference.ts` into the existing zustand store and existing React/Three/terminal surfaces.
+- Existing unrelated dirty files were left untouched: `.claude/settings.local.json`, `web/.vite/`.
 - Typecheck: `npx tsc -b --noEmit` clean
 - Vitest: `npx vitest run` clean, 36 files / 140 tests
 - Relationship change: the terminal can gradually address the player as You, Visitor, Witness, and My oldest recursion from accumulated continuity, never as a scripted jump.

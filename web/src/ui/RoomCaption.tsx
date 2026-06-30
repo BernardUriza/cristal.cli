@@ -2,6 +2,7 @@ import { useEffect, useMemo } from "react";
 import { useGame } from "../game/store";
 import { GameMode } from "../game/types";
 import { deriveRoomD1Results } from "../game/RoomD1Derivations";
+import { shouldOfferSafeExit } from "../game/RuntimeTransference";
 
 // In-room HUD: the prophet's caption, breadcrumb, stability gauge, and the
 // cross/exit prompts. Crossing is proximity-only (walk to a door + E); ESC
@@ -21,20 +22,23 @@ export function RoomCaption() {
   const pressureEnding = useGame((s) => s.pressureEnding);
   const emotionalHistory = useGame((s) => s.emotionalHistory);
   const falseDoorCount = useGame((s) => s.falseDoorAnnotations.length);
+  const transference = useGame((s) => s.transference);
   const dismissRoom = useGame((s) => s.dismissRoom);
 
   const inRoom = mode === GameMode.Room && !!room;
-  const { safeExit, mirrors } = useMemo(
-    () =>
-      deriveRoomD1Results({
+  const { safeExit, mirrors } = useMemo(() => {
+    const d1 = deriveRoomD1Results({
         room,
         psychologicalStance: stance,
         psychologicalPressure: pressure,
         emotionalHistory,
         falseDoorCount,
-      }),
-    [room, stance, pressure, emotionalHistory, falseDoorCount]
-  );
+      });
+    return {
+      safeExit: room && shouldOfferSafeExit(room, d1.safeExit, transference.worldBehavior) ? d1.safeExit : null,
+      mirrors: d1.mirrors,
+    };
+  }, [room, stance, pressure, emotionalHistory, falseDoorCount, transference.worldBehavior]);
 
   useEffect(() => {
     if (!inRoom) return;
@@ -59,17 +63,19 @@ export function RoomCaption() {
   const danger = new Set(dangerousSeeds);
   const here = danger.has(room.seed);
   const trail = history.slice(0, -1).slice(-4);
+  const echo = transference.memoryEchoes[0]?.text;
+  const omitSentence = transference.absencePlan.omissions.some((item) => item.kind === "sentence");
 
   return (
     <div className={`room-caption${here ? " room-caption-danger" : ""}`}>
       <p className="room-breadcrumb">
-        <span>prof {depth}</span>
+        <span>{transference.identity.identity.toLowerCase()} · prof {depth}</span>
         <span>seed {hex(room.seed)}</span>
         <span>{parentSeed !== null ? `desde ${hex(parentSeed)}` : "raíz"}</span>
         {here && <span className="room-danger-tag">⚠ peligroso</span>}
       </p>
       <h2 className="room-name">{mirrors?.softenedRoomName ?? room.name}</h2>
-      <p className="room-inscription">“{room.inscription}”</p>
+      {!omitSentence && <p className="room-inscription">“{room.inscription}”</p>}
       <div className="room-dread">
         <span>DREAD</span>
         <span className="room-dread-bar">
@@ -97,6 +103,10 @@ export function RoomCaption() {
         <p className="room-trail room-whisper">{pressureEnding.line}</p>
       ) : (
         whisper && <p className="room-trail room-whisper">{whisper}</p>
+      )}
+      {!pressureEnding?.active && !whisper && echo && <p className="room-trail room-whisper">{echo}</p>}
+      {!pressureEnding?.active && transference.narrativeReflection && (
+        <p className="room-trail room-whisper">{transference.narrativeReflection}</p>
       )}
       <p className="room-caption-hint">
         {exitText

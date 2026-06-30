@@ -9,9 +9,23 @@ import { placeBackroomFurniture } from "./BackroomFurniturePlacer";
 import { cellCenter, generateMaze } from "./maze";
 import { MAZE_COLS, MAZE_ROWS, MAZE_SEED, SPAWN_CELL } from "./mazeConfig";
 import { CONSOLE_NODES, GLYPH_NODES, WORLD_NODES } from "./worldNodes";
+import { useGame } from "./store";
 
 export function Scene() {
   const maze = useMemo(() => generateMaze(MAZE_COLS, MAZE_ROWS, MAZE_SEED), []);
+  const transference = useGame((s) => s.transference);
+  const omittedIds = useMemo(
+    () => new Set(transference.absencePlan.omissions.map((item) => item.id)),
+    [transference.absencePlan]
+  );
+  const visibleConsoles = useMemo(
+    () => CONSOLE_NODES.filter((node) => !omittedIds.has(node.id)),
+    [omittedIds]
+  );
+  const visibleGlyphs = useMemo(
+    () => GLYPH_NODES.filter((node) => !omittedIds.has(node.id)),
+    [omittedIds]
+  );
 
   const spawn = useMemo<[number, number, number]>(() => {
     // central cell so the follow camera starts inside the labyrinth
@@ -21,20 +35,20 @@ export function Scene() {
 
   const consoles = useMemo<ConsoleRef[]>(
     () =>
-      CONSOLE_NODES.map((c) => {
+      visibleConsoles.map((c) => {
         const [x, z] = cellCenter(maze, c.cell[0], c.cell[1]);
         return { id: c.id, label: c.label, position: new THREE.Vector3(x, 0, z) };
       }),
-    [maze]
+    [maze, visibleConsoles]
   );
 
   const glyphs = useMemo<GlyphRef[]>(
     () =>
-      GLYPH_NODES.map((g) => {
+      visibleGlyphs.map((g) => {
         const [x, z] = cellCenter(maze, g.cell[0], g.cell[1]);
         return { id: g.id, position: new THREE.Vector3(x, 0, z), archetype: g.archetype };
       }),
-    [maze]
+    [maze, visibleGlyphs]
   );
 
   const furniture = useMemo(
@@ -67,7 +81,7 @@ export function Scene() {
 
       <Labyrinth maze={maze} />
 
-      {CONSOLE_NODES.map((c) => {
+      {visibleConsoles.map((c) => {
         const [x, z] = cellCenter(maze, c.cell[0], c.cell[1]);
         return (
           <InWorldConsole
@@ -80,8 +94,9 @@ export function Scene() {
         );
       })}
 
-      {GLYPH_NODES.map((g) => {
+      {visibleGlyphs.map((g) => {
         const [x, z] = cellCenter(maze, g.cell[0], g.cell[1]);
+        const gravity = transference.ritualGravity.archetypeBias[g.archetype] ?? 1;
         return (
           <RitualGlyph
             key={g.id}
@@ -89,6 +104,7 @@ export function Scene() {
             position={[x, 0, z]}
             archetype={g.archetype}
             color={g.accent}
+            gravity={gravity}
           />
         );
       })}
