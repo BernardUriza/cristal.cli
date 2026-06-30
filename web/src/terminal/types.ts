@@ -100,6 +100,7 @@ export interface BuiltResponse {
   lines: string[];
   level: ResponseLevel;
   applyGlitch: boolean;
+  delayMs?: number;
   effect?: string;
   stateTransition?: CristalState | null;
   patternId?: string;
@@ -113,4 +114,5 @@ export interface TerminalResponse {
   lines: string[];
   responseType: ResponseType;
   applyGlitch: boolean;
+  delayMs?: number;
 }

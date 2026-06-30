@@ -78,6 +78,7 @@ export function ConsoleOverlay() {
   const [booted, setBooted] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const linesRef = useRef<HTMLDivElement>(null);
+  const pendingTimers = useRef<number[]>([]);
 
   const visible = mode === GameMode.Console || (mode === GameMode.Transition && activeId !== null);
 
@@ -96,6 +97,14 @@ export function ConsoleOverlay() {
     linesRef.current?.scrollTo({ top: linesRef.current.scrollHeight });
   }, [lines]);
 
+  useEffect(
+    () => () => {
+      pendingTimers.current.forEach((id) => window.clearTimeout(id));
+      pendingTimers.current = [];
+    },
+    []
+  );
+
   if (!visible) return null;
 
   const submit = () => {
@@ -106,11 +115,20 @@ export function ConsoleOverlay() {
     useGame
       .getState()
       .setPsychologicalPressure(pressure.pressure, pressure.recent[pressure.recent.length - 1] ?? null);
-    setLines((prev) => [
-      ...prev,
-      { text: `> ${trimmed}`, cls: "echo", scramble: false },
-      ...(res ? toLines(res) : []),
-    ]);
+    const echo = { text: `> ${trimmed}`, cls: "echo", scramble: false };
+    setLines((prev) => [...prev, echo]);
+    if (res) {
+      const appendResponse = () => setLines((prev) => [...prev, ...toLines(res)]);
+      if (res.delayMs && res.delayMs > 0) {
+        const id = window.setTimeout(() => {
+          pendingTimers.current = pendingTimers.current.filter((timer) => timer !== id);
+          appendResponse();
+        }, res.delayMs);
+        pendingTimers.current.push(id);
+      } else {
+        appendResponse();
+      }
+    }
     setValue("");
   };
 

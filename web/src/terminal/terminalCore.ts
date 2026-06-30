@@ -9,7 +9,13 @@ import { parse, getArgument } from "./inputParser";
 import { CristalMemory } from "./memory";
 import { StateMachine } from "./stateMachine";
 import { ResponseEngine } from "./responseEngine";
-import { resetPsychSession } from "./psych/PsychologicalResponseEngine";
+import { getPsychPressure, resetPsychSession } from "./psych/PsychologicalResponseEngine";
+import {
+  advanceSilence,
+  applySilencePolicy,
+  createInitialSilenceState,
+  type SilenceState,
+} from "./psych/SilenceEngine";
 
 // Minimal arcana table (22 Major Arcana) for the `invoke arcana` command.
 // In Unity this lived in ArcanaSystem/ArcanaData; here it is enough to drive
@@ -76,6 +82,7 @@ export class TerminalCore {
   private readonly engine: ResponseEngine;
 
   private firstInput = true;
+  private silenceState: SilenceState = createInitialSilenceState();
   private stateListeners: Listener<CristalState>[] = [];
 
   constructor() {
@@ -128,6 +135,23 @@ export class TerminalCore {
       built = this.engine.generateResponse(trimmed);
     }
 
+    if (built.responseSet === "emotional_psych") {
+      const pressure = getPsychPressure();
+      const stance = pressure.recent[pressure.recent.length - 1];
+      if (stance) {
+        const next = advanceSilence(this.silenceState, {
+          stance,
+          pressure: pressure.pressure,
+        });
+        this.silenceState = next.state;
+        built = {
+          ...built,
+          lines: applySilencePolicy(built.lines, next.policy),
+          delayMs: next.policy.delayMs,
+        };
+      }
+    }
+
     if (this.firstInput) {
       this.firstInput = false;
       this.memory.setFlag("hasSeenWelcome", true);
@@ -167,12 +191,14 @@ export class TerminalCore {
       lines: built.lines,
       responseType: responseTypeFor(built.responseSet, built.level),
       applyGlitch: built.applyGlitch,
+      delayMs: built.delayMs,
     };
   }
 
   reset() {
     this.memory.reset();
     resetPsychSession();
+    this.silenceState = createInitialSilenceState();
     this.firstInput = true;
     this.setState(CristalState.Waiting);
   }
