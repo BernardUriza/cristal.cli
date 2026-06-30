@@ -206,3 +206,14 @@
 - Typecheck: `npx tsc -b --noEmit` clean
 - Vitest: `npx vitest run` clean, 36 files / 140 tests
 - Relationship change: hundreds of interactions can now compress into one reflective paragraph about how the player protected, explained, confessed, or ritualized.
+
+## D1 Console Pressure Integration Defect - Spanish Deflection
+- Date: 2026-06-30
+- SHA: 4af82bc (`fix(web): classify Spanish deflections in console pressure`)
+- Root cause: StanceClassifier did not recognize explicit Spanish topic-change/skip phrases such as `siguiente. no. paso. cambia de tema ya.` as deflection. That input produced no stance signals, so `generateCristalPsychReply()` returned an opener before `tracker.record()`. The singleton tracker was not duplicated, and the zustand mirror was reading the same stale tracker state correctly.
+- Evidence: the new `TerminalCore` integration test failed before the fix with `getPsychPressure().recent.at(-1)` still effectively `confession` after `core.processInput("siguiente. no. paso. cambia de tema ya.")`; after the classifier fix, the same path records `deflection`, pressure increases, zustand mirrors `psychologicalStance: "deflection"`, and room-linked `emotionalHistory` appends.
+- Fix: expanded classifier deflection terms for direct Spanish avoidance/topic-change language (`siguiente`, `cambia de tema`, `cambiemos de tema`, `no quiero responder`, etc.) without adding duplicate pressure state or changing the tracker/store ownership model.
+- New integration test: `web/src/terminal/terminalCore.integration.test.ts` drives `TerminalCore.processInput()`, reads `getPsychPressure()`, mirrors pressure through `useGame.setPsychologicalPressure()` like `ConsoleOverlay.submit()`, asserts deflection pressure rises and store/history update, then asserts confession lowers pressure.
+- Supporting unit coverage: `web/src/terminal/psych/StanceClassifier.test.ts` now locks the two Spanish playtest phrases as `deflection`.
+- Typecheck after fix commit: `cd web && npx tsc -b --noEmit` clean.
+- Vitest after fix commit: `cd web && npx vitest run` clean, 37 files / 142 tests.
