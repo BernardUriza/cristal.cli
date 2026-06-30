@@ -132,3 +132,77 @@
 ## Skipped By Design
 - Pressure ownership centralization between zustand psychologicalPressure and StancePressureTracker was not attempted; that remains architectural. TerminalCore.reset() already calls resetPsychSession(), but resetting the zustand mirror there would introduce a terminal-to-game dependency, so it was left untouched.
 - Color/palette SSOT for #7dffd0 and PHOSPHOR #39ff14 was intentionally left for a dedicated low-priority sweep.
+
+## D2 Persistent Transference - Pure Modules
+
+### D2.1 PersistentTransference
+- SHA: RED - commit blocked; sandbox has read-only `.git` and `git commit` failed creating `.git/index.lock`.
+- Files: web/src/game/PersistentTransference.ts, web/src/game/PersistentTransference.test.ts
+- Public API: createPersistentTransference(storage), load(), save(profile), mergeSession(session), getTransference(), reset(), TransferenceProfile
+- Typecheck: `npx tsc -b --noEmit` clean
+- Vitest: `npx vitest run` clean, 36 files / 140 tests
+- Relationship change: the labyrinth now carries a bounded, weighted memory of habitual defense, confession, avoidance, pressure, depth, ritual, silence, and exploration style across sessions.
+
+### D2.2 WorldBehaviorResolver
+- SHA: RED - commit blocked; sandbox has read-only `.git` and `git commit` failed creating `.git/index.lock`.
+- Files: web/src/game/WorldBehaviorResolver.ts, web/src/game/WorldBehaviorResolver.test.ts
+- Public API: resolveWorldBehavior(profile, room, pressure), WorldBehavior
+- Typecheck: `npx tsc -b --noEmit` clean
+- Vitest: `npx vitest run` clean, 36 files / 140 tests
+- Relationship change: the world can now vary abstract behavior for different long-term player patterns without touching rendering.
+
+### D2.3 RelationshipTracker
+- SHA: RED - commit blocked; sandbox has read-only `.git` and `git commit` failed creating `.git/index.lock`.
+- Files: web/src/game/RelationshipTracker.ts, web/src/game/RelationshipTracker.test.ts
+- Public API: RelationshipTracker.recordInteraction(), snapshot(), serialize(), deserializeRelationship(serialized), RelationshipSnapshot
+- Typecheck: `npx tsc -b --noEmit` clean
+- Vitest: `npx vitest run` clean, 36 files / 140 tests
+- Relationship change: trust, resistance, curiosity, avoidance, and ritual depth now move slowly as relationship curves, not score or morality.
+
+### D2.4 MemoryEchoEngine
+- SHA: RED - commit blocked; sandbox has read-only `.git` and `git commit` failed creating `.git/index.lock`.
+- Files: web/src/game/MemoryEchoEngine.ts, web/src/game/MemoryEchoEngine.test.ts
+- Public API: generateMemoryEchoes(input), EchoFragment
+- Typecheck: `npx tsc -b --noEmit` clean
+- Vitest: `npx vitest run` clean, 36 files / 140 tests
+- Relationship change: repeated behavior becomes compressed echoes such as changed answers, remembered silence, ritual recurrence, and learned refusal without replaying exact logs.
+
+### D2.5 IdentityDrift
+- SHA: RED - commit blocked; sandbox has read-only `.git` and `git commit` failed creating `.git/index.lock`.
+- Files: web/src/game/IdentityDrift.ts, web/src/game/IdentityDrift.test.ts
+- Public API: IdentityDrift.currentIdentity(), update(input), snapshot(), PlayerIdentity
+- Typecheck: `npx tsc -b --noEmit` clean
+- Vitest: `npx vitest run` clean, 36 files / 140 tests
+- Relationship change: the terminal can gradually address the player as You, Visitor, Witness, and My oldest recursion from accumulated continuity, never as a scripted jump.
+
+### D2.A EmotionalSeason
+- SHA: RED - commit blocked; sandbox has read-only `.git` and `git commit` failed creating `.git/index.lock`.
+- Files: web/src/game/EmotionalSeason.ts, web/src/game/EmotionalSeason.test.ts
+- Public API: resolveEmotionalSeason(input), EmotionalSeasonState
+- Typecheck: `npx tsc -b --noEmit` clean
+- Vitest: `npx vitest run` clean, 36 files / 140 tests
+- Relationship change: the labyrinth now has abstract emotional climates - Dormant, Listening, Observing, Resisting, Accepting - derived from relationship, profile, and pressure history.
+
+### D2.B RitualGravity
+- SHA: RED - commit blocked; sandbox has read-only `.git` and `git commit` failed creating `.git/index.lock`.
+- Files: web/src/game/RitualGravity.ts, web/src/game/RitualGravity.test.ts
+- Public API: resolveRitualGravity(input), RitualGravity
+- Typecheck: `npx tsc -b --noEmit` clean
+- Vitest: `npx vitest run` clean, 36 files / 140 tests
+- Relationship change: repeated symbolic behaviors now create small future-generation bias, such as moon toward reflection and gate toward thresholds, without deterministic repetition.
+
+### D2.C AbsencePlanner
+- SHA: RED - commit blocked; sandbox has read-only `.git` and `git commit` failed creating `.git/index.lock`.
+- Files: web/src/game/AbsencePlanner.ts, web/src/game/AbsencePlanner.test.ts
+- Public API: planAbsence(input), AbsencePlan, AbsencePlanItem
+- Typecheck: `npx tsc -b --noEmit` clean
+- Vitest: `npx vitest run` clean, 36 files / 140 tests
+- Relationship change: the world can now communicate by deterministic, explainable omissions of consoles, glyphs, or sentences.
+
+### D2.D NarrativeCompression
+- SHA: RED - commit blocked; sandbox has read-only `.git` and `git commit` failed creating `.git/index.lock`.
+- Files: web/src/game/NarrativeCompression.ts, web/src/game/NarrativeCompression.test.ts
+- Public API: compressNarrative(input)
+- Typecheck: `npx tsc -b --noEmit` clean
+- Vitest: `npx vitest run` clean, 36 files / 140 tests
+- Relationship change: hundreds of interactions can now compress into one reflective paragraph about how the player protected, explained, confessed, or ritualized.
