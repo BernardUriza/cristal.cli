@@ -14,6 +14,7 @@ import { CristalMemory } from "./memory";
 import { StateMachine, stateTransitionFromString } from "./stateMachine";
 import { generateCristalPsychReply } from "./psych/PsychologicalResponseEngine";
 import { arbitrate } from "./psych/ToneArbitrator";
+import { clamp01 } from "../shared/math";
 
 const VARIABLE_PATTERN = /\{(\w+)\}/g;
 const NARRATIVE_THRESHOLD = 0.3;
@@ -180,7 +181,7 @@ export class ResponseEngine {
     score += Math.min(this.memory.discoveredKeywordCount / 20, 0.2);
     score += Math.min(this.memory.arcanaUnlockedCount / 7, 0.3);
     score += Math.min(this.memory.majorEventsCount / 5, 0.2);
-    return Math.max(0, Math.min(1, score));
+    return clamp01(score);
   }
 
   private applyStateModifiers(response: BuiltResponse) {

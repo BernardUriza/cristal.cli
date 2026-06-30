@@ -1,3 +1,5 @@
+import { clamp01 } from "../shared/math";
+
 export interface FalseDoorEvent {
   roomSeed: number;
   exitIndex: number;
@@ -18,10 +20,6 @@ export interface FalseDoorConsequence {
   atmosphereSpike: number;
   annotation: Omit<FalseDoorAnnotation, "timestamp">;
   whisper: string | null;
-}
-
-function clamp01(value: number): number {
-  return Math.max(0, Math.min(1, Number.isFinite(value) ? value : 0));
 }
 
 export function resolveFalseDoorConsequences(

@@ -1,11 +1,6 @@
 import type { Stance } from "./StanceClassifier";
-
-const EVASIVE: Stance[] = [
-  "intellectualization",
-  "deflection",
-  "anesthesia",
-  "ritualization",
-];
+import { clamp01 } from "../../shared/math";
+import { isEvasiveStance } from "./stanceUtils";
 
 const WINDOW = 6;
 const EVASION_STEP = 0.18;
@@ -19,10 +14,6 @@ export interface PressureState {
   recent: Stance[];
 }
 
-function isEvasive(stance: Stance): boolean {
-  return EVASIVE.includes(stance);
-}
-
 export class StancePressureTracker {
   private _pressure = 0;
   private _recent: Stance[] = [];
@@ -30,7 +21,7 @@ export class StancePressureTracker {
 
   record(stance: Stance): void {
     const prev = this._recent[this._recent.length - 1];
-    if (isEvasive(stance)) {
+    if (isEvasiveStance(stance)) {
       const repeat = prev === stance;
       this._consecutive = repeat ? this._consecutive + 1 : 1;
       this._pressure += EVASION_STEP + (repeat ? REPEAT_BONUS : 0);
@@ -38,7 +29,7 @@ export class StancePressureTracker {
       this._consecutive = 0;
       this._pressure -= CONFESSION_RELIEF;
     }
-    this._pressure = Math.max(0, Math.min(1, this._pressure));
+    this._pressure = clamp01(this._pressure);
     this._recent.push(stance);
     if (this._recent.length > WINDOW) this._recent.shift();
   }
@@ -46,7 +37,7 @@ export class StancePressureTracker {
   get state(): PressureState {
     const last = this._recent[this._recent.length - 1];
     const repeatingStance =
-      this._consecutive >= 2 && last && isEvasive(last) ? last : null;
+      this._consecutive >= 2 && last && isEvasiveStance(last) ? last : null;
     return {
       pressure: this._pressure,
       consecutiveEvasion: this._consecutive,

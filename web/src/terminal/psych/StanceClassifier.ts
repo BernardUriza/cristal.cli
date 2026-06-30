@@ -1,3 +1,5 @@
+import { clamp01 } from "../../shared/math";
+
 export type Stance =
   | "confession"
   | "intellectualization"
@@ -75,7 +77,7 @@ function countHits(text: string, terms: string[]): number {
 }
 
 function saturate(hits: number, full: number): number {
-  return Math.max(0, Math.min(1, hits / full));
+  return clamp01(hits / full);
 }
 
 export function classifyStance(input: string): StanceProfile {
@@ -105,7 +107,7 @@ export function classifyStance(input: string): StanceProfile {
   const stance = ranked[0];
   const top = scores[stance];
   const second = scores[ranked[1]];
-  const confidence = Math.max(0, Math.min(1, top <= 0 ? 0 : (top - second) / (top + 1e-6)));
+  const confidence = clamp01(top <= 0 ? 0 : (top - second) / (top + 1e-6));
 
   const signals: string[] = [];
   if (firstPerson > 0) signals.push("first-person");

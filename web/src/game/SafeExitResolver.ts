@@ -1,4 +1,5 @@
 import type { Stance } from "../terminal/psych/StanceClassifier";
+import { clamp01 } from "../shared/math";
 import { seedForExit, type Room } from "./roomApi";
 
 export interface SafeExit {
@@ -14,10 +15,6 @@ export interface SafeExitInput {
   stance: Stance | null;
   pressure: number;
   room: Pick<Room, "seed" | "exits" | "inscription">;
-}
-
-function clamp01(value: number): number {
-  return Math.max(0, Math.min(1, Number.isFinite(value) ? value : 0));
 }
 
 export function resolveSafeExit(input: SafeExitInput): SafeExit | null {

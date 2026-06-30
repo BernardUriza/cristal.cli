@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { GameMode, type Locomotion } from "./types";
 import type { SymbolicArchetype, SymbolicEvent } from "./symbolicBus";
+import { clamp01 } from "../shared/math";
 import { generateRoom, seedForExit, type Room } from "./roomApi";
 import { StabilityEngine } from "./StabilityEngine";
 import {
@@ -281,7 +282,7 @@ export const useGame = create<GameState>((set, get) => {
 
   setPsychologicalPressure: (pressure, stance) =>
     set((s) => ({
-      psychologicalPressure: Math.max(0, Math.min(1, pressure)),
+      psychologicalPressure: clamp01(pressure),
       psychologicalStance: stance !== undefined ? stance : s.psychologicalStance,
       pressureEnding:
         s.pressureEnding ??

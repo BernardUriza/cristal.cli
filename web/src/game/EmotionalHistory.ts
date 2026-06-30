@@ -1,4 +1,6 @@
 import type { Stance } from "../terminal/psych/StanceClassifier";
+import { isEvasiveStance } from "../terminal/psych/stanceUtils";
+import { clamp01 } from "../shared/math";
 
 export interface EmotionalRoomRef {
   seed: number;
@@ -20,21 +22,6 @@ export interface EmotionalHistorySummary {
   dominantStance: Stance | null;
   avoidanceStreak: number;
   averagePressure: number;
-}
-
-const EVASIVE: Stance[] = [
-  "intellectualization",
-  "deflection",
-  "anesthesia",
-  "ritualization",
-];
-
-function clamp01(value: number): number {
-  return Math.max(0, Math.min(1, Number.isFinite(value) ? value : 0));
-}
-
-function isEvasive(stance: Stance): boolean {
-  return EVASIVE.includes(stance);
 }
 
 export function appendEmotionalHistory(
@@ -76,11 +63,11 @@ export function summarizeEmotionalHistory(
   const last = recent[recent.length - 1];
   const pressureDelta = last.pressure - first.pressure;
   const confessionCount = recent.filter((entry) => entry.stance === "confession").length;
-  const evasionCount = recent.filter((entry) => isEvasive(entry.stance)).length;
+  const evasionCount = recent.filter((entry) => isEvasiveStance(entry.stance)).length;
 
   let avoidanceStreak = 0;
   for (let i = history.length - 1; i >= 0; i--) {
-    if (!isEvasive(history[i].stance)) break;
+    if (!isEvasiveStance(history[i].stance)) break;
     avoidanceStreak++;
   }
 

@@ -1,4 +1,5 @@
 import type { Stance } from "../terminal/psych/StanceClassifier";
+import { isEvasiveStance } from "../terminal/psych/stanceUtils";
 import type { EmotionalHistoryEntry } from "./EmotionalHistory";
 
 export type WorldPersonality =
@@ -22,13 +23,6 @@ export interface AdaptiveWorldProfile {
   averageRoomDepth: number;
   personality: WorldPersonality;
 }
-
-const EVASIVE: Stance[] = [
-  "intellectualization",
-  "deflection",
-  "anesthesia",
-  "ritualization",
-];
 
 function average(values: number[]): number {
   if (values.length === 0) return 0;
@@ -58,7 +52,8 @@ export function buildAdaptiveWorldProfile(input: AdaptiveWorldInput): AdaptiveWo
       ? "Ritualistic"
       : averagePressure > 0.72 && falseDoorRatio > 0.18
       ? "Cowardly"
-      : falseDoorRatio > 0.24 || (favorite !== null && EVASIVE.includes(favorite) && averagePressure > 0.42)
+      : falseDoorRatio > 0.24 ||
+        (favorite !== null && isEvasiveStance(favorite) && averagePressure > 0.42)
       ? "Avoidant"
       : confessionRatio >= 0.5 && averagePressure < 0.5
       ? "Open"
