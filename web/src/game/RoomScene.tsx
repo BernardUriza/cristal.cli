@@ -6,6 +6,7 @@ import { useKeyboard } from "./input/useKeyboard";
 import { playEnterDrone, playCross, playAlarm } from "./audio";
 import { resolveRoomPressureAtmosphere, type RoomPressureAtmosphere } from "./RoomPressureController";
 import { resolveSafeExit, type SafeExit } from "./SafeExitResolver";
+import { generateMicroMirrors, type MicroMirrors } from "./MicroMirrorGenerator";
 import type { RoomShape } from "./types";
 import type { Room } from "./roomApi";
 
@@ -115,6 +116,7 @@ interface DoorSpec {
   position: [number, number, number];
   rotationY: number;
   safe: boolean;
+  label: string;
 }
 
 // In-world door label as a canvas texture — no external font fetch, works
@@ -139,23 +141,33 @@ function makeLabelTexture(label: string): THREE.CanvasTexture {
   return tex;
 }
 
-// Distribute exits across the four walls (front/back/left/right), each door set
-// into its wall and facing inward.
-function buildDoors(room: Room, dims: Dims, safeExit: SafeExit | null = null): DoorSpec[] {
+function doorSlots(dims: Dims): Omit<DoorSpec, "index" | "safe" | "label">[] {
   const hw = dims.w / 2;
   const hd = dims.d / 2;
   const y = DOOR_H / 2;
-  const slots: Omit<DoorSpec, "index" | "safe">[] = [
+  return [
     { position: [0, y, -hd + 0.05], rotationY: 0 },
     { position: [0, y, hd - 0.05], rotationY: Math.PI },
     { position: [-hw + 0.05, y, 0], rotationY: Math.PI / 2 },
     { position: [hw - 0.05, y, 0], rotationY: -Math.PI / 2 },
   ];
+}
+
+// Distribute exits across the four walls (front/back/left/right), each door set
+// into its wall and facing inward.
+function buildDoors(
+  room: Room,
+  dims: Dims,
+  safeExit: SafeExit | null = null,
+  mirrors: MicroMirrors | null = null
+): DoorSpec[] {
+  const slots = doorSlots(dims);
   const count = Math.min(slots.length, room.exits.length + (safeExit ? 1 : 0));
   return Array.from({ length: count }, (_, i) => ({
     ...slots[i],
     index: i,
     safe: safeExit?.index === i,
+    label: mirrors?.doorLabelMode === "clinical" ? `D-${String(i + 1).padStart(2, "0")}` : String(i + 1),
   }));
 }
 
@@ -175,7 +187,7 @@ function Door({
   const frameRef = useRef<THREE.MeshStandardMaterial>(null);
   const glowRef = useRef<THREE.MeshBasicMaterial>(null);
   const spiritRef = useRef<THREE.Group>(null);
-  const labelTex = useMemo(() => makeLabelTexture(String(spec.index + 1)), [spec.index]);
+  const labelTex = useMemo(() => makeLabelTexture(spec.label), [spec.label]);
   // free the GPU texture when the door changes or unmounts — r3f never disposes
   // a material's map, so without this every room crossing leaks textures.
   useEffect(() => () => labelTex.dispose(), [labelTex]);
@@ -255,6 +267,8 @@ function FirstPersonController({ dims }: { dims: Dims }) {
   const setNearbyExit = useGame((s) => s.setNearbyExit);
   const psychologicalPressure = useGame((s) => s.psychologicalPressure);
   const psychologicalStance = useGame((s) => s.psychologicalStance);
+  const emotionalHistory = useGame((s) => s.emotionalHistory);
+  const falseDoorCount = useGame((s) => s.falseDoorAnnotations.length);
   const safeExit = useMemo(
     () =>
       room
@@ -266,7 +280,18 @@ function FirstPersonController({ dims }: { dims: Dims }) {
         : null,
     [room, psychologicalPressure, psychologicalStance]
   );
-  const doors = useMemo(() => (room ? buildDoors(room, dims, safeExit) : []), [room, dims, safeExit]);
+  const mirrors = useMemo(
+    () =>
+      room
+        ? generateMicroMirrors({
+            room,
+            emotionalHistory,
+            falseDoorCount,
+          })
+        : null,
+    [room, emotionalHistory, falseDoorCount]
+  );
+  const doors = useMemo(() => (room ? buildDoors(room, dims, safeExit, mirrors) : []), [room, dims, safeExit, mirrors]);
   const seed = room?.seed;
 
   // Respawn at the entrance whenever the room itself changes.
@@ -433,6 +458,36 @@ function RoomShell({
   );
 }
 
+function DeadCorridors({
+  dims,
+  usedDoors,
+  count,
+  color,
+}: {
+  dims: Dims;
+  usedDoors: number;
+  count: number;
+  color: THREE.Color;
+}) {
+  const slots = doorSlots(dims).slice(usedDoors, usedDoors + count);
+  return (
+    <>
+      {slots.map((slot, i) => (
+        <group key={i} position={slot.position} rotation={[0, slot.rotationY, 0]}>
+          <mesh>
+            <boxGeometry args={[DOOR_W + 0.18, DOOR_H + 0.18, 0.12]} />
+            <meshStandardMaterial color="#030605" emissive={color} emissiveIntensity={0.18} roughness={0.8} />
+          </mesh>
+          <mesh position={[0, 0, 0.08]}>
+            <planeGeometry args={[DOOR_W, DOOR_H]} />
+            <meshBasicMaterial color="#050505" transparent opacity={0.72} side={THREE.DoubleSide} />
+          </mesh>
+        </group>
+      ))}
+    </>
+  );
+}
+
 export function RoomScene() {
   const room = useGame((s) => s.room);
   const nearbyExit = useGame((s) => s.nearbyExit);
@@ -440,6 +495,8 @@ export function RoomScene() {
   const psychologicalStance = useGame((s) => s.psychologicalStance);
   const roomPressureSpike = useGame((s) => s.roomPressureSpike);
   const pressureEnding = useGame((s) => s.pressureEnding);
+  const emotionalHistory = useGame((s) => s.emotionalHistory);
+  const falseDoorCount = useGame((s) => s.falseDoorAnnotations.length);
 
   const dims = useMemo(() => (room ? dimsForShape(room.shape) : dimsForShape("chamber")), [room]);
   const atmo = useMemo(() => atmosphere(room?.dread ?? 0), [room]);
@@ -463,7 +520,18 @@ export function RoomScene() {
         : null,
     [room, psychologicalPressure, psychologicalStance]
   );
-  const doors = useMemo(() => (room ? buildDoors(room, dims, safeExit) : []), [room, dims, safeExit]);
+  const mirrors = useMemo(
+    () =>
+      room
+        ? generateMicroMirrors({
+            room,
+            emotionalHistory,
+            falseDoorCount,
+          })
+        : null,
+    [room, emotionalHistory, falseDoorCount]
+  );
+  const doors = useMemo(() => (room ? buildDoors(room, dims, safeExit, mirrors) : []), [room, dims, safeExit, mirrors]);
   const surface = useMemo(() => surfaceForShape(room?.shape ?? "chamber"), [room]);
   const inscriptionTex = useMemo(
     () => (room ? makeInscriptionTexture(room.inscription) : null),
@@ -540,6 +608,14 @@ export function RoomScene() {
           safeExit={safeExit}
         />
       ))}
+      {mirrors && mirrors.deadCorridors > 0 && (
+        <DeadCorridors
+          dims={dims}
+          usedDoors={doors.length}
+          count={mirrors.deadCorridors}
+          color={doorColor}
+        />
+      )}
 
       <FirstPersonController dims={dims} />
     </>

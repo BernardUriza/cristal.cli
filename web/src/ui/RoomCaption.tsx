@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useGame } from "../game/store";
 import { GameMode } from "../game/types";
 import { resolveSafeExit } from "../game/SafeExitResolver";
+import { generateMicroMirrors } from "../game/MicroMirrorGenerator";
 
 // In-room HUD: the prophet's caption, breadcrumb, stability gauge, and the
 // cross/exit prompts. Crossing is proximity-only (walk to a door + E); ESC
@@ -19,6 +20,8 @@ export function RoomCaption() {
   const pressure = useGame((s) => s.psychologicalPressure);
   const stance = useGame((s) => s.psychologicalStance);
   const pressureEnding = useGame((s) => s.pressureEnding);
+  const emotionalHistory = useGame((s) => s.emotionalHistory);
+  const falseDoorCount = useGame((s) => s.falseDoorAnnotations.length);
   const dismissRoom = useGame((s) => s.dismissRoom);
 
   const inRoom = mode === GameMode.Room && !!room;
@@ -35,6 +38,7 @@ export function RoomCaption() {
   if (!inRoom || !room) return null;
 
   const safeExit = resolveSafeExit({ stance, pressure, room });
+  const mirrors = generateMicroMirrors({ room, emotionalHistory, falseDoorCount });
   const exitText =
     nearbyExit !== null
       ? nearbyExit === safeExit?.index
@@ -56,7 +60,7 @@ export function RoomCaption() {
         <span>{parentSeed !== null ? `desde ${hex(parentSeed)}` : "raíz"}</span>
         {here && <span className="room-danger-tag">⚠ peligroso</span>}
       </p>
-      <h2 className="room-name">{room.name}</h2>
+      <h2 className="room-name">{mirrors.softenedRoomName ?? room.name}</h2>
       <p className="room-inscription">“{room.inscription}”</p>
       <div className="room-dread">
         <span>DREAD</span>
