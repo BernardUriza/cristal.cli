@@ -38,6 +38,19 @@ function cacheRoom(seed: number, room: Room): void {
 const HISTORY_LIMIT = 8;
 const FALSE_DOOR_HISTORY_LIMIT = 12;
 
+function resolveRoomEntryPressureEnding(state: GameState): PressureEndingState | null {
+  return (
+    state.pressureEnding ??
+    (state.psychologicalPressure >= 1
+      ? resolvePressureEnding({
+          pressure: state.psychologicalPressure,
+          inRoom: true,
+          now: Date.now(),
+        })
+      : null)
+  );
+}
+
 // The room's integrity runtime lives in the canonical pure StabilityEngine (decay
 // math, false-door penalty, safe-door reward, eviction). The store holds the
 // engine for the active descent and mirrors its value into `stability` for the
@@ -175,6 +188,7 @@ export const useGame = create<GameState>((set, get) => {
               timestamp: Date.now(),
             })
           : s.emotionalHistory,
+        pressureEnding: resolveRoomEntryPressureEnding(s),
         stability: enterStability(cached, freshDescent),
       }));
       return;
@@ -199,6 +213,7 @@ export const useGame = create<GameState>((set, get) => {
                 timestamp: Date.now(),
               })
             : s.emotionalHistory,
+          pressureEnding: resolveRoomEntryPressureEnding(s),
           stability: enterStability(room, freshDescent),
         }));
       })
@@ -421,6 +436,6 @@ export const useGame = create<GameState>((set, get) => {
 });
 
 // Dev-only handle for debugging the mode flow from the console / tests.
-if (import.meta.env.DEV) {
+if (import.meta.env.DEV && typeof window !== "undefined") {
   (window as unknown as { __game: typeof useGame }).__game = useGame;
 }
