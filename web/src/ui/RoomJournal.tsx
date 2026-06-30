@@ -3,12 +3,15 @@ import { RoomMemoryIndex } from "../game/RoomMemoryIndex";
 import { profileRoomDanger } from "../game/RoomDangerProfiler";
 import { parseInscription } from "../game/InscriptionParser";
 import { summarizeEmotionalHistory } from "../game/EmotionalHistory";
+import { buildAdaptiveWorldProfile } from "../game/AdaptiveWorldProfile";
 
 const PHOSPHOR = "#39ff14";
 
 export function RoomJournal() {
   const history = useGame((s) => s.roomHistory);
   const emotionalHistory = useGame((s) => s.emotionalHistory);
+  const falseDoorCount = useGame((s) => s.falseDoorAnnotations.length);
+  const depth = useGame((s) => s.depth);
   if (history.length === 0) return null;
 
   const index = new RoomMemoryIndex();
@@ -22,6 +25,11 @@ export function RoomJournal() {
   const recent = index.recent(5);
   const worst = index.mostDangerous(1)[0];
   const emotional = summarizeEmotionalHistory(emotionalHistory);
+  const profile = buildAdaptiveWorldProfile({
+    emotionalHistory,
+    falseDoorCount,
+    roomDepths: history.map((_, i) => Math.max(0, depth - history.length + i + 1)),
+  });
 
   return (
     <div
@@ -41,6 +49,7 @@ export function RoomJournal() {
     >
       <div style={{ opacity: 0.7 }}>JOURNAL · {index.summarizeTrail()}</div>
       <div style={{ opacity: 0.65, marginTop: 2 }}>{emotional.summary}</div>
+      <div style={{ opacity: 0.5, marginTop: 2 }}>WORLD · {profile.personality}</div>
       {recent.map((r) => {
         const { symbols } = parseInscription(r.room.inscription);
         return (
