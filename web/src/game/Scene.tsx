@@ -4,9 +4,11 @@ import { Labyrinth } from "./Labyrinth";
 import { InWorldConsole } from "./InWorldConsole";
 import { Player, type ConsoleRef } from "./Player";
 import { RitualGlyph, type GlyphRef } from "./RitualGlyph";
+import { BackroomFurniture } from "./BackroomFurniture.tsx";
+import { placeBackroomFurniture } from "./BackroomFurniturePlacer";
 import { cellCenter, generateMaze } from "./maze";
-import { MAZE_COLS, MAZE_ROWS, MAZE_SEED } from "./mazeConfig";
-import { CONSOLE_NODES, GLYPH_NODES } from "./worldNodes";
+import { MAZE_COLS, MAZE_ROWS, MAZE_SEED, SPAWN_CELL } from "./mazeConfig";
+import { CONSOLE_NODES, GLYPH_NODES, WORLD_NODES } from "./worldNodes";
 
 export function Scene() {
   const maze = useMemo(() => generateMaze(MAZE_COLS, MAZE_ROWS, MAZE_SEED), []);
@@ -32,6 +34,15 @@ export function Scene() {
         const [x, z] = cellCenter(maze, g.cell[0], g.cell[1]);
         return { id: g.id, position: new THREE.Vector3(x, 0, z), archetype: g.archetype };
       }),
+    [maze]
+  );
+
+  const furniture = useMemo(
+    () =>
+      placeBackroomFurniture(maze, MAZE_SEED, [
+        SPAWN_CELL,
+        ...WORLD_NODES.map((node) => ({ x: node.cell[0], y: node.cell[1] })),
+      ]),
     [maze]
   );
 
@@ -81,6 +92,15 @@ export function Scene() {
           />
         );
       })}
+
+      {furniture.map((item) => (
+        <BackroomFurniture
+          key={item.id}
+          kind={item.kind}
+          position={item.position}
+          rotationY={item.rotationY}
+        />
+      ))}
 
       <Player maze={maze} spawn={spawn} consoles={consoles} glyphs={glyphs} />
     </>
