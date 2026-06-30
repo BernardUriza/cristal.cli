@@ -1,0 +1,11 @@
+{
+  "engine": "unborn-songmaker (rules-based polymeter, Korda-style)",
+  "direction": "hypnotic minimal / dub / ambient techno — a machine that observes",
+  "tracks": {
+    "explore": { "file": "explore.mp3", "state": "Exploration", "loop": true, "use": "ambient exploration bed; steady sub+kick, sparse euclid hats" },
+    "terminal": { "file": "terminal.mp3", "state": "Console/confession", "loop": true, "use": "intimate terminal; thinned percussion, distant metallic bells — approaches, not pushes" },
+    "pressure": { "file": "pressure.mp3", "state": "High psychological pressure", "loop": true, "use": "polymeter 7/11/13 slipping; density rises with pressure — world loses stability" },
+    "dream": { "file": "dream.mp3", "state": "Dream", "loop": true, "use": "ambiguous tempo, ghost percussion, resonances — suspended" },
+    "ending": { "file": "ending.mp3", "state": "Pressure ending / surrender", "loop": false, "use": "energy falls to one low pulse + few notes — resolution by simplicity" }
+  }
+}
