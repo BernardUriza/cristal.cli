@@ -4,6 +4,8 @@ import * as THREE from "three";
 import { useGame, fakeExitForRoom } from "./store";
 import { shouldOfferSafeExit } from "./RuntimeTransference";
 import { useKeyboard } from "./input/useKeyboard";
+import { computeMoveDirection } from "./player/movement";
+import { usePointerLook } from "./player/usePointerLook";
 import { playEnterDrone, playCross, playAlarm } from "./audio";
 import { resolveRoomPressureAtmosphere, type RoomPressureAtmosphere } from "./RoomPressureController";
 import { deriveRoomD1Results } from "./RoomD1Derivations";
@@ -270,8 +272,11 @@ function FirstPersonController({
 }) {
   const { camera, gl } = useThree();
   const torch = useRef<THREE.PointLight>(null);
-  const yaw = useRef(0);
-  const pitch = useRef(0);
+  const { yaw, pitch } = usePointerLook(gl.domElement, true, {
+    initialPitch: 0,
+    minPitch: -1.2,
+    maxPitch: 1.2,
+  });
   const pos = useRef(new THREE.Vector3(0, EYE_HEIGHT, dims.d / 2 - 1.5));
   const input = useKeyboard(true);
   const room = useGame((s) => s.room);
@@ -285,22 +290,6 @@ function FirstPersonController({
     yaw.current = Math.PI; // look into the room
     pitch.current = 0;
   }, [seed, dims.d]);
-
-  useEffect(() => {
-    const canvas = gl.domElement;
-    const onClick = () => canvas.requestPointerLock();
-    const onMove = (e: MouseEvent) => {
-      if (document.pointerLockElement !== canvas) return;
-      yaw.current -= e.movementX * 0.0025;
-      pitch.current = THREE.MathUtils.clamp(pitch.current - e.movementY * 0.0025, -1.2, 1.2);
-    };
-    canvas.addEventListener("click", onClick);
-    document.addEventListener("mousemove", onMove);
-    return () => {
-      canvas.removeEventListener("click", onClick);
-      document.removeEventListener("mousemove", onMove);
-    };
-  }, [gl]);
 
   // E crosses the nearest door in range.
   useEffect(() => {
@@ -324,21 +313,12 @@ function FirstPersonController({
     tickAcc.current = 0;
   }, [seed]);
 
-  const fwd = useMemo(() => new THREE.Vector3(), []);
-  const right = useMemo(() => new THREE.Vector3(), []);
   const move = useMemo(() => new THREE.Vector3(), []);
 
   useFrame((_, dtRaw) => {
     const dt = Math.min(dtRaw, 0.05);
     const i = input.current;
-    fwd.set(Math.sin(yaw.current), 0, Math.cos(yaw.current)).normalize();
-    // screen-right = cross(forward, up); the negative form inverted A/D strafe.
-    right.set(-Math.cos(yaw.current), 0, Math.sin(yaw.current)).normalize();
-    const iz = (i.forward ? 1 : 0) - (i.back ? 1 : 0);
-    const ix = (i.right ? 1 : 0) - (i.left ? 1 : 0);
-    move.set(0, 0, 0).addScaledVector(fwd, iz).addScaledVector(right, ix);
-    if (move.lengthSq() > 0.0001) {
-      move.normalize();
+    if (computeMoveDirection(yaw.current, i, move)) {
       pos.current.x += move.x * MOVE_SPEED * dt;
       pos.current.z += move.z * MOVE_SPEED * dt;
     }
