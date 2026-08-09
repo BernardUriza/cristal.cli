@@ -4,6 +4,8 @@ import { distanceField, isFullyConnected } from "../game/mazeGraph";
 import { cellKey, nearestUnvisited, routeToRoom } from "../game/MazeRouteAdvisor";
 import { MAZE_COLS, MAZE_ROWS, MAZE_SEED, SPAWN_CELL } from "../game/mazeConfig";
 import { getPlayerPose, subscribePlayerPose, type PlayerPose } from "../game/playerPositionBus";
+import { riteCandidateNodes } from "../game/riteFocus";
+import { useGame } from "../game/store";
 import { WORLD_NODES, type WorldNode } from "../game/worldNodes";
 
 const CELL_PX = 18;
@@ -44,29 +46,49 @@ export function Minimap() {
   const headX = dotX + Math.sin(pose.heading) * CELL_PX * 0.6;
   const headZ = dotZ + Math.cos(pose.heading) * CELL_PX * 0.6;
 
-  // Suggested exploration route: trail visited cells as the player walks, then
-  // route to the nearest unvisited world node before falling back to any cell.
+  // Suggested route: aim at the rite's next target first (consoles until the
+  // confession lands, then glyphs), then any unvisited world node, then the
+  // nearest unvisited cell. Visited cells only demote within the same tier —
+  // the rite target stays routable even after walking over it.
+  const verticalSlice = useGame((s) => s.verticalSlice);
   const visited = useRef<Set<string>>(new Set());
   const pcx = Math.max(0, Math.min(MAZE_COLS - 1, Math.round((pose.x + OFFSET_X) / CELL)));
   const pcy = Math.max(0, Math.min(MAZE_ROWS - 1, Math.round((pose.z + OFFSET_Z) / CELL)));
   visited.current.add(cellKey({ x: pcx, y: pcy }));
-  const { route, targetNode } = useMemo(() => {
+  const { route, targetNode, isRiteTarget } = useMemo(() => {
     const from = { x: pcx, y: pcy };
-    const nodeRoutes = WORLD_NODES
-      .filter((node) => !visited.current.has(cellKey({ x: node.cell[0], y: node.cell[1] })))
-      .map((node) => ({
-        node,
-        route: routeToRoom(maze, from, { x: node.cell[0], y: node.cell[1] }),
-      }))
-      .filter((entry): entry is { node: WorldNode; route: NonNullable<ReturnType<typeof routeToRoom>> } =>
-        Boolean(entry.route)
-      )
-      .sort((a, b) => a.route.length - b.route.length);
-    if (nodeRoutes[0]) return { route: nodeRoutes[0].route, targetNode: nodeRoutes[0].node };
+    const shortestRouteTo = (nodes: readonly WorldNode[]) =>
+      nodes
+        .map((node) => ({
+          node,
+          route: routeToRoom(maze, from, { x: node.cell[0], y: node.cell[1] }),
+        }))
+        .filter((entry): entry is { node: WorldNode; route: NonNullable<ReturnType<typeof routeToRoom>> } =>
+          Boolean(entry.route)
+        )
+        .sort((a, b) => a.route.length - b.route.length)[0] ?? null;
+
+    const riteNodes = riteCandidateNodes(verticalSlice, WORLD_NODES);
+    const unvisitedRite = riteNodes.filter(
+      (node) => !visited.current.has(cellKey({ x: node.cell[0], y: node.cell[1] }))
+    );
+    const riteHit = shortestRouteTo(unvisitedRite.length > 0 ? unvisitedRite : riteNodes);
+    if (riteHit && riteHit.route.length > 1) {
+      return { route: riteHit.route, targetNode: riteHit.node, isRiteTarget: true };
+    }
+
+    const nodeHit = shortestRouteTo(
+      WORLD_NODES.filter((node) => !visited.current.has(cellKey({ x: node.cell[0], y: node.cell[1] })))
+    );
+    if (nodeHit) return { route: nodeHit.route, targetNode: nodeHit.node, isRiteTarget: false };
 
     const target = nearestUnvisited(maze, from, visited.current);
-    return { route: target ? routeToRoom(maze, from, target) : null, targetNode: null };
-  }, [maze, pcx, pcy]);
+    return {
+      route: target ? routeToRoom(maze, from, target) : null,
+      targetNode: null,
+      isRiteTarget: false,
+    };
+  }, [maze, pcx, pcy, verticalSlice]);
 
   return (
     <div
@@ -163,7 +185,9 @@ export function Minimap() {
       </svg>
       <div style={{ marginTop: 4 }}>
         MAP · {connected ? "connected" : "DISJOINT"} ·{" "}
-        {route ? `→ ${targetNode?.label ?? "unexplored"} ${route.length}` : "explored"}
+        {route
+          ? `${isRiteTarget ? "RITO → " : "→ "}${targetNode?.label ?? "unexplored"} ${route.length}`
+          : "explored"}
       </div>
     </div>
   );

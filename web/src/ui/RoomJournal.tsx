@@ -4,11 +4,13 @@ import { profileRoomDanger } from "../game/RoomDangerProfiler";
 import { parseInscription } from "../game/InscriptionParser";
 import { summarizeEmotionalHistory } from "../game/EmotionalHistory";
 import { buildAdaptiveWorldProfile } from "../game/AdaptiveWorldProfile";
+import { riteSummaryLine } from "../game/riteFocus";
 
 const PHOSPHOR = "#39ff14";
 
 export function RoomJournal() {
   const history = useGame((s) => s.roomHistory);
+  const verticalSlice = useGame((s) => s.verticalSlice);
   const emotionalHistory = useGame((s) => s.emotionalHistory);
   const falseDoorCount = useGame((s) => s.falseDoorAnnotations.length);
   const depth = useGame((s) => s.depth);
@@ -49,6 +51,7 @@ export function RoomJournal() {
       }}
     >
       <div style={{ opacity: 0.7 }}>JOURNAL · {index.summarizeTrail()}</div>
+      <div style={{ opacity: 0.8, marginTop: 2 }}>{riteSummaryLine(verticalSlice)}</div>
       <div style={{ opacity: 0.65, marginTop: 2 }}>{emotional.summary}</div>
       <div style={{ opacity: 0.5, marginTop: 2 }}>WORLD · {profile.personality}</div>
       <div style={{ opacity: 0.45, marginTop: 2 }}>

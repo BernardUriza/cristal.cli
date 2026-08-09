@@ -1,6 +1,12 @@
 import { useEffect } from "react";
 import { clamp01 } from "../shared/math";
 import { getCtx } from "./audio";
+import {
+  loadAudioSettings,
+  resolveMasterGain,
+  saveAudioSettings,
+  type AudioSettings,
+} from "./audioSettings";
 import { useGame } from "./store";
 import { GameMode } from "./types";
 import type { WorldBehavior } from "./WorldBehaviorResolver";
@@ -21,7 +27,7 @@ export interface MusicDirectorState extends MusicSelectionState {
   };
 }
 
-const TRACK_FILES: Record<MusicTrack, string> = {
+export const TRACK_FILES: Record<MusicTrack, string> = {
   explore: "/audio/explore.mp3",
   terminal: "/audio/terminal.mp3",
   pressure: "/audio/pressure.mp3",
@@ -29,18 +35,48 @@ const TRACK_FILES: Record<MusicTrack, string> = {
   ending: "/audio/ending.mp3",
 };
 
-const CROSSFADE_SECONDS = 4.5;
-const MASTER_VOLUME = 0.42;
+export const MUSIC_TRACKS = Object.keys(TRACK_FILES) as MusicTrack[];
 
-let muted = false;
+// The ending resolves and stays silent instead of looping (see audio manifest).
+export const TRACK_LOOPS: Record<MusicTrack, boolean> = {
+  explore: true,
+  terminal: true,
+  pressure: true,
+  dream: true,
+  ending: false,
+};
+
+const CROSSFADE_SECONDS = 4.5;
+
+let settings: AudioSettings = loadAudioSettings();
+const settingsListeners = new Set<() => void>();
+
+function commitSettings(next: AudioSettings): void {
+  settings = next;
+  saveAudioSettings(settings);
+  director?.applyMasterGain();
+  for (const listener of settingsListeners) listener();
+}
 
 export function setMusicMuted(nextMuted: boolean): void {
-  muted = nextMuted;
-  director?.applyMasterGain();
+  commitSettings({ ...settings, muted: nextMuted });
+}
+
+export function setMusicVolume(volume: number): void {
+  commitSettings({ ...settings, volume: clamp01(volume) });
 }
 
 export function isMusicMuted(): boolean {
-  return muted;
+  return settings.muted;
+}
+
+export function getAudioSettings(): AudioSettings {
+  return settings;
+}
+
+export function subscribeAudioSettings(listener: () => void): () => void {
+  settingsListeners.add(listener);
+  return () => settingsListeners.delete(listener);
 }
 
 export function selectTrack(state: MusicSelectionState): MusicTrack {
@@ -54,6 +90,20 @@ export function selectTrack(state: MusicSelectionState): MusicTrack {
   }
   if (state.mode === GameMode.Console) return "terminal";
   return "explore";
+}
+
+export function resolveMusicIntensity(state: MusicDirectorState): number {
+  const pressure = clamp01(state.psychologicalPressure);
+  const behavior = state.transference?.worldBehavior;
+  const behaviorBias = behavior
+    ? clamp01(
+        behavior.mirrorIntensity * 0.34 +
+          behavior.architectureDrift * 0.28 +
+          (1 - behavior.lightingBias) * 0.2 +
+          behavior.silenceProbability * 0.18,
+      )
+    : 0.35;
+  return clamp01(0.5 + pressure * 0.32 + behaviorBias * 0.18);
 }
 
 interface TrackRuntime {
@@ -137,7 +187,7 @@ class MusicDirectorRuntime {
     if (existing) return existing;
 
     const element = new Audio(TRACK_FILES[track]);
-    element.loop = true;
+    element.loop = TRACK_LOOPS[track];
     element.preload = "metadata";
     element.crossOrigin = "anonymous";
     const source = this.ctx.createMediaElementSource(element);
@@ -154,7 +204,7 @@ class MusicDirectorRuntime {
   private update(): void {
     if (!this.ctx) return;
     const nextTrack = selectTrack(this.currentState);
-    const intensity = this.resolveIntensity();
+    const intensity = resolveMusicIntensity(this.currentState);
     this.applyMasterGain();
 
     if (this.activeTrack === nextTrack) {
@@ -186,21 +236,7 @@ class MusicDirectorRuntime {
 
   applyMasterGain(): void {
     if (!this.ctx || !this.master) return;
-    this.ramp(this.master.gain, muted ? 0 : MASTER_VOLUME, 0.35);
-  }
-
-  private resolveIntensity(): number {
-    const pressure = clamp01(this.currentState.psychologicalPressure);
-    const behavior = this.currentState.transference?.worldBehavior;
-    const behaviorBias = behavior
-      ? clamp01(
-          behavior.mirrorIntensity * 0.34 +
-            behavior.architectureDrift * 0.28 +
-            (1 - behavior.lightingBias) * 0.2 +
-            behavior.silenceProbability * 0.18,
-        )
-      : 0.35;
-    return clamp01(0.5 + pressure * 0.32 + behaviorBias * 0.18);
+    this.ramp(this.master.gain, resolveMasterGain(settings), 0.35);
   }
 
   private ramp(param: AudioParam, value: number, seconds: number): void {

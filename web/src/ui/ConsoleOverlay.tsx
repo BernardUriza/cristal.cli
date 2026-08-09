@@ -4,6 +4,7 @@ import { GameMode } from "../game/types";
 import { getTerminalCore } from "../terminal/terminalCore";
 import { getPsychPressure } from "../terminal/psych/PsychologicalResponseEngine";
 import { ResponseType, TerminalResponse } from "../terminal/types";
+import { objectiveForSlice } from "../game/VerticalSlice";
 
 interface Line {
   text: string;
@@ -79,13 +80,26 @@ export function ConsoleOverlay() {
   const inputRef = useRef<HTMLInputElement>(null);
   const linesRef = useRef<HTMLDivElement>(null);
   const pendingTimers = useRef<number[]>([]);
+  const lastObjective = useRef<string | null>(null);
 
   const visible = mode === GameMode.Console || (mode === GameMode.Transition && activeId !== null);
 
   useEffect(() => {
-    if (visible && !booted) {
-      setLines(toLines(core.welcome()));
+    if (!visible) return;
+    const objective = objectiveForSlice(useGame.getState().verticalSlice);
+    if (!booted) {
+      setLines([
+        ...toLines(core.welcome()),
+        { text: `RITO GUIADO: ${objective}`, cls: "system", scramble: false },
+      ]);
       setBooted(true);
+      lastObjective.current = objective;
+    } else if (lastObjective.current !== objective) {
+      setLines((prev) => [
+        ...prev,
+        { text: `RITO GUIADO: ${objective}`, cls: "system", scramble: false },
+      ]);
+      lastObjective.current = objective;
     }
   }, [visible, booted, core]);
 
@@ -115,8 +129,29 @@ export function ConsoleOverlay() {
     useGame
       .getState()
       .setPsychologicalPressure(pressure.pressure, pressure.recent[pressure.recent.length - 1] ?? null);
+    const sliceBefore = useGame.getState().verticalSlice;
+    useGame.getState().recordConsoleInput(trimmed);
+    const sliceAfter = useGame.getState().verticalSlice;
     const echo = { text: `> ${trimmed}`, cls: "echo", scramble: false };
     setLines((prev) => [...prev, echo]);
+    if (!sliceBefore.confessed && sliceAfter.confessed && sliceAfter.confessionFragment) {
+      setLines((prev) => [
+        ...prev,
+        {
+          text: `// frase archivada: «${sliceAfter.confessionFragment}» — los glifos la usarán.`,
+          cls: "mem",
+          scramble: true,
+        },
+      ]);
+    }
+    if (sliceBefore.step !== sliceAfter.step) {
+      const objective = objectiveForSlice(sliceAfter);
+      lastObjective.current = objective;
+      setLines((prev) => [
+        ...prev,
+        { text: `RITO GUIADO: ${objective}`, cls: "system", scramble: false },
+      ]);
+    }
     if (res) {
       const appendResponse = () => setLines((prev) => [...prev, ...toLines(res)]);
       if (res.delayMs && res.delayMs > 0) {

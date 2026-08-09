@@ -80,6 +80,87 @@ describe("game store pressure ending", () => {
   });
 });
 
+describe("game store stale room responses", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    resetPsychSession();
+    useGame.setState(useGame.getInitialState(), true);
+  });
+
+  async function flushMicrotasks(): Promise<void> {
+    for (let i = 0; i < 20; i += 1) await Promise.resolve();
+  }
+
+  it("ignores a late server room after the descent was dismissed", async () => {
+    let resolveFetch: ((r: Response) => void) | undefined;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        () =>
+          new Promise<Response>((resolve) => {
+            resolveFetch = resolve;
+          }),
+      ),
+    );
+
+    useGame.getState().invokeGlyph("echo", "glyph-stale-dismiss");
+    expect(useGame.getState().roomLoading).toBe(true);
+
+    useGame.getState().dismissRoom();
+    expect(useGame.getState().roomLoading).toBe(false);
+
+    resolveFetch?.(
+      responseWithJson({
+        name: "Late Room",
+        inscription: "",
+        description: "",
+        exits: ["north"],
+        dread: 0,
+        shape: "chamber",
+      }),
+    );
+    await flushMicrotasks();
+
+    expect(useGame.getState().room).toBeNull();
+    expect(useGame.getState().mode).toBe(GameMode.Exploration);
+    expect(useGame.getState().roomLoading).toBe(false);
+  });
+
+  it("ignores a late server room after the room collapsed", async () => {
+    let resolveFetch: ((r: Response) => void) | undefined;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        () =>
+          new Promise<Response>((resolve) => {
+            resolveFetch = resolve;
+          }),
+      ),
+    );
+
+    useGame.getState().invokeGlyph("echo", "glyph-stale-collapse");
+    expect(useGame.getState().roomLoading).toBe(true);
+
+    useGame.getState().collapseRoom();
+
+    resolveFetch?.(
+      responseWithJson({
+        name: "Collapsed Late Room",
+        inscription: "",
+        description: "",
+        exits: ["north"],
+        dread: 0,
+        shape: "chamber",
+      }),
+    );
+    await flushMicrotasks();
+
+    expect(useGame.getState().room).toBeNull();
+    expect(useGame.getState().mode).toBe(GameMode.Exploration);
+    expect(useGame.getState().roomLoading).toBe(false);
+  });
+});
+
 describe("game store pressure normalization", () => {
   afterEach(() => {
     vi.unstubAllGlobals();

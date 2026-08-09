@@ -27,6 +27,19 @@ import {
   symbolicSeedBias,
   type RuntimeTransferenceSnapshot,
 } from "./RuntimeTransference";
+import {
+  beginNextVariation,
+  confessionFragmentsForRoom,
+  loadVerticalSlice,
+  noteConsoleInput,
+  noteConsoleOpened,
+  noteFalseDoor,
+  noteGlyphInvoked,
+  noteRoomCrossed,
+  noteRoomDismissed,
+  saveVerticalSlice,
+  type VerticalSliceState,
+} from "./VerticalSlice";
 
 // Rooms are deterministic by seed, so a session cache makes re-crossing a door
 // you already opened instant and free — no second LLM call. Kept at module scope
@@ -47,6 +60,7 @@ const HISTORY_LIMIT = 8;
 const FALSE_DOOR_HISTORY_LIMIT = 12;
 const runtimeTransference = getRuntimeTransference();
 const initialTransference = runtimeTransference.bootstrap();
+const initialVerticalSlice = loadVerticalSlice();
 
 function resolveRoomEntryPressureEnding(state: GameState): PressureEndingState | null {
   return (
@@ -131,9 +145,12 @@ interface GameState {
   dangerousSeeds: number[];
   /** D2 pure-model outputs adapted into the live runtime */
   transference: RuntimeTransferenceSnapshot;
+  /** first-playable-run objective and authored consequence tracker */
+  verticalSlice: VerticalSliceState;
 
   enterConsoleMode: (consoleId: string) => void;
   exitConsoleMode: () => void;
+  recordConsoleInput: (input: string) => void;
   setNearbyConsole: (consoleId: string | null) => void;
   setNearbyGlyph: (glyphId: string | null) => void;
   setNearbyExit: (index: number | null) => void;
@@ -151,11 +168,18 @@ interface GameState {
   /** stability hit 0 — mark the room dangerous and expel to the maze */
   collapseRoom: () => void;
   dismissRoom: () => void;
+  /** closed rite -> open the next variation; scoped to the slice, keeps terminal memory */
+  startNextVariation: () => void;
 }
 
 const TRANSITION_MS = 500; // matches _modeTransitionDuration
 
 export const useGame = create<GameState>((set, get) => {
+  // Monotonic token for in-flight room generation: any flow change (new load,
+  // collapse, dismiss) bumps it, so a stale server response can never overwrite
+  // the mode/room the player already moved away from.
+  let roomRequestId = 0;
+
   // Single source of truth for loading a room by seed: cache hit -> instant and
   // free; miss -> generate via the LLM server and cache the result. Shared by
   // the glyph-invoke entry point and every door crossing.
@@ -182,6 +206,7 @@ export const useGame = create<GameState>((set, get) => {
     parentSeed: number | null,
     freshDescent: boolean
   ) => {
+    const requestId = ++roomRequestId;
     const cached = roomCache.get(seed);
     if (cached) {
       set((s) => {
@@ -217,6 +242,7 @@ export const useGame = create<GameState>((set, get) => {
     generateRoom({ seed, archetype, depth: get().depth, fragments })
       .then((room) => {
         cacheRoom(seed, room);
+        if (requestId !== roomRequestId) return;
         set((s) => {
           const emotionalHistory = s.psychologicalStance
             ? appendEmotionalHistory(s.emotionalHistory, {
@@ -245,7 +271,10 @@ export const useGame = create<GameState>((set, get) => {
         };
         });
       })
-      .catch((e) => set({ roomLoading: false, roomError: String(e) }));
+      .catch((e) => {
+        if (requestId !== roomRequestId) return;
+        set({ roomLoading: false, roomError: String(e) });
+      });
   };
 
   return {
@@ -274,10 +303,13 @@ export const useGame = create<GameState>((set, get) => {
   pressureEnding: null,
   dangerousSeeds: [],
   transference: initialTransference,
+  verticalSlice: initialVerticalSlice,
 
   enterConsoleMode: (consoleId) => {
     if (get().mode !== GameMode.Exploration) return;
-    set({ mode: GameMode.Transition, activeConsoleId: consoleId });
+    const nextSlice = noteConsoleOpened(get().verticalSlice, consoleId.toUpperCase());
+    saveVerticalSlice(nextSlice);
+    set({ mode: GameMode.Transition, activeConsoleId: consoleId, verticalSlice: nextSlice });
     window.setTimeout(() => {
       // Only settle into Console if we are still transitioning into it.
       if (get().activeConsoleId === consoleId) {
@@ -285,6 +317,13 @@ export const useGame = create<GameState>((set, get) => {
       }
     }, TRANSITION_MS);
   },
+
+  recordConsoleInput: (input) =>
+    set((s) => {
+      const verticalSlice = noteConsoleInput(s.verticalSlice, input);
+      if (verticalSlice !== s.verticalSlice) saveVerticalSlice(verticalSlice);
+      return { verticalSlice };
+    }),
 
   exitConsoleMode: () => {
     if (get().mode !== GameMode.Console) return;
@@ -392,8 +431,19 @@ export const useGame = create<GameState>((set, get) => {
       glyphId.length + archetype.length
     );
     // a glyph opens a fresh descent — clear the previous breadcrumb trail
-    set({ roomHistory: [] });
-    loadRoom(seed, archetype, [`ritual gravity ${gravity.archetypeBias[archetype].toFixed(2)}`], null, true);
+    const verticalSlice = noteGlyphInvoked(get().verticalSlice, glyphId, archetype);
+    saveVerticalSlice(verticalSlice);
+    set({ roomHistory: [], verticalSlice });
+    loadRoom(
+      seed,
+      archetype,
+      [
+        ...confessionFragmentsForRoom(verticalSlice),
+        `ritual gravity ${gravity.archetypeBias[archetype].toFixed(2)}`,
+      ],
+      null,
+      true
+    );
   },
 
   takeExit: (index) => {
@@ -417,6 +467,8 @@ export const useGame = create<GameState>((set, get) => {
       const pressure = recordEnvironmentalStance(consequence.pressureStance);
       stabilityEngine?.falseDoorPenalty();
       set((s) => {
+        const verticalSlice = noteFalseDoor(s.verticalSlice);
+        saveVerticalSlice(verticalSlice);
         const emotionalHistory = appendEmotionalHistory(s.emotionalHistory, {
           room: { seed: room.seed, name: room.name },
           stance: consequence.pressureStance,
@@ -441,6 +493,7 @@ export const useGame = create<GameState>((set, get) => {
         ].slice(-FALSE_DOOR_HISTORY_LIMIT),
         emotionalHistory,
         lastRoomWhisper: consequence.whisper,
+        verticalSlice,
         dangerousSeeds: s.dangerousSeeds.includes(room.seed)
           ? s.dangerousSeeds
           : [...s.dangerousSeeds, room.seed],
@@ -458,20 +511,27 @@ export const useGame = create<GameState>((set, get) => {
     }
     if (shouldOfferSafeExit(room, safeExit, get().transference.worldBehavior) && index === safeExit.index) {
       stabilityEngine?.safeDoorReward();
-      set({ lastRoomWhisper: "La puerta no se abre: deja de defenderse." });
+      const verticalSlice = noteRoomCrossed(get().verticalSlice, safeExit.label);
+      saveVerticalSlice(verticalSlice);
+      set({ lastRoomWhisper: "La puerta no se abre: deja de defenderse.", verticalSlice });
       loadRoom(safeExit.seed, roomArchetype, [room.inscription, "confession opened a stable path"], room.seed, false);
       return;
     }
     // a true door rewards a sliver of integrity, then carries the engine forward
     stabilityEngine?.safeDoorReward();
-    set({ lastRoomWhisper: null });
+    const exitLabel = room.exits[index] ?? `puerta ${index + 1}`;
+    const verticalSlice = noteRoomCrossed(get().verticalSlice, exitLabel);
+    saveVerticalSlice(verticalSlice);
+    set({ lastRoomWhisper: null, verticalSlice });
     loadRoom(seedForExit(room.seed, index), roomArchetype, [room.inscription], room.seed, false);
   },
 
   collapseRoom: () => {
     stabilityEngine = null;
+    roomRequestId += 1;
     set((s) => ({
       room: null,
+      roomLoading: false,
       roomError: null,
       roomArchetype: null,
       nearbyExit: null,
@@ -496,8 +556,10 @@ export const useGame = create<GameState>((set, get) => {
 
   dismissRoom: () => {
     stabilityEngine = null;
+    roomRequestId += 1;
     set((s) => ({
       room: null,
+      roomLoading: false,
       roomError: null,
       roomArchetype: null,
       nearbyExit: null,
@@ -513,8 +575,21 @@ export const useGame = create<GameState>((set, get) => {
         roomDepths: s.roomHistory.map((_, i) => Math.max(0, s.depth - s.roomHistory.length + i + 1)),
       }),
       mode: s.mode === GameMode.Room ? GameMode.Exploration : s.mode,
+      verticalSlice: (() => {
+        const verticalSlice = noteRoomDismissed(s.verticalSlice);
+        saveVerticalSlice(verticalSlice);
+        return verticalSlice;
+      })(),
     }));
   },
+
+  startNextVariation: () =>
+    set((s) => {
+      const verticalSlice = beginNextVariation(s.verticalSlice);
+      if (verticalSlice === s.verticalSlice) return s;
+      saveVerticalSlice(verticalSlice);
+      return { verticalSlice };
+    }),
   };
 });
 

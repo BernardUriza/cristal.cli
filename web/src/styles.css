@@ -40,12 +40,21 @@ canvas {
   transform: translateX(-50%);
   padding: 8px 16px;
   border: 1px solid var(--term-dim);
-  background: rgba(0, 0, 0, 0.65);
+  background: rgba(0, 0, 0, 0.78);
   color: var(--term-fg);
   font-size: 14px;
   letter-spacing: 1px;
   border-radius: 4px;
   text-shadow: 0 0 6px var(--term-dim);
+  text-align: center;
+  max-width: min(480px, calc(100vw - 24px));
+}
+
+.prompt-hint {
+  margin-top: 5px;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  color: var(--term-dim);
 }
 
 .prompt kbd {
@@ -192,6 +201,211 @@ canvas {
   font-size: 11px;
   color: var(--term-dim);
   letter-spacing: 2px;
+}
+
+.audio-control {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  pointer-events: auto;
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: var(--term-dim);
+}
+
+.audio-control .audio-mute {
+  padding: 2px 8px;
+  border: 1px solid var(--term-dim);
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.6);
+  color: var(--term-fg);
+  font: inherit;
+  cursor: pointer;
+  text-shadow: 0 0 6px var(--term-dim);
+}
+
+.audio-control .audio-mute.muted {
+  color: var(--term-dim);
+  text-shadow: none;
+}
+
+.audio-control .audio-volume {
+  width: 72px;
+  height: 4px;
+  accent-color: var(--term-fg);
+  background: transparent;
+  cursor: pointer;
+}
+
+.audio-control .audio-volume:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.objective-panel {
+  position: absolute;
+  top: 36px;
+  left: 12px;
+  width: min(360px, calc(100vw - 24px));
+  padding: 10px 12px;
+  border: 1px solid rgba(51, 221, 255, 0.42);
+  border-radius: 4px;
+  background: rgba(0, 6, 8, 0.66);
+  color: var(--term-fg);
+  text-shadow: 0 0 8px rgba(51, 255, 153, 0.22);
+}
+
+/* In-room the left column belongs to the danger badge, so the objective
+   collapses to one centered line at the top edge. */
+.objective-panel-compact {
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: auto;
+  max-width: min(480px, calc(100vw - 24px));
+  padding: 6px 12px;
+  text-align: center;
+}
+
+.objective-kicker {
+  margin-bottom: 4px;
+  color: var(--term-cyan);
+  font-size: 10px;
+  letter-spacing: 2px;
+}
+
+.objective-text {
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.objective-beats {
+  margin: 7px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--term-dim);
+}
+
+.objective-beats .beat.done {
+  color: var(--term-fg);
+}
+
+.objective-beats .beat span {
+  color: var(--term-cyan);
+}
+
+.objective-meta {
+  display: flex;
+  gap: 10px;
+  margin-top: 7px;
+  color: var(--term-dim);
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+.run-closure {
+  border-color: rgba(51, 255, 153, 0.55);
+  box-shadow: 0 0 18px rgba(51, 255, 153, 0.12);
+}
+
+.run-summary {
+  margin: 7px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 11px;
+  line-height: 1.55;
+  color: var(--term-fg);
+}
+
+.run-restart {
+  margin-top: 9px;
+  padding: 4px 8px;
+  border: 1px solid rgba(51, 221, 255, 0.42);
+  border-radius: 3px;
+  background: transparent;
+  color: var(--term-cyan);
+  font: inherit;
+  font-size: 12px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  text-shadow: 0 0 8px rgba(51, 221, 255, 0.28);
+}
+
+.run-restart:hover,
+.run-restart:focus-visible {
+  border-color: var(--term-cyan);
+  background: rgba(51, 221, 255, 0.08);
+  outline: none;
+}
+
+.run-closure-note {
+  margin-top: 6px;
+  color: var(--term-dim);
+  font-size: 10px;
+  letter-spacing: 1px;
+}
+
+.consequence-signal {
+  position: absolute;
+  top: 36px;
+  right: 12px;
+  width: min(360px, calc(100vw - 24px));
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 207, 92, 0.42);
+  border-radius: 4px;
+  background: rgba(12, 8, 0, 0.66);
+  color: #ffcf5c;
+  font-size: 12px;
+  line-height: 1.35;
+  text-shadow: 0 0 10px rgba(255, 207, 92, 0.18);
+  animation: consequence-life 9s ease-out forwards;
+}
+
+/* A fresh consequence flashes in, holds while it matters, then recedes without
+   disappearing — the last signal stays readable but stops competing. */
+@keyframes consequence-life {
+  0% {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  5% {
+    opacity: 1;
+    transform: translateY(0);
+    border-color: rgba(255, 207, 92, 0.9);
+    box-shadow: 0 0 22px rgba(255, 207, 92, 0.35);
+  }
+  70% {
+    opacity: 1;
+    border-color: rgba(255, 207, 92, 0.42);
+    box-shadow: none;
+  }
+  100% {
+    opacity: 0.55;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .consequence-signal {
+    animation: none;
+    opacity: 0.85;
+  }
+}
+
+.danger-badge {
+  position: fixed;
+  left: 16px;
+  top: 56px;
+  padding: 6px 10px;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  font: 11px monospace;
+  pointer-events: none;
 }
 
 .debug-hud {
@@ -375,6 +589,35 @@ canvas {
   color: var(--term-cyan);
 }
 
+.room-caption-hint kbd {
+  display: inline-block;
+  min-width: 20px;
+  padding: 0 5px;
+  margin: 0 2px;
+  border: 1px solid var(--term-cyan);
+  border-radius: 3px;
+  color: var(--term-cyan);
+  text-align: center;
+}
+
+.room-caption-hint-active {
+  color: var(--term-fg);
+  font-size: 13px;
+  animation: hint-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes hint-pulse {
+  50% {
+    text-shadow: 0 0 12px rgba(51, 255, 153, 0.7);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .room-caption-hint-active {
+    animation: none;
+  }
+}
+
 .room-breadcrumb {
   display: flex;
   justify-content: center;
@@ -451,4 +694,63 @@ canvas {
   font-size: 11px;
   letter-spacing: 1px;
   color: var(--term-dim);
+}
+
+/* Small screens: the HUD's top panels flow as a stacked column instead of two
+   absolutely-positioned columns fighting for the same corners, the prompt gets
+   a fixed offset clear of everything at the bottom, and the debug readout goes
+   away entirely. */
+@media (max-width: 760px) {
+  .hud {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding: 30px 8px 0;
+  }
+
+  .objective-panel,
+  .consequence-signal {
+    position: static;
+    transform: none;
+    width: auto;
+    max-width: none;
+  }
+
+  .prompt {
+    bottom: 96px;
+    width: calc(100vw - 24px);
+    max-width: none;
+  }
+
+  .debug-hud {
+    display: none;
+  }
+
+  .danger-badge {
+    position: static;
+    align-self: flex-start;
+  }
+
+  .room-panel {
+    right: 10px;
+    left: 10px;
+    width: auto;
+    max-height: 60vh;
+  }
+
+  .room-caption {
+    width: calc(100vw - 20px);
+    bottom: 12px;
+    padding: 12px;
+  }
+
+  .room-caption .room-trail {
+    display: none;
+  }
+
+  .room-breadcrumb,
+  .objective-meta {
+    flex-wrap: wrap;
+  }
 }

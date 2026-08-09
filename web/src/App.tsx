@@ -12,6 +12,8 @@ import { RoomCaption } from "./ui/RoomCaption";
 import { Minimap } from "./ui/Minimap";
 import { DangerBadge } from "./ui/DangerBadge";
 import { RoomJournal } from "./ui/RoomJournal";
+import { ConsequenceSignal, ObjectivePanel } from "./ui/ObjectivePanel";
+import { AudioControl } from "./ui/AudioControl";
 import { MusicDirector } from "./game/MusicDirector";
 import { useGame } from "./game/store";
 import { GameMode } from "./game/types";
@@ -107,9 +109,12 @@ export function App() {
 
       <div className="hud">
         <ModeBadge />
+        <ObjectivePanel />
         <InteractPrompt />
         <DebugHUD />
         <DangerBadge />
+        <ConsequenceSignal />
+        <AudioControl />
       </div>
       <RoomPanel />
       <RoomCaption />

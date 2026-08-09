@@ -108,10 +108,21 @@ export function RoomCaption() {
       {!pressureEnding?.active && transference.narrativeReflection && (
         <p className="room-trail room-whisper">{transference.narrativeReflection}</p>
       )}
-      <p className="room-caption-hint">
-        {exitText
-          ? `[E] cruzar — ${exitText}`
-          : "camina hasta una puerta para cruzar · [ESC] salir"}
+      <p
+        className={
+          exitText ? "room-caption-hint room-caption-hint-active" : "room-caption-hint"
+        }
+        role="status"
+      >
+        {exitText ? (
+          <>
+            <kbd>E</kbd> cruzar — {exitText}
+          </>
+        ) : (
+          <>
+            camina hasta una puerta para cruzar · <kbd>ESC</kbd> salir
+          </>
+        )}
       </p>
     </div>
   );

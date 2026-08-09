@@ -18,20 +18,7 @@ export function DangerBadge() {
   const color = ACTION_COLOR[recommendedAction];
 
   return (
-    <div
-      style={{
-        position: "fixed",
-        left: 16,
-        top: 56,
-        padding: "6px 10px",
-        background: "rgba(0,0,0,0.6)",
-        border: `1px solid ${color}`,
-        borderRadius: 4,
-        font: "11px monospace",
-        color,
-        pointerEvents: "none",
-      }}
-    >
+    <div className="danger-badge" style={{ borderColor: color, color }}>
       <div style={{ fontWeight: 700 }}>
         DANGER {dangerScore} · {recommendedAction.toUpperCase()}
       </div>
