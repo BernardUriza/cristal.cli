@@ -7,6 +7,7 @@ construidos sólo con vectores y geometría. Cero imágenes generadas por IA.
 
 - Generador: `web/src/game/friedebergSvg.ts` (TypeScript, junto a `glyphSvg.ts`, el generador de sellos de CRISTAL).
 - Primitivas compartidas: `web/src/game/svgPrimitives.ts` (RNG `mulberry32`, polígonos, radiales, concéntricos, flor de la vida, espiral logarítmica, estrellas).
+- Motivos ornamentales: `web/src/game/ornamentMotifs.ts` (greca, chevrón, hélice salomónica, abanico, roseta, volutas, Sierpinski, dovelaje, arcos anidados, anillo apuntado). Puros, en espacio de pantalla, con `level` y gate `visible(px)`.
 - Test: `web/src/game/friedebergSvg.test.ts`.
 - Render a disco: `node render.ts --seed=7 --density=0.6 --complexity=3 --palette=friedeberg` (Node 24 corre TS sin build). Sale en `out/` un `.svg` y un `.scene.json`.
 
@@ -35,3 +36,12 @@ piso → `PlaneGeometry` con shader de tablero. El `.scene.json` es el contrato.
 
 `seed` (reproducible), `density` 0..1 (estrías, bandas, diamantes del piso, festones), `complexity` 1..5 (dovelas, arcos anidados, pisos de cúpula, rosetas),
 `horizon`, `focal`, `camHeight`, `columns`, `palette` (`friedeberg` crema/magenta/turquesa/ocre, `noche` sobre negro con el verde de CRISTAL).
+
+## Gramática v2 (2026-10-15)
+
+- **Tres escalas por módulo.** Escala 1: colonnade (columnas, arcos, cúpula, entablamento). Escala 2: cada columna lleva bandas de chevrón alternadas con estrías, cada capitel volutas y roseta, cada dovela un rombo. Escala 3: la clave lleva roseta con puntos, la voluta lleva espiral interior, el chevrón lleva puntos. Cada escala se dibuja sólo si su tamaño proyectado pasa `visible(px, min)`: eso es LOD y es lo que evita el ruido.
+- **Sin vacíos.** Cada arco abre una galería: `complexity` niveles de arcos a profundidades `z + k·1.1·spacing`, con muros laterales en perspectiva (cuadriláteros que convergen al punto de fuga), nervaduras que unen arco exterior e interior, líneas de piso proyectadas, ventanitas en los muros y, al fondo, abanico + roseta. Entre arcos y entablamento hay un muro con abanicos en las enjutas y una fila de ventanas ciegas.
+- **Repetición con anomalías.** `anomalyRate` decide por seed: una columna salomónica (`helixBand`), un arco apuntado (`pointedRingPath` + arcos anidados), una ventana estrella, un triglifo invertido. La simetría global se conserva; la local se rompe en un módulo.
+- **Profundidad en fachada, no sólo en piso.** Sofito del entablamento con casetones proyectados (`view.project` a `z` y `z + depth`), escalones con cara superior y frontal, alas laterales a `z + 7` con cara lateral visible, galerías interiores.
+- **Autosimilitud estructural.** Las alas son la misma `Colonnade` con 3 columnas y `spacing·0.8`; la linterna es otra cúpula a 0.42; el sol lleva un Sierpinski de profundidad `complexity`; las rosetas se repiten en capitel, clave, friso y esquinas del marco.
+- **Paleta.** Magenta y turquesa bajados de saturación, crema de muro distinto del fondo, línea de tinta en todo. La sofisticación va en la línea, no en el color.
