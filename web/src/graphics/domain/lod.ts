@@ -16,3 +16,8 @@ export function lodLevel(projectedPx: number, thresholds: readonly number[]): nu
   for (const t of thresholds) if (projectedPx >= t) level++;
   return level;
 }
+
+export function projectedHeightPx(worldHeight: number, distance: number, fovDeg: number, viewportPx: number): number {
+  const halfFov = (fovDeg * Math.PI) / 360;
+  return (worldHeight * (viewportPx / 2)) / (Math.max(distance, 1e-6) * Math.tan(halfFov));
+}

@@ -7,6 +7,8 @@ long vague one.
 ## Layout
 - `src/game/` — game logic + R3F components (Scene, Labyrinth, Player, RoomScene, …)
   and **pure logic modules** (`maze.ts`, `store.ts`, `types.ts`, `StabilityEngine.ts`).
+- `src/graphics/` — procedural graphics subsystem (grammar → SVG | Canvas 2D | Three.js + GLSL);
+  layer map and rules in `src/graphics/CLAUDE.md`. Preview: `/?view=graphics&backend=svg|canvas|three`.
 - `src/terminal/` — terminal core ported from Unity.
 - `src/ui/` — React UI overlays.
 - `public/` — static assets served at `/` (e.g. `public/brand/` icons).
@@ -14,9 +16,8 @@ long vague one.
 ## Commands (run from `web/`)
 - `npm run typecheck` — `tsc -b --noEmit`. **This is the verification gate. Every change must pass it.**
 - `npm run dev` — Vite dev server (browser verification; usually :5173).
-- There is **no unit-test runner installed yet** (no vitest/jest). Tests may be
-  written in vitest style (`import { describe, it, expect } from 'vitest'`) for when a
-  runner lands, but they are NOT executed by `typecheck` — do not claim them green.
+- `npm test` — `vitest run`. Tests live next to their module (`x.test.ts`); run them before
+  claiming green, `typecheck` does not execute them.
 
 ## Conventions
 - TypeScript, ES modules, 2-space indent. Match the existing style in

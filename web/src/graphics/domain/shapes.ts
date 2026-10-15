@@ -10,7 +10,8 @@ export type Style = {
 };
 
 export type PathSegment =
-  | { op: "M" | "L"; p: Vec2 }
+  | { op: "M"; p: Vec2 }
+  | { op: "L"; p: Vec2 }
   | { op: "A"; r: number; large: 0 | 1; sweep: 0 | 1; p: Vec2 }
   | { op: "Z" };
 

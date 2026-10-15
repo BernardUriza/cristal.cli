@@ -69,3 +69,17 @@ export function pointedRingSegments(cx: number, cy: number, rOut: number, rIn: n
     { op: "Z" },
   ];
 }
+
+export type CircularArc = { cx: number; cy: number; r: number; a0: number; a1: number; anticlockwise: boolean };
+
+export function arcFromEndpoints(p0: Vec2, p1: Vec2, radius: number, large: 0 | 1, sweep: 0 | 1): CircularArc {
+  const dx = p1[0] - p0[0];
+  const dy = p1[1] - p0[1];
+  const d = Math.hypot(dx, dy);
+  const r = Math.max(radius, d / 2);
+  const h = Math.sqrt(Math.max(0, r * r - (d / 2) * (d / 2)));
+  const sign = large === sweep ? -1 : 1;
+  const cx = (p0[0] + p1[0]) / 2 + (sign * h * -dy) / d;
+  const cy = (p0[1] + p1[1]) / 2 + (sign * h * dx) / d;
+  return { cx, cy, r, a0: Math.atan2(p0[1] - cy, p0[0] - cx), a1: Math.atan2(p1[1] - cy, p1[0] - cx), anticlockwise: sweep === 0 };
+}

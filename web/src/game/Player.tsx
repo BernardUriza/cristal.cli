@@ -73,10 +73,12 @@ export function Player({ maze, spawn, consoles, glyphs }: PlayerProps) {
       __player: typeof pos;
       __glyphs: GlyphRef[];
       __scene: THREE.Scene;
+      __camera: THREE.Camera;
     };
     devWindow.__player = pos;
     devWindow.__glyphs = glyphs;
     devWindow.__scene = scene;
+    devWindow.__camera = camera;
   }
 
   useFrame((_, dtRaw) => {

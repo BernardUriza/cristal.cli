@@ -10,6 +10,8 @@ import { cellCenter, generateMaze } from "./maze";
 import { MAZE_COLS, MAZE_ROWS, MAZE_SEED, SPAWN_CELL } from "./mazeConfig";
 import { CONSOLE_NODES, GLYPH_NODES, WORLD_NODES } from "./worldNodes";
 import { useGame } from "./store";
+import { Temple } from "../graphics/presentation/Temple";
+import { GAME_COMPOSITION, TEMPLE_PLACEMENT } from "../graphics/config/composition";
 
 export function Scene() {
   const maze = useMemo(() => generateMaze(MAZE_COLS, MAZE_ROWS, MAZE_SEED), []);
@@ -80,6 +82,7 @@ export function Scene() {
       />
 
       <Labyrinth maze={maze} />
+      <Temple input={GAME_COMPOSITION} position={TEMPLE_PLACEMENT.position} rotation={TEMPLE_PLACEMENT.rotation} viewDistance={TEMPLE_PLACEMENT.viewDistance} />
 
       {visibleConsoles.map((c) => {
         const [x, z] = cellCenter(maze, c.cell[0], c.cell[1]);
