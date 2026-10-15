@@ -5,17 +5,21 @@ construidos sólo con vectores y geometría. Cero imágenes generadas por IA.
 
 ## Dónde vive el código
 
-- Generador: `web/src/game/friedebergSvg.ts` (TypeScript, junto a `glyphSvg.ts`, el generador de sellos de CRISTAL).
-- Primitivas compartidas: `web/src/game/svgPrimitives.ts` (RNG `mulberry32`, polígonos, radiales, concéntricos, flor de la vida, espiral logarítmica, estrellas).
-- Motivos ornamentales: `web/src/game/ornamentMotifs.ts` (greca, chevrón, hélice salomónica, abanico, roseta, volutas, Sierpinski, dovelaje, arcos anidados, anillo apuntado). Puros, en espacio de pantalla, con `level` y gate `visible(px)`.
-- Test: `web/src/game/friedebergSvg.test.ts`.
-- Render a disco: `node render.ts --seed=7 --density=0.6 --complexity=3 --palette=friedeberg` (Node 24 corre TS sin build). Sale en `out/` un `.svg` y un `.scene.json`.
+Desde 2026-10-15 el generador es el subsistema `web/src/graphics/` (mapa de capas en `web/src/graphics/CLAUDE.md`):
 
-## Arquitectura: escena en unidades de mundo → proyección → SVG
+- Gramática en metros: `graphics/domain/architecture/` (`buildArchitecture`, `buildColonnade`). Los esquemas ornamentales de cada columna, arco, cúpula y entablamento son datos del modelo, no decisiones del dibujo.
+- Motivos ornamentales: `graphics/domain/motifs/` (greca, chevrón, hélice salomónica, abanico, roseta, volutas, Sierpinski, dovelaje, arcos anidados, anillo apuntado, sigilos). Puros, emiten `Shape[]`, LOD por `shows(px)`.
+- Composición 2D: `graphics/application/compose.ts` (`composeIllustration(config)` → `DisplayList` por capas) y `application/facade/*` (un pintor por elemento). Proyección en `application/projection.ts` (perspectiva de un punto o alzado).
+- Serialización: `graphics/renderers/svg/serialize.ts` (`toSvg`). El mismo `DisplayList` lo pinta Canvas 2D y lo rasteriza Three.js como textura.
+- Configuración: `graphics/config/` (`ArtConfig`/`TechConfig`, paletas, presets `sparse|base|dense|noche|elevation`, `resolveConfig` valida en la frontera).
+- Tests: `web/src/graphics/**/*.test.ts` (`npx vitest run src/graphics` desde `web/`).
+- Render a disco: `node render.ts --preset=dense` o `node render.ts --seed=7 --density=0.6 --complexity=3 --palette=friedeberg --symmetry=bilateral` (Node 24 corre TS sin build). Sale en `out/` un `.svg` y un `.scene.json` con la `Architecture`.
 
-`buildScene(cfg, rng)` produce una escena en metros (columnas con `x, z, h, r`; arcos con `x0, x1, y, r`; cúpula con `x, z, y, r, ribs`; piso con `tile`).
-Nada ahí sabe de píxeles. `makeView(cfg)` es la única capa que proyecta (perspectiva de un punto de fuga); los `draw*` reciben la vista y la escena.
-Para pasar a Three.js se reusa `buildScene` tal cual: columna → `CylinderGeometry`, cúpula → `SphereGeometry(thetaLength = π/2)`, arco → `TorusGeometry(arc = π)`,
+## Arquitectura: gramática en metros → proyección → DisplayList → SVG | Canvas | Three
+
+`buildArchitecture(art, rng)` produce el modelo en metros (columnas con `x, z, h, r, shaft, capital`; arcos con `x0, x1, y, r, gallery, voussoirs`; cúpula con `ribs, tiers, windows`; piso con `tile`).
+Nada ahí sabe de píxeles. `makeView(tech, z)` es la única proyección; los pintores de `facade/` reciben la vista y el modelo y emiten formas 2D que cualquier backend serializa.
+Three.js reusa `buildArchitecture` tal cual: columna → `CylinderGeometry`, cúpula → `SphereGeometry(thetaLength = π/2)`, arco → `TorusGeometry(arc = π)`,
 piso → `PlaneGeometry` con shader de tablero. El `.scene.json` es el contrato.
 
 ## Principios matemáticos y compositivos

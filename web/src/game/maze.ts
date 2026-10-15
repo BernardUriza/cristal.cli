@@ -2,6 +2,8 @@
 // stable across reloads without needing a saved .unity scene. Cells are square;
 // a wall lives on the boundary between two cells.
 
+import { mulberry32 } from "../graphics/domain/rng";
+
 export const CELL = 4; // world units per maze cell
 export const WALL_HEIGHT = 3.5;
 export const WALL_THICK = 0.4;
@@ -21,18 +23,6 @@ export interface Maze {
   cols: number;
   rows: number;
   cells: Cell[][];
-}
-
-// Small deterministic PRNG (mulberry32) so a fixed seed => fixed labyrinth.
-function mulberry32(seed: number) {
-  let a = seed >>> 0;
-  return () => {
-    a |= 0;
-    a = (a + 0x6d2b79f5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
 }
 
 export function generateMaze(cols: number, rows: number, seed = 1337): Maze {
