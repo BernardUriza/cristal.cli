@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Auditoría: gramática arquitectónica computacional (Friedeberg)</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="/dev/null" />
+  <style>
+  :root{--bg:#f3e7c6;--ink:#1a1412;--mag:#b8336a;--tur:#2f8f86;--gold:#c89a2a;--wall:#e6d5ab}
+  body{max-width:980px;margin:0 auto;padding:32px 20px 80px;font:16px/1.55 -apple-system,"Helvetica Neue",Arial,sans-serif;background:var(--bg);color:var(--ink)}
+  h1{font-size:1.9rem;line-height:1.2;border-bottom:4px double var(--mag);padding-bottom:10px}
+  h2{font-size:1.35rem;color:var(--mag);margin-top:2.2em;border-left:6px solid var(--gold);padding-left:12px}
+  h3{font-size:1.08rem;color:var(--tur);margin-top:1.6em}
+  table{border-collapse:collapse;width:100%;margin:14px 0;font-size:.92rem;background:#fff9ea}
+  th{background:var(--ink);color:var(--bg);text-align:left;padding:8px}
+  td{padding:8px;border-bottom:1px solid var(--wall);vertical-align:top}
+  tr:nth-child(even) td{background:#f8efd6}
+  code{background:#fff3d6;border:1px solid var(--wall);border-radius:3px;padding:1px 4px;font-size:.88em}
+  strong{color:var(--mag)}
+  ol,ul{padding-left:1.4em}
+  li{margin:4px 0}
+  a{color:var(--tur);word-break:break-all}
+  p{margin:.7em 0}
+  @media (prefers-color-scheme:dark){:root{--bg:#0b0b12;--ink:#f1e6c8;--mag:#d8468f;--tur:#2fb7c9;--gold:#e0b24a;--wall:#2a2a3e}table{background:#16162a}tr:nth-child(even) td{background:#1c1c33}code{background:#1c1c33;border-color:#2a2a3e}}
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Auditoría: gramática arquitectónica computacional
+(Friedeberg)</h1>
+</header>
+<h1
+id="auditoría-del-generador-de-fachadas-a-una-gramática-arquitectónica-computacional">Auditoría:
+del generador de fachadas a una gramática arquitectónica
+computacional</h1>
+<p>Fecha: 2026-10-15. Alcance:
+<code>web/src/game/friedebergSvg.ts</code>,
+<code>ornamentMotifs.ts</code>, <code>svgPrimitives.ts</code>, lo
+reusable del juego 3D (<code>maze.ts</code>, <code>mazeGraph.ts</code>,
+<code>RoomScene.tsx</code>, <code>proceduralPbrTextures.ts</code>,
+<code>RitualGlyph.tsx</code>) y <code>i+d/terminal-2d-basico</code>.
+Pregunta: ¿qué del motor actual ya soporta "un modelo geométrico →
+planta, alzado, sección, axonometría y vista navegable" y qué falta?</p>
+<h2 id="1-lo-que-ya-existe-y-se-conserva">1. Lo que ya existe y se
+conserva</h2>
+<table>
+<thead>
+<tr>
+<th>Pieza</th>
+<th>Qué hace hoy</th>
+<th>Veredicto</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>buildScene(cfg, rng)</code></td>
+<td>Escena en metros, separada de píxeles: columnas
+<code>{x,z,h,r}</code>, arcos <code>{x0,x1,z,y,r}</code>, cúpula, piso,
+plataforma, alas</td>
+<td><strong>Se conserva como semilla del modelo</strong>, pero es una
+<em>escena de fachada</em> (lista de colonnades), no un edificio: no hay
+planta, muros, habitaciones ni estructura. Pasa a ser una <em>vista
+derivada</em> del modelo nuevo.</td>
+</tr>
+<tr>
+<td><code>View.project(x,y,z) → [sx,sy]</code></td>
+<td>Único punto de proyección (perspectiva de un punto de fuga)</td>
+<td><strong>Es exactamente la costura correcta.</strong> El proyector se
+vuelve una interfaz <code>Projector</code> con implementaciones
+iso/dimétrica/oblicua/ortográfica/cónica.</td>
+</tr>
+<tr>
+<td><code>facade(view, z)</code></td>
+<td>Atajo: escala uniforme para un plano frontal a profundidad
+<code>z</code></td>
+<td><strong>Es la deuda.</strong> Casi todo <code>draw*</code> lo usa;
+asume plano frontal y perspectiva de un punto. Con proyecciones
+paralelas la escala constante sigue valiendo, con dos puntos de fuga no.
+Se reemplaza por proyección de polígonos 3D reales.</td>
+</tr>
+<tr>
+<td><code>ornamentMotifs.ts</code></td>
+<td>Motivos puros en espacio de pantalla con <code>level</code> y gate
+<code>visible(px)</code></td>
+<td><strong>Se conserva íntegro.</strong> Es el LOD. Para Three.js se
+reusa vía SVG → textura (camino ya existente en
+<code>RitualGlyph.tsx</code>: <code>glyphSvgDataUri</code> →
+<code>TextureLoader</code>) o se reescribe en GLSL para los patrones
+puramente matemáticos (greca, chevrón, tablero).</td>
+</tr>
+<tr>
+<td><code>svgPrimitives.ts</code></td>
+<td><code>mulberry32</code>, espiral logarítmica, estrellas, flor de la
+vida</td>
+<td>Se conserva. <code>maze.ts</code> duplica <code>mulberry32</code> en
+privado: unificar (Art. 6).</td>
+</tr>
+<tr>
+<td>Anomalías (<code>anomalyRate</code>)</td>
+<td><code>twisted</code>, <code>pointed</code>, <code>star</code>,
+<code>flipped</code> elegidas por seed en
+<code>buildColonnade</code></td>
+<td>Embrión correcto: la anomalía vive en el <strong>modelo</strong>, no
+en el dibujo. Falta que sea una transformación con traza (qué regla,
+sobre qué elemento, con qué parámetros).</td>
+</tr>
+<tr>
+<td>Tests (<code>friedebergSvg.test.ts</code>)</td>
+<td>Determinismo, simetría, anomalías gated, ornamento escala con
+density/complexity</td>
+<td>Se conservan y se extienden con validaciones espaciales. 4/4 verdes
+hoy.</td>
+</tr>
+<tr>
+<td><code>maze.ts</code> + <code>mazeGraph.ts</code></td>
+<td>Celdas con muros n/s/e/w, BFS <code>shortestPath</code>,
+<code>connectedNeighbors</code></td>
+<td><strong>Reusable para validar conectividad de la planta</strong>:
+grafo de habitaciones con puertas es el mismo problema.</td>
+</tr>
+<tr>
+<td><code>RoomScene.tsx</code></td>
+<td>Habitaciones como <code>boxGeometry</code> +
+<code>planeGeometry</code>, puertas por <code>buildDoors</code></td>
+<td>Patrón 3D existente para "habitación con puertas". No sirve para
+muros con huecos ni arcos; se sustituye por geometría generada del
+modelo.</td>
+</tr>
+<tr>
+<td><code>proceduralPbrTextures.ts</code></td>
+<td><code>CanvasTexture</code> procedural (fbm) para materiales</td>
+<td>Camino canónico para ornamento como material en Three.js.</td>
+</tr>
+<tr>
+<td><code>i+d/terminal-2d-basico/index.html</code></td>
+<td>Terminal HTML con importmap a <code>three@0.169.0</code>, sin
+build</td>
+<td>Restricción de compatibilidad: modelo y renderizadores deben ser ESM
+puros, sin React, cargables por importmap.</td>
+</tr>
+<tr>
+<td><code>render.ts</code> + <code>.scene.json</code></td>
+<td>Node 24 corre TS directo y escribe SVG + escena</td>
+<td>Se conserva; el <code>.scene.json</code> pasa a ser el modelo
+completo (<code>building.json</code>).</td>
+</tr>
+</tbody>
+</table>
+<h3
+id="11-el-refactor-paralelo-en-curso-websrcgraphics-sesión-abierta-a-las-0304-sin-commit-todavía">1.1
+El refactor paralelo en curso: <code>web/src/graphics/</code> (sesión
+abierta a las 03:04, sin commit todavía)</h3>
+<p>Otra sesión está migrando el generador a capas (<code>domain/</code>,
+<code>application/</code>, <code>renderers/</code>,
+<code>config/</code>, ~1300 líneas, 28 archivos) y
+<code>render.ts</code> ya apunta ahí (<code>composeIllustration</code> →
+<code>toSvg</code>). Leído sin tocarlo. Qué resuelve y qué no, respecto
+al pedido:</p>
+<table>
+<thead>
+<tr>
+<th>Capa nueva</th>
+<th>Qué trae</th>
+<th>Respecto a la gramática arquitectónica</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>config/types.ts</code></td>
+<td><code>ArtConfig</code> / <code>TechConfig</code> tipados,
+<code>ProjectionKind = "perspective" | "elevation"</code>,
+<code>RenderBackend = "svg" | "canvas" | "three"</code>,
+<code>ShaderPreset</code>, presets, validación</td>
+<td><strong>Cumple</strong> "reglas y parámetros en config tipada".
+<code>ProjectionKind</code> es el lugar donde entran
+iso/dimétrica/oblicua/sección.</td>
+</tr>
+<tr>
+<td><code>domain/architecture/types.ts</code> + <code>build.ts</code> +
+<code>colonnade.ts</code></td>
+<td>El mismo modelo <code>Colonnade</code> de antes con más atributos de
+detalle (<code>ShaftScheme</code>, <code>voussoirs</code>,
+<code>nestedRings</code>, <code>detailLevel</code>) y
+<code>symmetry</code></td>
+<td><strong>Sigue siendo escena de fachada</strong>: ni planta, ni
+muros, ni masas, ni estructura. Es el punto exacto donde se inserta
+<code>program → plan → mass → structure</code>.</td>
+</tr>
+<tr>
+<td><code>domain/geometry.ts</code>, <code>domain/shapes.ts</code></td>
+<td>Primitivas 2D (<code>Vec2</code>, <code>PathSegment</code>, polígono
+regular, estrella, espiral, cuña, arco de dos centros
+<code>R = 1.3r</code>)</td>
+<td><strong>Todo es 2D de pantalla.</strong> Falta <code>Vec3</code>,
+<code>Polygon3D</code>, matriz 4×4. El arco apuntado usa
+<code>1.3r</code> y <code>1.25r</code> a ojo: el de dos centros de §3.3
+(<code>ρ = S/2 + d</code>) lo sustituye con parámetro con nombre.</td>
+</tr>
+<tr>
+<td><code>domain/lod.ts</code></td>
+<td><code>visible(px)</code>, <code>makeLod(detailScale)</code>,
+<code>lodLevel(px, thresholds)</code></td>
+<td>Se conserva tal cual; sólo cambia quién calcula <code>px</code>
+(tamaño proyectado del polígono 3D).</td>
+</tr>
+<tr>
+<td><code>application/projection.ts</code></td>
+<td><code>makeView(tech, referenceZ)</code> con <code>scaleAt(z)</code>:
+perspectiva <code>f/z</code> o elevación <code>f/referenceZ</code>;
+<code>facade(view, z)</code> sigue vivo</td>
+<td><strong>El modo "elevation" es escala constante sobre el mismo
+dibujo frontal, no una proyección ortográfica del modelo.</strong> Aquí
+entra el <code>Projector</code> matricial de la Fase 0;
+<code>facade()</code> se borra en la Fase 7.</td>
+</tr>
+<tr>
+<td><code>application/painter.ts</code> +
+<code>application/facade/*</code></td>
+<td>Pintores por elemento (column, dome, opening, wall…) que reciben
+<code>Painter = { view, pal, art, lod }</code> y emiten
+<code>DisplayList</code></td>
+<td>Es la vista de fachada legacy ya aislada: perfecto para envolverla y
+después igualarla.</td>
+</tr>
+<tr>
+<td><code>renderers/svg/serialize.ts</code>,
+<code>renderers/pathData.ts</code></td>
+<td><code>DisplayList</code> (rect, path, polygon en píxeles) → SVG</td>
+<td><strong>Renderer tonto, bien.</strong> La DisplayList es 2D: Canvas
+la consume directo, Three.js sólo como textura. La geometría 3D
+compartida vive un nivel antes (polígonos 3D → proyector →
+DisplayList).</td>
+</tr>
+<tr>
+<td><code>presentation/</code></td>
+<td>Vacía por ahora</td>
+<td>Componentes dumb pendientes.</td>
+</tr>
+</tbody>
+</table>
+<p>Conclusión: el refactor paralelo <strong>no se duplica ni se
+corrige</strong>; la ruta de §4 se monta encima de él. Sus nombres
+(<code>domain/architecture</code>, <code>application/projection</code>,
+<code>renderers/*</code>) son los que usa la ruta.</p>
+<p>Render actual visto (<code>out/friedeberg-s7-d0.6-c3.svg</code>,
+<code>s23-d0.9-c5</code>): fachada frontal con galerías en perspectiva;
+toda la profundidad es <em>fingida</em> por <code>facade()</code> a
+distintas <code>z</code> sobre un plano; no hay planta detrás. Es justo
+lo que Bernard describió como "fachadas que simulan profundidad mediante
+líneas arbitrarias".</p>
+<h2 id="2-lo-que-falta-por-capa-del-pedido">2. Lo que falta, por capa
+del pedido</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Capa</th>
+<th>Estado</th>
+<th>Falta</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Programa espacial</td>
+<td>No existe</td>
+<td>Tipos <code>Space</code>, <code>Adjacency</code>; programa del
+experimento (patio, galería, 4 torres, salas) como config tipada.</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Planta</td>
+<td>No existe</td>
+<td><code>Plan</code>: muros como segmentos con grosor, habitaciones
+como polígonos, huecos (puertas/arcos) sobre muros, patio como
+habitación exterior.</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Volumetría</td>
+<td>Parcial (<code>h</code> de columna, <code>y</code> de
+entablamento)</td>
+<td><code>Mass</code>: extrusión de cada habitación a su altura, torres
+como prismas/cilindros, cubiertas (skeleton recto o paramétricas),
+cúpulas por revolución.</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Estructura</td>
+<td>Implícita (columnas y arcos sueltos)</td>
+<td><code>Structure</code>: apoyos y luces derivados de la planta (vano
+= distancia entre apoyos), arcos como función del vano, verificación
+luz/altura.</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Proyección</td>
+<td>Sólo cónica de un punto</td>
+<td>Proyectores paralelos (iso, dimétrica, caballera, militar),
+ortográficos (planta, alzado, sección), cónica de dos puntos;
+<strong>una sola matriz</strong> compartida con la cámara de
+Three.js.</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Lenguaje</td>
+<td>Proporciones a ojo (<code>r = spacing·0.125</code>,
+<code>entH = spacing·0.28</code>)</td>
+<td><code>orders.ts</code> con módulos de Vignola/Vitruvio/Palladio
+citados.</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Ornamento sobre superficies reales</td>
+<td>En pantalla, por <code>facade()</code></td>
+<td>Mapeo motivo → cara del modelo (UV de cada polígono) para que el
+mismo motivo caiga en SVG y en textura/GLSL.</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Transgresión</td>
+<td>Flags por seed</td>
+<td><code>Anomaly</code> como transformación nombrada
+<code>model → model'</code> con <code>trace</code> y test de que la
+geometría original es recuperable.</td>
+</tr>
+<tr>
+<td>—</td>
+<td>Líneas ocultas / sección</td>
+<td>No existe (painter's por capas a mano)</td>
+<td>Corte por plano (segmentos → polígonos cerrados → poché) y
+eliminación de líneas ocultas para SVG.</td>
+</tr>
+<tr>
+<td>—</td>
+<td>Validaciones</td>
+<td>Simetría y conteo</td>
+<td>Conectividad (BFS sobre habitaciones), no-solape, patio cerrado,
+torres en esquinas, proporciones dentro del orden, misma geometría en
+todas las vistas.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="3-qué-dice-la-literatura-7-investigadores-fuentes-al-final">3.
+Qué dice la literatura (7 investigadores, fuentes al final)</h2>
+<h3 id="31-formalismo-cga-shape-grammar-implementada-en-casa">3.1
+Formalismo: CGA shape grammar, implementada en casa</h3>
+<p>Linaje: Stiny 1971/72 → Wonka 2003 (split grammars) → Müller 2006
+(CGA shape, el estándar de facto). Operaciones núcleo:
+<code>scope</code> (caja orientada), <code>split</code> por eje con
+tamaños absolutos/relativos/flotantes <code>~</code> y repetición
+<code>[*]</code>, <code>comp(f|e|v)</code> (descomponer en
+caras/aristas/vértices), <code>extrude</code>, <code>roof*</code>,
+<code>offset</code>, <code>insert</code>, consultas de oclusión
+(<code>inside/overlaps/touches</code>, sólo contra sólidos cerrados).
+Orden grueso→fino: masa → fachada → detalle. <strong>CERTEZA:
+CONFIRMADA</strong> para la estructura, PROBABLE para la semántica
+exacta de operadores (el worker no abrió el PDF completo).</p>
+<p>Implementaciones JS: <code>gromgull/cgajs</code> (Apache-2.0, muerto
+desde 2017, subconjunto "muy buggy" según su autor, sin
+<code>roof*</code>, <code>offset</code>, reglas paramétricas) y
+<code>pboechat/ShapeGrammars.js</code> (sin licencia, 9 commits).
+<strong>Veredicto: ninguna sirve como dependencia; se escribe un motor
+split-grammar propio en TS</strong> usando cgajs sólo como referencia de
+diseño. PROBABLE (la ausencia descansa en pocas búsquedas).</p>
+<p>CGA no genera plantas interiores: Müller 2006 hace masa + fachada.
+Las plantas vienen de otra familia (treemaps, Merrell 2010, gramáticas
+de planta tipo Palladio/Mies). El diseño sano: gramática de subdivisión
+sobre el footprint 2D → <code>extrude</code> + <code>comp</code> estilo
+CGA.</p>
+<h3 id="32-planta-el-claustro-se-modela-explícito-no-se-descubre">3.2
+Planta: el claustro se modela explícito, no se "descubre"</h3>
+<ul>
+<li>Squarified treemap (Bruls/Huizing/van Wijk 2000) y su adaptación a
+plantas (Marson &amp; Musse 2010): rectángulos por área, pasillos
+añadidos para evitar habitaciones inalcanzables. Tractable (~60-100
+líneas). No impone adyacencias.</li>
+<li>Merrell, <strong>Schkufza</strong> &amp; Koltun 2010 (SIGGRAPH
+Asia): red bayesiana + optimización estocástica. Necesita datos de
+entrenamiento y ~30 s por layout. <strong>Fuera de alcance</strong>; se
+toma sólo su arquitectura (programa → búsqueda → función de costo).</li>
+<li>Lopes/Bidarra 2010 "constrained growth": alcanzabilidad garantizada
+por construcción. Mejor ajuste conceptual.</li>
+<li><strong>Tipología de claustro (CONFIRMADA, 4 fuentes)</strong>:
+galería cubierta alrededor de un patio (garth), edificios principales
+conectados por la galería, antecedente el peristilo romano.
+Descomposición propuesta por el worker (su inferencia, no un algoritmo
+publicado): footprint rectangular → patio central → anillo de galería
+por offset → anillo exterior dividido en 4 bloques de esquina (torres) +
+4 bandas laterales subdivididas 1-D → toda habitación toca la galería
+por su cara interior, luego la puerta va ahí y la conectividad queda
+garantizada por construcción. ~80 líneas, determinista.</li>
+<li>Validación: grafo de acceso (nodos = habitaciones, galerías, patio,
+torres, exterior; aristas = puertas) + BFS desde la entrada; métricas de
+space syntax (profundidad media, RA = 2(MD−1)/(n−2)) como test
+descriptivo, no oráculo. Chequeos de proporción: aspect ratio, área
+mínima, suma de áreas = footprint, no solape, ancho de galería
+consistente con el vano de los arcos.</li>
+<li>Nota del worker: los nombres "Lo &amp; Marmorstein / Peng" que puse
+en el brief <strong>no existen</strong> en ninguna fuente.
+Descartados.</li>
+</ul>
+<h3 id="33-cubiertas-y-bóvedas">3.3 Cubiertas y bóvedas</h3>
+<ul>
+<li><strong>Straight skeleton</strong> (Aichholzer et al. 1995; Felkel
+&amp; Obdržálek 1998): cada cara del esqueleto es un plano de cubierta,
+<code>z = pendiente × distancia a la arista origen</code>. Con un patio
+(anillo exterior CCW + hueco CW) sale una cubierta a cuatro aguas anular
+que cae hacia fuera y hacia el patio. Si patio y muro exterior son
+paralelos y equidistantes, aparece una franja plana degenerada: elegir
+pendiente y ancho de galería para evitarlo.</li>
+<li>Paquete: <code>straight-skeleton</code> v3.0.0 (npm, 2026-03-24,
+MIT) envuelve <strong>CGAL compilado a Wasm, y el módulo de CGAL es
+GPL</strong>. Riesgo de licencia no resuelto por ninguna fuente.
+<strong>Decisión: para el experimento no se toma la
+dependencia</strong>; la cubierta anular del rectángulo se construye
+paramétrica (4 alas trapezoidales con juntas en las bisectrices a 45°,
+que es exactamente el resultado del esqueleto para un rectángulo). El
+esqueleto general queda como fase posterior si aparecen footprints no
+rectangulares.</li>
+<li>Cúpulas: hemisferio <code>(R·sin t, R·cos t)</code>; apuntada de dos
+centros con <code>ρ = S/2 + d</code> (d=0 semicircular, d=S/2
+equilátera); bulbosa sin ecuación canónica (spline por tres tramos:
+bulbo &gt; tambor, curva ogee, punta). Todo por
+<code>LatheGeometry</code>. Bóveda de arista = <code>max</code> de dos
+cañones ortogonales, bóveda de claustro = <code>min</code>; fácil
+confundirlas en código.</li>
+<li>Three.js r169 (CONFIRMADO leyendo fuente):
+<code>ExtrudeGeometry</code> tiene <strong>bevel activado por
+defecto</strong> (apagarlo), invierte el contorno si no es CW y sólo
+normaliza huecos en esa rama → pasar exterior CCW y huecos CW y testear;
+<code>ShapeUtils.removeDupEndPts</code> <strong>muta</strong> los arrays
+del llamador (pasar copias si el mismo anillo alimenta el SVG).
+Convención de anillo cerrado opuesta entre el esqueleto (repite el
+primer vértice) y Three (lo quita): un anillo canónico y conversión en
+cada frontera.</li>
+</ul>
+<h3 id="34-proyecciones-la-pieza-que-une-todo">3.4 Proyecciones (la
+pieza que une todo)</h3>
+<ul>
+<li>Isométrica verdadera: ortográfica con elevación
+<code>asin(1/√3) = 35.264°</code>, azimut 45°;
+<code>x' = (x−z)/√2</code>, <code>y' = y·√(2/3) + (x+z)/√6</code>;
+acortamiento 0.8165 en los tres ejes. Forma de dibujante sin escalar:
+<code>x' = (x−z)·cos30°</code>, <code>y' = y + (x+z)·sin30°</code>.
+<strong>Las dos convenciones coexisten: elegir una y usarla idéntica en
+SVG y Three.</strong></li>
+<li>"Isométrica" de videojuego 2:1 es <strong>dimétrica</strong>
+(26.565°, elevación 30°). No etiquetarla isométrica.</li>
+<li>Dimétrica de ingeniería (ISO 5456-3 §5.2 vía fuente secundaria):
+ejes a ~7°10' y 41°25', escalas 1:1:½ → dirección de vista
+<code>d = (1/3, 1/3, √7/3)</code>, elevación 19.47°, azimut 20.7°.
+Fórmula general: acortamiento del eje i = <code>√(1 − dᵢ²)</code>.</li>
+<li>Oblicuas: <code>(x,y,z) → (x + k·cosα·z, y + k·sinα·z)</code>.
+Caballera k=1, gabinete k=½ (α 45° o 63.4° según texto: parámetro),
+militar/planométrica = planta rotada en forma verdadera + alturas a
+escala real. <strong>No afirmar que ISO/DIN definen las
+oblicuas</strong>: la norma está de paga y sólo se leyó el listado.</li>
+<li>Cónica de dos puntos: yaw θ sin pitch (verticales paralelas),
+<code>X = x·cosθ − z·sinθ</code>, <code>Z = x·sinθ + z·cosθ</code>,
+<code>sx = f·X/Z</code>; puntos de fuga en <code>f·cotθ</code> y
+<code>−f·tanθ</code>.</li>
+<li>Three.js r169 (CONFIRMADO en fuente):
+<code>Matrix4.makeShear(xy, xz, yx, yz, zx, zy)</code> existe; para
+oblicua <code>zx = −k·cosα</code>, <code>zy = −k·sinα</code> (signo
+negativo porque la cámara mira a −Z),
+<code>camera.projectionMatrix = ortho.clone().multiply(shear)</code> y
+actualizar <code>projectionMatrixInverse</code>;
+<code>updateProjectionMatrix()</code> y el resize
+<strong>sobrescriben</strong> el override (subclase o re-aplicar).
+<code>Vector3.project(camera)</code> es literalmente
+<code>applyMatrix4(matrixWorldInverse).applyMatrix4(projectionMatrix)</code>,
+así que honra cualquier override → <strong>un solo par de matrices
+view/projection en un módulo TS puro alimenta al SVG y a la
+cámara</strong>. NDC → SVG: <code>sx = (x+1)/2·W</code>,
+<code>sy = (1−y)/2·H</code>; <code>project</code> no recorta (puntos
+detrás de la cámara se voltean: clip contra near antes de dibujar); NDC
+z sirve de profundidad para painter's.</li>
+</ul>
+<h3 id="35-planta-sección-y-alzado-desde-el-modelo-3d--svg-limpio">3.5
+Planta, sección y alzado desde el modelo; 3D → SVG limpio</h3>
+<ul>
+<li>Convención: planta = sección horizontal a ~1.2 m (fuentes dan 1.2 m,
+4'-0" y 4'-6": <strong>parámetro</strong>, no constante); material
+cortado en poché; líneas de corte las más gruesas, luego aristas
+visibles, luego ocultas discontinuas; sección vertical por el eje
+principal. PROBABLE (páginas de curso, no norma primaria).</li>
+<li><code>clippingPlanes</code> de Three sólo recorta el render. Sección
+real = intersección plano/triángulo → segmentos → encadenar en polígonos
+cerrados → poché. <code>three-edge-projection</code> trae
+<code>PlanarIntersectionGenerator</code> para eso, pero su
+<code>package.json</code> fija <code>three ^0.155.0</code> (no casa con
+0.169 sin override). Para un modelo <strong>procedural</strong> la vía
+limpia es emitir los footprints de muro analíticamente desde la planta:
+no hace falta cortar mallas.</li>
+<li><code>SVGRenderer</code> <strong>sigue en r169</strong>
+(<code>examples/jsm/renderers/SVGRenderer.js</code>, sin
+<code>@deprecated</code>), painter's algorithm, <strong>sin eliminación
+de líneas ocultas</strong>. CONFIRMADO.</li>
+<li>Líneas ocultas: <code>three-edge-projection</code> (gkjohnson,
+2026-06) recorta aristas contra triángulos delante con BVH, expone
+<code>visibleEdges/hiddenEdges</code>, sin exportador SVG, proyecta sólo
+en Y (rotar el modelo al marco). Alternativa tipo <code>ln</code>
+(fogleman): muestrear aristas y lanzar rayos a la cámara. Para unos
+cientos de caras ambas son viables; la exacta da salida más limpia.</li>
+</ul>
+<h3
+id="36-lenguaje-proporciones-de-los-órdenes-con-números-para-configordersts">3.6
+Lenguaje: proporciones de los órdenes, con números para
+<code>config/orders.ts</code></h3>
+<p>Fuente primaria: escaneo de Vignola, <em>Regola delli cinque
+ordini</em> (ed. inglesa 1889, Getty, leída como imagen de láminas),
+cruzado con el análisis de Zloković/Mitrović, la ficha de Tours y
+Wikipedia. Módulo <strong>M = radio inferior de la columna</strong> (D =
+2M); M se divide en 12 partes (toscano, dórico) o 18 (jónico, corintio,
+compuesto): <strong>no mezclar sin convertir</strong>.</p>
+<table>
+<thead>
+<tr>
+<th>Orden</th>
+<th>Altura de columna (base+fuste+capitel)</th>
+<th>Base</th>
+<th>Capitel</th>
+<th>Entablamento (= ¼ de la columna)</th>
+<th>Arquitrabe / friso / cornisa (M)</th>
+<th>Pedestal (≈ ⅓)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Toscano</td>
+<td>14M (7D)</td>
+<td>1M</td>
+<td>1M</td>
+<td>3.5M</td>
+<td>1 / 1⅙ / 1⅓</td>
+<td>4⅔M</td>
+</tr>
+<tr>
+<td>Dórico</td>
+<td>16M (8D)</td>
+<td>1M</td>
+<td>1M</td>
+<td>4M</td>
+<td>1 / 1.5 / 1.5</td>
+<td>5⅓M</td>
+</tr>
+<tr>
+<td>Jónico</td>
+<td>18M (9D)</td>
+<td>1M</td>
+<td>15/18 M</td>
+<td>4.5M</td>
+<td>1.25 / 1.5 / 1.75 (5:6:7)</td>
+<td>6M</td>
+</tr>
+<tr>
+<td>Corintio</td>
+<td>20M (10D)</td>
+<td>1M</td>
+<td>2⅓M</td>
+<td>5M</td>
+<td>1.5 / 1.5 / 2 (3:3:4)</td>
+<td>5M 10p</td>
+</tr>
+<tr>
+<td>Compuesto</td>
+<td>20M (10D)</td>
+<td>1M</td>
+<td>como corintio</td>
+<td>≈5M</td>
+<td>sólo dibujado</td>
+<td>como corintio</td>
+</tr>
+</tbody>
+</table>
+<p>CONFIRMADO para alturas y la regla ¼; PROBABLE para los sub-repartos
+y la fracción de éntasis. Orden completo con pedestal = 19 partes (4
+pedestal : 12 columna : 3 entablamento); sin pedestal 5 partes (4:1).
+Éntasis: el afinamiento empieza a ⅓ de la altura; diámetro superior ≈
+5/6 del inferior (lectura visual, marcar como tal). Estrías: 20 de
+arista viva (dórico), 24 semicirculares (jónico, corintio).</p>
+<p><strong>Intercolumnios</strong> (vano libre en diámetros; Vitruvio
+III.3, Palladio I.XIII): picnóstilo 1.5D, sístilo 2D, éustilo 2.25D con
+3D en la crujía central, diástilo 3D, areóstilo &gt; 3D (Vitruvio no da
+cifra: codificar como rango abierto). Palladio asigna por orden: dórico
+algo menos de 3D, jónico 2¼D, corintio 2D. Vignola en práctica (vano
+libre desde sus láminas): toscano ≈2⅓D, dórico 2.75D, jónico 2.25D,
+corintio ≈2⅓D. Contradicción no resuelta: esbeltez del éustilo 8½D
+(Gwilt 1826) vs 9½D (Morgan 1914); guardar ambas.</p>
+<p><strong>Arcadas de Vignola</strong> (la galería del experimento sale
+de aquí): hueco alto = 2 × ancho, semicírculo (flecha = ancho/2); pilar
+≈ ⅓ a ½ del hueco; imposta 1M de espesor; clave del arco 1-2M bajo el
+entablamento. Crujías sin pedestal (M): toscano 6.5 × 13, pilar 3, eje a
+eje 9.5; dórico 7 × 14 / 3 / 10 (altura total 20M); jónico 8.5 × 17 / 3
+/ 11.5; corintio 9 × 18 / 3 / 12 (pilar = ⅓ del hueco). Con pedestal:
+toscano 8¾ × 17½ / 4; dórico 10 × 20 / 5; jónico 11 × 22 / 4; corintio
+12 × 25 / 4 (rompe el 2:1 a propósito). Palladio: pilar nunca menos de ⅓
+del vano, ½ a ⅔ si pesado, ⅔ en esquinas. Un tercio de cada columna va
+embebido en el pilar. CONFIRMADO (escaneo primario). Proporción medida
+de una crujía de claustro real: <strong>no encontrada</strong>; se usa
+Vignola normalizado (hueco : pilar ≈ 2:1, alto : hueco = 2:1).</p>
+<p><strong>Voluta jónica (Vignola, láminas XIV-XV)</strong>: ojo de 2
+partes de diámetro con cuadrado inscrito a 45°; centros de la primera
+vuelta a 9 arriba, 8 derecha, 7 abajo, 6 izquierda del centro del ojo;
+vueltas 2 y 3 con centros a ⅓ de la semidiagonal hacia el ojo; 12
+cuartos de arco = 3 vueltas; voluta de 16 partes de alto (8 + 2 + 6).
+PROBABLE en conteo exacto de partes.</p>
+<p><strong>Sin cifras en ninguna fuente</strong> (quedan como parámetros
+de diseño propios, sin cita): vueltas de la columna salomónica (el "6
+vueltas" del brief no se confirmó), proporciones del estípite (sólo la
+definición de Toussaint: base angosta, obelisco invertido, pirámides y
+prismas apilados, más ancho al medio), frontón partido, relación
+tambor/cúpula/linterna de Alberti. Panteón según Palladio: altura
+interior = diámetro (hemisferio sobre cilindro de igual altura), óculo ≈
+0.19-0.21 del diámetro (aritmética propia sobre las cifras citadas).</p>
+<h3
+id="37-transgresión-figuras-imposibles-como-transformación-explícita">3.7
+Transgresión: figuras imposibles como transformación explícita</h3>
+<ul>
+<li><strong>Elber 2011, "Modeling (Seemingly) Impossible
+Models"</strong> (Computers &amp; Graphics 35(3), leído de primera mano
+pp. 1-4): un modelo 3D tangible que se ve contradictorio desde al menos
+una dirección de vista. Observación 2.1: <strong>una deformación a lo
+largo de la línea de vista no cambia el dibujo visto desde ese
+ojo</strong>; en ortográfica sólo cambia Z. Fórmulas: skew global
+<code>z' = z + y</code> (Ec. 1, conserva colinealidad y coplanaridad,
+rompe ortogonalidad); deformación cónica local
+<code>z' = z + √((x−x0)² + (y−y0)²)</code> (Ec. 2); a lo largo de una
+línea <code>z' = z + α / max(d − |L(x,y)|^k, ε)</code> (Ec. 3). El
+triángulo de Penrose son 3 barras ortogonales con skew en una. La
+deformación se restringe por región del plano XY o por sub-objeto.
+<strong>Es una función pura <code>model → model'</code> parametrizada
+por (dirección de vista, f, máscara por parte): exactamente lo que pide
+el punto 8.</strong> PROBABLE (Elber de primera mano; Wu y Sugihara sólo
+por abstracts).</li>
+<li>Wu, Fu, Yeung, Jia, Tang 2010 (ACM TOG 29(2)): partes localmente
+posibles + optimización de mínimos cuadrados con restricciones por punto
+de vista, a tasas interactivas. Sólo si se quiere orbitar la cámara con
+la figura intacta. Mucho más código; no leído completo.</li>
+<li>Sugihara (1982-2015): teoría de interpretación de dibujos de línea;
+test de realizabilidad como factibilidad lineal
+(<code>Aw = 0, Bw &gt; 0</code>, <strong>no verificado contra el paper
+primario</strong>: los PDFs no abrieron). Sirve para
+<strong>validar</strong>, no para generar.</li>
+<li>Consecuencia para el diseño: la anomalía es un pase separado que
+nunca muta el modelo fuente. Planta, sección y alzado se derivan del
+modelo <strong>sin deformar</strong>; la axonometría "imposible" se
+renderiza desde el modelo deformado con la cámara en la dirección que la
+hace píxel-idéntica a la original, y desde cualquier otra vista revela
+la deformación. Recalcular normales tras deformar (Elber reporta
+discontinuidades de sombreado en la costura, Fig. 5). Perspectiva: el
+paper dice que es extensión simple pero no da fórmula; mover cada
+vértice sobre su rayo ocular es extrapolación nuestra, hay que
+testearla.</li>
+</ul>
+<p><strong>Friedeberg, métodos documentados (PROBABLE):</strong> estudió
+arquitectura en la Ibero desde 1957 hasta tercer año sin terminar;
+Mathias Goeritz lo empujó al arte (Goeritz: quitar personas del dibujo
+le da aire metafísico; "cuando añades gente parece proyecto de
+arquitectura"); sus profesores favorecían la simetría de Mies, él
+prefería las plantas circulares de Gaudí y dibujaba edificios
+impracticables; de niño calcaba Canaletto y Piranesi y admiraba las
+perspectivas de Escher; en sus palabras "un poco Piranesi, un poco
+Beardsley, un poco Escher"; arquitectos favoritos italianos (Lombardía,
+Piamonte), Palladio, Gaudí; etiqueta propia "Nintendo Churrigueresque".
+<strong>NO se encontró ninguna fuente que documente axonometría,
+isometría, plantas o mapas como método suyo</strong>; un listado de
+venta (fuente débil) habla de perspectiva de un punto. Los catálogos que
+lo dirían (retrospectiva Bellas Artes 2009, "La Casa Irracional") no se
+abrieron. <strong>En los docs del proyecto no se afirma "Friedeberg
+usaba isométrica"</strong>: se escribe "inspirado en", citando Ibero,
+Goeritz, Piranesi, Escher, Palladio.</p>
+<h2 id="4-veredicto-ruta-incremental-de-integración">4. Veredicto: ruta
+incremental de integración</h2>
+<p>Principio: <strong>un modelo, muchos proyectores</strong>.
+<code>buildScene</code> y los <code>draw*</code> actuales no se borran
+el día uno; se envuelven como la "vista de fachada legacy" hasta que la
+vista nueva los iguale, y entonces se borran (migración termina con
+borrado, no con shim eterno).</p>
+<p>Todas las rutas abajo cuelgan de <code>web/src/graphics/</code> (el
+árbol del refactor paralelo). Nada se crea fuera de él.</p>
+<p>Fase 0 — Costura de proyección (sin tocar el dibujo).
+<code>domain/math/mat4.ts</code> (matriz 4×4 de 16 números,
+<code>Vec3</code>, sin dependencia de <code>three</code> para que
+<code>2d.cli</code> lo cargue por importmap) y
+<code>application/projection.ts</code> crece a
+<code>Projector = { view, proj, toNdc(p), toScreen(p) }</code> con
+fábricas <code>onePoint</code>, <code>twoPoint</code>,
+<code>isometric</code>, <code>dimetric</code>,
+<code>oblique(k, α)</code>, <code>orthoTop/Front/Side</code>;
+<code>ProjectionKind</code> en <code>config/types.ts</code> pasa de
+<code>"perspective" | "elevation"</code> a la unión completa. Adaptador
+<code>renderers/three/camera.ts: toThreeCamera(projector)</code>. Test:
+<code>onePoint</code> reproduce bit a bit el
+<code>makeView(tech, z).project</code> actual, así el SVG de hoy no
+cambia ni un byte.</p>
+<p>Fase 1 — Programa y planta.
+<code>domain/architecture/program.ts</code> (tipos <code>Space</code>,
+<code>Adjacency</code>, <code>Program</code>; el programa del
+experimento como const tipada en <code>config/programs.ts</code>),
+<code>domain/architecture/plan.ts</code> (claustro explícito: patio →
+galería por offset → 4 torres de esquina + 4 bandas subdivididas; salida
+<code>Plan = { rooms, walls, openings, courtyard }</code> con polígonos
+en metros), <code>domain/architecture/validate.ts</code> (BFS sobre el
+grafo de accesos reusando la idea de <code>game/mazeGraph.ts</code>,
+no-solape, suma de áreas, patio cerrado, torres en esquinas). Tests por
+seed.</p>
+<p>Fase 2 — Volumetría y estructura.
+<code>domain/architecture/mass.ts</code> (extrusión de habitaciones y
+torres, cubierta anular paramétrica de 4 alas, cúpulas por perfil de
+revolución con las ecuaciones de §3.3),
+<code>domain/architecture/structure.ts</code> (apoyos de la galería a
+partir del vano, arcos como función del vano con <code>d</code> de dos
+centros, entablamento). Salida:
+<code>Building = { plan, masses, structure, surfaces: Polygon3D[] con uv y etiqueta }</code>.
+Es el <code>.building.json</code>; <code>Architecture</code> (la escena
+de fachada actual) se vuelve una derivación de
+<code>Building</code>.</p>
+<p>Fase 3 — Dibujos. <code>application/drawings/plan.ts</code> (corte
+analítico a <code>cutHeight</code>, poché), <code>elevation.ts</code>,
+<code>section.ts</code>, <code>axonometric.ts</code>: todos reciben
+<code>Building</code> + <code>Projector</code> y emiten la <strong>misma
+<code>DisplayList</code></strong> que ya consume
+<code>renderers/svg</code>, con peso de línea (corte/visible/oculta).
+Líneas ocultas: primero painter's por NDC z (suficiente para este
+edificio convexo-anular); <code>three-edge-projection</code> como fase
+posterior si hace falta. <code>render.ts</code> emite las cuatro láminas
++ el json.</p>
+<p>Fase 4 — Three.js. <code>renderers/three/building.ts</code>:
+<code>ExtrudeGeometry</code> (bevel off, anillos CCW/CW verificados,
+copias de arrays), <code>LatheGeometry</code> para cúpulas,
+<code>BufferGeometry</code> por cara de cubierta. La cámara sale de
+<code>toThreeCamera(projector)</code>; test de consistencia: proyectar
+los vértices del modelo con el <code>Projector</code> TS y con
+<code>Vector3.project(camera)</code> y exigir igualdad en NDC.
+<code>RenderBackend: "three"</code> deja de ser un string sin
+implementación.</p>
+<p>Fase 5 — Órdenes y ornamento sobre superficies.
+<code>config/orders.ts</code> (config tipada con las cifras de §3.6:
+módulo, partes por módulo, alturas, reparto del entablamento, crujías de
+arcada; los campos sin fuente marcados <code>unsourced</code>),
+<code>domain/motifs/*</code> se conservan;
+<code>application/ornament.ts</code>: cada <code>Polygon3D</code> lleva
+marco uv; los motivos se dibujan en uv y se proyectan por polígono (SVG)
+o se rasterizan a <code>CanvasTexture</code>/GLSL (Three).
+<code>domain/lod.ts</code> sigue siendo el LOD, ahora alimentado con el
+tamaño proyectado del polígono.</p>
+<p>Fase 6 — Transgresión con traza.
+<code>domain/architecture/anomaly.ts</code>:
+<code>applyAnomaly(building, rule, rng) → { building', trace }</code>
+con dos familias de reglas nombradas. (a) <strong>Anomalías de
+modelo</strong> (siguen siendo edificios posibles): torre girada, arco
+apuntado en una sola crujía, galería que cambia de nivel, orden
+invertido en un módulo; aparecen en las cuatro láminas. (b)
+<strong>Anomalías de línea de vista (Elber LoSD)</strong>:
+<code>z' = z + f(x,y)</code> en coordenadas de vista, con máscara por
+parte y <code>f</code> de las Ecs. 1-3; la axonometría desde la
+dirección elegida es píxel-idéntica al modelo sano, cualquier otra vista
+delata la deformación. Test: <code>trace</code> reconstruye el original;
+para (a) las cuatro láminas de <code>building'</code> son coherentes
+entre sí; para (b) la proyección ortográfica en la dirección de la
+anomalía iguala a la del modelo sano en NDC (eso prueba que es
+transformación explícita y no error de proyección).</p>
+<p>Fase 7 — Borrado. Cuando la vista de fachada nueva (Fase 3 + 5 con
+<code>onePoint</code>) iguale lo que hoy hace
+<code>composeIllustration</code>, se borran <code>facade()</code>,
+<code>application/facade/*</code> y lo que quede de
+<code>game/friedebergSvg.ts</code>; grep a cero referencias.</p>
+<h2 id="5-fuentes-consultadas-por-investigador">5. Fuentes consultadas
+(por investigador)</h2>
+<p>Gramáticas de forma</p>
+<ol type="1">
+<li><a
+href="https://www.doi.org/10.1145/1141911.1141931">https://www.doi.org/10.1145/1141911.1141931</a>
+— Müller et al. 2006, "Procedural Modeling of Buildings" (CGA shape),
+ACM TOG 25(3).</li>
+<li><a
+href="https://cg.tuwien.ac.at/research/publications/2003/Wonka-2003-Ins">https://cg.tuwien.ac.at/research/publications/2003/Wonka-2003-Ins</a>
+— Wonka et al. 2003, "Instant Architecture" (split grammars).</li>
+<li><a
+href="https://ideas.repec.org/a/sae/envirb/v7y1980i3p343-351.html">https://ideas.repec.org/a/sae/envirb/v7y1980i3p343-351.html</a>
+— Stiny 1980, "Introduction to shape and shape grammars".</li>
+<li><a
+href="https://doc.arcgis.com/en/cityengine/latest/help/help-component-split.htm">https://doc.arcgis.com/en/cityengine/latest/help/help-component-split.htm</a>
+— Esri CGA: comp split.</li>
+<li><a
+href="https://doc.arcgis.com/en/cityengine/latest/cga/cga-inside-function.htm">https://doc.arcgis.com/en/cityengine/latest/cga/cga-inside-function.htm</a>
+— Esri CGA: consultas de oclusión.</li>
+<li><a
+href="https://doc.arcgis.com/en/cityengine/latest/cga/cga-changelog.htm">https://doc.arcgis.com/en/cityengine/latest/cga/cga-changelog.htm</a>
+— Esri CGA changelog.</li>
+<li><a
+href="https://github.com/gromgull/cgajs">https://github.com/gromgull/cgajs</a>
+y <a
+href="https://gromgull.github.io/cgajs/">https://gromgull.github.io/cgajs/</a>
+— cgajs (Apache-2.0, 2017, subconjunto).</li>
+<li><a
+href="https://github.com/pboechat/ShapeGrammars.js">https://github.com/pboechat/ShapeGrammars.js</a>
+— ShapeGrammars.js (sin licencia).</li>
+<li><a
+href="https://www.cs.princeton.edu/courses/archive/spring11/cos598A/pdfs/Merrell10a.pdf">https://www.cs.princeton.edu/courses/archive/spring11/cos598A/pdfs/Merrell10a.pdf</a>
+— Merrell, Schkufza, Koltun 2010.</li>
+<li><a
+href="https://dspace.mit.edu/handle/1721.1/39310?show=full">https://dspace.mit.edu/handle/1721.1/39310?show=full</a>
+— tesis MIT, gramática de plantas de Mies.</li>
+</ol>
+<p>Plantas 11. <a
+href="https://diglib.eg.org/items/7e776ce8-0dcb-4818-ab78-831fa73b71bd">https://diglib.eg.org/items/7e776ce8-0dcb-4818-ab78-831fa73b71bd</a>
+— Bruls, Huizing, van Wijk 2000, "Squarified Treemaps". 12. <a
+href="https://onlinelibrary.wiley.com/doi/10.1155/2010/624817">https://onlinelibrary.wiley.com/doi/10.1155/2010/624817</a>
+— Marson &amp; Musse 2010, plantas por treemap (403, resumen). 13. <a
+href="https://history.siggraph.org/?p=197308">https://history.siggraph.org/?p=197308</a>
+— Merrell et al. 2010, abstract. 14. <a
+href="https://publications.graphics.tudelft.nl/papers/584">https://publications.graphics.tudelft.nl/papers/584</a>
+— Lopes, Tutenel, Smelik, de Kraker, Bidarra 2010, "Constrained Growth".
+15. <a
+href="https://cumincades.scix.net/pdfs/w78-2020-paper-002.pdf">https://cumincades.scix.net/pdfs/w78-2020-paper-002.pdf</a>
+— Zhu &amp; McArthur 2020, GA/SA para plantas. 16. <a
+href="https://doi.org/10.3390/app11178229">https://doi.org/10.3390/app11178229</a>
+— Grzesiak-Kopeć et al. 2021. 17. <a
+href="https://arxiv.org/pdf/2008.01803">https://arxiv.org/pdf/2008.01803</a>
+— GPLAN 2020. <a
+href="https://arxiv.org/pdf/2003.06988">https://arxiv.org/pdf/2003.06988</a>
+— House-GAN 2020. 18. <a
+href="https://www.britannica.com/topic/cloister">https://www.britannica.com/topic/cloister</a>
+— tipología de claustro. <a
+href="https://projects.mcah.columbia.edu/courses/medmil/pages/non-mma-pages/text_links/cloistergarth">https://projects.mcah.columbia.edu/courses/medmil/pages/non-mma-pages/text_links/cloistergarth</a>
+— Columbia. <a
+href="https://www.gardenvisit.com/history_theory/garden_landscape_design_articles/historic_design_styles/cloister_garden_design_style">https://www.gardenvisit.com/history_theory/garden_landscape_design_articles/historic_design_styles/cloister_garden_design_style</a>
+— forma típica. <a
+href="https://en.wikipedia.org/wiki/Cloister">https://en.wikipedia.org/wiki/Cloister</a>
+— puntero. 19. <a
+href="https://doi.org/10.3390/su13063394">https://doi.org/10.3390/su13063394</a>
+— síntesis de space syntax (Hillier). <a
+href="https://www.spacesyntax.net/symposia-archive/SSS4/fullpapers/35Campos-Fongpaper.pdf">https://www.spacesyntax.net/symposia-archive/SSS4/fullpapers/35Campos-Fongpaper.pdf</a>
+— Campos &amp; Fong.</p>
+<p>Cubiertas y bóvedas 20. <a
+href="https://lib.jucs.org/article_preview.php?id=27191">https://lib.jucs.org/article_preview.php?id=27191</a>
+— Aichholzer et al. 1995, straight skeleton. <a
+href="https://publications.ist.tugraz.at/abstracts/aaag-sssp-95/index.html">https://publications.ist.tugraz.at/abstracts/aaag-sssp-95/index.html</a>
+— construcción O(n r log n). 21. <a
+href="https://www.sthu.org/misc/SKRW14/papers/Felkel_1998_StraightSkeletonImplementation.pdf">https://www.sthu.org/misc/SKRW14/papers/Felkel_1998_StraightSkeletonImplementation.pdf</a>
+— Felkel &amp; Obdržálek 1998. 22. <a
+href="https://registry.npmjs.org/straight-skeleton">https://registry.npmjs.org/straight-skeleton</a>
+y <a
+href="https://github.com/StrandedKitty/straight-skeleton">https://github.com/StrandedKitty/straight-skeleton</a>
+— paquete 3.0.0 (2026-03-24), CGAL/Wasm. 23. <a
+href="https://doc.cgal.org/latest/Manual/packages.html">https://doc.cgal.org/latest/Manual/packages.html</a>
+y <a
+href="https://doc.cgal.org/latest/Straight_skeleton_2/index.html">https://doc.cgal.org/latest/Straight_skeleton_2/index.html</a>
+— CGAL: licencia GPL del módulo, reglas de entrada. 24. <a
+href="https://en.wikipedia.org/wiki/Groin_vault">https://en.wikipedia.org/wiki/Groin_vault</a>,
+<a
+href="https://en.wikipedia.org/wiki/Cloister_vault">https://en.wikipedia.org/wiki/Cloister_vault</a>,
+<a
+href="https://en.wikipedia.org/wiki/Pointed_arch">https://en.wikipedia.org/wiki/Pointed_arch</a>,
+<a
+href="https://en.wikipedia.org/wiki/Ogive">https://en.wikipedia.org/wiki/Ogive</a>,
+<a
+href="https://en.wikipedia.org/wiki/Onion_dome">https://en.wikipedia.org/wiki/Onion_dome</a>
+— definiciones. 25. <a
+href="https://raw.githubusercontent.com/mrdoob/three.js/r169/src/geometries/ExtrudeGeometry.js">https://raw.githubusercontent.com/mrdoob/three.js/r169/src/geometries/ExtrudeGeometry.js</a>,
+…/LatheGeometry.js, …/SphereGeometry.js, …/src/extras/ShapeUtils.js —
+fuente r169.</p>
+<p>Proyecciones 26. <a
+href="https://raw.githubusercontent.com/mrdoob/three.js/r169/src/math/Matrix4.js">https://raw.githubusercontent.com/mrdoob/three.js/r169/src/math/Matrix4.js</a>
+— <code>makeShear</code>, <code>makeOrthographic</code>. <a
+href="https://raw.githubusercontent.com/mrdoob/three.js/r169/src/math/Vector3.js">https://raw.githubusercontent.com/mrdoob/three.js/r169/src/math/Vector3.js</a>
+— <code>project</code>. 27. <a
+href="https://en.wikipedia.org/wiki/Axonometric_projection">https://en.wikipedia.org/wiki/Axonometric_projection</a>,
+<a
+href="https://en.wikipedia.org/wiki/Oblique_projection">https://en.wikipedia.org/wiki/Oblique_projection</a>,
+<a
+href="https://en.wikipedia.org/wiki/Isometric_video_game_graphics">https://en.wikipedia.org/wiki/Isometric_video_game_graphics</a>.
+28. <a
+href="https://lists.w3.org/Archives/Public/public-css-archive/2019Apr/0777.html">https://lists.w3.org/Archives/Public/public-css-archive/2019Apr/0777.html</a>
+— post W3C citando ISO 5456-3 (secundaria). 29. <a
+href="https://6sku3uaup9f9.din.de/en/standard/din-iso-5456-3/3357845">https://6sku3uaup9f9.din.de/en/standard/din-iso-5456-3/3357845</a>
+— listado DIN ISO 5456-3 (texto de paga, no leído). 30. <a
+href="https://perspectiveresearchcentre.com/dimetric-perspective/">https://perspectiveresearchcentre.com/dimetric-perspective/</a>
+— dimétrica 7°/42°.</p>
+<p>Dibujos desde un modelo y 3D → SVG 31. <a
+href="https://smorgasbord.cdp.arch.columbia.edu/modules/13-arch-drawing/13-1_orthographic-drawing">https://smorgasbord.cdp.arch.columbia.edu/modules/13-arch-drawing/13-1_orthographic-drawing</a>
+— Columbia CDP: corte a 4'-0", poché, pesos. 32. <a
+href="https://openlab.citytech.cuny.edu/christo-arch1101-fall2022/files/2022/09/Architectural-Drawings_Plan-Section-Elevation.pdf">https://openlab.citytech.cuny.edu/christo-arch1101-fall2022/files/2022/09/Architectural-Drawings_Plan-Section-Elevation.pdf</a>
+— CUNY (snippet). 33. <a
+href="https://github.com/mrdoob/three.js/blob/r169/examples/jsm/renderers/SVGRenderer.js">https://github.com/mrdoob/three.js/blob/r169/examples/jsm/renderers/SVGRenderer.js</a>
+y <a
+href="https://threejs.org/docs/pages/SVGRenderer.html">https://threejs.org/docs/pages/SVGRenderer.html</a>
+— SVGRenderer vivo en r169. 34. <a
+href="https://github.com/gkjohnson/three-edge-projection">https://github.com/gkjohnson/three-edge-projection</a>
+y <a
+href="https://raw.githubusercontent.com/gkjohnson/three-edge-projection/main/API.md">https://raw.githubusercontent.com/gkjohnson/three-edge-projection/main/API.md</a>
+— líneas ocultas, <code>PlanarIntersectionGenerator</code>; <a
+href="https://discourse.threejs.org/t/three-edge-projection-generating-vector-drawings-from-models/92165">https://discourse.threejs.org/t/three-edge-projection-generating-vector-drawings-from-models/92165</a>
+(2026-06-11). 35. <a
+href="https://github.com/gkjohnson/three-mesh-bvh">https://github.com/gkjohnson/three-mesh-bvh</a>,
+<a
+href="https://github.com/gkjohnson/three-bvh-csg">https://github.com/gkjohnson/three-bvh-csg</a>,
+<a
+href="https://github.com/mfogel/polygon-clipping">https://github.com/mfogel/polygon-clipping</a>,
+<a
+href="https://github.com/fogleman/ln">https://github.com/fogleman/ln</a>.</p>
+<p>Órdenes clásicos 43. <a
+href="http://archive.org/details/fiveordersofarch00vign">http://archive.org/details/fiveordersofarch00vign</a>
+(copia: <a
+href="https://www.chenarch.com/images/arch-texts/1562-Vignola-Five-Orders.pdf">https://www.chenarch.com/images/arch-texts/1562-Vignola-Five-Orders.pdf</a>)
+— Vignola, <em>The Five Orders of Architecture</em>, ed. 1889, láminas
+I-XXIX leídas como imagen. 44. <a
+href="https://www.milanzlokovic.org/wp-content/uploads/2026/01/Branko-Mitrovic_Vignola-and-the-golden-section_Milan-Zlokovic-analysis.pdf">https://www.milanzlokovic.org/wp-content/uploads/2026/01/Branko-Mitrovic_Vignola-and-the-golden-section_Milan-Zlokovic-analysis.pdf</a>
+— Mitrović sobre Zloković: tabla de Vignola en unidades de
+intercolumnio. 45. <a
+href="https://architectura.univ-tours.fr/en/livres-auteur/livres-notice/ENSBA_LES64c490">https://architectura.univ-tours.fr/en/livres-auteur/livres-notice/ENSBA_LES64c490</a>
+— ficha de Tours: ¼, ⅓, 19 partes. 46. <a
+href="https://en.wikipedia.org/wiki/Classical_order">https://en.wikipedia.org/wiki/Classical_order</a>,
+<a
+href="https://en.wikipedia.org/wiki/Intercolumniation">https://en.wikipedia.org/wiki/Intercolumniation</a>,
+<a
+href="https://en.wikipedia.org/wiki/Arch">https://en.wikipedia.org/wiki/Arch</a>,
+<a
+href="https://en.wikipedia.org/wiki/Solomonic_column">https://en.wikipedia.org/wiki/Solomonic_column</a>,
+<a
+href="https://en.wikipedia.org/wiki/Estipite">https://en.wikipedia.org/wiki/Estipite</a>.
+47. <a
+href="https://www.lexundria.com/vitr/3.3.10/mg">https://www.lexundria.com/vitr/3.3.10/mg</a>,
+<a
+href="https://lexundria.com/vitr/3.3.7/cf">https://lexundria.com/vitr/3.3.7/cf</a>,
+<a
+href="https://lexundria.com/vitr/3.3/cf">https://lexundria.com/vitr/3.3/cf</a>
+— Vitruvio III.3 (Morgan y Gwilt). 48. <a
+href="https://archive.org/stream/andreapalladiosa00pall/andreapalladiosa00pall_djvu.txt">https://archive.org/stream/andreapalladiosa00pall/andreapalladiosa00pall_djvu.txt</a>
+— Palladio, Ware 1736, Libro I cap. XIII (resumen, no verbatim). 49. <a
+href="https://emis.muni.cz/journals/NNJ/AndGal.html">https://emis.muni.cz/journals/NNJ/AndGal.html</a>
+— volutas de Vitruvio/Alberti/Palladio comparadas. 50. <a
+href="https://digi.ub.uni-heidelberg.de/diglit/sheraton1793/0237">https://digi.ub.uni-heidelberg.de/diglit/sheraton1793/0237</a>
+— Sheraton 1793 (sistema de 5 partes, no mezclar).</p>
+<p>Figuras imposibles y Friedeberg 36. <a
+href="https://gershon.cs.technion.ac.il/papers/ModelImpossibleObjs.pdf">https://gershon.cs.technion.ac.il/papers/ModelImpossibleObjs.pdf</a>
+— Elber 2011, "Modeling (Seemingly) Impossible Models", Computers &amp;
+Graphics 35(3) (leído pp. 1-4). 37. <a
+href="https://www.cse.cuhk.edu.hk/~cwfu/papers/ifrender/ifrender.html">https://www.cse.cuhk.edu.hk/~cwfu/papers/ifrender/ifrender.html</a>
+— Wu, Fu, Yeung, Jia, Tang 2010, ACM TOG 29(2) (abstract). 38. <a
+href="https://www.isc.meiji.ac.jp/~kokichis/personal/sugilist.html">https://www.isc.meiji.ac.jp/~kokichis/personal/sugilist.html</a>
+— lista de publicaciones de Sugihara. <a
+href="https://nautil.us/the-illusion-machine-that-teaches-us-how-we-see-235154">https://nautil.us/the-illusion-machine-that-teaches-us-how-we-see-235154</a>
+— divulgación (secundaria). 39. <a
+href="https://en.wikipedia.org/wiki/Pedro_Friedeberg">https://en.wikipedia.org/wiki/Pedro_Friedeberg</a>
+— formación, Goeritz, influencias (cita Reforma 1999-2011). 40. <a
+href="https://michaelbullock.nyc/volumes/journalism/pedro-friedeberg">https://michaelbullock.nyc/volumes/journalism/pedro-friedeberg</a>
+— entrevista: Ibero, Goeritz, "sin personas". 41. <a
+href="https://zetatijuana.com/2026/03/los-que-mas-estan-de-moda-son-los-que-peor-arte-hacen-pedro-friedeberg-a-zeta/">https://zetatijuana.com/2026/03/los-que-mas-estan-de-moda-son-los-que-peor-arte-hacen-pedro-friedeberg-a-zeta/</a>,
+<a
+href="https://www.designboom.com/?p=1180670">https://www.designboom.com/?p=1180670</a>
+— "un poco Piranesi, Beardsley, Escher" (snippets). 42. No abiertos (403
+o PDF ilegible): <a
+href="https://www.frieze.com/article/palm-reader">https://www.frieze.com/article/palm-reader</a>,
+<a
+href="https://repositoriodigital.ipn.mx/bitstream/123456789/25321/1/12-PedroFriedeberg.pdf">https://repositoriodigital.ipn.mx/bitstream/123456789/25321/1/12-PedroFriedeberg.pdf</a>,
+catálogos Bellas Artes 2009 y "La Casa Irracional".</p>
+</body>
+</html>
