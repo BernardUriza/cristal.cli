@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CRISTAL.CLI — i+d 2d</title>
+  <script type="importmap">
+    { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js" } }
+  </script>
+  <style>
+    :root { --term-bg: #000000; --term-fg: #33ff99; --term-dim: #1a8a55; --term-cyan: #33ddff; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; background: var(--term-bg); color: var(--term-fg);
+      font-family: "JetBrains Mono", "Consolas", "Courier New", monospace; font-size: 15px; }
+    #term { height: 100%; padding: 4vh 5vw; display: flex; flex-direction: column; gap: 6px; overflow: hidden; }
+    #out { flex: 1; overflow-y: auto; white-space: pre-wrap; text-shadow: 0 0 6px var(--term-dim); }
+    #out .sys { color: var(--term-dim); }
+    #line { display: flex; gap: 8px; border-top: 1px solid var(--term-dim); padding-top: 8px; }
+    #line span { color: var(--term-cyan); }
+    #in { flex: 1; background: transparent; border: 0; outline: 0; color: var(--term-fg);
+      font: inherit; caret-color: var(--term-fg); }
+  </style>
+</head>
+<body>
+  <div id="term">
+    <div id="out"><span class="sys">CRISTAL.CLI :: i+d :: 2d básico</span></div>
+    <div id="line"><span>&gt;</span><input id="in" autofocus autocomplete="off" spellcheck="false"></div>
+  </div>
+  <script type="module">
+    import * as THREE from "three";
+    const out = document.getElementById("out");
+    const input = document.getElementById("in");
+    const print = (text, cls = "") => {
+      const row = document.createElement("div");
+      if (cls) row.className = cls;
+      row.textContent = text;
+      out.appendChild(row);
+      out.scrollTop = out.scrollHeight;
+    };
+    print(`three.js r${THREE.REVISION} cargado, sin usar`, "sys");
+    input.addEventListener("keydown", (e) => {
+      if (e.key !== "Enter" || !input.value.trim()) return;
+      print(`> ${input.value}`);
+      print("...");
+      input.value = "";
+    });
+    document.body.addEventListener("click", () => input.focus());
+  </script>
+</body>
+</html>
