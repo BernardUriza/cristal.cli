@@ -9,4 +9,9 @@ export default defineConfig({
   },
   // Large FBX/GLB assets live in /public/models (synced from ../Mixamo)
   assetsInclude: ["**/*.fbx", "**/*.glb", "**/*.gltf"],
+  build: {
+    rollupOptions: {
+      input: { main: "index.html", building: "building.html" },
+    },
+  },
 });

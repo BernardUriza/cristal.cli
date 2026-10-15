@@ -53,3 +53,19 @@ piso → `PlaneGeometry` con shader de tablero. El `.scene.json` es el contrato.
 - **Profundidad en fachada, no sólo en piso.** Sofito del entablamento con casetones proyectados (`view.project` a `z` y `z + depth`), escalones con cara superior y frontal, alas laterales a `z + 7` con cara lateral visible, galerías interiores.
 - **Autosimilitud estructural.** Las alas son la misma `Colonnade` con 3 columnas y `spacing·0.8`; la linterna es otra cúpula a 0.42; el sol lleva un Sierpinski de profundidad `complexity`; las rosetas se repiten en capitel, clave, friso y esquinas del marco.
 - **Paleta.** Magenta y turquesa bajados de saturación, crema de muro distinto del fondo, línea de tinta en todo. La sofisticación va en la línea, no en el color.
+
+## Edificio computacional v0 (2026-10-15): un modelo, cinco vistas
+
+Prueba de concepto arquitectónica, sin ornamento, que cierra el criterio de éxito «si se mueve una puerta en el modelo, se mueve en planta, alzado, sección, axonometría y escena navegable». Auditoría y ruta: `auditoria-gramatica-arquitectonica.md`.
+
+- Programa espacial y layout: `web/src/graphics/config/programs.ts` (`CLOISTER_PROGRAM`, `CLOISTER_LAYOUT`): patio, cuatro galerías, cuatro torres de esquina, vestíbulo y ocho salas; adyacencias con tipo de acceso (`door` | `arch` | `open`).
+- Planta: `domain/architecture/plan.ts` deriva muros de las aristas compartidas entre rectángulos y coloca huecos por adyacencia; `openingOverrides[pairKey(a,b)].at` mueve una puerta.
+- Validación: `domain/architecture/validate.ts` separa **geométrica** (solape, cobertura exacta del footprint, huecos dentro del muro), **arquitectónica** (toda adyacencia realizada, BFS desde el exterior, patio cerrado por galerías, torres en esquinas, proporciones como advertencia) y **estructural** (`not-evaluated`: no existe cálculo de cargas ni luces; nada aquí certifica edificabilidad).
+- Volumetría: `domain/architecture/mass.ts` → sólidos convexos con normales y winding coherentes (muros partidos en dintel/antepecho alrededor de cada hueco, losas, pirámides de torre).
+- Proyección: `application/projector.ts` (planta, alzados, isométrica, dimétrica, caballera, gabinete, militar, cónica) con matrices propias column-major; `renderers/three/building/camera.ts` las copia a una cámara de Three y el test exige igualdad en NDC con `Vector3.project`.
+- Láminas: `application/drawings/{plan,elevation,section,axonometric}.ts` emiten la misma `DisplayList` que `toSvg`; corte real por plano (`domain/math/clip.ts`), poché, painter's por sólido (no es eliminación exacta de líneas ocultas; límite conocido).
+- Render a disco: `node i+d/friedeberg/render-building.ts [--door=0.2]` → `out/building/*.svg` + `building.json` + `validation.json`.
+- Página navegable: `npm run dev` y `http://localhost:5173/building.html` (slider de puerta, botones que montan la cámara desde el mismo `Projector`; la sección 3D usa `clippingPlanes`, que recorta sólo el render).
+- Evidencia: `capturas/building-*.png` y `capturas/building-page-door0.2.jpg`.
+
+Siguiente: órdenes clásicos (`config/orders.ts` con las cifras de Vignola citadas en la auditoría), arcos de dos centros en la arcada, ornamento por cara con uv, anomalías con traza.
