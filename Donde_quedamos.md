@@ -3,7 +3,21 @@
 ## Estado Actual: Phase 6.7 - Dream Tunnels Complete
 
 **Version:** 0.6.7
-**Ultima actualizacion:** 2026-01-11
+**Ultima actualizacion:** 2026-10-16
+
+---
+
+## Web publicada (2026-10-16)
+
+- `web/` vive en https://cristal.bernarduriza.com (Static Web App `cristal-cli`, `portfolio-rg`; host default
+  `lemon-mushroom-04a84da0f.3.azurestaticapps.net`). Deploy: push a `main` tocando `web/**`
+  (`.github/workflows/azure-static-web-app.yml`). Provision y promote: `web/provision.sh`, `web/promote.sh`.
+- `/` es el selector; `/laberinto.html` el juego 3D; `/memorama.html` el memorama de templos Friedeberg
+  (`web/src/memorama/`, arte por semilla desde `web/src/graphics/`).
+- El laberinto publicado usa `cristal-api` para `/generate` (CORS ya incluye el dominio); sin API cae a `localRoom`.
+- Portafolio: proyecto id 8 en portfolio-spring, visible en bernarduriza.com.
+- Pendiente al cerrar la sesión: el dominio estaba en `Validating` en Azure (cert); cuando conteste 200 la
+  variable `CRISTAL_WEB_HOST` del repo pasa al dominio y el smoke del workflow lo prueba.
 
 ---
 
