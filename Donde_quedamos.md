@@ -29,6 +29,21 @@
 
 Feedback de betatesters: se registra aquí, con fecha y cita, y lo accionable pasa a `.claude/backlog/`.
 
+### Recorrido del homework #1 en prod (2026-10-16, Claude como jugador nuevo)
+
+Arreglado y desplegado (b6f8903 → 08d2aac, verificado en cristal.bernarduriza.com):
+- la E que conecta la consola ya no cae dentro del input; el HUD de exploración se oculta con la consola abierta
+- el minimapa apunta al nodo del rito donde estás ("ALPHA 3 → 2 → 1 → aquí") y no se pinta dentro de un cuarto
+- **el cuarto de IA sí llega**: `cristal-api /generate` tarda 38–54 s (AIRE) y el cliente abortaba a 8 s, así que
+  nadie veía un cuarto generado; ahora timeout 90 s, una petición por semilla, prefetch del glifo que señala el mapa
+  en cuanto se archiva la confesión y semilla fijada por glifo (la gravedad ritual drifteaba y re-rolaba el cuarto)
+- fallback local corta la confesión por palabra con «…»; "one rooms" → "one room"
+
+Observado, sin tocar (decisiones de Bernard): el turno de AIRE para un JSON de 600 chars tarda 40–55 s y se
+serializa bajo carga (dos a la vez → 89 s); la bienvenida de la consola y el journal mezclan inglés
+("What should the room learn first?", "Mostly confessing…"); con ventana < ~1000 px el journal y el panel del
+cuarto se encajan; la integridad drena ~2/s mientras el jugador lee el cuarto.
+
 ---
 
 ## Completado
