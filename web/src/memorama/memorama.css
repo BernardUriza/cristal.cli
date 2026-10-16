@@ -1,0 +1,193 @@
+:root {
+  --bg: #0b0b12;
+  --fg: #f1e6c8;
+  --dim: #8a7f66;
+  --accent: #33ff99;
+  --magenta: #d8468f;
+  --turquoise: #2fb7c9;
+  --card-ink: #1a1412;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  min-height: 100%;
+  background: var(--bg);
+  color: var(--fg);
+  font: 14px/1.4 "JetBrains Mono", Consolas, monospace;
+}
+
+.memorama {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 12px 16px 32px;
+  gap: 16px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.memorama-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 20px;
+  border-bottom: 1px solid #222;
+  padding-bottom: 10px;
+}
+
+.memorama-header h1 {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+}
+
+.memorama-home {
+  color: var(--dim);
+  text-decoration: none;
+}
+
+.memorama-home:hover {
+  color: var(--fg);
+}
+
+.memorama-stats {
+  display: flex;
+  gap: 16px;
+  color: var(--fg);
+}
+
+.memorama-seed {
+  color: var(--dim);
+}
+
+.memorama-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.memorama-controls button,
+.memorama-won button {
+  background: transparent;
+  color: var(--fg);
+  border: 1px solid var(--dim);
+  padding: 4px 10px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.memorama-controls button.active {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.memorama-grid {
+  --gap: 10px;
+  --board-height: calc(100vh - 140px);
+  display: grid;
+  grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+  gap: var(--gap);
+  width: min(100%, calc((var(--board-height) - (var(--rows) - 1) * var(--gap)) / var(--rows) * 3 / 4 * var(--cols) + (var(--cols) - 1) * var(--gap)));
+  margin: 0 auto;
+}
+
+.card {
+  appearance: none;
+  background: none;
+  border: 0;
+  padding: 0;
+  aspect-ratio: 3 / 4;
+  perspective: 900px;
+  cursor: pointer;
+}
+
+.card:disabled {
+  cursor: default;
+}
+
+.card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 420ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.card.up .card-inner {
+  transform: rotateY(180deg);
+}
+
+.card-face {
+  position: absolute;
+  inset: 0;
+  border-radius: 6px;
+  overflow: hidden;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  border: 1px solid #2a2a3a;
+}
+
+.card-back {
+  background-color: #12121f;
+  background-size: 55%;
+  background-position: center;
+  background-repeat: no-repeat;
+  box-shadow: inset 0 0 0 4px #0b0b12, inset 0 0 0 5px var(--turquoise);
+}
+
+.card:not(:disabled):hover .card-back {
+  box-shadow: inset 0 0 0 4px #0b0b12, inset 0 0 0 5px var(--magenta);
+}
+
+.card-front {
+  transform: rotateY(180deg);
+  background: #f3e7c6;
+}
+
+.card-front canvas {
+  display: block;
+}
+
+.card.matched .card-front {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.memorama-won {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  gap: 16px;
+  text-align: center;
+  background: rgba(11, 11, 18, 0.86);
+  font-size: 18px;
+  color: var(--accent);
+}
+
+@media (max-width: 640px) {
+  .memorama {
+    padding: 10px 12px 24px;
+    gap: 12px;
+  }
+  .memorama-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+    width: 100%;
+  }
+  .memorama-controls {
+    margin-left: 0;
+  }
+  .memorama-stats {
+    gap: 12px;
+    font-size: 13px;
+  }
+}

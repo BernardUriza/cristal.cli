@@ -9,6 +9,8 @@ long vague one.
   and **pure logic modules** (`maze.ts`, `store.ts`, `types.ts`, `StabilityEngine.ts`).
 - `src/graphics/` — procedural graphics subsystem (grammar → SVG | Canvas 2D | Three.js + GLSL);
   layer map and rules in `src/graphics/CLAUDE.md`. Preview: `/?view=graphics&backend=svg|canvas|three`.
+- `src/memorama/` — standalone memory-matching game (`memorama.html` entry): pure rules in `memorama.ts`,
+  per-card art config in `cardArt.ts`, both seeded; the React layer rasterizes each card through `graphics/`.
 - `src/terminal/` — terminal core ported from Unity.
 - `src/ui/` — React UI overlays.
 - `public/` — static assets served at `/` (e.g. `public/brand/` icons).

@@ -15,7 +15,7 @@ Esta primera fase reconstruye el **laberinto 3D explorable** y el flujo de
 ```bash
 npm install
 npm run sync-assets   # copia los FBX de ../Mixamo a public/models (gitignored)
-npm run dev           # http://localhost:5173
+npm run dev           # http://localhost:5173 (laberinto) · /memorama.html (memorama) · /building.html
 npm run build         # build de producción a /dist
 npm run typecheck
 ```
