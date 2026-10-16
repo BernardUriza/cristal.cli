@@ -1,10 +1,10 @@
 # CRISTAL.CLI server — Azure Container Apps image. Build from server/: docker build -t cristal-api server/
-FROM quay.io/condaforge/miniforge3:latest
+FROM quay.io/condaforge/miniforge3:26.1.1-3
 SHELL ["/bin/bash", "-l", "-c"]
 WORKDIR /app
 
 COPY environment.yml .
-RUN mamba env update -n base -f environment.yml \
+RUN mamba clean --all --yes && mamba env update -n base -f environment.yml \
  && mamba clean --all --yes \
  && find /opt/conda/ -follow -type f -name '*.pyc' -delete
 
