@@ -239,3 +239,42 @@ describe("glyph room prefetch", () => {
     expect(useGame.getState().mode).toBe(GameMode.Room);
   });
 });
+
+describe("glyph room prefetch survives gravity drift", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    resetPsychSession();
+    useGame.setState(useGame.getInitialState(), true);
+  });
+
+  it("invokes the prepared seed even after ritual gravity moved", async () => {
+    const fetchRoom = vi.fn(async () =>
+      responseWithJson({
+        name: "Pinned",
+        inscription: "",
+        description: "",
+        exits: ["north"],
+        dread: 0,
+        shape: "chamber",
+      }),
+    );
+    vi.stubGlobal("fetch", fetchRoom);
+
+    useGame.getState().prefetchGlyphRoom("echo", "glyph-drift-x");
+    const transference = useGame.getState().transference;
+    useGame.setState({
+      transference: {
+        ...transference,
+        ritualGravity: {
+          ...transference.ritualGravity,
+          archetypeBias: { ...transference.ritualGravity.archetypeBias, echo: 1.37 },
+        },
+      },
+    });
+    useGame.getState().invokeGlyph("echo", "glyph-drift-x");
+    await waitForRoom();
+
+    expect(fetchRoom).toHaveBeenCalledTimes(1);
+    expect(useGame.getState().room?.name).toBe("Pinned");
+  });
+});

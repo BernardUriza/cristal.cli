@@ -48,6 +48,9 @@ import {
 const ROOM_CACHE_LIMIT = 64;
 const roomCache = new Map<number, Room>();
 const pendingRooms = new Map<number, Promise<Room>>();
+// Ritual gravity drifts while the player walks, so the seed a prefetch used is
+// pinned per glyph until the confession changes; otherwise the arrival re-rolls it.
+const preparedGlyphRooms = new Map<string, { seed: number; confession: string | null }>();
 
 function cacheRoom(seed: number, room: Room): void {
   roomCache.set(seed, room);
@@ -217,11 +220,15 @@ export const useGame = create<GameState>((set, get) => {
     return request;
   };
 
-  const glyphRoomSeed = (archetype: SymbolicArchetype, glyphId: string): number =>
-    seedForExit(
+  const glyphRoomSeed = (archetype: SymbolicArchetype, glyphId: string): number => {
+    const prepared = preparedGlyphRooms.get(glyphId);
+    const confession = get().verticalSlice.confessionFragment ?? null;
+    if (prepared && prepared.confession === confession) return prepared.seed;
+    return seedForExit(
       (get().depth + 1) * 0x9e3779b1 + symbolicSeedBias(archetype, get().transference.ritualGravity),
       glyphId.length + archetype.length
     );
+  };
 
   const glyphRoomFragments = (archetype: SymbolicArchetype, slice: VerticalSliceState): string[] => [
     ...confessionFragmentsForRoom(slice),
@@ -454,6 +461,7 @@ export const useGame = create<GameState>((set, get) => {
   invokeGlyph: (archetype, glyphId) => {
     if (get().roomLoading) return;
     const seed = glyphRoomSeed(archetype, glyphId);
+    preparedGlyphRooms.delete(glyphId);
     // a glyph opens a fresh descent — clear the previous breadcrumb trail
     const verticalSlice = noteGlyphInvoked(get().verticalSlice, glyphId, archetype);
     saveVerticalSlice(verticalSlice);
@@ -463,6 +471,7 @@ export const useGame = create<GameState>((set, get) => {
 
   prefetchGlyphRoom: (archetype, glyphId) => {
     const seed = glyphRoomSeed(archetype, glyphId);
+    preparedGlyphRooms.set(glyphId, { seed, confession: get().verticalSlice.confessionFragment ?? null });
     if (roomCache.has(seed) || pendingRooms.has(seed)) return;
     void requestRoom(seed, archetype, glyphRoomFragments(archetype, get().verticalSlice)).catch(() => undefined);
   },
