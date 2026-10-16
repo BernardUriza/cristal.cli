@@ -65,4 +65,5 @@ jobs:
             done
             [ "$code" = "200" ] || { echo "FAIL $path"; exit 1; }
           done
-          curl -sS "https://$HOST/" | grep -q "landing" && echo "landing served on $HOST" || { echo "FAIL: / is not the landing"; exit 1; }
+          curl -sS "https://$HOST/" | grep -q "memory game of procedural temples" && echo "landing served on $HOST" || { echo "FAIL: / is not the landing"; exit 1; }
+          curl -sS "https://$HOST/memorama.html" | grep -q "<title>CRISTAL.CLI — memorama</title>" && echo "memorama served" || { echo "FAIL: /memorama.html is not the memorama"; exit 1; }
