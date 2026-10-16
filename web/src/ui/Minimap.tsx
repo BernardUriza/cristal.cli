@@ -6,6 +6,7 @@ import { MAZE_COLS, MAZE_ROWS, MAZE_SEED, SPAWN_CELL } from "../game/mazeConfig"
 import { getPlayerPose, subscribePlayerPose, type PlayerPose } from "../game/playerPositionBus";
 import { riteCandidateNodes } from "../game/riteFocus";
 import { useGame } from "../game/store";
+import { GameMode } from "../game/types";
 import { WORLD_NODES, type WorldNode } from "../game/worldNodes";
 
 const CELL_PX = 18;
@@ -49,6 +50,7 @@ export function Minimap() {
   // Route tiers: nearest rite target (never demoted by visits, so standing on it
   // reads "aquí" instead of pointing at a farther twin), unvisited node, unvisited cell.
   const verticalSlice = useGame((s) => s.verticalSlice);
+  const exploring = useGame((s) => s.mode === GameMode.Exploration);
   const visited = useRef<Set<string>>(new Set());
   const pcx = Math.max(0, Math.min(MAZE_COLS - 1, Math.round((pose.x + OFFSET_X) / CELL)));
   const pcy = Math.max(0, Math.min(MAZE_ROWS - 1, Math.round((pose.z + OFFSET_Z) / CELL)));
@@ -81,6 +83,8 @@ export function Minimap() {
       isRiteTarget: false,
     };
   }, [maze, pcx, pcy, verticalSlice]);
+
+  if (!exploring) return null;
 
   return (
     <div

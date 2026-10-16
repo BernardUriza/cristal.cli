@@ -75,7 +75,8 @@ export function compressNarrative(input: NarrativeCompressionInput): string {
     ? ` It now recognizes ${input.profile.dominantDefense} as one of your shelters.`
     : "";
 
-  return `You spent ${countWord(rooms)} rooms ${movement} ${ending}. ${relationship}.${defense}`.replace(
+  const roomWord = rooms === 1 ? "room" : "rooms";
+  return `You spent ${countWord(rooms)} ${roomWord} ${movement} ${ending}. ${relationship}.${defense}`.replace(
     /\s+/g,
     " "
   );

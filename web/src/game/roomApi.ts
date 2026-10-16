@@ -69,6 +69,12 @@ export async function generateRoom(params: {
   }
 }
 
+function clipAtWord(text: string | undefined, max: number): string | undefined {
+  if (!text || text.length <= max) return text;
+  const cut = text.lastIndexOf(" ", max);
+  return `${text.slice(0, cut > max / 2 ? cut : max)}…`;
+}
+
 export function localRoom(params: {
   seed: number;
   archetype: SymbolicArchetype;
@@ -92,7 +98,7 @@ export function localRoom(params: {
   const verbs = ["respira", "miente", "espera", "recuerda", "parpadea"];
   const noun = pick(nouns[params.archetype], rng);
   const verb = pick(verbs, rng);
-  const fragment = params.fragments?.[0]?.replace(/\s+/g, " ").slice(0, 56);
+  const fragment = clipAtWord(params.fragments?.[0]?.replace(/\s+/g, " "), 56);
   const depth = Math.max(0, params.depth);
   const dread = Math.min(100, 26 + depth * 7 + Math.floor(rng() * 42));
   const exitCount = 2 + Math.floor(rng() * 2);

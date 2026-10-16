@@ -151,3 +151,20 @@ describe("generateRoom", () => {
     });
   });
 });
+
+describe("localRoom fragment clipping", () => {
+  it("clips a long confession at a word boundary with an ellipsis", () => {
+    const room = localRoom({
+      seed: 7,
+      archetype: "corruption",
+      depth: 0,
+      fragments: ["confesión del jugador: me siento perdida pero con curiosidad y algo de miedo"],
+    });
+    expect(room.inscription).toMatch(/: confesión del jugador: me siento perdida pero con…$/);
+  });
+
+  it("leaves a short confession untouched", () => {
+    const room = localRoom({ seed: 7, archetype: "corruption", depth: 0, fragments: ["me siento perdida"] });
+    expect(room.inscription).toMatch(/: me siento perdida$/);
+  });
+});

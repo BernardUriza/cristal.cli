@@ -66,3 +66,19 @@ describe("compressNarrative", () => {
     expect(compressNarrative({ relationship, profile, history: [] })).toContain("left no pattern behind");
   });
 });
+
+describe("compressNarrative room count", () => {
+  it("uses the singular when the history covers one room", () => {
+    const paragraph = compressNarrative({
+      history: [
+        {
+          room: { seed: 1 } as never,
+          stance: "confession",
+        } as never,
+      ],
+      relationship: { trust: 1, resistance: 0 } as never,
+      profile: { dominantDefense: null } as never,
+    });
+    expect(paragraph).toContain("You spent one room ");
+  });
+});
