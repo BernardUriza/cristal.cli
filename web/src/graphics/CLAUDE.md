@@ -33,7 +33,7 @@ Convive aquí la gramática arquitectónica de la otra línea de trabajo (`domai
 - Paridad visual: `i+d/friedeberg/out/*.svg` son las tres variantes de referencia
   (`node i+d/friedeberg/render.ts --preset=sparse|base|dense`). Un cambio en `facade/` o `motifs/`
   se compara pixel a pixel en Chrome antes de commitear. Vista previa: `npm run dev` y
-  `/?view=graphics&preset=dense&backend=svg|canvas|three` (acepta `seed`, `density`, `complexity`,
+  `/laberinto.html?view=graphics&preset=dense&backend=svg|canvas|three` (acepta `seed`, `density`, `complexity`,
   `anomalyRate`, `palette`, `symmetry`, `projection`, `shader`, `lod`).
 - Imports relativos con extensión `.ts` dentro de `graphics/` para que Node 24 ejecute `render.ts`
   sin build.

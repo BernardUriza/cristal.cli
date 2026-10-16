@@ -1,0 +1,66 @@
+# Build web/ and publish it to the Static Web App cristal-cli (cristal.bernarduriza.com).
+# The deployment token comes from web/provision.sh (gh secret AZURE_STATIC_WEB_APPS_API_TOKEN_CRISTAL).
+# The labyrinth's room generator points at the live API (cristal-api Container App, see server/).
+name: Deploy web to Azure Static Web Apps
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "web/**"
+      - ".github/workflows/azure-static-web-app.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: swa-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+    name: Build and deploy
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - run: npm ci
+
+      - run: npm test
+
+      - run: npm run build
+        env:
+          VITE_CRISTAL_LLM_URL: https://cristal-api.greendune-53f1f4af.eastus2.azurecontainerapps.io
+
+      - name: Deploy to Static Web App
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_CRISTAL }}
+          action: upload
+          app_location: web/dist
+          skip_app_build: true
+          skip_api_build: true
+
+      - name: Smoke the live pages
+        working-directory: .
+        run: |
+          for path in / /laberinto.html /memorama.html; do
+            for i in $(seq 1 12); do
+              code=$(curl -sS -o /dev/null -w "%{http_code}" "https://cristal.bernarduriza.com$path" || echo "000")
+              echo "$path attempt $i: HTTP $code"
+              [ "$code" = "200" ] && break
+              sleep 10
+            done
+            [ "$code" = "200" ] || { echo "FAIL $path"; exit 1; }
+          done
+          curl -sS https://cristal.bernarduriza.com/ | grep -q "src/landing\|landing-" && echo "landing bundle served" || { echo "FAIL: / is not the landing"; exit 1; }

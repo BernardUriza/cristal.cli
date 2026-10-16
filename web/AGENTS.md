@@ -5,10 +5,12 @@ CRISTAL.CLI. This file is durable guidance for Codex; a short accurate file beat
 long vague one.
 
 ## Layout
+- `index.html` → `src/landing/` — the selector page (labyrinth or memorama). The labyrinth itself is
+  `laberinto.html` → `src/main.tsx`; `memorama.html` and `building.html` are the other Vite entries.
 - `src/game/` — game logic + R3F components (Scene, Labyrinth, Player, RoomScene, …)
   and **pure logic modules** (`maze.ts`, `store.ts`, `types.ts`, `StabilityEngine.ts`).
 - `src/graphics/` — procedural graphics subsystem (grammar → SVG | Canvas 2D | Three.js + GLSL);
-  layer map and rules in `src/graphics/CLAUDE.md`. Preview: `/?view=graphics&backend=svg|canvas|three`.
+  layer map and rules in `src/graphics/CLAUDE.md`. Preview: `/laberinto.html?view=graphics&backend=svg|canvas|three`.
 - `src/memorama/` — standalone memory-matching game (`memorama.html` entry): pure rules in `memorama.ts`,
   per-card art config in `cardArt.ts`, both seeded; the React layer rasterizes each card through `graphics/`.
 - `src/terminal/` — terminal core ported from Unity.

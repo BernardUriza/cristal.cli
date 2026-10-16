@@ -14,7 +14,7 @@ Desde 2026-10-15 el generador es el subsistema `web/src/graphics/` (mapa de capa
 - Configuración: `graphics/config/` (`ArtConfig`/`TechConfig`, paletas, presets `sparse|base|dense|noche|elevation`, `resolveConfig` valida en la frontera).
 - Canvas 2D: `graphics/renderers/canvas/paint.ts` pinta el mismo `DisplayList` (arcos convertidos a centro, sin `Path2D`).
 - Three.js: `graphics/renderers/three/buildTemple.ts` levanta la `Architecture` en geometría (cilindros, toros, anillos, cajas, esferas); las texturas salen de los mismos pintores de fachada vía `application/textureView.ts`; piso y cúpulas usan GLSL (`renderers/three/shaders/`). El juego lo monta en `web/src/game/Scene.tsx` al norte del laberinto (`config/composition.ts`).
-- Vista previa en el navegador: `npm run dev` en `web/` y `/?view=graphics&preset=dense&backend=svg|canvas|three`.
+- Vista previa en el navegador: `npm run dev` en `web/` y `/laberinto.html?view=graphics&preset=dense&backend=svg|canvas|three`.
 - Capturas de referencia: `capturas/` (`dense-svg.jpg`, `dense-canvas.jpg`, `dense-three.jpg`, `game-temple-north.jpg`).
 - Tests: `web/src/graphics/**/*.test.ts` (`npx vitest run src/graphics` desde `web/`).
 - Render a disco: `node render.ts --preset=dense` o `node render.ts --seed=7 --density=0.6 --complexity=3 --palette=friedeberg --symmetry=bilateral` (Node 24 corre TS sin build). Sale en `out/` un `.svg` y un `.scene.json` con la `Architecture`.

@@ -1,0 +1,9 @@
+{
+  "routes": [
+    { "route": "/laberinto", "rewrite": "/laberinto.html" },
+    { "route": "/memorama", "rewrite": "/memorama.html" },
+    { "route": "/building", "rewrite": "/building.html" }
+  ],
+  "navigationFallback": { "rewrite": "/index.html", "exclude": ["/assets/*", "/models/*", "/audio/*", "/brand/*", "/*.html"] },
+  "mimeTypes": { ".glb": "model/gltf-binary", ".fbx": "application/octet-stream" }
+}

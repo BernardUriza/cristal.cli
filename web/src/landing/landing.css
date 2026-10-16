@@ -1,0 +1,155 @@
+:root {
+  --bg: #000000;
+  --fg: #f1e6c8;
+  --dim: #8a7f66;
+  --accent: #33ff99;
+  --magenta: #d8468f;
+  --turquoise: #2fb7c9;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  min-height: 100%;
+  background: var(--bg);
+  color: var(--fg);
+  font: 15px/1.5 "JetBrains Mono", Consolas, monospace;
+}
+
+.landing {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 40px;
+  padding: 48px 16px 32px;
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.landing-header {
+  text-align: center;
+}
+
+.landing-emblem {
+  width: 112px;
+  height: 112px;
+  border-radius: 8px;
+}
+
+.landing-title {
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  margin-top: 12px;
+}
+
+.landing-tagline {
+  color: var(--accent);
+  letter-spacing: 0.2em;
+  margin-top: 8px;
+}
+
+.landing-choices {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  width: 100%;
+}
+
+.choice {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px;
+  border: 1px solid #222;
+  border-radius: 8px;
+  color: var(--fg);
+  text-decoration: none;
+  background: #0b0b12;
+  transition: border-color 160ms ease, transform 160ms ease;
+}
+
+.choice:hover,
+.choice:focus-visible {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  outline: none;
+}
+
+.choice h2 {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+}
+
+.choice p {
+  color: var(--fg);
+}
+
+.choice-meta {
+  color: var(--dim);
+  font-size: 13px;
+  margin-top: auto;
+}
+
+.landing-preview {
+  aspect-ratio: 3 / 2;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #12121f;
+}
+
+.landing-preview.glyph {
+  background-size: 48%;
+  background-position: center;
+  background-repeat: no-repeat;
+  box-shadow: inset 0 0 0 4px #0b0b12, inset 0 0 0 5px var(--turquoise);
+}
+
+.landing-preview.temples {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  padding: 6px;
+  background: #f3e7c6;
+}
+
+.landing-preview.temples canvas {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border-radius: 4px;
+}
+
+.landing-footer {
+  display: flex;
+  gap: 24px;
+  margin-top: auto;
+}
+
+.landing-footer a {
+  color: var(--dim);
+  text-decoration: none;
+}
+
+.landing-footer a:hover {
+  color: var(--fg);
+}
+
+@media (max-width: 640px) {
+  .landing {
+    gap: 28px;
+    padding-top: 32px;
+  }
+  .landing-choices {
+    grid-template-columns: 1fr;
+  }
+}
