@@ -21,6 +21,16 @@
 
 ---
 
+## Betatesters (2026-10-16)
+
+| Quién | Canal | Estado | Qué recibió |
+|---|---|---|---|
+| `me.tikkum` (Instagram) | DM https://www.instagram.com/direct/t/17847378020577220/ | 2026-10-16 12:40 se ofreció ("Siiii yo puedo ser tu beta-tester"); 12:43 Bernard le mandó el link. Sin feedback aún. 12:55 homework #1 redactado (memorama seed 777 / 8 pares desde el cel + una consola del laberinto desde compu, con screenshots); lo manda Bernard por el DM. | https://cristal.bernarduriza.com/ — va a abrirlo desde el celular: el memorama sí juega en touch (verificado 390x844, sin errores de consola); el laberinto es sólo escritorio (WASD + E + pointer lock), la landing ya lo dice. |
+
+Feedback de betatesters: se registra aquí, con fecha y cita, y lo accionable pasa a `.claude/backlog/`.
+
+---
+
 ## Completado
 
 ### Phase 1-6.3: Core Systems
