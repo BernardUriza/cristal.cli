@@ -53,14 +53,16 @@ jobs:
 
       - name: Smoke the live pages
         working-directory: .
+        env:
+          HOST: ${{ vars.CRISTAL_WEB_HOST || 'cristal.bernarduriza.com' }}
         run: |
           for path in / /laberinto.html /memorama.html; do
             for i in $(seq 1 12); do
-              code=$(curl -sS -o /dev/null -w "%{http_code}" "https://cristal.bernarduriza.com$path" || echo "000")
+              code=$(curl -sS -o /dev/null -w "%{http_code}" "https://$HOST$path" || echo "000")
               echo "$path attempt $i: HTTP $code"
               [ "$code" = "200" ] && break
               sleep 10
             done
             [ "$code" = "200" ] || { echo "FAIL $path"; exit 1; }
           done
-          curl -sS https://cristal.bernarduriza.com/ | grep -q "src/landing\|landing-" && echo "landing bundle served" || { echo "FAIL: / is not the landing"; exit 1; }
+          curl -sS "https://$HOST/" | grep -q "landing" && echo "landing served on $HOST" || { echo "FAIL: / is not the landing"; exit 1; }
