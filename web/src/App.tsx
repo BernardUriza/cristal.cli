@@ -1,4 +1,4 @@
-import { Suspense, useEffect } from "react";
+import { Suspense, useEffect, type ReactNode } from "react";
 import { Environment } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
 import * as THREE from "three";
@@ -31,6 +31,15 @@ function ModeBadge() {
 function World() {
   const inRoom = useGame((s) => s.mode === GameMode.Room);
   return inRoom ? <RoomScene /> : <Scene />;
+}
+
+// Exploration aids hide while the console is up: the overlay replaces the world,
+// so the objective panel and minimap must not bleed through its transcript.
+function ExplorationHud({ children }: { children: ReactNode }) {
+  const consoleUp = useGame(
+    (s) => s.mode === GameMode.Console || (s.mode === GameMode.Transition && s.activeConsoleId !== null)
+  );
+  return consoleUp ? null : <>{children}</>;
 }
 
 function PressureVignette() {
@@ -109,16 +118,20 @@ export function App() {
 
       <div className="hud">
         <ModeBadge />
-        <ObjectivePanel />
-        <InteractPrompt />
-        <DebugHUD />
-        <DangerBadge />
-        <ConsequenceSignal />
+        <ExplorationHud>
+          <ObjectivePanel />
+          <InteractPrompt />
+          <DebugHUD />
+          <DangerBadge />
+          <ConsequenceSignal />
+        </ExplorationHud>
         <AudioControl />
       </div>
       <RoomPanel />
       <RoomCaption />
-      <Minimap />
+      <ExplorationHud>
+        <Minimap />
+      </ExplorationHud>
       <RoomJournal />
       <PressureVignette />
       <ConsoleOverlay />

@@ -20,6 +20,7 @@ export function useInteractKey(glyphs: GlyphRef[]): void {
           useGame.getState().invokeGlyph(glyph.archetype, glyph.id);
         }
       } else if (nearbyConsoleId) {
+        e.preventDefault();
         enterConsoleMode(nearbyConsoleId);
       }
     };

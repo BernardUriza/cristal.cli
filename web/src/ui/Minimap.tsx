@@ -46,10 +46,8 @@ export function Minimap() {
   const headX = dotX + Math.sin(pose.heading) * CELL_PX * 0.6;
   const headZ = dotZ + Math.cos(pose.heading) * CELL_PX * 0.6;
 
-  // Suggested route: aim at the rite's next target first (consoles until the
-  // confession lands, then glyphs), then any unvisited world node, then the
-  // nearest unvisited cell. Visited cells only demote within the same tier —
-  // the rite target stays routable even after walking over it.
+  // Route tiers: nearest rite target (never demoted by visits, so standing on it
+  // reads "aquí" instead of pointing at a farther twin), unvisited node, unvisited cell.
   const verticalSlice = useGame((s) => s.verticalSlice);
   const visited = useRef<Set<string>>(new Set());
   const pcx = Math.max(0, Math.min(MAZE_COLS - 1, Math.round((pose.x + OFFSET_X) / CELL)));
@@ -68,14 +66,8 @@ export function Minimap() {
         )
         .sort((a, b) => a.route.length - b.route.length)[0] ?? null;
 
-    const riteNodes = riteCandidateNodes(verticalSlice, WORLD_NODES);
-    const unvisitedRite = riteNodes.filter(
-      (node) => !visited.current.has(cellKey({ x: node.cell[0], y: node.cell[1] }))
-    );
-    const riteHit = shortestRouteTo(unvisitedRite.length > 0 ? unvisitedRite : riteNodes);
-    if (riteHit && riteHit.route.length > 1) {
-      return { route: riteHit.route, targetNode: riteHit.node, isRiteTarget: true };
-    }
+    const riteHit = shortestRouteTo(riteCandidateNodes(verticalSlice, WORLD_NODES));
+    if (riteHit) return { route: riteHit.route, targetNode: riteHit.node, isRiteTarget: true };
 
     const nodeHit = shortestRouteTo(
       WORLD_NODES.filter((node) => !visited.current.has(cellKey({ x: node.cell[0], y: node.cell[1] })))
@@ -186,7 +178,9 @@ export function Minimap() {
       <div style={{ marginTop: 4 }}>
         MAP · {connected ? "connected" : "DISJOINT"} ·{" "}
         {route
-          ? `${isRiteTarget ? "RITO → " : "→ "}${targetNode?.label ?? "unexplored"} ${route.length}`
+          ? `${isRiteTarget ? "RITO → " : "→ "}${targetNode?.label ?? "unexplored"} ${
+              route.length > 1 ? route.length - 1 : "aquí"
+            }`
           : "explored"}
       </div>
     </div>
