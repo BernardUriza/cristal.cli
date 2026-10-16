@@ -209,3 +209,33 @@ describe("game store pressure normalization", () => {
     expect(annotations[annotations.length - 1]?.kind).toBe("false-door-avoidance");
   });
 });
+
+describe("glyph room prefetch", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    resetPsychSession();
+    useGame.setState(useGame.getInitialState(), true);
+  });
+
+  it("shares the in-flight request between the prefetch and the invocation", async () => {
+    const fetchRoom = vi.fn(async () =>
+      responseWithJson({
+        name: "Prefetched",
+        inscription: "",
+        description: "",
+        exits: ["north"],
+        dread: 0,
+        shape: "chamber",
+      }),
+    );
+    vi.stubGlobal("fetch", fetchRoom);
+
+    useGame.getState().prefetchGlyphRoom("echo", "glyph-prefetch");
+    useGame.getState().invokeGlyph("echo", "glyph-prefetch");
+    await waitForRoom();
+
+    expect(fetchRoom).toHaveBeenCalledTimes(1);
+    expect(useGame.getState().room?.name).toBe("Prefetched");
+    expect(useGame.getState().mode).toBe(GameMode.Room);
+  });
+});

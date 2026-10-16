@@ -7,6 +7,7 @@ import { getPlayerPose, subscribePlayerPose, type PlayerPose } from "../game/pla
 import { riteCandidateNodes } from "../game/riteFocus";
 import { useGame } from "../game/store";
 import { GameMode } from "../game/types";
+import { useRitePrefetch } from "../game/useRitePrefetch";
 import { WORLD_NODES, type WorldNode } from "../game/worldNodes";
 
 const CELL_PX = 18;
@@ -83,6 +84,7 @@ export function Minimap() {
       isRiteTarget: false,
     };
   }, [maze, pcx, pcy, verticalSlice]);
+  useRitePrefetch(targetNode, isRiteTarget);
 
   if (!exploring) return null;
 

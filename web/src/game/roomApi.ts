@@ -24,8 +24,9 @@ export function seedForExit(parentSeed: number, index: number): number {
   return (a ^ (a >>> 16)) >>> 0;
 }
 
-// A hung AI server must degrade to the local fallback, never freeze the descent.
-export const GENERATE_ROOM_TIMEOUT_MS = 8000;
+// The AIRE room turn measured ~40 s on 2026-10-16; a hung server still degrades
+// to the local fallback instead of freezing the descent.
+export const GENERATE_ROOM_TIMEOUT_MS = 45000;
 
 export async function generateRoom(params: {
   seed: number;

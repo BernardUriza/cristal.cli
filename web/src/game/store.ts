@@ -47,6 +47,7 @@ import {
 // endless descent can't grow the cache without limit.
 const ROOM_CACHE_LIMIT = 64;
 const roomCache = new Map<number, Room>();
+const pendingRooms = new Map<number, Promise<Room>>();
 
 function cacheRoom(seed: number, room: Room): void {
   roomCache.set(seed, room);
@@ -163,6 +164,8 @@ interface GameState {
   setPsychologicalPressure: (pressure: number, stance?: Stance | null) => void;
   /** glyph pressed in the world — opens the first room of a descent */
   invokeGlyph: (archetype: SymbolicArchetype, glyphId: string) => void;
+  /** warm the cache for the glyph the rite points at, so the AI room is ready on arrival */
+  prefetchGlyphRoom: (archetype: SymbolicArchetype, glyphId: string) => void;
   /** cross exit[index] of the current room — load/generate the next one */
   takeExit: (index: number) => void;
   /** stability hit 0 — mark the room dangerous and expel to the maze */
@@ -198,6 +201,32 @@ export const useGame = create<GameState>((set, get) => {
     }
     return stabilityEngine.state.stability;
   };
+
+  // One in-flight request per seed: a prefetch started on the walk is the same
+  // promise the glyph invocation awaits, never a second server turn.
+  const requestRoom = (seed: number, archetype: SymbolicArchetype, fragments: string[]): Promise<Room> => {
+    const pending = pendingRooms.get(seed);
+    if (pending) return pending;
+    const request = generateRoom({ seed, archetype, depth: get().depth, fragments })
+      .then((room) => {
+        cacheRoom(seed, room);
+        return room;
+      })
+      .finally(() => pendingRooms.delete(seed));
+    pendingRooms.set(seed, request);
+    return request;
+  };
+
+  const glyphRoomSeed = (archetype: SymbolicArchetype, glyphId: string): number =>
+    seedForExit(
+      (get().depth + 1) * 0x9e3779b1 + symbolicSeedBias(archetype, get().transference.ritualGravity),
+      glyphId.length + archetype.length
+    );
+
+  const glyphRoomFragments = (archetype: SymbolicArchetype, slice: VerticalSliceState): string[] => [
+    ...confessionFragmentsForRoom(slice),
+    `ritual gravity ${get().transference.ritualGravity.archetypeBias[archetype].toFixed(2)}`,
+  ];
 
   const loadRoom = (
     seed: number,
@@ -239,9 +268,8 @@ export const useGame = create<GameState>((set, get) => {
       return;
     }
     set({ roomLoading: true, roomError: null, roomArchetype: archetype });
-    generateRoom({ seed, archetype, depth: get().depth, fragments })
+    requestRoom(seed, archetype, fragments)
       .then((room) => {
-        cacheRoom(seed, room);
         if (requestId !== roomRequestId) return;
         set((s) => {
           const emotionalHistory = s.psychologicalStance
@@ -425,25 +453,18 @@ export const useGame = create<GameState>((set, get) => {
 
   invokeGlyph: (archetype, glyphId) => {
     if (get().roomLoading) return;
-    const gravity = get().transference.ritualGravity;
-    const seed = seedForExit(
-      (get().depth + 1) * 0x9e3779b1 + symbolicSeedBias(archetype, gravity),
-      glyphId.length + archetype.length
-    );
+    const seed = glyphRoomSeed(archetype, glyphId);
     // a glyph opens a fresh descent — clear the previous breadcrumb trail
     const verticalSlice = noteGlyphInvoked(get().verticalSlice, glyphId, archetype);
     saveVerticalSlice(verticalSlice);
     set({ roomHistory: [], verticalSlice });
-    loadRoom(
-      seed,
-      archetype,
-      [
-        ...confessionFragmentsForRoom(verticalSlice),
-        `ritual gravity ${gravity.archetypeBias[archetype].toFixed(2)}`,
-      ],
-      null,
-      true
-    );
+    loadRoom(seed, archetype, glyphRoomFragments(archetype, verticalSlice), null, true);
+  },
+
+  prefetchGlyphRoom: (archetype, glyphId) => {
+    const seed = glyphRoomSeed(archetype, glyphId);
+    if (roomCache.has(seed) || pendingRooms.has(seed)) return;
+    void requestRoom(seed, archetype, glyphRoomFragments(archetype, get().verticalSlice)).catch(() => undefined);
   },
 
   takeExit: (index) => {
