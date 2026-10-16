@@ -1,0 +1,6 @@
+.venv
+.env.local
+__pycache__
+*.pyc
+claim-susurro.sh
+run.sh

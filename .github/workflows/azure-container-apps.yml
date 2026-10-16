@@ -1,0 +1,98 @@
+# Build server/ into ghcr.io/bernarduriza/cristal.cli/api and roll it into the Container App.
+# Auth: OIDC federated credential repo:BernardUriza/cristal.cli:ref:refs/heads/main on the shared AAD app.
+# The Container App carries its env/secrets out-of-band (AIRE_GATE_URL, AIRE_AUTH_TOKEN, SUSURRO_KEY, CRISTAL_ALLOWED_ORIGINS).
+name: Deploy API to Azure Container Apps
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "server/**"
+      - ".github/workflows/azure-container-apps.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: aca-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  id-token: write
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository_owner }}/${{ github.event.repository.name }}/api
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+    name: Build and deploy
+    env:
+      DEPLOY_CONFIGURED: ${{ vars.AZURE_CLIENT_ID != '' && vars.AZURE_CONTAINER_APP_NAME != '' }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Compute image tag
+        id: img
+        run: |
+          IMG_LOWER=$(echo "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}" | tr '[:upper:]' '[:lower:]')
+          echo "image=${IMG_LOWER}:${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          echo "image_latest=${IMG_LOWER}:latest" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: server
+          file: server/Dockerfile
+          push: true
+          tags: |
+            ${{ steps.img.outputs.image }}
+            ${{ steps.img.outputs.image_latest }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Azure login (OIDC)
+        if: ${{ env.DEPLOY_CONFIGURED == 'true' }}
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Update Container App revision
+        if: ${{ env.DEPLOY_CONFIGURED == 'true' }}
+        run: |
+          az containerapp update \
+            --name "${{ vars.AZURE_CONTAINER_APP_NAME }}" \
+            --resource-group "${{ vars.AZURE_RESOURCE_GROUP }}" \
+            --image "${{ steps.img.outputs.image }}" \
+            --output none
+          echo "Rolled ${{ vars.AZURE_CONTAINER_APP_NAME }} to ${{ steps.img.outputs.image }}"
+
+      - name: Smoke /health
+        if: ${{ env.DEPLOY_CONFIGURED == 'true' }}
+        run: |
+          FQDN=$(az containerapp show \
+            --name "${{ vars.AZURE_CONTAINER_APP_NAME }}" \
+            --resource-group "${{ vars.AZURE_RESOURCE_GROUP }}" \
+            --query "properties.configuration.ingress.fqdn" -o tsv)
+          echo "Probing https://$FQDN/health …"
+          for i in $(seq 1 18); do
+            code=$(curl -sS -o /dev/null -w "%{http_code}" "https://$FQDN/health" || echo "000")
+            echo "  attempt $i: HTTP $code"
+            [ "$code" = "200" ] && { echo "OK — revision is live."; exit 0; }
+            sleep 5
+          done
+          echo "FAIL — /health never returned 200."
+          exit 1

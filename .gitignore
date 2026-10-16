@@ -86,3 +86,6 @@ tmpclaude-*
 # Local env (coagent id, secrets) — never commit
 .env
 .env.local
+
+# TarotGame checkout (its own repo, github.com/BernardUriza/TarotGame)
+tarot/

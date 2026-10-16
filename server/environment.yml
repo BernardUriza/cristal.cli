@@ -1,0 +1,15 @@
+# CRISTAL.CLI server — conda-native image env (fi-runner over AIRE, FastAPI).
+name: app
+channels:
+  - conda-forge
+  - nodefaults
+dependencies:
+  - python=3.12
+  - pip
+  - pip:
+      # Pinned to a free-intelligence SHA: a branch can vanish, a SHA cannot (fi-runner 0.23.0, 2026-10-15).
+      - "fi-core @ git+https://github.com/BernardUriza/free-intelligence.git@109260afbf2de53b4de5a5910302d5cebd93d377#subdirectory=apps/packages/fi-core"
+      - "fi-runner[aire] @ git+https://github.com/BernardUriza/free-intelligence.git@109260afbf2de53b4de5a5910302d5cebd93d377#subdirectory=apps/packages/fi-runner"
+      - "fastapi>=0.110"
+      - "uvicorn[standard]>=0.29"
+      - "httpx>=0.27"
