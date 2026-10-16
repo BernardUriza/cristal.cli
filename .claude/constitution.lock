@@ -13,7 +13,7 @@ tree = "sha256:99b3047a072cc0f1c55b56ebf599ac2a6b4b94b1df26316036628e995599b720"
 id = "cristal.cli"
 surfaces = ["CLAUDE.md", ".claude/CLAUDE.md", ".claude/rules/**", ".claude/overrides/**"]
 imports = []
-surfaces_tree = "sha256:f057cc062eac0b314c827835cb94edc4da33d7e12f026ffa4c883cca62f054f1"
+surfaces_tree = "sha256:c8aebbdb64fc5d756ec0338e3d47c4e4317a0345e86822526c43ecbbe5a25bfd"
 
 [hooks]
 entries = [
@@ -29,12 +29,12 @@ policy = ["repo", "bernard", "core"]
 methodology = []
 
 [lock]
-canonical_sha256 = "9f1b40036f6cf6f46f0429b8194ef4d6311af4f62bf3d0858ebee2a8c3a72660"
+canonical_sha256 = "00c4e86adf0c96e554a7457ded31c6671eee454e9bc7dd3abafc11184bf48b16"
 
 [[overlay]]
 id = "bernard"
 layer = "personal"
 scope = "machine-only"
 repo = "https://github.com/BernardUriza/constitution-bernard.git"
-rev = "7f6eeaf94e2b27f5149ca54c92fdde2d59467301"
-tree = "sha256:31906e1c64b1d52b4b497a98e39b862f14cafdf74a71cd037acfe0a887934a67"
+rev = "1e268e2dcdccc5079d9910e32f7fddca6dbb7f2a"
+tree = "sha256:7a08f289f9ca1639fbc7da9844a63585e6a00de252b8d51c4c63fce29c8babf4"
