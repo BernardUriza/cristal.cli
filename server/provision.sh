@@ -44,3 +44,8 @@ fi
 FQDN=$(az containerapp show -n "$APP" -g "$RG" --query properties.configuration.ingress.fqdn -o tsv)
 echo "   https://$FQDN"
 printf 'health -> '; curl -s -o /dev/null -w '%{http_code}\n' --max-time 60 "https://$FQDN/health" || true
+
+echo "== CI service principal: Contributor on this Container App only"
+SPOID=$(az ad sp show --id "$AAD_CLIENT_ID" --query id -o tsv)
+APPID=$(az containerapp show -n "$APP" -g "$RG" --query id -o tsv)
+az role assignment create --assignee-object-id "$SPOID" --assignee-principal-type ServicePrincipal --role Contributor --scope "$APPID" --output none && echo "   granted"
