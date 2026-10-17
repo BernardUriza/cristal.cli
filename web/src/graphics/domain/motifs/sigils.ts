@@ -1,5 +1,5 @@
 import { regularPolygon } from "../geometry.ts";
-import type { Rng } from "../rng.ts";
+import type { Rng } from "../../../shared/rng";
 import { circle, line, polygon, rect, stroked, type Shape } from "../shapes.ts";
 
 export function outlinedPolygon(cx: number, cy: number, r: number, sides: number, stroke: string, sw: number, rot = 0, glow = true): Shape {

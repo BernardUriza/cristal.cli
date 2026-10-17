@@ -1,5 +1,5 @@
 import type { ArtConfig } from "../../config/types.ts";
-import { chance, indexBelow, pick, type Rng } from "../rng.ts";
+import { chance, indexBelow, pick, type Rng } from "../../../shared/rng";
 import type { Arch, Capital, Colonnade, Column, ShaftScheme, Window } from "./types.ts";
 
 export type ColonnadeSpec = {

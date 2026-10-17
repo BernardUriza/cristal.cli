@@ -2,7 +2,7 @@ import type { SymbolicArchetype } from "../../game/symbolicBus";
 import { inks } from "../domain/motifs/ornament.ts";
 import { concentricRings, radialLines } from "../domain/motifs/radial.ts";
 import { flowerOfLife, glitchPattern, outlinedPolygon } from "../domain/motifs/sigils.ts";
-import { mulberry32, type Rng } from "../domain/rng.ts";
+import { mulberry32, type Rng } from "../../shared/rng";
 import { circle, stroked, type DisplayList, type Shape } from "../domain/shapes.ts";
 
 export const GLYPH_SIZE = 256;
