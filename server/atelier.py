@@ -4,7 +4,8 @@ POST /atelier/direct {narration, seed} → {title, choices: [{field, value, beca
 
 The model never produces pixels: it picks parameters of the procedural grammar
 (web/src/graphics) and says why, so the browser can show every decision and the
-player can override it. Invalid fields or values are dropped here, never guessed.
+player can override it. Invalid fields or values are dropped here, never guessed; a `program` with one bad
+RuleCall is dropped whole, and the browser expands it with the grammar before using it.
 The persona lives in prompts/atelier.md and speaks in its own AIRE casita.
 """
 
@@ -22,7 +23,7 @@ _PALETTES = ("friedeberg", "noche")
 _SYMMETRIES = ("bilateral", "asymmetric")
 _PROJECTIONS = ("perspective", "elevation")
 _COLUMNS = (5, 7, 9)
-_COMPOSITIONS = ("templo", "patio")
+_COMPOSITIONS = ("programa", "templo", "patio")
 _MOTIFS = ("ojo", "mano", "craneo", "perro", "jaguar", "escalera", "mascara", "sirena")
 _ORNAMENT = ("greca", "chevrón", "ajedrez", "estrías", "roseta", "sierpinski")
 _ANOMALIES = ("none", "escalera-imposible", "edificio-anidado", "torre-flotante", "columna-figura")
@@ -34,6 +35,11 @@ _PLACES = ("patio", "azoteas", "torres", "cielo", "escalera")
 _ARCH = {"footprint": ("cuadrado", "alargado", "profundo"), "courtyard": ("chico", "medio", "grande"), "heights": ("bajo", "medio", "alto", "vertiginoso")}
 _ARCH_DEFAULT = {"footprint": "cuadrado", "courtyard": "medio", "heights": "medio"}
 _MAX_BECAUSE = 200
+_ARCHETYPES = ("palace", "city", "temple", "labyrinth")
+_GRAMMAR_RULES = ("R1", "R2", "R3", "R4", "R5", "R6")
+_MAX_RULE_CALLS = 8
+_MAX_SHORT = 24
+_MAX_PARAMS = 4
 
 
 class DirectRequest(BaseModel):
@@ -109,10 +115,45 @@ def _scene(value: Any) -> dict[str, Any] | None:
     return {"groups": groups, "architecture": arch}
 
 
+def _short(value: Any) -> bool:
+    return isinstance(value, str) and 0 < len(value) <= _MAX_SHORT
+
+
+def _param(value: Any) -> bool:
+    if isinstance(value, bool):
+        return False
+    return isinstance(value, (int, float)) or _short(value)
+
+
+def _rule_call(raw: Any) -> dict[str, Any] | None:
+    if not isinstance(raw, dict) or raw.get("rule") not in _GRAMMAR_RULES or not _short(raw.get("target")):
+        return None
+    params = raw.get("params", {})
+    if not isinstance(params, dict) or len(params) > _MAX_PARAMS:
+        return None
+    if not all(_short(k) and _param(v) for k, v in params.items()):
+        return None
+    return {"rule": raw["rule"], "target": raw["target"], "params": dict(params)}
+
+
+def _program(value: Any) -> dict[str, Any] | None:
+    if not isinstance(value, dict) or value.get("archetype") not in _ARCHETYPES:
+        return None
+    rules = value.get("rules")
+    if not isinstance(rules, list) or not 1 <= len(rules) <= _MAX_RULE_CALLS:
+        return None
+    calls = [_rule_call(r) for r in rules]
+    if any(c is None for c in calls):
+        return None
+    return {"archetype": value["archetype"], "rules": calls}
+
+
 def _coerce(field: str, value: Any) -> str | int | float | list[str] | dict[str, Any] | None:
     numeric = isinstance(value, (int, float)) and not isinstance(value, bool)
     if field == "scene":
         return _scene(value)
+    if field == "program":
+        return _program(value)
     if field == "composition":
         return value if value in _COMPOSITIONS else None
     if field == "anomaly":
