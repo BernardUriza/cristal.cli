@@ -1,6 +1,6 @@
 # Diversión con evidencia: la consola nunca rechaza, nunca repite, siempre mueve
 
-Status: In progress (punto 1 Done 2026-10-17, `673ef59`; puntos 2–6 Proposed)
+Status: In progress (puntos 1 y 2 Done 2026-10-17; puntos 3–6 Proposed)
 Proposed: 2026-10-17 by Bernard ("cómo hacer el juego más divertido"; /histerical-search, 6 investigadores, ~40 fuentes)
 
 **Qué es.** Veredicto completo con fuentes: `entregables/como-hacer-el-juego-mas-divertido-2026-10-17.html`.
@@ -54,5 +54,15 @@ solo `SilenceEngine.ts`.
 de `no siento nada, da igual` → diez líneas distintas, `...` con nag en el octavo, pivot al cuarto de la confesión en el noveno.
 Detalle y captura en `Donde_quedamos.md`.
 
-**Next.** Bernard decide entre los puntos 2–6 (densidad de hallazgo, primeros cinco minutos, memorama, modo viaje, relación);
+**Hecho, punto 2 (2026-10-17).** Cada frase tecleada en una consola queda escrita en un muro de la celda de esa
+consola (y luego en anillos hacia afuera), con el acento de la consola y atenuada si el stance fue evasivo:
+`web/src/game/inscriptions/WorldInscriptions.ts` (colocación determinista por anillo BFS sin repetir muro, pose
+pegada al muro mirando al centro, `deformPhrase` para la ambigüedad, persistencia en `localStorage` con tope 24),
+`WallInscription.tsx` (plano con textura canvas, revelado en 1.6 s), `DiscoveryClock.ts` (segundos sin hallazgo:
+nodo, inscripción, frase; umbral 60 s) y `useDiscoveryClock.ts` (muestrea la pose a 12 Hz en exploración; sin
+hallazgo un minuto, el laberinto escribe un fragmento deformado de las palabras del jugador uno o dos anillos
+adelante). El HUD de debug muestra `hallazgo: Ns · finds · hambre N`. El glifo y la puerta como cambios visibles
+quedan para cuando el cuarto IA (`/generate`) deje de tardar 40 s (`latencia-cristal-api.md`).
+
+**Next.** Punto 3 en orden (primeros cinco minutos: un verbo a la vez, placeholder con ejemplo, embudo instrumentado);
 y el DM a `me.tikkum` sigue pendiente de Bernard (borrador en `Donde_quedamos.md`).
