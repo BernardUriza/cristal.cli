@@ -5,6 +5,7 @@ import { clamp01 } from "../shared/math";
 import { fnv1a, mulberry32 } from "../shared/rng";
 import { loadFunnel, randomSessionId, reachFunnelStep, saveFunnel, type FunnelState, type FunnelStep } from "./funnel";
 import { reportFunnelStep } from "./funnelClient";
+import { loadViaje, saveViaje } from "./viaje";
 import { generateMaze } from "./maze";
 import { MAZE_COLS, MAZE_ROWS, MAZE_SEED } from "./mazeConfig";
 import type { CellCoord } from "./mazeGraph";
@@ -184,6 +185,8 @@ interface GameState {
   discovery: DiscoveryState;
   /** first-five-minutes funnel: seconds since load at which each step was first reached */
   funnel: FunnelState;
+  /** modo viaje: pantalla escasa, texto grande, sin parpadeo, el laberinto camina solo si sueltas */
+  viaje: boolean;
 
   enterConsoleMode: (consoleId: string) => void;
   exitConsoleMode: () => void;
@@ -193,6 +196,7 @@ interface GameState {
   noteDiscovery: (kind: DiscoveryKind, key: string, now: number) => void;
   /** first time a funnel step is reached this visit it is saved and reported; later calls are no-ops */
   reachFunnel: (step: FunnelStep, now: number) => void;
+  setViaje: (on: boolean) => void;
   /** a minute without a find: the labyrinth writes a deformed fragment of the player's words ahead */
   relieveStarvation: (playerCell: CellCoord, now: number) => void;
   setNearbyConsole: (consoleId: string | null) => void;
@@ -382,6 +386,12 @@ export const useGame = create<GameState>((set, get) => {
   inscriptions: loadInscriptions(),
   discovery: createDiscoveryState(Date.now()),
   funnel: loadFunnel(randomSessionId(mulberry32(Date.now() >>> 0)), Date.now()),
+  viaje: loadViaje(typeof window === "undefined" ? "" : window.location.search),
+
+  setViaje: (on) => {
+    saveViaje(on);
+    set({ viaje: on });
+  },
 
   reachFunnel: (step, now) =>
     set((s) => {

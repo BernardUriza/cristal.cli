@@ -11,6 +11,7 @@ import { cellCenter, generateMaze } from "./maze";
 import { MAZE_COLS, MAZE_ROWS, MAZE_SEED, SPAWN_CELL } from "./mazeConfig";
 import { CONSOLE_NODES, GLYPH_NODES, WORLD_NODES } from "./worldNodes";
 import { useGame } from "./store";
+import { rewardLevel, viajeAtmosphere } from "./viaje";
 import { Temple } from "../graphics/presentation/Temple";
 import { GAME_COMPOSITION, TEMPLE_PLACEMENT } from "../graphics/config/composition";
 
@@ -18,6 +19,8 @@ export function Scene() {
   const maze = useMemo(() => generateMaze(MAZE_COLS, MAZE_ROWS, MAZE_SEED), []);
   const transference = useGame((s) => s.transference);
   const inscriptions = useGame((s) => s.inscriptions);
+  const viaje = useGame((s) => s.viaje);
+  const atmosphere = viajeAtmosphere(viaje ? rewardLevel(inscriptions.length) : 0);
   const omittedIds = useMemo(
     () => new Set(transference.absencePlan.omissions.map((item) => item.id)),
     [transference.absencePlan]
@@ -67,10 +70,10 @@ export function Scene() {
   return (
     <>
       <color attach="background" args={["#02050a"]} />
-      <fog attach="fog" args={["#02050a", 8, 34]} />
+      <fog attach="fog" args={["#02050a", 8, atmosphere.fogFar]} />
 
-      <ambientLight intensity={0.6} color="#2a5a44" />
-      <hemisphereLight args={["#1a4a32", "#04100a", 0.8]} />
+      <ambientLight intensity={atmosphere.ambient} color="#2a5a44" />
+      <hemisphereLight args={["#1a4a32", "#04100a", atmosphere.hemisphere]} />
       <directionalLight
         position={[10, 18, 6]}
         intensity={1.1}

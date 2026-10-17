@@ -9,7 +9,12 @@ import type { Maze } from "./maze";
 import { publishPlayerPose } from "./playerPositionBus";
 import { useKeyboard } from "./input/useKeyboard";
 import type { GlyphRef } from "./RitualGlyph";
-import { ROTATION_SPEED, stepGravity, stepMovement } from "./player/movement";
+import { CROUCH_SPEED, ROTATION_SPEED, stepGravity, stepMovement, stepTowards } from "./player/movement";
+import { autowalkTarget, type AutowalkTarget } from "./autowalk";
+import { lastInputActivityAt, markInputActivity } from "./inputActivity";
+import { cellAt } from "./maze";
+import { isIdle } from "./viaje";
+import { WORLD_NODES } from "./worldNodes";
 import { findNearestId } from "./player/proximity";
 import {
   computeConsoleCamera,
@@ -47,6 +52,9 @@ export function Player({ maze, spawn, consoles, glyphs }: PlayerProps) {
   const vertical = useRef({ velY: 0, grounded: true });
   const loco = useRef<Locomotion>("idle");
   const lastLoco = useRef<Locomotion>("idle");
+  const autowalk = useRef<{ target: AutowalkTarget | null; at: number }>({ target: null, at: 0 });
+
+  useEffect(() => markInputActivity(Date.now()), []);
 
   // Remember where we stood so leaving a room returns us here, not the centre.
   useEffect(() => {
@@ -86,7 +94,25 @@ export function Player({ maze, spawn, consoles, glyphs }: PlayerProps) {
 
     if (exploring) {
       const i = input.current;
-      const move = stepMovement(maze, pos.current, yaw.current, i, dt);
+      let move = stepMovement(maze, pos.current, yaw.current, i, dt);
+      const now = Date.now();
+      const drifting = !move.moving && useGame.getState().viaje && isIdle(lastInputActivityAt(), now);
+      if (drifting) {
+        if (now - autowalk.current.at > 500) {
+          autowalk.current = {
+            target: autowalkTarget(maze, cellAt(maze, pos.current.x, pos.current.z), useGame.getState().verticalSlice, WORLD_NODES),
+            at: now,
+          };
+        }
+        const target = autowalk.current.target;
+        if (target) {
+          move = stepTowards(maze, pos.current, target.world, CROUCH_SPEED, dt);
+          if (move.targetYaw !== null) {
+            const delta = Math.atan2(Math.sin(move.targetYaw - yaw.current), Math.cos(move.targetYaw - yaw.current));
+            yaw.current += delta * Math.min(1, dt * 1.2);
+          }
+        }
+      }
       loco.current = move.locomotion;
 
       if (move.targetYaw !== null && group.current) {

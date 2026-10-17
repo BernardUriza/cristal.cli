@@ -90,6 +90,7 @@ export function Minimap() {
 
   return (
     <div
+      className="minimap"
       style={{
         position: "fixed",
         right: 16,

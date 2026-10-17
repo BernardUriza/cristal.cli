@@ -15,6 +15,7 @@ import { DangerBadge } from "./ui/DangerBadge";
 import { RoomJournal } from "./ui/RoomJournal";
 import { ConsequenceSignal, ObjectivePanel } from "./ui/ObjectivePanel";
 import { AudioControl } from "./ui/AudioControl";
+import { ViajeControl, ViajeExit } from "./ui/ViajeControl";
 import { MusicDirector } from "./game/MusicDirector";
 import { useGame } from "./game/store";
 import { GameMode } from "./game/types";
@@ -87,6 +88,10 @@ export function App() {
   useEffect(() => symbolicBus.subscribe(useGame.getState().setLastSymbol), []);
   useDiscoveryClock();
   useEffect(() => useGame.getState().reachFunnel("laberinto", Date.now()), []);
+  const viaje = useGame((s) => s.viaje);
+  useEffect(() => {
+    document.documentElement.classList.toggle("viaje", viaje);
+  }, [viaje]);
 
   return (
     <>
@@ -131,6 +136,8 @@ export function App() {
           <ConsequenceSignal />
         </ExplorationHud>
         <AudioControl />
+        <ViajeControl />
+        <ViajeExit />
       </div>
       <RoomPanel />
       <RoomCaption />
