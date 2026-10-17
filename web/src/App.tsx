@@ -88,6 +88,7 @@ export function App() {
   useEffect(() => symbolicBus.subscribe(useGame.getState().setLastSymbol), []);
   useDiscoveryClock();
   useEffect(() => useGame.getState().reachFunnel("laberinto", Date.now()), []);
+  useEffect(() => useGame.getState().fetchForeignEcho(), []);
   const viaje = useGame((s) => s.viaje);
   useEffect(() => {
     document.documentElement.classList.toggle("viaje", viaje);

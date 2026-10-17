@@ -44,4 +44,17 @@ describe("store: inscriptions and discovery", () => {
     expect(useGame.getState()).toBe(after);
     expect(before).not.toBe(after);
   });
+
+  it("writes another player's echo first when one is waiting, then falls back to its own words", () => {
+    useGame.getState().addInscription("me siento cansado y confundido", "confession", ALPHA, "#33ff99", 1000);
+    useGame.getState().setForeignEcho("alguien dejó su miedo aquí");
+    useGame.getState().relieveStarvation({ x: 4, y: 4 }, 1000 + STARVATION_MS);
+    const echo = useGame.getState().inscriptions[1];
+    expect(echo.source).toBe("echo");
+    expect(echo.text.split(" ").filter((w) => w !== "…").every((w) => "alguien dejó su miedo aquí".includes(w))).toBe(true);
+    expect(useGame.getState().foreignEcho).toBeNull();
+
+    useGame.getState().relieveStarvation({ x: 4, y: 4 }, 1000 + 2 * STARVATION_MS);
+    expect(useGame.getState().inscriptions[2].source).toBe("starvation");
+  });
 });

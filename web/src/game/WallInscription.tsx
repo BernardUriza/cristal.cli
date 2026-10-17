@@ -39,7 +39,7 @@ export function WallInscription({ maze, inscription }: { maze: Maze; inscription
   const matRef = useRef<THREE.MeshBasicMaterial>(null);
   const pose = useMemo(() => inscriptionPose(maze, inscription), [maze, inscription]);
   const texture = useMemo(() => makeInscriptionTexture(inscription.text, inscription.accent), [inscription.text, inscription.accent]);
-  const fullOpacity = inscription.stance && isEvasiveStance(inscription.stance) ? 0.62 : inscription.source === "starvation" ? 0.8 : 1;
+  const fullOpacity = inscription.stance && isEvasiveStance(inscription.stance) ? 0.62 : inscription.source === "console" ? 1 : 0.8;
 
   useEffect(() => () => texture.dispose(), [texture]);
 
