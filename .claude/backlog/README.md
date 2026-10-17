@@ -7,7 +7,7 @@ Un archivo por item; status se voltea el día que cambia. Fuente de las ideas de
 | Item | Status | Propuesto |
 |---|---|---|
 | [IA psiconauta: acompañante que aprovecha el estado alterado](ia-psiconauta.md) | Proposed | 2026-10-16 |
-| [RAG propio sobre sustancias y percepción](rag-corpus-psiconautico.md) | Proposed | 2026-10-16 |
+| [RAG propio sobre sustancias y percepción](rag-corpus-psiconautico.md) | In progress (v1 en prod 5984d9e) | 2026-10-16 |
 | [Diseño compasivo para estado alterado: capa de seguridad](diseno-compasivo-estado-alterado.md) | Proposed | 2026-10-16 |
 | [Gramática estética procedural (capa sobre el motor Three.js)](gramatica-estetica-procedural.md) | In progress (gramática + SVG/Canvas/Three + vista previa Done; faltan 2 pendientes visuales y 20 variaciones) | 2026-10-16 |
 | [Conocimiento arquitectónico real en el motor](conocimiento-arquitectonico-del-motor.md) | In progress (edificio con patio y cinco vistas Done en 2c1f2df; faltan órdenes clásicos) | 2026-10-16 |

@@ -93,3 +93,17 @@ def test_http_surface(tmp_path, monkeypatch):
     body = client.post("/corpus/check", json={"text": "tomé ácido y me voy a morir"}).json()
     assert body["sustancias"] == ["lsd"] and body["senales"][0]["id"] == "panico" and "nida-lsd" in body["contexto"]
     corpus.corpus.cache_clear()
+
+
+def test_real_corpus_names_survive_yaml_commas_and_every_claim_has_a_known_source():
+    c = corpus.load_corpus(corpus.Path(corpus.__file__).with_name("corpus"))
+    for sid, fiche in c.sustancias.items():
+        names = [str(n) for n in fiche.get("nombres", [])]
+        assert all(len(n) >= 2 for n in names), (sid, names)
+        known = {f["id"] for f in fiche.get("fuentes", [])}
+        for key in ("efectos", "riesgos", "senales_de_urgencia", "investigacion", "fenomenologia", "acompanamiento", "contradicciones"):
+            for item in fiche.get(key, []):
+                assert item.get("fuentes"), (sid, key, item.get("texto", "")[:40])
+                assert set(item["fuentes"]) <= known, (sid, key, set(item["fuentes"]) - known)
+    assert "N,N-dimetiltriptamina" in c.sustancias["dmt"]["nombres"]
+    assert corpus.detect_substances("me dieron una tacha", c) == ["mdma"]
