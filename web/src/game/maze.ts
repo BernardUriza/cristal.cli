@@ -2,7 +2,7 @@
 // stable across reloads without needing a saved .unity scene. Cells are square;
 // a wall lives on the boundary between two cells.
 
-import { mulberry32 } from "../graphics/domain/rng";
+import { mulberry32 } from "../shared/rng";
 
 export const CELL = 4; // world units per maze cell
 export const WALL_HEIGHT = 3.5;

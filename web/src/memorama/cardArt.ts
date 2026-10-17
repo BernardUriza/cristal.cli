@@ -1,6 +1,6 @@
 import { PALETTE_NAMES } from "../graphics/config/palettes.ts";
 import type { ConfigInput } from "../graphics/config/types.ts";
-import { mulberry32, pick } from "../graphics/domain/rng.ts";
+import { mulberry32, pick } from "../shared/rng";
 
 export const CARD_WIDTH = 300;
 export const CARD_HEIGHT = 400;

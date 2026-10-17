@@ -1,7 +1,7 @@
 import type { Sky } from "../../domain/architecture/types.ts";
 import { star } from "../../domain/geometry.ts";
 import { concentricRings, sierpinski, sunburst } from "../../domain/motifs/radial.ts";
-import type { Rng } from "../../domain/rng.ts";
+import type { Rng } from "../../../shared/rng";
 import { circle, filled, polygon, type Shape } from "../../domain/shapes.ts";
 import { ornament, palInks, type Painter } from "../painter.ts";
 

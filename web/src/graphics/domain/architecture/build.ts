@@ -1,5 +1,5 @@
 import type { ArtConfig } from "../../config/types.ts";
-import { pick, type Rng } from "../rng.ts";
+import { pick, type Rng } from "../../../shared/rng";
 import { buildColonnade } from "./colonnade.ts";
 import type { Architecture } from "./types.ts";
 

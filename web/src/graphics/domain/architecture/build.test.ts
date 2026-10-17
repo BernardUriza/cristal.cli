@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { resolveConfig } from "../../config/validate";
-import { mulberry32 } from "../rng";
+import { mulberry32 } from "../../../shared/rng";
 import { buildArchitecture } from "./build";
 
 const art = (over: Record<string, unknown> = {}) => resolveConfig({ ...over }).art;

@@ -4,7 +4,7 @@ import { resolveConfig } from "../config/validate.ts";
 import { buildArchitecture } from "../domain/architecture/build.ts";
 import type { Architecture } from "../domain/architecture/types.ts";
 import { makeLod } from "../domain/lod.ts";
-import { mulberry32 } from "../domain/rng.ts";
+import { mulberry32 } from "../../shared/rng";
 import { rect, solid, type DisplayList } from "../domain/shapes.ts";
 import { paintColonnade } from "./facade/colonnade.ts";
 import { paintFloor, paintPlatform } from "./facade/floor.ts";

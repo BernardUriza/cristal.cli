@@ -1,4 +1,4 @@
-import { mulberry32, type Rng } from "../graphics/domain/rng.ts";
+import { mulberry32, type Rng } from "../shared/rng";
 
 export type Card = { id: number; pairId: number; artSeed: number };
 
