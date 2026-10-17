@@ -1,6 +1,6 @@
 # Figuras generativas: que el motor invente figuras en vez de pegar 8 motivos
 
-Status: Proposed
+Status: In progress
 Proposed: 2026-10-17 by Bernard («busca más inspiración para algoritmos de más figuras»; /histerical-search, 5 investigadores)
 
 **Qué es.** Hoy ATELIER tiene 8 siluetas Bézier trazadas a mano (ojo, mano, cráneo, perro, jaguar, escalera, máscara,
@@ -49,4 +49,4 @@ No Man's Sky, canon animal. tactile-js no trae tipos TS y npm dice «SEE LICENSE
 
 **Decisión de Bernard.** Agregar `polygon-clipping` (MIT) y `tactile-js` (BSD-3, verificar LICENSE) como dependencias.
 
-**Next.** Paso 1 tras cerrar la integración de la gramática arquitectónica en ATELIER (agente en curso 2026-10-17).
+**Next.** 2026-10-17: pasos 1, 3 y 5 en curso en tres worktrees paralelos (sin dependencias nuevas); 2 y 4 esperan la decisión de dependencias.
