@@ -41,6 +41,15 @@ Captura `i+d/friedeberg/capturas/atelier-pedro-prod-2026-10-17.jpg`. Lección de
 por un `atelier.py` que el Dockerfile no copiaba y el smoke aprobó con el `/health` de la revisión vieja; el
 workflow ahora espera a que la revisión nueva corra la imagen pusheada (`3aa2daf`).
 
+**Escena (`41a7b87`, 2026-10-17) y la crítica de Bernard: «sigue muy simple».** El director ya escribe una escena
+(criaturas compuestas, cantidad, acomodo, lugar, escala del edificio), pero el edificio sigue siendo el mismo claustro
+y las criaturas son collage. Se le contó a Astra en el chat «CRISTAL.CLI Game» y respondió con tres commits concretos
+(fuente literal: `fuente-astra-atelier-no-simple-2026-10-17.md`): `architecture-grammar` (grafo espacial, R1–R6,
+validador, solver, cuatro programas con topologías distintas), `structural-rewrites` (roles y anchors, T1 columna
+antropomórfica, T2 cuerpo-fachada, T3 abertura recursiva, T4 ornamento habitable, oclusión) y `complexity-report`
+(diversidad topológica, profundidad semántica, cobertura multiescala por bandas de tamaño, familias de siluetas, con
+umbrales de aceptación). En ejecución 2026-10-17.
+
 **Canónico a reusar.** `web/src/graphics/` (gramática + pintores + SVG/Canvas), `web/src/minigames/kit/`.
 Para el director por LLM: `cristal-api` (`server/`) y `web/src/game/roomApi.ts` como precedente de llamada;
 la regla dura 2 (no tocar guardrails) y la regla `prompts-as-content-not-code`.
