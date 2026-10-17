@@ -2,6 +2,28 @@ import { create } from "zustand";
 import { GameMode, type Locomotion } from "./types";
 import type { SymbolicArchetype, SymbolicEvent } from "./symbolicBus";
 import { clamp01 } from "../shared/math";
+import { fnv1a } from "../shared/rng";
+import { generateMaze } from "./maze";
+import { MAZE_COLS, MAZE_ROWS, MAZE_SEED } from "./mazeConfig";
+import type { CellCoord } from "./mazeGraph";
+import {
+  createDiscoveryState,
+  isStarved,
+  noteDiscovery,
+  noteStarvationRelief,
+  type DiscoveryKind,
+  type DiscoveryState,
+} from "./DiscoveryClock";
+import {
+  compactInscription,
+  deformPhrase,
+  inscriptionId,
+  INSCRIPTION_LIMIT,
+  loadInscriptions,
+  placeInscription,
+  saveInscriptions,
+  type WorldInscription,
+} from "./inscriptions/WorldInscriptions";
 import { generateRoom, seedForExit, type Room } from "./roomApi";
 import { StabilityEngine } from "./StabilityEngine";
 import {
@@ -45,6 +67,9 @@ import {
 // you already opened instant and free — no second LLM call. Kept at module scope
 // (not in the store) so reads never trigger React re-renders. Bounded FIFO so an
 // endless descent can't grow the cache without limit.
+const WORLD_MAZE = generateMaze(MAZE_COLS, MAZE_ROWS, MAZE_SEED);
+const STARVATION_ACCENT = "#7dffd0";
+const STARVATION_FALLBACK = ["alguien pasó por aquí", "todavía no has dicho nada", "las paredes esperan una palabra"];
 const ROOM_CACHE_LIMIT = 64;
 const roomCache = new Map<number, Room>();
 const pendingRooms = new Map<number, Promise<Room>>();
@@ -151,10 +176,19 @@ interface GameState {
   transference: RuntimeTransferenceSnapshot;
   /** first-playable-run objective and authored consequence tracker */
   verticalSlice: VerticalSliceState;
+  /** the player's own words, written on labyrinth walls */
+  inscriptions: WorldInscription[];
+  /** seconds-without-a-find meter that feeds starvation relief */
+  discovery: DiscoveryState;
 
   enterConsoleMode: (consoleId: string) => void;
   exitConsoleMode: () => void;
   recordConsoleInput: (input: string) => void;
+  /** a console phrase lands on a wall near the console it was typed into */
+  addInscription: (text: string, stance: Stance | null, originCell: CellCoord, accent: string, now: number) => void;
+  noteDiscovery: (kind: DiscoveryKind, key: string, now: number) => void;
+  /** a minute without a find: the labyrinth writes a deformed fragment of the player's words ahead */
+  relieveStarvation: (playerCell: CellCoord, now: number) => void;
   setNearbyConsole: (consoleId: string | null) => void;
   setNearbyGlyph: (glyphId: string | null) => void;
   setNearbyExit: (index: number | null) => void;
@@ -339,6 +373,62 @@ export const useGame = create<GameState>((set, get) => {
   dangerousSeeds: [],
   transference: initialTransference,
   verticalSlice: initialVerticalSlice,
+  inscriptions: loadInscriptions(),
+  discovery: createDiscoveryState(Date.now()),
+
+  addInscription: (text, stance, originCell, accent, now) =>
+    set((s) => {
+      const slot = placeInscription(WORLD_MAZE, originCell, s.inscriptions, fnv1a(text) ^ now);
+      if (!slot) return s;
+      const id = inscriptionId(text, now);
+      const inscription: WorldInscription = {
+        id,
+        text: compactInscription(text),
+        cell: slot.cell,
+        side: slot.side,
+        stance,
+        source: "console",
+        accent,
+        at: now,
+      };
+      const inscriptions = [...s.inscriptions, inscription].slice(-INSCRIPTION_LIMIT);
+      saveInscriptions(inscriptions);
+      return { inscriptions, discovery: noteDiscovery(s.discovery, "phrase", id, now) };
+    }),
+
+  noteDiscovery: (kind, key, now) =>
+    set((s) => {
+      const discovery = noteDiscovery(s.discovery, kind, key, now);
+      return discovery === s.discovery ? s : { discovery };
+    }),
+
+  relieveStarvation: (playerCell, now) =>
+    set((s) => {
+      if (!isStarved(s.discovery, now)) return s;
+      const ownWords = s.inscriptions.filter((item) => item.source === "console").map((item) => item.text);
+      if (s.verticalSlice.confessionFragment) ownWords.push(s.verticalSlice.confessionFragment);
+      const pool = ownWords.length > 0 ? ownWords : STARVATION_FALLBACK;
+      const seed = (now ^ Math.imul(s.discovery.starvations + 1, 0x9e3779b1)) >>> 0;
+      const phrase = pool[seed % pool.length];
+      const slot =
+        placeInscription(WORLD_MAZE, playerCell, s.inscriptions, seed, { minRing: 1, maxRing: 2 }) ??
+        placeInscription(WORLD_MAZE, playerCell, s.inscriptions, seed);
+      const discovery = noteStarvationRelief(s.discovery, now);
+      if (!slot) return { discovery };
+      const inscription: WorldInscription = {
+        id: inscriptionId(phrase, now),
+        text: deformPhrase(phrase, seed),
+        cell: slot.cell,
+        side: slot.side,
+        stance: null,
+        source: "starvation",
+        accent: STARVATION_ACCENT,
+        at: now,
+      };
+      const inscriptions = [...s.inscriptions, inscription].slice(-INSCRIPTION_LIMIT);
+      saveInscriptions(inscriptions);
+      return { inscriptions, discovery };
+    }),
 
   enterConsoleMode: (consoleId) => {
     if (get().mode !== GameMode.Exploration) return;
