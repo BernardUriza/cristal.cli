@@ -40,7 +40,7 @@ jobs:
 
       - run: npm run build
         env:
-          VITE_CRISTAL_LLM_URL: https://cristal-api.greendune-53f1f4af.eastus2.azurecontainerapps.io
+          VITE_CRISTAL_LLM_URL: https://cristal-api.mangobush-0b255aa4.eastus2.azurecontainerapps.io
 
       - name: Deploy to Static Web App
         uses: Azure/static-web-apps-deploy@v1
