@@ -1,47 +1,105 @@
 import { classifyStance, type Stance } from "./StanceClassifier";
-import { buildResponse, type RoomContext, type CristalReply } from "./CristalReplyBuilder";
+import { buildResponse, FORBIDDEN, type CristalReply } from "./CristalReplyBuilder";
 import { StancePressureTracker, type PressureState } from "./StancePressureTracker";
+import { createBagState, drawReply, DEFAULT_REPLY_CONTEXT, type BagState, type ReplyContext } from "./ReplyBag";
+import { CATCH_ALL_POOL, PIVOT_POOL, SILENCE_NAG_POOL } from "./replyPool";
 
-const OPENERS = [
-  "El sistema espera. No lo que sabes — lo que sientes.",
-  "Escribe desde el cuerpo, no desde la cabeza. ¿Qué hay ahí?",
-  "Aún no me das nada que replicar. ¿Qué sientes, ahora?",
-];
+export interface PsychContext {
+  sessionId?: string;
+  confessionFragment?: string | null;
+  invokedGlyph?: string | null;
+  objective?: string | null;
+}
 
-const tracker = new StancePressureTracker();
+export type SilenceCompanionKind = "nag" | "pivot";
 
-function opener(seedLen: number): CristalReply {
+interface PsychSession {
+  tracker: StancePressureTracker;
+  bag: BagState;
+  turn: number;
+  lastReply: CristalReply | null;
+  catchAllStreak: number;
+}
+
+function freshSession(): PsychSession {
+  return { tracker: new StancePressureTracker(), bag: createBagState(), turn: 0, lastReply: null, catchAllStreak: 0 };
+}
+
+let session = freshSession();
+
+function replyContext(input: string, word: string, context: PsychContext, stance: Stance | null): ReplyContext {
+  const { pressure, repeatingStance } = session.tracker.state;
   return {
-    text: OPENERS[seedLen % OPENERS.length],
-    stance: null,
-    tone: "press",
-    asksForBody: true,
-    forbiddenPhrasePresent: false,
+    ...DEFAULT_REPLY_CONTEXT,
+    sessionId: context.sessionId ?? DEFAULT_REPLY_CONTEXT.sessionId,
+    turn: session.turn,
+    pressure,
+    repeating: stance !== null && repeatingStance === stance,
+    afterBodyQuestion: afterBodyQuestion(),
+    word: word || input,
+    confessionFragment: context.confessionFragment ?? null,
+    invokedGlyph: context.invokedGlyph ?? null,
+    objective: context.objective ?? null,
   };
 }
 
-export function generateCristalPsychReply(
-  input: string,
-  roomContext?: RoomContext
-): CristalReply {
+function afterBodyQuestion(): boolean {
+  const last = session.lastReply;
+  return last !== null && last.stance !== null && last.asksForBody;
+}
+
+function remember(reply: CristalReply): CristalReply {
+  session.lastReply = reply;
+  return reply;
+}
+
+function catchAll(input: string, word: string, context: PsychContext): CristalReply {
+  session.catchAllStreak += 1;
+  const pivot = session.catchAllStreak >= 2;
+  if (pivot) session.catchAllStreak = 0;
+  const ctx = replyContext(input, word, context, null);
+  const drawn = pivot
+    ? drawReply("pivot", PIVOT_POOL, ctx, session.bag)
+    : drawReply("catch-all", CATCH_ALL_POOL, ctx, session.bag);
+  session.bag = drawn.state;
+  return remember({
+    text: drawn.text,
+    stance: null,
+    tone: pivot ? "interrupt" : "soften",
+    asksForBody: !pivot,
+    forbiddenPhrasePresent: FORBIDDEN.test(drawn.text),
+  });
+}
+
+export function generateCristalPsychReply(input: string, context: PsychContext = {}): CristalReply {
+  session.turn += 1;
   const trimmed = (input ?? "").trim();
-  if (trimmed.length === 0) return opener(0);
+  const profile = classifyStance(trimmed, { afterBodyQuestion: afterBodyQuestion() });
+  if (trimmed.length === 0 || profile.signals.length === 0) return catchAll(trimmed, profile.salientWord, context);
 
-  const stance = classifyStance(trimmed);
-  if (stance.signals.length === 0) return opener(trimmed.length);
+  session.catchAllStreak = 0;
+  session.tracker.record(profile.stance);
+  const built = buildResponse(profile, trimmed, replyContext(trimmed, profile.salientWord, context, profile.stance), session.bag);
+  session.bag = built.bag;
+  return remember(built.reply);
+}
 
-  tracker.record(stance.stance);
-  const { pressure, repeatingStance } = tracker.state;
-  return buildResponse(stance, trimmed, roomContext, { level: pressure, repeatingStance });
+export function silenceCompanion(kind: SilenceCompanionKind, context: PsychContext = {}): string {
+  const ctx = replyContext("", "", context, null);
+  const drawn = kind === "nag"
+    ? drawReply("nag", SILENCE_NAG_POOL, ctx, session.bag)
+    : drawReply("pivot", PIVOT_POOL, ctx, session.bag);
+  session.bag = drawn.state;
+  return drawn.text;
 }
 
 export function getPsychPressure(): PressureState {
-  return tracker.state;
+  return session.tracker.state;
 }
 
 export function recordEnvironmentalStance(stance: Stance): PressureState {
-  tracker.record(stance);
-  return tracker.state;
+  session.tracker.record(stance);
+  return session.tracker.state;
 }
 
 export function recordEnvironmentalDeflection(): PressureState {
@@ -49,5 +107,5 @@ export function recordEnvironmentalDeflection(): PressureState {
 }
 
 export function resetPsychSession(): void {
-  tracker.reset();
+  session = freshSession();
 }

@@ -9,7 +9,12 @@ import { parse, getArgument } from "./inputParser";
 import { CristalMemory } from "./memory";
 import { StateMachine } from "./stateMachine";
 import { ResponseEngine } from "./responseEngine";
-import { getPsychPressure, resetPsychSession } from "./psych/PsychologicalResponseEngine";
+import {
+  getPsychPressure,
+  resetPsychSession,
+  silenceCompanion,
+  type PsychContext,
+} from "./psych/PsychologicalResponseEngine";
 import {
   advanceSilence,
   applySilencePolicy,
@@ -76,6 +81,8 @@ function responseTypeFor(set: string | undefined, level: ResponseLevel): Respons
 
 type Listener<T> = (value: T) => void;
 
+export type ConsoleContext = Omit<PsychContext, "sessionId">;
+
 /** Port of TerminalCore — orchestrates parsing, state, and response building. */
 export class TerminalCore {
   readonly memory: CristalMemory;
@@ -118,7 +125,7 @@ export class TerminalCore {
     return this.finalize(built, "welcome");
   }
 
-  processInput(input: string): TerminalResponse | null {
+  processInput(input: string, context: ConsoleContext = {}): TerminalResponse | null {
     if (!input || !input.trim()) return null;
     const trimmed = input.trim();
 
@@ -133,7 +140,7 @@ export class TerminalCore {
     } else {
       const suggested = this.stateMachine.determineStateFromInput(trimmed);
       if (suggested) this.stateMachine.transitionTo(suggested);
-      built = this.engine.generateResponse(trimmed);
+      built = this.engine.generateResponse(trimmed, context);
     }
 
     if (built.responseSet === "emotional_psych" && built.psychStance) {
@@ -142,9 +149,11 @@ export class TerminalCore {
         pressure: getPsychPressure().pressure,
       });
       this.silenceState = next.state;
+      const companion =
+        next.policy.companion === "none" ? undefined : silenceCompanion(next.policy.companion, context);
       built = {
         ...built,
-        lines: applySilencePolicy(built.lines, next.policy),
+        lines: applySilencePolicy(built.lines, next.policy, companion),
         delayMs: next.policy.delayMs,
       };
     }

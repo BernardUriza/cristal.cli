@@ -229,7 +229,7 @@ export class RuntimeTransference {
     const silenceProbability = worldBehavior?.silenceProbability ?? profile.silenceTolerance * 0.55;
     const shouldWait = context === "input" && silenceProbability > 0.45 && stableUnit(this.terminalTurns, 71) < silenceProbability;
     if (shouldWait && relationship.trust < 0.42) {
-      lines = ["..."];
+      lines = ["...", ...lines.filter((line) => line.trim().length > 0).slice(0, 1)];
     }
 
     const echo = memoryEchoes[0];
