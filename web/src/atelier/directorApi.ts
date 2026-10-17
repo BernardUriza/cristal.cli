@@ -5,6 +5,7 @@ import type { Decision } from "./directorRules.ts";
 export const DIRECT_TIMEOUT_MS = 90000;
 
 import { sanitizeScene } from "../graphics/config/scene.ts";
+import { parseProgram } from "./programApi.ts";
 import { ANOMALIES, COMPOSITIONS, MAX_LANGUAGES, MAX_MOTIFS, MOTIF_NAMES, ORNAMENT_LANGUAGES, isOneOf } from "./vocabulary.ts";
 
 type WireChoice = { field: string; value: unknown; because: string };
@@ -16,8 +17,12 @@ function subset<T extends string>(list: readonly T[], value: unknown, max: numbe
   return kept;
 }
 
-function decisionOf(raw: WireChoice): Decision | null {
+function decisionOf(raw: WireChoice, seed: number): Decision | null {
   const { field, value } = raw;
+  if (field === "program") {
+    const program = parseProgram(value, seed);
+    return program ? { field, value: program } : null;
+  }
   if (field === "scene") {
     const scene = sanitizeScene(value);
     return scene && scene.groups.length > 0 ? { field, value: scene } : null;
@@ -37,13 +42,13 @@ function decisionOf(raw: WireChoice): Decision | null {
   return null;
 }
 
-export function parseDirection(data: unknown): Direction | null {
+export function parseDirection(data: unknown, seed = 1): Direction | null {
   if (typeof data !== "object" || data === null) return null;
   const { title, choices } = data as { title?: unknown; choices?: unknown };
   if (!Array.isArray(choices)) return null;
   const parsed: Direction["choices"] = [];
   for (const raw of choices as WireChoice[]) {
-    const decision = decisionOf(raw);
+    const decision = decisionOf(raw, seed);
     if (decision) parsed.push({ decision, because: String(raw.because ?? ""), source: "pedro" });
   }
   if (parsed.length === 0) return null;
@@ -62,7 +67,7 @@ export async function requestDirection(narration: string, seed: number, signal?:
       signal: controller.signal,
     });
     if (!res.ok) return null;
-    return parseDirection(await res.json());
+    return parseDirection(await res.json(), seed);
   } catch {
     return null;
   } finally {

@@ -1,4 +1,4 @@
-import { PATIO_LAYOUT, patioStyle, resolvePatio } from "../../config/patio.ts";
+import { PATIO_LAYOUT, patioStyle, resolvePatio, type PatioConfig } from "../../config/patio.ts";
 import type { Building } from "../../domain/architecture/mass.ts";
 import { boundsOf } from "../../domain/math/vec3.ts";
 import { makeLod } from "../../domain/lod.ts";
@@ -13,7 +13,7 @@ import type { PatioContext } from "../patio/types.ts";
 import type { ProgramScene } from "./scene.ts";
 import { risingFaces } from "./volumeStage.ts";
 
-function roleOf(face: TaggedFace, s: ProgramScene): SurfaceRole | undefined {
+export function roleOf(face: TaggedFace, s: ProgramScene): SurfaceRole | undefined {
   const space = s.layout.spaces.find((p) => p.node.id === face.solid.tag.space);
   if (!space) return undefined;
   const vertical = Math.abs(face.normal[1]) < 1e-6;
@@ -21,21 +21,22 @@ function roleOf(face: TaggedFace, s: ProgramScene): SurfaceRole | undefined {
   if (!vertical) return space.node.kind === "tower" && part === "spire" ? "cubierta-torre" : undefined;
   if (space.node.kind === "tower" && part === "body") return "torre";
   if ((space.node.kind === "hall" || space.node.kind === "chamber") && part === "body") return "muro-exterior";
+  if (part.startsWith("cell")) return "muro-exterior";
   if (space.node.kind === "gallery") return part === "roof" ? "dintel-arcada" : "pilar";
   if (space.node.kind === "hall" && part === "cornice") return "dintel-arcada";
   return undefined;
 }
 
-function patioContextFor(s: ProgramScene): PatioContext {
-  const seed = s.graph.nodes.length + s.solids.length;
-  const config = resolvePatio({ seed, palette: s.view.palette, width: s.view.width, height: s.view.height, azimuth: s.view.azimuth });
+export function programContext(s: ProgramScene, input: Partial<PatioConfig> = {}): PatioContext {
+  const seed = input.seed ?? s.graph.nodes.length + s.solids.length;
+  const config = resolvePatio({ ...input, seed, palette: s.view.palette, width: s.view.width, height: s.view.height, azimuth: s.view.azimuth });
   const plan = { programId: "grammar", layout: PATIO_LAYOUT, bounds: s.layout.bounds, spaces: [], walls: [], openings: [] };
   const building: Building = { plan, solids: s.solids, bounds: boundsOf(s.solids.flatMap((x) => x.faces.flatMap((f) => f.points))) };
   return { config, building, projector: s.projector, pal: s.pal, style: patioStyle(s.view.palette), lod: makeLod({ detailScale: 1 }), rng: mulberry32(seed) };
 }
 
 export function ornamentStage(s: ProgramScene): Stage {
-  const ctx = patioContextFor(s);
+  const ctx = programContext(s);
   const shapes: Shape[] = [];
   const count: Record<string, number> = {};
   for (const face of risingFaces(s)) {

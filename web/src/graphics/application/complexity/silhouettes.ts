@@ -86,9 +86,13 @@ function outlines(list: DisplayList, segments: number, maxArea: number): Vec2[][
   return [...masses.values()].map(convexHull);
 }
 
-export function silhouetteDiversity(list: DisplayList, canvasArea: number, tuning: ComplexityTuning): { candidates: number; families: number } {
+export function silhouetteDescriptors(list: DisplayList, canvasArea: number, tuning: ComplexityTuning): number[][] {
   const isCandidate = (pts: Vec2[]) => pts.length >= 3 && polygonArea(pts) >= tuning.silhouetteMinAreaPx && polygonArea(pts) <= canvasArea * tuning.backgroundAreaRatio;
   const shapes = outlines(list, tuning.circleSegments, canvasArea * tuning.backgroundAreaRatio).filter(isCandidate);
-  const descriptors = shapes.map((points) => silhouetteDescriptor(points, tuning.silhouetteRays));
-  return { candidates: shapes.length, families: silhouetteFamilies(descriptors, tuning.silhouetteThreshold).length };
+  return shapes.map((points) => silhouetteDescriptor(points, tuning.silhouetteRays));
+}
+
+export function silhouetteDiversity(list: DisplayList, canvasArea: number, tuning: ComplexityTuning): { candidates: number; families: number } {
+  const descriptors = silhouetteDescriptors(list, canvasArea, tuning);
+  return { candidates: descriptors.length, families: silhouetteFamilies(descriptors, tuning.silhouetteThreshold).length };
 }

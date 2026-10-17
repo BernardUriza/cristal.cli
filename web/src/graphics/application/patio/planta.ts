@@ -10,12 +10,12 @@ import type { PatioContext } from "./types.ts";
 const TILE = 1;
 const GRID = 2;
 
-function ground(ctx: PatioContext, x: number, z: number): Vec2 {
-  return ctx.projector.toScreen([x, 0, z]);
+function ground(ctx: PatioContext, x: number, z: number, y = 0): Vec2 {
+  return ctx.projector.toScreen([x, y, z]);
 }
 
-function groundPolygon(ctx: PatioContext, pts: readonly Vec2[], style: Style): Shape {
-  return polygon(pts.map((p) => ground(ctx, p[0], p[1])), style);
+function groundPolygon(ctx: PatioContext, pts: readonly Vec2[], style: Style, y = 0): Shape {
+  return polygon(pts.map((p) => ground(ctx, p[0], p[1], y)), style);
 }
 
 function apron(ctx: PatioContext): Shape[] {
@@ -35,19 +35,21 @@ function apron(ctx: PatioContext): Shape[] {
   return out;
 }
 
-function courtyardTiles(ctx: PatioContext, patio: Space): Shape[] {
+export function courtyardTiles(ctx: PatioContext, patio: Pick<Space, "rect">, y = 0, tile = TILE): Shape[] {
   const r = patio.rect;
-  const nx = Math.round((r.x1 - r.x0) / TILE);
-  const nz = Math.round((r.z1 - r.z0) / TILE);
+  const nx = Math.max(1, Math.round((r.x1 - r.x0) / tile));
+  const nz = Math.max(1, Math.round((r.z1 - r.z0) / tile));
+  const tx = (r.x1 - r.x0) / nx;
+  const tz = (r.z1 - r.z0) / nz;
   const flips = new Set<string>();
   for (let k = 0; k < Math.round(ctx.config.density * 4); k++) flips.add(`${Math.floor(ctx.rng() * nx)}:${Math.floor(ctx.rng() * nz)}`);
   const out: Shape[] = [];
   for (let j = nz - 1; j >= 0; j--) {
     for (let i = 0; i < nx; i++) {
       const dark = ((i + j) % 2 === 0) !== flips.has(`${i}:${j}`);
-      const x = r.x0 + i * TILE;
-      const z = r.z0 + j * TILE;
-      const q: Vec2[] = [ground(ctx, x, z), ground(ctx, x + TILE, z), ground(ctx, x + TILE, z + TILE), ground(ctx, x, z + TILE)];
+      const x = r.x0 + i * tx;
+      const z = r.z0 + j * tz;
+      const q: Vec2[] = [ground(ctx, x, z, y), ground(ctx, x + tx, z, y), ground(ctx, x + tx, z + tz, y), ground(ctx, x, z + tz, y)];
       out.push(polygon(q, filled(dark ? ctx.pal.floorA : ctx.pal.floorB, ctx.pal.ink, 0.3, { join: "round" })));
       const px = Math.hypot(q[1][0] - q[0][0], q[1][1] - q[0][1]);
       if (!dark && ctx.config.density >= 0.5 && ctx.lod.shows(px, 9)) {
@@ -58,8 +60,8 @@ function courtyardTiles(ctx: PatioContext, patio: Space): Shape[] {
   }
   const cx = (r.x0 + r.x1) / 2;
   const cz = (r.z0 + r.z1) / 2;
-  out.push(groundPolygon(ctx, regularPolygon(cx, cz, 2.4, 24), filled(ctx.pal.secondary, ctx.pal.ink, 0.8, { opacity: 0.85 })));
-  out.push(groundPolygon(ctx, regularPolygon(cx, cz, 1.7, 24), filled(ctx.pal.bg, ctx.pal.ink, 0.6)));
+  out.push(groundPolygon(ctx, regularPolygon(cx, cz, 2.4, 24), filled(ctx.pal.secondary, ctx.pal.ink, 0.8, { opacity: 0.85 }), y));
+  out.push(groundPolygon(ctx, regularPolygon(cx, cz, 1.7, 24), filled(ctx.pal.bg, ctx.pal.ink, 0.6), y));
   return out;
 }
 

@@ -72,6 +72,19 @@ describe("structural rewrites", () => {
     expect(deep.shapes[0].kind === "group" && deep.shapes[0].clip).toEqual(mouth.mask);
   });
 
+  it("T3 shortens the corridor so its far door passes the next minimum, and the deepest portal holds a mini-scene", () => {
+    const deepest = REWRITES.T3_OPENING_AS_PORTAL.constraints.maxDepth;
+    const nextMinPx = REWRITES.T3_OPENING_AS_PORTAL.constraints.minProjectedPx;
+    const rule: Rule = { rewrite: REWRITES.T3_OPENING_AS_PORTAL, produce: portal({ frames: 4, miniPx: 1e9, deepest, nextMinPx }) };
+    const door = box("puerta", "opening", "puerta", 0, 0, 16, 18);
+    const out = applyRewrite(rule, door, { ...env(), depth: 1 });
+    if (!("part" in out)) throw new Error(out.skipped);
+    expect(out.records.map((r) => r.depth)).toEqual([2, 3]);
+    expect(applyRewrite(T3, door, { ...env(), depth: 1 })).toMatchObject({ records: [{ depth: 2 }] });
+    const last = applyRewrite(rule, door, { ...env(), depth: 2 });
+    expect("part" in last && last.part.geometryId).toBe("mini-escena");
+  });
+
   it("T3 puts a tiny courtyard inside a big portal when a mini composer exists", () => {
     const mini = (seed: number) => ({ shapes: [{ kind: "rect" as const, x: 0, y: 0, w: 10, h: 10, style: { fill: `#${seed % 9}` } }], width: 10, height: 10 });
     const rule: Rule = { rewrite: REWRITES.T3_OPENING_AS_PORTAL, produce: portal({ frames: 4, miniPx: 50, mini }) };

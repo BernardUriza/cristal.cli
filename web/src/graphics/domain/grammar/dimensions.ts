@@ -13,6 +13,10 @@ export const KIND_DIMENSIONS: Record<SpaceKind, KindDimensions> = {
   bridge: { height: 8, slab: 0.5 },
 };
 
+export const OPEN_GROUND_STYLES: readonly string[] = ["city"];
+
+export const STREET_BY_STYLE: Partial<Record<string, number>> = { city: 9 };
+
 export const LAYOUT_RULES = {
   precinctMargin: 2,
   courtyardMargin: 2.5,

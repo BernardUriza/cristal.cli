@@ -1,6 +1,6 @@
 import { box, pyramid, type Solid, type SolidKind } from "../architecture/mass.ts";
 import type { Rect } from "../architecture/layout.ts";
-import { KIND_DIMENSIONS, LAYOUT_RULES } from "./dimensions.ts";
+import { KIND_DIMENSIONS, LAYOUT_RULES, OPEN_GROUND_STYLES } from "./dimensions.ts";
 import type { GraphLayout, PlacedSpace } from "./layout.ts";
 import { corridor, openCell } from "./cells.ts";
 import { gable, steppedDome } from "./roofs.ts";
@@ -60,7 +60,7 @@ function solidsOf(p: PlacedSpace, toward: Rect | undefined): Solid[] {
     if (p.node.kind === "courtyard") return [part(p, "floor", "floor", r, p.y0, p.y1), ...openCell(p, p.y1 + 1.4, ["z0", "z1", "x0", "x1"])];
   }
   switch (p.node.kind) {
-    case "complex": return [part(p, "plinth", "floor", r, p.y0, p.y1)];
+    case "complex": return !p.node.parent && OPEN_GROUND_STYLES.includes(p.node.style) ? [] : [part(p, "plinth", "floor", r, p.y0, p.y1)];
     case "courtyard": return [part(p, "floor", "floor", r, p.y0, p.y1)];
     case "chamber": return walled(p);
     case "hall": {

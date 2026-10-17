@@ -1,8 +1,10 @@
 import { composeIllustration, type Stage } from "../graphics/application/compose.ts";
+import type { ArchitectureProgram } from "../graphics/domain/grammar/types.ts";
 import { configFor, planOf, type Plan, type Recipe } from "./director.ts";
 import { composePatioWork } from "./patioWork.ts";
+import { composeProgramWork, programFor } from "./programWork.ts";
 
-export type Work = { stages: Stage[]; width: number; height: number; plan: Plan; seed: number };
+export type Work = { stages: Stage[]; width: number; height: number; plan: Plan; seed: number; program: ArchitectureProgram | null };
 
 export type Composer = (recipe: Recipe, plan: Plan, width: number, height: number) => Stage[];
 
@@ -14,9 +16,10 @@ const composeTemplo: Composer = (recipe, _plan, width, height) => {
   }));
 };
 
-const composers: Record<Plan["composition"], Composer> = { templo: composeTemplo, patio: composePatioWork };
+const composers: Record<Plan["composition"], Composer> = { programa: composeProgramWork, templo: composeTemplo, patio: composePatioWork };
 
 export function composeWork(recipe: Recipe, width: number, height: number): Work {
   const plan = planOf(recipe);
-  return { stages: composers[plan.composition](recipe, plan, width, height), width, height, plan, seed: recipe.seed };
+  const program = plan.composition === "programa" ? programFor(plan, recipe).program : null;
+  return { stages: composers[plan.composition](recipe, plan, width, height), width, height, plan, seed: recipe.seed, program };
 }

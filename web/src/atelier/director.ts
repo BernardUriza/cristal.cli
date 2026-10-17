@@ -1,8 +1,10 @@
 import type { ConfigInput } from "../graphics/config/types.ts";
 import type { Scene } from "../graphics/config/scene.ts";
+import type { ArchitectureProgram } from "../graphics/domain/grammar/types.ts";
+import { readProgram } from "./programReader.ts";
 import { readScene } from "./sceneReader.ts";
 import { fnv1a } from "../shared/rng";
-import { DEFAULT_ANOMALY, DEFAULT_DENSITY, DEFAULT_ORNAMENT, DIRECTOR_RULES, MAX_COMPLEXITY, MOTIF_RULES, ORNAMENT_RULES, WORDS_PER_COMPLEXITY_LEVEL, type Decision } from "./directorRules.ts";
+import { DEFAULT_ANOMALY, DEFAULT_COMPOSITION_BECAUSE, DEFAULT_DENSITY, DEFAULT_ORNAMENT, DEFAULT_PROGRAM_ORNAMENT, DIRECTOR_RULES, MAX_COMPLEXITY, MOTIF_RULES, ORNAMENT_RULES, WORDS_PER_COMPLEXITY_LEVEL, type Decision } from "./directorRules.ts";
 import { MAX_LANGUAGES, MAX_MOTIFS, type Anomaly, type Composition, type MotifName, type OrnamentLanguage } from "./vocabulary.ts";
 
 export type ChoiceSource = "narración" | "defecto" | "humano" | "pedro";
@@ -46,7 +48,9 @@ export function direct(narration: string, seed = seedFromNarration(narration)): 
   if (!decided.has("density")) choices.push({ decision: { field: "density", value: DEFAULT_DENSITY }, because: "no hablaste de lleno ni vacío", source: "defecto" });
   if (!decided.has("anomalyRate")) choices.push({ decision: { field: "anomalyRate", value: DEFAULT_ANOMALY }, because: "no hablaste de orden ni de caos", source: "defecto" });
   if (!decided.has("palette")) choices.push({ decision: { field: "palette", value: "friedeberg" }, because: "no hablaste de luz ni de noche", source: "defecto" });
-  if (!decided.has("composition")) choices.push({ decision: { field: "composition", value: "patio" }, because: "sin un templo nombrado, el estudio arranca por el patio: la planta primero", source: "defecto" });
+  if (!decided.has("composition")) choices.push({ decision: { field: "composition", value: "programa" }, because: DEFAULT_COMPOSITION_BECAUSE, source: "defecto" });
+  const program = readProgram(narration, seed);
+  choices.push({ decision: { field: "program", value: program.program }, because: program.because.join("; "), source: program.matched ? "narración" : "defecto" });
   if (!decided.has("anomaly")) choices.push({ decision: { field: "anomaly", value: "none" }, because: "no pediste nada imposible todavía", source: "defecto" });
   const motifs = matchedList(narration, MOTIF_RULES.map((r) => ({ match: r.match, value: r.motif, because: r.because })), MAX_MOTIFS);
   choices.push(
@@ -58,7 +62,9 @@ export function direct(narration: string, seed = seedFromNarration(narration)): 
   choices.push(
     ornament.values.length > 0
       ? { decision: { field: "ornament", value: ornament.values }, because: ornament.because.join("; "), source: "narración" }
-      : { decision: { field: "ornament", value: DEFAULT_ORNAMENT }, because: "sin lenguaje pedido: greca en muros y ajedrez en el suelo", source: "defecto" },
+      : choices.some((c) => c.decision.field === "composition" && c.decision.value === "programa")
+        ? { decision: { field: "ornament", value: DEFAULT_PROGRAM_ORNAMENT }, because: "sin lenguaje pedido: greca en muros, ajedrez en suelos y azoteas, estrías en las torres del programa", source: "defecto" }
+        : { decision: { field: "ornament", value: DEFAULT_ORNAMENT }, because: "sin lenguaje pedido: greca en muros y ajedrez en el suelo", source: "defecto" },
   );
   const reading = readScene(narration, motifs.values);
   choices.push({
@@ -93,16 +99,18 @@ export type Plan = {
   projection: "perspective" | "elevation";
   columns: number | null;
   scene: Scene | null;
+  program: ArchitectureProgram | null;
 };
 
 export function planOf(recipe: Recipe): Plan {
-  const plan: Plan = { composition: "patio", motifs: [], ornament: DEFAULT_ORNAMENT, anomaly: "none", palette: "friedeberg", density: 0.6, complexity: 3, anomalyRate: 0.4, symmetry: "bilateral", projection: "perspective", columns: null, scene: null };
+  const plan: Plan = { composition: "patio", motifs: [], ornament: DEFAULT_ORNAMENT, anomaly: "none", palette: "friedeberg", density: 0.6, complexity: 3, anomalyRate: 0.4, symmetry: "bilateral", projection: "perspective", columns: null, scene: null, program: null };
   for (const { decision } of recipe.choices) {
     if (decision.field === "composition") plan.composition = decision.value;
     else if (decision.field === "motifs") plan.motifs = decision.value;
     else if (decision.field === "ornament") plan.ornament = decision.value;
     else if (decision.field === "anomaly") plan.anomaly = decision.value;
     else if (decision.field === "scene") plan.scene = decision.value;
+    else if (decision.field === "program") plan.program = decision.value;
     else if (decision.field === "palette") plan.palette = decision.value;
     else if (decision.field === "symmetry") plan.symmetry = decision.value;
     else if (decision.field === "projection") plan.projection = decision.value;

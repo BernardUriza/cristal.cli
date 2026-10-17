@@ -8,7 +8,7 @@ import type { ComplexityInput, ComplexityReport } from "./types.ts";
 export type { BandCoverage, ComplexityInput, ComplexityReport, RewriteEntry, SpaceGraph, SpaceGraphEdge, SpaceGraphNode } from "./types.ts";
 export { detailBand, DETAIL_BANDS, multiscaleCoverage, type DetailBand } from "./bands.ts";
 export { semanticDepth } from "./depth.ts";
-export { silhouetteDescriptor, silhouetteDistance, silhouetteDiversity, silhouetteFamilies } from "./silhouettes.ts";
+export { silhouetteDescriptor, silhouetteDescriptors, silhouetteDistance, silhouetteDiversity, silhouetteFamilies } from "./silhouettes.ts";
 export { graphFromPlan, graphSignature, localSignatures, topologicalDiversity, toSpaceGraph, type GraphSource } from "./topology.ts";
 export { ACCEPTANCE } from "../../config/complexity.ts";
 

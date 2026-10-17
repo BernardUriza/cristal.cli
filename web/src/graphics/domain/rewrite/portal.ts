@@ -2,13 +2,16 @@ import { polygonBounds } from "../bezier.ts";
 import { mapShapePoints } from "../mapPoints.ts";
 import { quad, type Part } from "../motifs/figures/parts.ts";
 import { filled, line, polygon, stroked, type Shape, type Vec2 } from "../shapes.ts";
+import { miniCourt } from "./miniCourt.ts";
 import type { Producer, RewriteEnv } from "./rewrite.ts";
 
 export type MiniScene = { shapes: Shape[]; width: number; height: number };
 
 export type MiniComposer = (seed: number) => MiniScene;
 
-export type PortalOptions = { frames: number; miniPx: number; mini?: MiniComposer };
+export type PortalOptions = { frames: number; miniPx: number; mini?: MiniComposer; deepest?: number; nextMinPx?: number };
+
+const FAR = (k: number) => 0.8 * (1 - Math.pow(0.6, k));
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
@@ -17,7 +20,7 @@ function corridor(x0: number, y0: number, x1: number, y1: number, frames: number
   const ring = (t: number): Vec2[] => quad(lerp(x0, vp[0], t), lerp(y0, vp[1], t), lerp(x1, vp[0], t), lerp(y1, vp[1], t));
   const ink = { stroke: env.ink.ink, strokeWidth: env.ink.line * 0.7 };
   const outer = ring(0);
-  const rings = Array.from({ length: frames }, (_, k) => ring(0.8 * (1 - Math.pow(0.6, k + 1))));
+  const rings = Array.from({ length: frames }, (_, k) => ring(FAR(k + 1)));
   const end = rings[rings.length - 1];
   const shapes: Shape[] = [
     polygon(outer, filled(env.ink.fill, env.ink.ink, env.ink.line)),
@@ -46,6 +49,12 @@ function fitted(scene: MiniScene, x0: number, y0: number, x1: number, y1: number
   return mapShapePoints(scene.shapes, ([x, y]) => [ox + x * s, oy + y * s]);
 }
 
+function framesFor(px: number, opts: PortalOptions): number {
+  if (opts.nextMinPx === undefined) return opts.frames;
+  for (let k = opts.frames; k >= 1; k--) if ((1 - FAR(k)) * px >= opts.nextMinPx) return k;
+  return opts.frames;
+}
+
 /** T3: an opening becomes a portal clipped by its own contour; inside, a corridor whose far door is again an opening, or a tiny courtyard. */
 export function portal(opts: PortalOptions): Producer {
   return (_source, { w, h, mask, pxPerUnit }, env) => {
@@ -55,7 +64,10 @@ export function portal(opts: PortalOptions): Producer {
       const shapes = fitted(opts.mini(env.seed + Math.floor(env.rng() * 997)), b.minX, b.minY, b.maxX, b.maxY);
       return { part: { id: "patio-diminuto", role: "enclosure", geometryId: "patio-diminuto", anchors: {}, mask, children: [] }, shapes };
     }
-    const c = corridor(b.minX, b.minY, b.maxX, b.maxY, opts.frames, env);
+    if (opts.deepest !== undefined && env.depth + 1 >= opts.deepest) {
+      return { part: { id: "patio-del-fondo", role: "enclosure", geometryId: "mini-escena", anchors: {}, mask, children: [] }, shapes: miniCourt(b.minX, b.minY, b.maxX, b.maxY, env) };
+    }
+    const c = corridor(b.minX, b.minY, b.maxX, b.maxY, framesFor(px, opts), env);
     const end: Part = { id: "fondo", role: "opening", geometryId: "fondo", anchors: {}, mask: c.end, children: [] };
     return { part: { id: "corredor", role: "connector", geometryId: "corredor", anchors: {}, mask, children: [end] }, shapes: c.shapes };
   };

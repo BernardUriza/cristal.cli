@@ -4,11 +4,12 @@ import { toSvg } from "../graphics/renderers/svg/serialize.ts";
 import { fnv1a } from "../shared/rng";
 import type { Recipe } from "./director.ts";
 import { describeShape, flattenStrokes, stageBounds } from "./strokes.ts";
-import { complexityReport, graphFromPlan, type ComplexityReport, type SpaceGraph } from "../graphics/application/complexity/index.ts";
+import { complexityReport, graphFromPlan, toSpaceGraph, type ComplexityReport, type SpaceGraph } from "../graphics/application/complexity/index.ts";
 import { patioProgram } from "../graphics/application/patio/building.ts";
 import { patioLayout } from "../graphics/config/patio.ts";
 import { buildPlan } from "../graphics/domain/architecture/plan.ts";
 import { sceneFor } from "./patioWork.ts";
+import { expandProgram } from "../graphics/domain/grammar/expand.ts";
 
 export type Manifest = {
   obra: string;
@@ -25,6 +26,7 @@ export function svgOf(work: Work): string {
 }
 
 export function workGraph(work: Work): SpaceGraph | null {
+  if (work.program) return toSpaceGraph(expandProgram(work.program));
   if (work.plan.composition !== "patio") return null;
   return graphFromPlan(buildPlan(patioProgram(work.plan.symmetry === "asymmetric" ? 2 : 4), patioLayout(sceneFor(work.plan).architecture)));
 }

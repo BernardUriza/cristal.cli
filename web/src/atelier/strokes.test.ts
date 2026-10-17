@@ -6,7 +6,7 @@ import { buildManifest, strokeLog } from "./manifest.ts";
 import { describeShape, flattenStrokes, stageBounds } from "./strokes.ts";
 import { composeWork } from "./work.ts";
 
-const ill = composeWork(direct("un templo de día"), 600, 450);
+const ill = composeWork(direct("la fachada de un templo de día"), 600, 450);
 
 describe("strokes", () => {
   it("flattens the stages in order and keeps every shape", () => {
@@ -35,7 +35,7 @@ describe("strokes", () => {
   });
 
   it("the manifest counts every stroke per stage and hashes the svg deterministically", () => {
-    const recipe = direct("un templo de día");
+    const recipe = direct("la fachada de un templo de día");
     const m = buildManifest(recipe, ill);
     expect(m.etapas.reduce((n, e) => n + e.trazos, 0)).toBe(m.trazos);
     expect(m.hashSvg).toBe(buildManifest(recipe, composeWork(recipe, 600, 450)).hashSvg);
@@ -55,7 +55,7 @@ describe("patio work", () => {
   });
 
   it("draws the patio in traceable stages and places the asked figures on architectural anchors", () => {
-    const recipe = direct("un patio de noche que se recorre con un ojo que vigila y una escalera que sube");
+    const recipe = direct("un claustro único de noche que se recorre con un ojo que vigila y una escalera que sube");
     const work = composeWork(recipe, 600, 450);
     expect(work.plan.composition).toBe("patio");
     expect(work.stages.map((s) => s.name)).toEqual(["planta", "volúmenes", "ornamento", "símbolos", "anomalía", "habitada"]);

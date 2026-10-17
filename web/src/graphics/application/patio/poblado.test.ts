@@ -3,6 +3,7 @@ import { PALETTES } from "../../config/palettes.ts";
 import { DEFAULT_ARCHITECTURE, type Scene } from "../../config/scene.ts";
 import { composePatio } from "./index.ts";
 import { poblado } from "./poblado.ts";
+import { siteOfBuilding } from "./lugares.ts";
 
 const robots: Scene = {
   groups: [{ creature: { name: "robot", parts: { cabeza: "craneo", ojos: "ojo", cuerpo: "escalera" } }, count: 8, arrangement: "escalera", place: "patio", scale: 1 }],
@@ -12,7 +13,7 @@ const robots: Scene = {
 describe("poblado", () => {
   it("places every creature of every group and says what it placed", () => {
     const c = composePatio({ seed: 3, width: 800, height: 600 });
-    const s = poblado(c, robots, PALETTES.friedeberg, 1, 3);
+    const s = poblado(siteOfBuilding(c.building, c.projector), robots, PALETTES.friedeberg, 1, 3);
     expect(s.items).toHaveLength(8);
     expect(s.items.flatMap((i) => i.shapes).length).toBeGreaterThan(8 * 3);
     expect(s.provenance?.params.figuras).toBe(8);
