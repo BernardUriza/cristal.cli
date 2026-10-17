@@ -107,6 +107,13 @@ first_step, console_open, first_phrase, glyph_invoked, door_crossed), anónimo. 
 `/home/runner/telemetry` y fija el secreto `telemetry-token` desde `~/.secrets/cristal-telemetry-token.txt`. Hasta
 entonces el JSONL vive solo dentro de la revisión y el resumen contesta 503.
 
+Verificado en prod (deploy `aa42ec1`): `POST /telemetry/funnel` 204 con evento válido, 422 con paso inválido, resumen
+503 «CRISTAL_TELEMETRY_TOKEN unset»; en la página, «CLICK PARA MIRAR» visible y `embudo: 1/7` → `2/7` al primer paso
+(captura `~/Documents/personal-assistance/cristal-betatesters/2026-10-17-prod-onboarding-hint.jpg`). **Bug encontrado
+ahí mismo:** `navigator.sendBeacon` con un Blob `application/json` falla en Chrome con `net::ERR_FAILED` después del
+preflight (lo vi en la lista de red de la página: dos beacons muertos); `fetch` con `keepalive` desde la misma página
+contesta 204. El reporter quedó solo con `fetch keepalive`.
+
 Lección de sesión: dos llamadas Bash en la misma respuesta comparten cwd y se pisan los `cd`; rutas absolutas o
 `npm --prefix`.
 
