@@ -140,6 +140,7 @@ export function ConsoleOverlay() {
       useGame
         .getState()
         .addInscription(trimmed, lastStance, { x: consoleNode.cell[0], y: consoleNode.cell[1] }, consoleNode.accent, Date.now());
+      useGame.getState().reachFunnel("first_phrase", Date.now());
     }
     const sliceBefore = useGame.getState().verticalSlice;
     useGame.getState().recordConsoleInput(trimmed);
@@ -196,7 +197,7 @@ export function ConsoleOverlay() {
             if (e.key === "Enter") submit();
             else if (e.key === "Escape") exitConsoleMode();
           }}
-          placeholder="escribe lo que sientes..."
+          placeholder="escribe lo que sientes… p. ej. «me pesa el pecho»"
           autoComplete="off"
           spellCheck={false}
         />

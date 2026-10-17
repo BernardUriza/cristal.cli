@@ -1,5 +1,6 @@
 import { useEffect, useRef, type MutableRefObject } from "react";
 import * as THREE from "three";
+import { useGame } from "../store";
 
 export interface PointerLook {
   yaw: MutableRefObject<number>;
@@ -32,11 +33,16 @@ export function usePointerLook(
       yaw.current -= e.movementX * 0.0025;
       pitch.current = THREE.MathUtils.clamp(pitch.current - e.movementY * 0.0025, minPitch, maxPitch);
     };
+    const onLockChange = () => {
+      if (document.pointerLockElement === canvas) useGame.getState().reachFunnel("pointer_lock", Date.now());
+    };
     canvas.addEventListener("click", onClick);
     document.addEventListener("mousemove", onMove);
+    document.addEventListener("pointerlockchange", onLockChange);
     return () => {
       canvas.removeEventListener("click", onClick);
       document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("pointerlockchange", onLockChange);
     };
   }, [canvas, enabled, minPitch, maxPitch]);
 

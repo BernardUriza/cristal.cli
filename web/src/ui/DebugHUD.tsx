@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { secondsSinceFind } from "../game/DiscoveryClock";
+import { FUNNEL_STEPS, funnelProgress } from "../game/funnel";
 import { useGame } from "../game/store";
 import { worldNodeById } from "../game/worldNodes";
 
@@ -21,6 +22,7 @@ export function DebugHUD() {
   const nearbyGlyphId = useGame((s) => s.nearbyGlyphId);
   const node = worldNodeById(nearbyGlyphId ?? activeConsoleId ?? nearbyConsoleId);
   const discovery = useGame((s) => s.discovery);
+  const funnel = useGame((s) => s.funnel);
   const now = useNow();
 
   return (
@@ -42,6 +44,9 @@ export function DebugHUD() {
       </span>
       <span>
         hallazgo: <b>{secondsSinceFind(discovery, now)}s</b> · {discovery.finds} · hambre {discovery.starvations}
+      </span>
+      <span>
+        embudo: <b>{funnelProgress(funnel)}/{FUNNEL_STEPS.length}</b>
       </span>
     </div>
   );

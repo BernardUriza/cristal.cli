@@ -50,6 +50,28 @@ canvas {
   max-width: min(480px, calc(100vw - 24px));
 }
 
+.onboarding-hint {
+  position: absolute;
+  left: 50%;
+  bottom: 22%;
+  transform: translateX(-50%);
+  padding: 10px 22px;
+  border: 1px solid var(--term-fg);
+  background: rgba(0, 0, 0, 0.82);
+  color: var(--term-cyan);
+  font-size: 22px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  border-radius: 4px;
+  text-shadow: 0 0 10px var(--term-dim);
+  animation: onboarding-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes onboarding-pulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+
 .prompt-hint {
   margin-top: 5px;
   font-size: 11px;
