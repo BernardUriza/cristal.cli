@@ -1,0 +1,198 @@
+:root {
+  --bg: #0b0b12;
+  --fg: #f1e6c8;
+  --dim: #8a7f66;
+  --accent: #33ff99;
+  --magenta: #d8468f;
+  --turquoise: #2fb7c9;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  min-height: 100%;
+  background: var(--bg);
+  color: var(--fg);
+  font: 15px/1.5 "JetBrains Mono", Consolas, monospace;
+}
+
+.atelier {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 12px 16px 32px;
+  gap: 16px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.atelier-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  grid-template-areas: "narration side" "easel side";
+  gap: 16px;
+}
+
+.atelier-narration {
+  grid-area: narration;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.atelier-narration label {
+  color: var(--dim);
+}
+
+.atelier-narration textarea {
+  width: 100%;
+  font: inherit;
+  font-size: 18px;
+  color: var(--fg);
+  background: #12121f;
+  border: 1px solid var(--dim);
+  padding: 10px 12px;
+  resize: vertical;
+}
+
+.atelier-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.atelier-controls button {
+  background: transparent;
+  color: var(--fg);
+  border: 1px solid var(--dim);
+  padding: 6px 12px;
+  font: inherit;
+  cursor: pointer;
+  min-height: 40px;
+}
+
+.atelier-controls button.primary {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.atelier-controls button.active {
+  border-color: var(--turquoise);
+  color: var(--turquoise);
+}
+
+.atelier-controls button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.atelier-easel {
+  grid-area: easel;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.atelier-easel canvas {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 4 / 3;
+  background: #f3e7c6;
+  border: 1px solid #2a2a3a;
+  cursor: crosshair;
+  display: block;
+}
+
+.atelier-easel input[type="range"] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.atelier-stages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.atelier-stages button {
+  background: transparent;
+  color: var(--dim);
+  border: 1px solid #2a2a3a;
+  padding: 2px 8px;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.atelier-stages button.done {
+  color: var(--fg);
+  border-color: var(--dim);
+}
+
+.atelier-stages small {
+  color: var(--dim);
+}
+
+.atelier-side {
+  grid-area: side;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.atelier-side h2 {
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+
+.atelier-recipe ol {
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.atelier-recipe li span {
+  display: block;
+  color: var(--dim);
+  font-size: 13px;
+}
+
+.atelier-recipe li.choice-humano b {
+  color: var(--magenta);
+}
+
+.atelier-recipe li.choice-narración b {
+  color: var(--turquoise);
+}
+
+.atelier-inspector {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 10px;
+  font-size: 13px;
+}
+
+.atelier-inspector dt {
+  color: var(--dim);
+}
+
+.atelier-hint {
+  color: var(--dim);
+  font-size: 13px;
+}
+
+@media (max-width: 900px) {
+  .atelier-main {
+    grid-template-columns: 1fr;
+    grid-template-areas: "narration" "easel" "side";
+  }
+}
