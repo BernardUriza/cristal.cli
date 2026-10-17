@@ -27,7 +27,12 @@ _MOTIFS = ("ojo", "mano", "craneo", "perro", "jaguar", "escalera", "mascara", "s
 _ORNAMENT = ("greca", "chevrón", "ajedrez", "estrías", "roseta", "sierpinski")
 _ANOMALIES = ("none", "escalera-imposible", "edificio-anidado", "torre-flotante", "columna-figura")
 _MAX_LIST = 3
-_MAX_CHOICES = 11
+_MAX_CHOICES = 12
+_PARTS = ("cabeza", "ojos", "cuerpo", "manos", "cola", "pies")
+_ARRANGEMENTS = ("fila", "circulo", "espiral", "escalera", "reticula", "procesion", "corona")
+_PLACES = ("patio", "azoteas", "torres", "cielo", "escalera")
+_ARCH = {"footprint": ("cuadrado", "alargado", "profundo"), "courtyard": ("chico", "medio", "grande"), "heights": ("bajo", "medio", "alto", "vertiginoso")}
+_ARCH_DEFAULT = {"footprint": "cuadrado", "courtyard": "medio", "heights": "medio"}
 _MAX_BECAUSE = 200
 
 
@@ -38,7 +43,7 @@ class DirectRequest(BaseModel):
 
 class Choice(BaseModel):
     field: str
-    value: str | int | float | list[str]
+    value: str | int | float | list[str] | dict[str, Any]
     because: str
     source: str = "pedro"
 
@@ -72,8 +77,42 @@ def _subset(value: Any, allowed: tuple[str, ...]) -> list[str] | None:
     return kept if kept or allowed is _MOTIFS else None
 
 
-def _coerce(field: str, value: Any) -> str | int | float | list[str] | None:
+def _scene(value: Any) -> dict[str, Any] | None:
+    if not isinstance(value, dict):
+        return None
+    groups = []
+    for g in value.get("groups", []) if isinstance(value.get("groups"), list) else []:
+        if len(groups) == 3 or not isinstance(g, dict):
+            continue
+        creature = g.get("creature") if isinstance(g.get("creature"), dict) else {}
+        raw_parts = creature.get("parts") if isinstance(creature.get("parts"), dict) else {}
+        parts = {k: v for k, v in raw_parts.items() if k in _PARTS and v in _MOTIFS}
+        if not parts:
+            continue
+        try:
+            count = max(1, min(24, int(round(float(g.get("count", 1))))))
+            scale = max(0.4, min(2.5, float(g.get("scale", 1))))
+        except (TypeError, ValueError):
+            count, scale = 1, 1.0
+        name = str(creature.get("name", "")).strip()[:40] or "figura"
+        groups.append({
+            "creature": {"name": name, "parts": parts},
+            "count": count,
+            "arrangement": g.get("arrangement") if g.get("arrangement") in _ARRANGEMENTS else "fila",
+            "place": g.get("place") if g.get("place") in _PLACES else "patio",
+            "scale": round(scale, 2),
+        })
+    if not groups:
+        return None
+    arch_in = value.get("architecture") if isinstance(value.get("architecture"), dict) else {}
+    arch = {k: (arch_in.get(k) if arch_in.get(k) in allowed else _ARCH_DEFAULT[k]) for k, allowed in _ARCH.items()}
+    return {"groups": groups, "architecture": arch}
+
+
+def _coerce(field: str, value: Any) -> str | int | float | list[str] | dict[str, Any] | None:
     numeric = isinstance(value, (int, float)) and not isinstance(value, bool)
+    if field == "scene":
+        return _scene(value)
     if field == "composition":
         return value if value in _COMPOSITIONS else None
     if field == "anomaly":

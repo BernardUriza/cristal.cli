@@ -26,4 +26,4 @@ export type PatioContext = {
 
 export type StageResult = { stage: Stage; anchors: Anchor[] };
 
-export type PatioComposition = { stages: Stage[]; anchors: Anchor[]; width: number; height: number; building: Building };
+export type PatioComposition = { stages: Stage[]; anchors: Anchor[]; width: number; height: number; building: Building; projector: Projector };

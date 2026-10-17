@@ -11,6 +11,14 @@ describe("Pedro's direction", () => {
     expect(parseDirection("nope")).toBeNull();
   });
 
+  it("accepts Pedro's scene and clamps it to the grammar", () => {
+    const d = parseDirection({ title: "x", choices: [{ field: "scene", value: { groups: [{ creature: { name: "robot", parts: { cabeza: "craneo", ojos: "ojo", alas: "ojo", cuerpo: "dragon" } }, count: 80, arrangement: "escalera", place: "patio", scale: 1 }], architecture: { courtyard: "grande", heights: "nube" } }, because: "b" }] });
+    const scene = d?.choices[0].decision.value as { groups: { count: number; creature: { parts: object } }[]; architecture: { courtyard: string; heights: string } };
+    expect(scene.groups[0].count).toBe(24);
+    expect(scene.groups[0].creature.parts).toEqual({ cabeza: "craneo", ojos: "ojo" });
+    expect(scene.architecture).toMatchObject({ courtyard: "grande", heights: "medio" });
+  });
+
   it("replaces narration and default choices but never a human override", () => {
     const base = override(direct("un templo de noche"), { field: "density", value: 0.9 }, "lo subiste tú");
     const directed = withDirection(base, {

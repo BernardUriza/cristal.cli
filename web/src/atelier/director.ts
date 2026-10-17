@@ -1,4 +1,6 @@
 import type { ConfigInput } from "../graphics/config/types.ts";
+import type { Scene } from "../graphics/config/scene.ts";
+import { readScene } from "./sceneReader.ts";
 import { fnv1a } from "../shared/rng";
 import { DEFAULT_ANOMALY, DEFAULT_DENSITY, DEFAULT_ORNAMENT, DIRECTOR_RULES, MAX_COMPLEXITY, MOTIF_RULES, ORNAMENT_RULES, WORDS_PER_COMPLEXITY_LEVEL, type Decision } from "./directorRules.ts";
 import { MAX_LANGUAGES, MAX_MOTIFS, type Anomaly, type Composition, type MotifName, type OrnamentLanguage } from "./vocabulary.ts";
@@ -58,6 +60,12 @@ export function direct(narration: string, seed = seedFromNarration(narration)): 
       ? { decision: { field: "ornament", value: ornament.values }, because: ornament.because.join("; "), source: "narración" }
       : { decision: { field: "ornament", value: DEFAULT_ORNAMENT }, because: "sin lenguaje pedido: greca en muros y ajedrez en el suelo", source: "defecto" },
   );
+  const reading = readScene(narration, motifs.values);
+  choices.push({
+    decision: { field: "scene", value: reading.scene },
+    because: reading.because.join("; ") || "sin criaturas nombradas: la arquitectura sola",
+    source: reading.because.length ? "narración" : "defecto",
+  });
   return { title: titleFor(narration), narration, seed, choices, renderer: "canvas+svg", reference: "ninguna imagen externa" };
 }
 
@@ -84,15 +92,17 @@ export type Plan = {
   symmetry: "bilateral" | "asymmetric";
   projection: "perspective" | "elevation";
   columns: number | null;
+  scene: Scene | null;
 };
 
 export function planOf(recipe: Recipe): Plan {
-  const plan: Plan = { composition: "patio", motifs: [], ornament: DEFAULT_ORNAMENT, anomaly: "none", palette: "friedeberg", density: 0.6, complexity: 3, anomalyRate: 0.4, symmetry: "bilateral", projection: "perspective", columns: null };
+  const plan: Plan = { composition: "patio", motifs: [], ornament: DEFAULT_ORNAMENT, anomaly: "none", palette: "friedeberg", density: 0.6, complexity: 3, anomalyRate: 0.4, symmetry: "bilateral", projection: "perspective", columns: null, scene: null };
   for (const { decision } of recipe.choices) {
     if (decision.field === "composition") plan.composition = decision.value;
     else if (decision.field === "motifs") plan.motifs = decision.value;
     else if (decision.field === "ornament") plan.ornament = decision.value;
     else if (decision.field === "anomaly") plan.anomaly = decision.value;
+    else if (decision.field === "scene") plan.scene = decision.value;
     else if (decision.field === "palette") plan.palette = decision.value;
     else if (decision.field === "symmetry") plan.symmetry = decision.value;
     else if (decision.field === "projection") plan.projection = decision.value;
