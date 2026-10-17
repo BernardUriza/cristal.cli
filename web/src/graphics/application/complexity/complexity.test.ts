@@ -89,3 +89,26 @@ describe("evaluate", () => {
     expect(rows[4].valor).toBeNull();
   });
 });
+
+describe("masses, not faces", () => {
+  it("touching pieces are one silhouette; separate masses of different shape are two families", async () => {
+    const { silhouetteDiversity } = await import("./silhouettes.ts");
+    const { COMPLEXITY_TUNING } = await import("../../config/complexity.ts");
+    const { polygon, circle, solid } = await import("../../domain/shapes.ts");
+    const face = (x: number) => polygon([[x, 100], [x + 40, 80], [x + 80, 100], [x + 40, 120]], solid("#000"));
+    const oneBuilding = silhouetteDiversity([face(100), face(150), face(200)], 1000 * 1000, COMPLEXITY_TUNING);
+    expect(oneBuilding).toEqual({ candidates: 1, families: 1 });
+    const two = silhouetteDiversity([circle(150, 150, 60, solid("#000")), polygon([[600, 600], [800, 600], [800, 640], [600, 640]], solid("#000"))], 1000 * 1000, COMPLEXITY_TUNING);
+    expect(two).toEqual({ candidates: 2, families: 2 });
+  });
+
+  it("an outlined closed shape covers its interior, not its bounding box", async () => {
+    const { multiscaleCoverage } = await import("./bands.ts");
+    const { COMPLEXITY_TUNING } = await import("../../config/complexity.ts");
+    const { polygon, stroked } = await import("../../domain/shapes.ts");
+    const triangle = polygon([[0, 0], [400, 0], [0, 400]], stroked("#000", 1));
+    const band3 = multiscaleCoverage([triangle], 400, 400, COMPLEXITY_TUNING)[3].areaPct;
+    expect(band3).toBeGreaterThan(45);
+    expect(band3).toBeLessThan(55);
+  });
+});
