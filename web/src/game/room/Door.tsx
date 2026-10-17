@@ -6,7 +6,7 @@ import { playCross, playAlarm } from "../audio";
 import type { RoomPressureAtmosphere } from "../RoomPressureController";
 import type { SafeExit } from "../SafeExitResolver";
 import type { DoorSpec } from "./geometry";
-import { makeLabelTexture } from "./textures";
+import { makeLabelTexture } from "../textTexture";
 import { DOOR_W, DOOR_H } from "./config";
 
 export interface DoorProps {
