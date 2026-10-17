@@ -121,6 +121,11 @@ body {
   background: #f3e7c6;
 }
 
+.landing-preview.atelier {
+  background: #f3e7c6;
+}
+
+.landing-preview.atelier canvas,
 .landing-preview.temples canvas {
   width: 100%;
   height: 100%;

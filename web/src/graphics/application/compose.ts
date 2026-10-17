@@ -13,7 +13,16 @@ import { paintStars, paintSun } from "./facade/sky.ts";
 import type { Painter } from "./painter.ts";
 import { makeView } from "./projection.ts";
 
-export type Illustration = { cfg: CompositionConfig; architecture: Architecture; layers: DisplayList; width: number; height: number };
+export type Stage = { name: string; shapes: DisplayList };
+
+export type Illustration = {
+  cfg: CompositionConfig;
+  architecture: Architecture;
+  stages: Stage[];
+  layers: DisplayList;
+  width: number;
+  height: number;
+};
 
 export function composeArchitecture(cfg: CompositionConfig): Architecture {
   return buildArchitecture(cfg.art, mulberry32(cfg.art.seed));
@@ -26,16 +35,16 @@ export function composeIllustration(input: ConfigInput = {}): Illustration {
   const architecture = buildArchitecture(cfg.art, rng);
   const view = makeView(cfg.tech, architecture.main.z);
   const p: Painter = { view, pal: PALETTES[cfg.art.palette], art: cfg.art, lod: makeLod(cfg.tech.lod) };
-  const layers: DisplayList = [
-    rect(0, 0, width, height, solid(p.pal.bg)),
-    ...paintSun(p, architecture.sky, width, height),
-    ...paintStars(p, architecture.sky, width, height, rng),
-    rect(0, view.hy, width, 2, solid(p.pal.ink)),
-    ...paintFloor(p, architecture.floor),
-    ...architecture.wings.flatMap((w) => paintColonnade(p, w)),
-    ...paintPlatform(p, architecture.platform),
-    ...paintColonnade(p, architecture.main),
-    ...paintFrame(p, width, height),
+  const stages: Stage[] = [
+    { name: "fondo", shapes: [rect(0, 0, width, height, solid(p.pal.bg))] },
+    { name: "cielo", shapes: [...paintSun(p, architecture.sky, width, height), ...paintStars(p, architecture.sky, width, height, rng)] },
+    { name: "horizonte", shapes: [rect(0, view.hy, width, 2, solid(p.pal.ink))] },
+    { name: "piso", shapes: paintFloor(p, architecture.floor) },
+    { name: "alas", shapes: architecture.wings.flatMap((w) => paintColonnade(p, w)) },
+    { name: "plataforma", shapes: paintPlatform(p, architecture.platform) },
+    { name: "templo", shapes: paintColonnade(p, architecture.main) },
+    { name: "marco", shapes: paintFrame(p, width, height) },
   ];
-  return { cfg, architecture, layers, width, height };
+  const layers: DisplayList = stages.flatMap((stage) => stage.shapes);
+  return { cfg, architecture, stages, layers, width, height };
 }

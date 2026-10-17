@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { composeIllustration } from "../graphics/application/compose.ts";
 import { PALETTES } from "../graphics/config/palettes.ts";
-import { rasterize } from "../graphics/renderers/canvas/rasterize.ts";
 import { glyphSvgDataUri } from "../graphics/renderers/svg/glyph.ts";
-import { cardArtInput } from "./cardArt.ts";
+import { randomSeed } from "../minigames/kit/dailySeed.ts";
+import { shareText, type ShareOutcome } from "../minigames/kit/share.ts";
+import { TempleCanvas } from "../minigames/kit/TempleCanvas.tsx";
+import { positiveInt, readSearch, replaceSearch, shareUrl } from "../minigames/kit/urlParams.ts";
 import {
   bestKey,
   dailySeed,
@@ -31,47 +32,10 @@ const MISMATCH_DELAY_MS = 900;
 const JUICE_MS = 700;
 const BACK_GLYPH = glyphSvgDataUri("gate", PALETTES.noche.secondary, PALETTES.noche.accent, 77);
 
-function randomSeed(): number {
-  return Math.floor(Math.random() * 1_000_000) + 1;
-}
-
 function readUrl(): { seed: number; pairs: PairCount } {
-  const q = new URLSearchParams(window.location.search);
-  const seed = Number(q.get("seed"));
+  const q = readSearch();
   const pairs = Number(q.get("pairs"));
-  return {
-    seed: Number.isFinite(seed) && seed > 0 ? Math.floor(seed) : dailySeed(new Date()),
-    pairs: isPairCount(pairs) ? pairs : 8,
-  };
-}
-
-function writeUrl(seed: number, pairs: PairCount) {
-  const url = new URL(window.location.href);
-  url.searchParams.set("seed", String(seed));
-  url.searchParams.set("pairs", String(pairs));
-  window.history.replaceState(null, "", url);
-}
-
-function shareUrl(seed: number, pairs: PairCount): string {
-  const url = new URL(window.location.href);
-  url.search = "";
-  url.searchParams.set("seed", String(seed));
-  url.searchParams.set("pairs", String(pairs));
-  return url.toString();
-}
-
-function CardFace({ artSeed }: { artSeed: number }) {
-  const holder = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const el = holder.current;
-    if (!el) return;
-    const ill = composeIllustration(cardArtInput(artSeed));
-    const canvas = rasterize(ill.layers, ill.width, ill.height, Math.min(2, window.devicePixelRatio || 1));
-    canvas.style.width = "100%";
-    canvas.style.height = "100%";
-    el.replaceChildren(canvas);
-  }, [artSeed]);
-  return <div ref={holder} className="card-face card-front" />;
+  return { seed: positiveInt(q.get("seed")) ?? dailySeed(new Date()), pairs: isPairCount(pairs) ? pairs : 8 };
 }
 
 export function Memorama() {
@@ -82,14 +46,14 @@ export function Memorama() {
   const [sound, setSound] = useState(loadSoundEnabled);
   const [justMatched, setJustMatched] = useState<number[]>([]);
   const [justMissed, setJustMissed] = useState<number[]>([]);
-  const [shared, setShared] = useState<"idle" | "copied" | "failed">("idle");
+  const [shared, setShared] = useState<"idle" | ShareOutcome>("idle");
   const resolveTimer = useRef<number | null>(null);
   const juiceTimer = useRef<number | null>(null);
 
   const today = dailySeed(new Date());
   const isDaily = seed === today;
 
-  useEffect(() => writeUrl(seed, pairs), [seed, pairs]);
+  useEffect(() => replaceSearch({ seed, pairs }), [seed, pairs]);
 
   useEffect(() => {
     if (!hasPendingPair(game)) return;
@@ -143,21 +107,7 @@ export function Memorama() {
     });
   };
 
-  const share = async () => {
-    const text = shareLine(game, { daily: isDaily, url: shareUrl(seed, pairs) });
-    const touch = window.matchMedia("(pointer: coarse)").matches;
-    try {
-      if (touch && navigator.share && (!navigator.canShare || navigator.canShare({ text }))) {
-        await navigator.share({ text });
-        setShared("copied");
-        return;
-      }
-      await navigator.clipboard.writeText(text);
-      setShared("copied");
-    } catch {
-      setShared("failed");
-    }
-  };
+  const share = async () => setShared(await shareText(shareLine(game, { daily: isDaily, url: shareUrl({ seed, pairs }) })));
 
   const columns = useMemo(() => (pairs === 12 ? 6 : 4), [pairs]);
   const rows = Math.ceil((pairs * 2) / columns);
@@ -166,16 +116,16 @@ export function Memorama() {
 
   return (
     <div className="memorama" style={{ ["--cols" as string]: columns, ["--rows" as string]: rows }}>
-      <header className="memorama-header">
-        <a className="memorama-home" href="/">← CRISTAL.CLI</a>
+      <header className="minigame-header">
+        <a className="minigame-home" href="/">← CRISTAL.CLI</a>
         <h1>memorama</h1>
-        <div className="memorama-stats">
+        <div className="minigame-stats">
           <span>pares {pairsFound(game)}/{totalPairs(game)}</span>
           <span>movimientos {game.moves}</span>
           <span className="memorama-seed">{isDaily ? "templo del día" : "templo"} {seed}</span>
           {bestHere !== undefined && <span className="memorama-best">mejor {bestHere}</span>}
         </div>
-        <div className="memorama-controls">
+        <div className="minigame-controls">
           {PAIR_OPTIONS.map((n) => (
             <button key={n} className={n === pairs ? "active" : ""} onClick={() => start(isDaily ? today : randomSeed(), n)}>
               {n} pares
@@ -206,7 +156,7 @@ export function Memorama() {
             >
               <div className="card-inner">
                 <div className="card-face card-back" style={{ backgroundImage: `url("${BACK_GLYPH}")` }} />
-                {up ? <CardFace artSeed={card.artSeed} /> : <div className="card-face card-front" />}
+                {up ? <TempleCanvas artSeed={card.artSeed} className="card-face card-front" /> : <div className="card-face card-front" />}
               </div>
             </button>
           );

@@ -1,9 +1,9 @@
-import { PALETTE_NAMES } from "../graphics/config/palettes.ts";
-import type { ConfigInput } from "../graphics/config/types.ts";
-import { mulberry32, pick } from "../shared/rng";
+import { PALETTE_NAMES } from "../../graphics/config/palettes.ts";
+import type { ConfigInput } from "../../graphics/config/types.ts";
+import { mulberry32, pick } from "../../shared/rng";
 
-export const CARD_WIDTH = 300;
-export const CARD_HEIGHT = 400;
+export const ART_WIDTH = 300;
+export const ART_HEIGHT = 400;
 
 export type ArtSignature = {
   palette: string;
@@ -15,7 +15,7 @@ export type ArtSignature = {
 
 export const SIGNATURE_AXES = ["palette", "complexity", "projection", "symmetry", "density"] as const;
 
-export function cardArtInput(artSeed: number): ConfigInput {
+export function templeArtInput(artSeed: number): ConfigInput {
   const rng = mulberry32(artSeed ^ 0x5eed);
   return {
     seed: artSeed,
@@ -25,15 +25,15 @@ export function cardArtInput(artSeed: number): ConfigInput {
     palette: pick(rng, PALETTE_NAMES),
     symmetry: rng() < 0.8 ? "bilateral" : "asymmetric",
     tech: {
-      width: CARD_WIDTH,
-      height: CARD_HEIGHT,
+      width: ART_WIDTH,
+      height: ART_HEIGHT,
       projection: { kind: rng() < 0.75 ? "perspective" : "elevation", horizon: 0.5 + rng() * 0.15, focal: 0.6 + rng() * 0.3 },
     },
   };
 }
 
 export function artSignature(artSeed: number): ArtSignature {
-  const input = cardArtInput(artSeed);
+  const input = templeArtInput(artSeed);
   const density = input.density ?? 0.6;
   return {
     palette: String(input.palette),

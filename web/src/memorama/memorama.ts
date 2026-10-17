@@ -1,5 +1,7 @@
-import { fnv1a, mulberry32, type Rng } from "../shared/rng";
-import { artSignature, signatureDistance, type ArtSignature } from "./cardArt.ts";
+import { mulberry32, shuffle, type Rng } from "../shared/rng";
+import { bestMarksStore, updateBest as updateBestMark, type BestMarks, type BestUpdate } from "../minigames/kit/bestMarks.ts";
+import { dailySeed as kitDailySeed } from "../minigames/kit/dailySeed.ts";
+import { artSignature, signatureDistance, type ArtSignature } from "../minigames/kit/templeArt.ts";
 
 export type Card = { id: number; pairId: number; artSeed: number };
 
@@ -25,15 +27,6 @@ const DEAL_TRIES = 40;
 
 export function isPairCount(n: number): n is PairCount {
   return (PAIR_OPTIONS as readonly number[]).includes(n);
-}
-
-export function shuffle<T>(items: readonly T[], rng: Rng): T[] {
-  const out = [...items];
-  for (let i = out.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1));
-    [out[i], out[j]] = [out[j], out[i]];
-  }
-  return out;
 }
 
 function nearestDistance(candidate: ArtSignature, chosen: readonly ArtSignature[]): number {
@@ -112,8 +105,7 @@ export function totalPairs(state: GameState): number {
 }
 
 export function dailySeed(date: Date): number {
-  const day = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-  return (fnv1a(`cristal-memorama-${day}`) % 1_000_000) + 1;
+  return kitDailySeed("memorama", date);
 }
 
 export function resultGlyphs(history: readonly MoveResult[]): string {
@@ -127,39 +119,16 @@ export function shareLine(state: GameState, options: { daily: boolean; url?: str
   return parts.filter(Boolean).join("\n");
 }
 
-export type BestMarks = Record<string, number>;
+export type { BestMarks };
 
 export function bestKey(seed: number, pairs: number): string {
   return `${seed}:${pairs}`;
 }
 
-export function updateBest(best: BestMarks, seed: number, pairs: number, moves: number): { best: BestMarks; isRecord: boolean; previous: number | null } {
-  const key = bestKey(seed, pairs);
-  const previous = best[key] ?? null;
-  if (previous !== null && previous <= moves) return { best, isRecord: false, previous };
-  return { best: { ...best, [key]: moves }, isRecord: true, previous };
+export function updateBest(best: BestMarks, seed: number, pairs: number, moves: number): BestUpdate {
+  return updateBestMark(best, bestKey(seed, pairs), moves);
 }
 
-const BEST_STORAGE_KEY = "cristal.memorama.best.v1";
-
-export function loadBest(): BestMarks {
-  if (typeof window === "undefined") return {};
-  try {
-    const parsed = JSON.parse(window.localStorage.getItem(BEST_STORAGE_KEY) || "{}") as unknown;
-    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) return {};
-    const out: BestMarks = {};
-    for (const [key, value] of Object.entries(parsed as Record<string, unknown>)) if (typeof value === "number") out[key] = value;
-    return out;
-  } catch {
-    return {};
-  }
-}
-
-export function saveBest(best: BestMarks): void {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(BEST_STORAGE_KEY, JSON.stringify(best));
-  } catch {
-    return;
-  }
-}
+const bestStore = bestMarksStore("cristal.memorama.best.v1");
+export const loadBest = bestStore.load;
+export const saveBest = bestStore.save;
