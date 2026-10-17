@@ -11,7 +11,9 @@ regla de conexión: cada minijuego enseña una regla del universo que luego se u
 por Bernard [236]. Lista completa en la fuente, items 58–70.
 
 **Ya aterrizado.** El memorama de templos (`web/src/memorama/`) es el primer minijuego vivo y el que
-el betatester puede jugar en el cel.
+el betatester puede jugar en el cel. El segundo es ATELIER (`atelier-estudio-de-dibujo-procedural.md`,
+2026-10-17), construido sobre `web/src/minigames/kit/`: lo que un minijuego nuevo ya no reescribe (semilla
+del día, marcas, url, compartir, sonido, arte de templo, cabecera).
 
 **Decisión de Bernard.** Cuáles tres prototipar primero [237]; ChatGPT marca "El arquitecto mentiroso"
 como el que mejor usa el motor de proyecciones.

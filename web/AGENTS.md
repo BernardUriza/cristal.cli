@@ -8,11 +8,16 @@ long vague one.
 - `index.html` → `src/landing/` — the selector page (labyrinth or memorama). The labyrinth itself is
   `laberinto.html` → `src/main.tsx`; `memorama.html` and `building.html` are the other Vite entries.
 - `src/game/` — game logic + R3F components (Scene, Labyrinth, Player, RoomScene, …)
-  and **pure logic modules** (`maze.ts`, `store.ts`, `types.ts`, `StabilityEngine.ts`).
+  and **pure logic modules** (`maze.ts`, `types.ts`, `StabilityEngine.ts`). `store.ts` composes the zustand
+  slices in `store/` (session, console, walls, pressure, roomFlow; policy in `store/config.ts`); `room/` holds
+  RoomScene's pure geometry/atmosphere and one component per file.
 - `src/graphics/` — procedural graphics subsystem (grammar → SVG | Canvas 2D | Three.js + GLSL);
   layer map and rules in `src/graphics/CLAUDE.md`. Preview: `/laberinto.html?view=graphics&backend=svg|canvas|three`.
-- `src/memorama/` — standalone memory-matching game (`memorama.html` entry): pure rules in `memorama.ts`,
-  per-card art config in `cardArt.ts`, both seeded; the React layer rasterizes each card through `graphics/`.
+- `src/minigames/kit/` — what every minigame shares: `dailySeed`, `bestMarks`, `urlParams`, `share`, `sound`,
+  `templeArt` + `TempleCanvas`, `minigame.css` (header/controls). A new minigame starts here, never by copying memorama.
+- `src/memorama/` — memory-matching game (`memorama.html`): pure rules in `memorama.ts`, React in `Memorama.tsx`, on the kit.
+- `src/atelier/` — ATELIER procedural drawing studio (`atelier.html`): `directorRules.ts` + `director.ts` (narration →
+  traceable `Recipe`), `strokes.ts`/`hitTest.ts`/`manifest.ts` pure, `useDrawing.ts` progressive canvas; draws `graphics/` stages.
 - `src/terminal/` — terminal core ported from Unity.
 - `src/ui/` — React UI overlays.
 - `public/` — static assets served at `/` (e.g. `public/brand/` icons).

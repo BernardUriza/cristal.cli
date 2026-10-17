@@ -1,7 +1,8 @@
 # Backlog CRISTAL.CLI
 
 Un archivo por item; status se voltea el día que cambia. Fuente de las ideas del 2026-10-16:
-`fuente-chat-friedeberg-astra-2026-10-16.md` (citas `[n/237]`). Reglas duras de Bernard: `.claude/rules/reglas-duras-del-juego.md`.
+`fuente-chat-friedeberg-astra-2026-10-16.md` (citas `[n/237]`); del ATELIER (2026-10-17):
+`fuente-chat-cristal-cli-game-atelier-2026-10-17.md` (citas `t.n`). Reglas duras de Bernard: `.claude/rules/reglas-duras-del-juego.md`.
 
 | Item | Status | Propuesto |
 |---|---|---|
@@ -12,6 +13,7 @@ Un archivo por item; status se voltea el día que cambia. Fuente de las ideas de
 | [Conocimiento arquitectónico real en el motor](conocimiento-arquitectonico-del-motor.md) | In progress (edificio con patio y cinco vistas Done en 2c1f2df; faltan órdenes clásicos) | 2026-10-16 |
 | [2d.cli: terminal en la habitación con acciones validadas por el motor](2d-cli-acciones-validadas.md) | Proposed | 2026-10-16 |
 | [Minijuegos donde la regla es el chiste](minijuegos-del-universo.md) | Proposed | 2026-10-16 |
+| [ATELIER — Estudio de dibujo procedural](atelier-estudio-de-dibujo-procedural.md) | In progress (v0 publicado 940976d; falta director por LLM) | 2026-10-17 |
 | [Seres híbridos por combinación conceptual](seres-hibridos-por-combinacion-conceptual.md) | Proposed | 2026-10-16 |
 | [Neobarroco kitsch como lenguaje visual; el significado no lo controla el autor](neobarroco-kitsch-lenguaje-visual.md) | Proposed | 2026-10-16 |
 | [Arsenal de render más allá de SVG/HTML](arsenal-de-render.md) | In progress (Canvas, Three y GLSL Done; falta shader de pared) | 2026-10-16 |

@@ -13,7 +13,8 @@
   `lemon-mushroom-04a84da0f.3.azurestaticapps.net`). Deploy: push a `main` tocando `web/**`
   (`.github/workflows/azure-static-web-app.yml`). Provision y promote: `web/provision.sh`, `web/promote.sh`.
 - `/` es el selector; `/laberinto.html` el juego 3D; `/memorama.html` el memorama de templos Friedeberg
-  (`web/src/memorama/`, arte por semilla desde `web/src/graphics/`).
+  (`web/src/memorama/`); `/atelier.html` ATELIER, estudio de dibujo procedural (`web/src/atelier/`, 2026-10-17).
+  Los minijuegos comparten `web/src/minigames/kit/`; el arte sale de `web/src/graphics/`.
 - El laberinto publicado usa `cristal-api` para `/generate` (CORS ya incluye el dominio); sin API cae a `localRoom`.
 - Portafolio: proyecto id 8 en portfolio-spring, visible en bernarduriza.com.
 - Pendiente al cerrar la sesión: el dominio estaba en `Validating` en Azure (cert); cuando conteste 200 la
@@ -47,6 +48,17 @@ uniforms de los shaders del templo. Las capturas del templo y del edificio son d
 
 Queda: ventanitas de galería que se leen como píldoras y sofito que parece segundo friso; 20 variaciones del
 templete; órdenes clásicos (Vignola) y ornamento por cara en el edificio; shader de pared con colisiones intactas.
+
+---
+
+## Modularización y ATELIER (2026-10-17)
+
+- `store.ts` 772 → 24 LOC (slices en `web/src/game/store/`, `c4ad5af`); `RoomScene.tsx` 603 → 132 LOC
+  (`web/src/game/room/`, `b8e2290`); kit de minijuegos `web/src/minigames/kit/` (`5d4cd04`); ATELIER
+  (`940976d`, backlog `atelier-estudio-de-dibujo-procedural.md`). Suite completa 390 tests verdes, typecheck y
+  build limpios. Deuda que dejó el corte, sin tocar: `WallInscription.tsx` e `InWorldConsole.tsx` repiten el
+  patrón texto→CanvasTexture que ya vive en `game/room/textures.ts`; `BackroomFurniture.tsx` (528 LOC, 2 commits)
+  se dejó entero a propósito: catálogo de 14 piezas que casi no cambia, partirlo subiría la frontera.
 
 ---
 
