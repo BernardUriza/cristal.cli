@@ -64,17 +64,31 @@ export function convexHull(points: readonly Vec2[]): Vec2[] {
   return [...lower.slice(0, -1), ...upper.slice(0, -1)];
 }
 
-function outlines(list: DisplayList, segments: number): Vec2[][] {
-  return list.flatMap((shape) => {
-    const leaves = flattenLeaves([shape], segments);
-    if (shape.kind === "group") return leaves.length ? [convexHull(leaves.flatMap((l) => l.points))] : [];
-    return leaves.filter((l) => l.closed).map((l) => l.points);
-  });
+type Box = { x0: number; y0: number; x1: number; y1: number };
+
+function boxOf(points: readonly Vec2[]): Box {
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  for (const [x, y] of points) { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); }
+  return { x0, y0, x1, y1 };
+}
+
+const touches = (a: Box, b: Box) => a.x0 <= b.x1 && b.x0 <= a.x1 && a.y0 <= b.y1 && b.y0 <= a.y1;
+
+/** Pieces that touch form one mass (a building's faces, a creature's parts); each mass contributes one silhouette. */
+function outlines(list: DisplayList, segments: number, maxArea: number): Vec2[][] {
+  const pieces = flattenLeaves(list, segments).filter((l) => l.closed && l.points.length >= 3 && polygonArea(l.points) <= maxArea);
+  const boxes = pieces.map((l) => boxOf(l.points));
+  const parent = pieces.map((_, i) => i);
+  const find = (i: number): number => (parent[i] === i ? i : (parent[i] = find(parent[i])));
+  for (let i = 0; i < pieces.length; i++) for (let j = i + 1; j < pieces.length; j++) if (touches(boxes[i], boxes[j])) parent[find(i)] = find(j);
+  const masses = new Map<number, Vec2[]>();
+  pieces.forEach((l, i) => { const r = find(i); masses.set(r, [...(masses.get(r) ?? []), ...l.points]); });
+  return [...masses.values()].map(convexHull);
 }
 
 export function silhouetteDiversity(list: DisplayList, canvasArea: number, tuning: ComplexityTuning): { candidates: number; families: number } {
   const isCandidate = (pts: Vec2[]) => pts.length >= 3 && polygonArea(pts) >= tuning.silhouetteMinAreaPx && polygonArea(pts) <= canvasArea * tuning.backgroundAreaRatio;
-  const shapes = outlines(list, tuning.circleSegments).filter(isCandidate);
+  const shapes = outlines(list, tuning.circleSegments, canvasArea * tuning.backgroundAreaRatio).filter(isCandidate);
   const descriptors = shapes.map((points) => silhouetteDescriptor(points, tuning.silhouetteRays));
   return { candidates: shapes.length, families: silhouetteFamilies(descriptors, tuning.silhouetteThreshold).length };
 }
