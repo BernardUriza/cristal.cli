@@ -106,3 +106,35 @@ def test_unconfigured_director_is_503():
     app = FastAPI()
     app.include_router(atelier.router)
     assert TestClient(app).post("/atelier/direct", json={"narration": "algo", "seed": 1}).status_code == 503
+
+
+def test_program_keeps_known_archetypes_and_rules_only():
+    palace = {"archetype": "palace", "rules": [{"rule": "R2", "target": "root", "params": {"chambers": 5}}, {"rule": "R6", "target": "hall-1", "params": {}}]}
+    client, _ = make_client({"title": "x", "choices": [
+        {"field": "composition", "value": "programa", "because": "un palacio"},
+        {"field": "program", "value": palace, "because": "salones y habitaciones"},
+    ]})
+    body = client.post("/atelier/direct", json={"narration": "un palacio de salones", "seed": 3}).json()
+    assert [(c["field"], c["value"]) for c in body["choices"]] == [("composition", "programa"), ("program", palace)]
+
+
+def test_program_with_one_bad_call_is_dropped_whole():
+    bad = [
+        {"archetype": "castle", "rules": [{"rule": "R1", "target": "root", "params": {}}]},
+        {"archetype": "city", "rules": [{"rule": "R9", "target": "root", "params": {}}]},
+        {"archetype": "city", "rules": [{"rule": "R3", "target": "root", "params": {"chambers": True}}]},
+        {"archetype": "city", "rules": [{"rule": "R3", "target": "root", "params": {"style": "x" * 40}}]},
+        {"archetype": "city", "rules": [{"rule": "R3", "target": "", "params": {}}]},
+        {"archetype": "city", "rules": [{"rule": "R4", "target": "gallery-1", "params": {}}] * 9},
+        {"archetype": "temple", "rules": []},
+        {"archetype": "temple", "rules": "R1"},
+    ]
+    client, _ = make_client({"title": "x", "choices": [{"field": "program", "value": v, "because": "b"} for v in bad] + [{"field": "palette", "value": "noche", "because": "n"}]})
+    body = client.post("/atelier/direct", json={"narration": "una ciudad", "seed": 3}).json()
+    assert [c["field"] for c in body["choices"]] == ["palette"]
+
+
+def test_prompt_teaches_the_program_grammar():
+    prompt = open("prompts/atelier.md", encoding="utf-8").read()
+    for word in ('"program"', '"programa"', "R1", "R2", "R3", "R4", "R5", "R6", "palace", "city", "temple", "labyrinth"):
+        assert word in prompt
