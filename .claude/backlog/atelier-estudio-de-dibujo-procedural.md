@@ -23,6 +23,9 @@ no-plagiadora, "inspiración matemática", nunca calcar. Sin victoria, sin timer
 - Verificado en dev 2026-10-17: 5235 trazos para "un templo de noche con siete columnas, lleno de galerías
   imposibles", inspector devuelve etapa/geometría/estilo/origen, replay por etapa; captura
   `i+d/friedeberg/capturas/atelier-dev-2026-10-17.jpg`. Tests: `director.test.ts`, `strokes.test.ts`.
+- Verificado en prod 2026-10-17 (deploy run 39055703516, smoke con `/atelier.html` verde): `https://cristal.bernarduriza.com/atelier.html?n=una capilla de día, vacía y torcida`
+  dibuja 2504 trazos con la receta correcta (friedeberg, anomalía 0.95, densidad 0.2, complejidad 1), consola sin
+  errores, y la landing lista los tres juegos. Captura `i+d/friedeberg/capturas/atelier-prod-2026-10-17.jpg`.
 
 **Canónico a reusar.** `web/src/graphics/` (gramática + pintores + SVG/Canvas), `web/src/minigames/kit/`.
 Para el director por LLM: `cristal-api` (`server/`) y `web/src/game/roomApi.ts` como precedente de llamada;
