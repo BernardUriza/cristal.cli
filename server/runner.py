@@ -24,6 +24,7 @@ Optional:
     CRISTAL_AIRE_PROJECT         the room generator's casita (default "cristal")
     CRISTAL_TAROT_AIRE_PROJECT   the tarot reader's casita (default "cristal-tarot")
     CRISTAL_ATELIER_AIRE_PROJECT the ATELIER director's casita (default "cristal-atelier")
+    CRISTAL_CONSOLE_AIRE_PROJECT the in-world console's second voice (default "cristal-console")
 
 The tarot reader (the tarot-thoth repo) is a second voice on the same door: its own
 casita, because a persona is per-CASITA and the room generator's must not be
@@ -40,6 +41,7 @@ from fi_runner import AIREBackend, Runner, load_prompt
 PERSONA_PATH = Path(__file__).parent / "prompts" / "persona.md"
 TAROT_PERSONA_PATH = Path(__file__).parent / "prompts" / "tarot.md"
 ATELIER_PERSONA_PATH = Path(__file__).parent / "prompts" / "atelier.md"
+CONSOLE_PERSONA_PATH = Path(__file__).parent / "prompts" / "console.md"
 
 
 def build_runner() -> Runner:
@@ -52,6 +54,10 @@ def build_tarot_runner() -> Runner:
 
 def build_atelier_runner() -> Runner:
     return _complete_runner(os.getenv("CRISTAL_ATELIER_AIRE_PROJECT", "cristal-atelier"), ATELIER_PERSONA_PATH)
+
+
+def build_console_runner() -> Runner:
+    return _complete_runner(os.getenv("CRISTAL_CONSOLE_AIRE_PROJECT", "cristal-console"), CONSOLE_PERSONA_PATH)
 
 
 def _complete_runner(project: str, persona_path: Path) -> Runner:
