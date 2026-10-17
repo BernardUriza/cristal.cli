@@ -69,4 +69,24 @@ describe("classifyStance", () => {
     expect(profile.signals).toContain("emotion-term");
     expect(profile.stance).toBe("confession");
   });
+
+  it("reads short sensory answers to a body question as confession (Façade §6: permissive)", () => {
+    for (const answer of ["tibia", "como una piedra", "pesa", "oscura y lenta", "quema un poco", "chiquita"]) {
+      const profile = classifyStance(answer, { afterBodyQuestion: true });
+      expect(profile.stance, answer).toBe("confession");
+      expect(profile.signals.length, answer).toBeGreaterThan(0);
+    }
+  });
+
+  it("does not turn an evasive short answer into a confession just because a body question came first", () => {
+    expect(classifyStance("jaja siguiente", { afterBodyQuestion: true }).stance).toBe("deflection");
+    expect(classifyStance("da igual", { afterBodyQuestion: true }).stance).toBe("anesthesia");
+    expect(classifyStance("zxqv", { afterBodyQuestion: false }).signals).toEqual([]);
+  });
+
+  it("exposes the salient word the reply can mirror", () => {
+    expect(classifyStance("sufre por el frío").salientWord).toBe("frío");
+    expect(classifyStance("es fría").salientWord).toBe("fría");
+    expect(classifyStance("zxqv").salientWord).toBe("zxqv");
+  });
 });

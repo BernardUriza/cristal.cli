@@ -4,6 +4,9 @@ import { useGame } from "../game/store";
 import type { Room } from "../game/roomApi";
 import { getPsychPressure, resetPsychSession } from "./psych/PsychologicalResponseEngine";
 import { TerminalCore } from "./terminalCore";
+import { CATCH_ALL_POOL } from "./psych/replyPool";
+
+const CATCH_ALL = CATCH_ALL_POOL.map((line) => line.text.replace("{palabra}", "ruido \\d"));
 
 const room: Room = {
   name: "Pressure Room",
@@ -84,12 +87,48 @@ describe("TerminalCore psychological pressure integration", () => {
       "sufre por el frío",
       "incomodidad",
     ];
+    const bodily: string[] = [];
     for (const line of transcript) {
       const response = core.processInput(line);
       const spoken = (response?.lines ?? []).filter((l) => l.trim().length > 0);
       expect(spoken, line).not.toEqual(["..."]);
-      expect(spoken.join(" "), line).not.toMatch(/Escribe desde el cuerpo|nada que replicar/);
+      expect(spoken.join(" "), line).not.toMatch(/Escribe desde el cuerpo|nada que replicar|no (te )?entiend/);
+      if (transcript.indexOf(line) >= 3) bodily.push(spoken[0]);
     }
+    expect(new Set(bodily).size, bodily.join(" | ")).toBe(4);
+  });
+
+  it("never emits the ellipsis alone and pivots toward the rite before the tenth evasive turn", () => {
+    const context = { objective: "Invoca un glifo: LUNA, VISION o ROTURA.", invokedGlyph: "luna" };
+    const spokenTurns: string[][] = [];
+    for (let i = 0; i < 12; i++) {
+      const response = core.processInput("no siento nada, da igual", context);
+      const spoken = (response?.lines ?? []).filter((l) => l.trim().length > 0);
+      expect(spoken, `turn ${i}`).not.toEqual(["..."]);
+      expect(spoken.length, `turn ${i}`).toBeGreaterThan(0);
+      spokenTurns.push(spoken);
+    }
+    for (let i = 1; i < spokenTurns.length; i++) {
+      expect(spokenTurns[i][0], `turn ${i}`).not.toBe(spokenTurns[i - 1][0]);
+    }
+    const pivotTurn = spokenTurns.findIndex((lines) => lines.some((l) => /Invoca un glifo|LUNA|otro cuarto|Camina|lugar donde no estés|laberinto también habla/.test(l)));
+    expect(pivotTurn).toBeGreaterThanOrEqual(0);
+    expect(pivotTurn).toBeLessThan(10);
+  });
+
+  it("reflects garbage once, pivots on the second, and never repeats the pivot", () => {
+    const context = { objective: "Conecta una consola." };
+    const first = core.processInput("zxqv", context)?.lines.filter((l) => l.trim().length > 0) ?? [];
+    expect(first.join(" ")).toContain("«zxqv»");
+    const pivots: string[] = [];
+    for (let i = 0; i < 6; i++) {
+      const pivot = core.processInput(`basura ${i}`, context)?.lines.filter((l) => l.trim().length > 0) ?? [];
+      expect(pivot.join(" "), `pivot ${i}`).not.toContain("«");
+      pivots.push(pivot[0]);
+      const reflect = core.processInput(`ruido ${i}`, context)?.lines.filter((l) => l.trim().length > 0) ?? [];
+      expect(CATCH_ALL.some((text) => new RegExp(text).test(reflect[0])), `reflect ${i}: ${reflect[0]}`).toBe(true);
+    }
+    for (let i = 1; i < pivots.length; i++) expect(pivots[i], `pivot ${i}`).not.toBe(pivots[i - 1]);
   });
 
   it("does not let unclassified input inherit the previous stance's silence stagnation", () => {

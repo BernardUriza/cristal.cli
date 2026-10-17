@@ -14,16 +14,23 @@ export interface StanceProfile {
   bodyPresence: number;
   abstractionLevel: number;
   emotionalExposure: number;
+  salientWord: string;
 }
 
 const BODY_TERMS = [
   "pecho", "estomago", "garganta", "cuerpo", "piel", "mano", "manos", "cabeza",
   "espalda", "vientre", "panza", "musculo", "hombro", "hombros", "pulso", "latido",
-  "respiracion", "duele", "dolor", "arde", "aprieta", "tiembla", "nausea", "mareo",
+  "duele", "dolor", "arde", "aprieta", "tiembla", "nausea", "mareo",
   "nudo", "puno", "sangre", "huesos", "carne", "boca", "ojos",
   "frio", "fria", "calor", "tibio", "tibia", "helado", "helada", "escalofrio", "temblor",
   "tenso", "tensa", "tension", "pesado", "pesada", "hueco", "incomod", "sufr", "cansad", "cansancio",
-  "agotad", "ahogo", "asfixia",
+  "agotad", "ahog", "asfixia",
+  "tibi", "asper", "suave", "pesa", "quema", "pica", "late", "vibra", "zumba", "oprime", "punza",
+  "hormigue", "seco", "seca", "humed", "hondo", "honda", "chiquit", "chico", "lento", "lenta",
+  "rapido", "rapida", "piedra", "apretad", "flojo", "floja", "liger", "denso", "densa", "espes",
+  "oscura", "oscuro", "brilla", "apagad", "grande", "pequen", "enorme", "diminut", "duro", "blando",
+  "blanda", "sudor", "suda", "tiembl", "respir", "palpita", "maread", "entumec", "adormec", "cosquill",
+  "grito", "grita", "lagrim", "llant",
 ];
 
 const EMOTION_TERMS = [
@@ -31,7 +38,16 @@ const EMOTION_TERMS = [
   "rabia", "enojo", "culpa", "verguenza", "vulnerable", "fragil", "llorar", "lloro",
   "perdido", "perdida", "dolido", "herido", "asustado", "asustada", "desesperado",
   "confundid", "confusion", "incomodidad", "cansado", "cansada", "agotado", "agotada", "sufro", "sufre",
+  "pena", "duelo", "nostalg", "tranquil", "calma", "alivio", "ternura", "amor", "carin", "feliz",
+  "alegr", "esperanz", "asco", "odio", "celos", "envidia", "panico", "terror", "nervios", "inquiet",
+  "abrum", "paz",
 ];
+
+const SHORT_ANSWER_MAX_WORDS = 6;
+
+export interface ClassifyOptions {
+  afterBodyQuestion?: boolean;
+}
 
 const CAUSAL_TERMS = [
   "porque", "debido a", "se debe", "ya que", "por eso", "por lo tanto", "dado que",
@@ -86,8 +102,25 @@ function saturate(hits: number, full: number): number {
   return clamp01(hits / full);
 }
 
-export function classifyStance(input: string): StanceProfile {
+function tokens(input: string): string[] {
+  return input.split(/[^\p{L}\p{N}]+/u).filter((token) => token.length > 0);
+}
+
+function salientWord(input: string): string {
+  const words = tokens(input);
+  if (words.length === 0) return "";
+  const somatic = words.filter((word) => {
+    const plain = normalize(word);
+    return [...BODY_TERMS, ...EMOTION_TERMS].some((term) => plain.includes(term));
+  });
+  if (somatic.length > 0) return somatic[somatic.length - 1];
+  if (words.length <= 3) return words.join(" ");
+  return words.reduce((longest, word) => (word.length > longest.length ? word : longest), "");
+}
+
+export function classifyStance(input: string, options: ClassifyOptions = {}): StanceProfile {
   const text = normalize(input);
+  const word = salientWord(input);
 
   const firstPerson = saturate(countHits(text, FIRST_PERSON_TERMS), 2);
   const bodyPresence = saturate(countHits(text, BODY_TERMS), 2);
@@ -125,5 +158,19 @@ export function classifyStance(input: string): StanceProfile {
   if (symbolic > 0) signals.push("symbolic-language");
   if (flat > 0) signals.push("flat-negation");
 
-  return { stance, confidence, signals, bodyPresence, abstractionLevel, emotionalExposure };
+  const shortAnswerToBodyQuestion =
+    signals.length === 0 && options.afterBodyQuestion === true && tokens(input).length <= SHORT_ANSWER_MAX_WORDS;
+  if (shortAnswerToBodyQuestion) {
+    return {
+      stance: "confession",
+      confidence: 0.5,
+      signals: ["answer-to-body-question"],
+      bodyPresence: 0.5,
+      abstractionLevel: 0,
+      emotionalExposure: 0,
+      salientWord: word,
+    };
+  }
+
+  return { stance, confidence, signals, bodyPresence, abstractionLevel, emotionalExposure, salientWord: word };
 }

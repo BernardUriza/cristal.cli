@@ -124,7 +124,12 @@ export function ConsoleOverlay() {
   const submit = () => {
     const trimmed = value.trim();
     if (!trimmed) return;
-    const res = core.processInput(trimmed);
+    const game = useGame.getState();
+    const res = core.processInput(trimmed, {
+      confessionFragment: game.verticalSlice.confessionFragment,
+      invokedGlyph: game.verticalSlice.invokedGlyph,
+      objective: objectiveForSlice(game.verticalSlice),
+    });
     const pressure = getPsychPressure();
     useGame
       .getState()

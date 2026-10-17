@@ -12,7 +12,7 @@ import { matchPattern } from "./patterns";
 import { RESPONSE_SETS } from "./responses";
 import { CristalMemory } from "./memory";
 import { StateMachine, stateTransitionFromString } from "./stateMachine";
-import { generateCristalPsychReply } from "./psych/PsychologicalResponseEngine";
+import { generateCristalPsychReply, type PsychContext } from "./psych/PsychologicalResponseEngine";
 import { arbitrate } from "./psych/ToneArbitrator";
 import { clamp01 } from "../shared/math";
 
@@ -37,7 +37,7 @@ function templatesForLevel(set: ResponseSet, level: ResponseLevel): ResponseTemp
 export class ResponseEngine {
   constructor(private memory: CristalMemory, private state: StateMachine) {}
 
-  generateResponse(input: string): BuiltResponse {
+  generateResponse(input: string, context: PsychContext = {}): BuiltResponse {
     const command = parse(input);
 
     // Log to memory (mirrors ResponseEngine.GenerateResponse).
@@ -58,7 +58,7 @@ export class ResponseEngine {
       return response;
     }
 
-    const reply = generateCristalPsychReply(input);
+    const reply = generateCristalPsychReply(input, { ...context, sessionId: this.memory.sessionId });
     const response: BuiltResponse = {
       lines: ["", reply.text, ""],
       level: ResponseLevel.Narrative,

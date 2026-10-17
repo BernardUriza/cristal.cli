@@ -27,9 +27,25 @@ describe("generateCristalPsychReply", () => {
     }
   });
 
-  it("answers empty and signal-less input with a reflective opener", () => {
+  it("reflects signal-less input in character, then pivots on the second one (Façade catch-all)", () => {
+    const first = generateCristalPsychReply("zxqv");
+    expect(first.text).toContain("«zxqv»");
+    expect(first.stance).toBeNull();
+    expect(FORBIDDEN.test(first.text)).toBe(false);
+
+    const second = generateCristalPsychReply("qwerty", { objective: "Invoca un glifo: LUNA, VISION o ROTURA." });
+    expect(second.stance).toBeNull();
+    expect(second.text).not.toContain("«qwerty»");
+    expect(second.text.length).toBeGreaterThan(0);
+
     expect(generateCristalPsychReply("").text.length).toBeGreaterThan(0);
-    expect(FORBIDDEN.test(generateCristalPsychReply("asdfgh qwerty").text)).toBe(false);
+  });
+
+  it("treats a short answer after its own body question as confession", () => {
+    generateCristalPsychReply("mi ansiedad se debe a patrones neuroquímicos");
+    const reply = generateCristalPsychReply("tibia");
+    expect(reply.stance).toBe("confession");
+    expect(reply.tone).toBe("mirror");
   });
 
   it("composes end-to-end: intellectualized body gets the sensation redirect", () => {
@@ -44,7 +60,7 @@ describe("generateCristalPsychReply", () => {
     generateCristalPsychReply("se explica por mi cortisol y mis patrones de sueño");
     const reply = generateCristalPsychReply("es un proceso neuroquímico, un mecanismo lógico");
     expect(getPsychPressure().pressure).toBeGreaterThan(first);
-    expect(reply.text.toLowerCase()).toContain("sigues explic");
+    expect(reply.text.toLowerCase()).toMatch(/sigues explic|otra vez el mapa|explicas más rápido/);
     expect(reply.tone).toBe("press");
   });
 
@@ -70,5 +86,11 @@ describe("generateCristalPsychReply", () => {
   it("marks an opener as unclassified so the silence engine cannot count it as a turn", () => {
     expect(generateCristalPsychReply("asdfgh qwerty").stance).toBeNull();
     expect(generateCristalPsychReply("me duele el pecho").stance).toBe("confession");
+  });
+
+  it("never says the same line twice in a row across twelve evasive turns", () => {
+    const lines: string[] = [];
+    for (let i = 0; i < 12; i++) lines.push(generateCristalPsychReply("jaja qué profundo, siguiente pregunta").text);
+    for (let i = 1; i < lines.length; i++) expect(lines[i], `turn ${i}`).not.toBe(lines[i - 1]);
   });
 });
