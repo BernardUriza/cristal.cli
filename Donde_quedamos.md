@@ -105,15 +105,13 @@ en `window` sí mueven al player, la `E` va con `press_key` (el gate de envíos 
 con KeyE), y la consola se escribe con `type_text` + Enter; el HUD (`node: ALPHA`, `E conectar ALPHA`) y el pie
 de la consola (`presión · stance`) son el estado observable.
 
-**Borrador de respuesta para el DM (lo manda Bernard):**
-> Ya quedó. Lo que viste no eras tú: el rito no tenía "frío" ni "incomodidad" en su vocabulario, así que tus
-> cuatro respuestas le parecieron vacías y encima se calló por "repetirte". Ya reconoce lo corporal y ya no se
-> queda mudo. Cuando puedas, vuelve a la consola y escríbele lo mismo: quiero ver qué te contesta ahora. Y lo del
-> templo con menos detalles me sirvió un montón.
->
-> Otra cosa, cuando tengas un rato: entra con https://cristal.bernarduriza.com/laberinto.html?viaje=1 y dime si el
-> texto grande se lee bien y si molesta algo de lo que se mueve o brilla. Es el modo pensado para jugar en viaje y
-> nadie lo ha probado más que yo.
+**Hilo leído 2026-10-17 12:06 CST:** Bernard ya contestó a las 9:15 con los dos bugs; `me.tikkum` respondió «Jaja,
+claude ya esta corrigiendo sus cagadas» y «El ácido será mejor mañana que voy a los museos... hoy tocan parques», ❤️.
+El delta pendiente (escrito en el composer del hilo sin enviar y en el portapapeles; el clic es de Bernard):
+> Ya quedó desde la mañana: vuelve a la consola y escríbele lo mismo, quiero ver qué te contesta ahora. Y para mañana
+> en los museos entra con https://cristal.bernarduriza.com/laberinto.html?viaje=1 : es el modo para jugar en viaje
+> (texto grande, sin parpadeos, camina solo si lo sueltas) y todavía nadie lo prueba en viaje de verdad. Dime si el
+> texto se lee y si algo molesta. Lo del templo con menos detalles me sirvió un montón.
 
 ### Consola: nunca rechaza, nunca repite, siempre mueve (2026-10-17, `53d4178` + `673ef59`)
 
