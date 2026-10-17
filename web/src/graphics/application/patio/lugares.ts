@@ -1,21 +1,18 @@
 import type { Group } from "../../config/scene.ts";
+import { FIGURE_SCALE } from "../../config/figures.ts";
 import type { Rect } from "../../domain/architecture/layout.ts";
 import type { Building } from "../../domain/architecture/mass.ts";
 import type { Vec3 } from "../../domain/math/vec3.ts";
 import type { Projector } from "../projector.ts";
+import { crowdOf, isProtagonist, protagonistStand, wantedHeightM } from "./protagonista.ts";
+import { boxesOf, type Flight, type Footing, type Site } from "./sitio.ts";
 
-export type Footing = { rect: Rect; y: number };
-
-export type Flight = { from: Vec3; to: Vec3 };
-
-export type Site = { projector: Projector; span: number; floor: Footing; towers: Footing[]; roofs: Footing[]; stairs: Flight[]; sky: Footing };
+export type { Flight, Footing, Site } from "./sitio.ts";
 
 export type Spot = { at: Vec3; group: number };
 
 const STEP_RISE = 0.35;
 const SKY_LIFT = 1.25;
-const PROTAGONIST = 0.34;
-const MIN_HEIGHT_M = 3;
 
 export function siteOfBuilding(building: Building, projector: Projector): Site {
   const h = building.plan.layout.heights;
@@ -25,15 +22,20 @@ export function siteOfBuilding(building: Building, projector: Projector): Site {
     projector,
     span: Math.min(court.x1 - court.x0, court.z1 - court.z0),
     floor: { rect: court, y: 0 },
+    stages: [{ rect: court, y: 0 }],
     towers: spaces.filter((s) => s.kind === "tower").map((t) => ({ rect: t.rect, y: t.height + h.roofSlab + h.towerRoof })),
     roofs: spaces.filter((s) => s.kind === "room" || s.kind === "gallery").map((s) => ({ rect: s.rect, y: s.height + h.roofSlab })),
     stairs: [],
     sky: { rect: court, y: h.tower * SKY_LIFT },
+    obstacles: boxesOf(building.solids),
   };
 }
 
+/** A crowd stands at human scale; a lone or giant figure is the protagonist (see protagonista.ts). */
 export function creatureHeightM(g: Group, c: Site): number {
-  return Math.max(MIN_HEIGHT_M, (c.span * PROTAGONIST * g.scale) / Math.max(1, Math.sqrt(g.count) / 2));
+  if (!isProtagonist(g)) return Math.max(FIGURE_SCALE.minHeightM, (c.span * FIGURE_SCALE.crowd * g.scale) / crowdOf(g));
+  const perched = g.place === "torres" && c.towers.length ? Math.min(...c.towers.map((t) => t.y)) * FIGURE_SCALE.perched : Infinity;
+  return protagonistStand(g, c)?.heightM ?? Math.max(FIGURE_SCALE.minHeightM, Math.min(wantedHeightM(g, c), perched));
 }
 
 function arrange(g: Group, r: Rect, y: number, rise: number): Vec3[] {
@@ -82,6 +84,8 @@ export function spotsFor(g: Group, c: Site): Vec3[] {
   const hM = creatureHeightM(g, c);
   const rise = hM * STEP_RISE;
   const centre = (f: Footing, lift: number): Vec3 => [(f.rect.x0 + f.rect.x1) / 2, f.y + lift, (f.rect.z0 + f.rect.z1) / 2];
+  const stand = protagonistStand(g, c);
+  if (stand) return arrange(g.place === "escalera" ? { ...g, arrangement: "escalera" } : g, stand.footing.rect, stand.footing.y, rise);
   if (g.place === "torres" && c.towers.length) return Array.from({ length: g.count }, (_, i) => centre(c.towers[i % c.towers.length], Math.floor(i / c.towers.length) * hM));
   if (g.place === "azoteas" && c.roofs.length) return Array.from({ length: g.count }, (_, i) => centre(c.roofs[(i * 3) % c.roofs.length], 0));
   if (g.place === "cielo") return arrange({ ...g, arrangement: g.arrangement === "escalera" ? "escalera" : "circulo" }, c.sky.rect, c.sky.y, rise);

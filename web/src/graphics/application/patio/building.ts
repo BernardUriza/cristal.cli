@@ -3,8 +3,10 @@ import { CLOISTER_PROGRAM } from "../../config/programs.ts";
 import { buildMass, type Building, type Face, type Solid } from "../../domain/architecture/mass.ts";
 import { buildPlan, type Plan, type Space } from "../../domain/architecture/plan.ts";
 import type { Program } from "../../domain/architecture/program.ts";
-import type { Box3, Vec3 } from "../../domain/math/vec3.ts";
-import { isometricProjector, type Projector } from "../projector.ts";
+import type { Rect } from "../../domain/architecture/layout.ts";
+import type { Vec3 } from "../../domain/math/vec3.ts";
+import { framedIsometric } from "../framing.ts";
+import type { Projector } from "../projector.ts";
 
 const DROPPED_TOWERS = ["torre-nw", "torre-se"];
 
@@ -31,15 +33,20 @@ export function floatingTowerBase(building: Building): number {
   return building.plan.layout.heights.tower * FLOAT_RATIO;
 }
 
-function sheetFrame(building: Building, config: PatioConfig): Box3 {
+const rectAt = (r: Rect, y: number): Vec3[] => [[r.x0, y, r.z0], [r.x1, y, r.z0], [r.x0, y, r.z1], [r.x1, y, r.z1]];
+
+/** What the patio sheet shows: the apron, every solid, and the floating tower when the anomaly lifts it. */
+function sheetPoints(building: Building, config: PatioConfig): Vec3[] {
   const { min, max } = building.bounds;
   const h = building.plan.layout.heights;
-  const top = config.anomaly === "torre-flotante" ? floatingTowerBase(building) + h.tower + h.roofSlab + h.towerRoof : max[1];
-  return { min: [min[0] - PATIO_APRON, min[1], min[2] - PATIO_APRON], max: [max[0] + PATIO_APRON, top, max[2] + PATIO_APRON] };
+  const apron = rectAt({ x0: min[0] - PATIO_APRON, x1: max[0] + PATIO_APRON, z0: min[2] - PATIO_APRON, z1: max[2] + PATIO_APRON }, min[1]);
+  const top = floatingTowerBase(building) + h.tower + h.roofSlab + h.towerRoof;
+  const lifted = config.anomaly === "torre-flotante" ? towers(building).flatMap((t) => rectAt(t.rect, top)) : [];
+  return [...apron, ...building.solids.flatMap((s) => s.faces.flatMap((f) => f.points)), ...lifted];
 }
 
-export function patioProjector(building: Building, config: PatioConfig): Projector {
-  return isometricProjector(sheetFrame(building, config), { width: config.width, height: config.height, margin: 0.06 }, config.azimuth);
+export function patioProjector(building: Building, config: PatioConfig, extra: readonly Vec3[] = []): Projector {
+  return framedIsometric([...sheetPoints(building, config), ...extra], config, config.azimuth);
 }
 
 export function towers(building: Building): Space[] {

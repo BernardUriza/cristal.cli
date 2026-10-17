@@ -39,8 +39,8 @@ function ndcToScreen(ndc: Vec3, vp: Viewport): Vec2 {
   return [((ndc[0] + 1) / 2) * vp.width, ((1 - ndc[1]) / 2) * vp.height];
 }
 
-function fitOrthographic(view: Mat4, frame: Box3, vp: Viewport): { proj: Mat4; pxPerMeter: number } {
-  const pts = boxCorners(frame).map((c) => transformPoint(view, c));
+function fitOrthographic(view: Mat4, content: readonly Vec3[], vp: Viewport): { proj: Mat4; pxPerMeter: number } {
+  const pts = content.map((c) => transformPoint(view, c));
   let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity, minZ = Infinity, maxZ = -Infinity;
   for (const p of pts) {
     minX = Math.min(minX, p[0]); maxX = Math.max(maxX, p[0]);
@@ -66,13 +66,13 @@ function finish(kind: ProjectorKind, view: Mat4, proj: Mat4, vp: Viewport, pxPer
   return { kind, view, proj, viewProj, viewport: vp, toNdc, toScreen: (p) => ndcToScreen(toNdc(p), vp), pxPerMeter, eye, forward };
 }
 
-function orthoFromDirection(kind: ProjectorKind, direction: Vec3, up: Vec3, frame: Box3, vp: Viewport, extraShear?: Mat4): Projector {
+function orthoFromDirection(kind: ProjectorKind, direction: Vec3, up: Vec3, frame: Box3, vp: Viewport, extraShear?: Mat4, content: readonly Vec3[] = boxCorners(frame)): Projector {
   const center = boxCenter(frame);
   const dist = length(sub(frame.max, frame.min)) * 2 + 10;
   const eye = add(center, scale(normalize(direction), dist));
   const base = lookAt(eye, center, up);
   const view = extraShear ? multiply(extraShear, base) : base;
-  const { proj, pxPerMeter } = fitOrthographic(view, frame, vp);
+  const { proj, pxPerMeter } = fitOrthographic(view, content, vp);
   return finish(kind, view, proj, vp, pxPerMeter, eye, normalize(sub(center, eye)));
 }
 
@@ -98,10 +98,10 @@ export function rightProjector(frame: Box3, vp = DEFAULT_VIEWPORT): Projector {
   return orthoFromDirection("right", [1, 0, 0], [0, 1, 0], frame, vp);
 }
 
-/** True isometric: elevation asin(1/√3) = 35.264°, azimuth 45°, every axis foreshortened by √(2/3). */
-export function isometricProjector(frame: Box3, vp = DEFAULT_VIEWPORT, azimuth = Math.PI / 4): Projector {
+/** True isometric: elevation asin(1/√3) = 35.264°, azimuth 45°, every axis foreshortened by √(2/3); `content` fits the projected hull of those points instead of the frame's corners. */
+export function isometricProjector(frame: Box3, vp = DEFAULT_VIEWPORT, azimuth = Math.PI / 4, content?: readonly Vec3[]): Projector {
   const dir: Vec3 = [Math.cos(ISO_ELEVATION) * Math.sin(azimuth), Math.sin(ISO_ELEVATION), Math.cos(ISO_ELEVATION) * Math.cos(azimuth)];
-  return orthoFromDirection("isometric", dir, [0, 1, 0], frame, vp);
+  return orthoFromDirection("isometric", dir, [0, 1, 0], frame, vp, undefined, content);
 }
 
 /** Engineering dimetric (ISO 5456-3 style): axes near 7° and 42°, foreshortening 1 : 1 : ½. */
