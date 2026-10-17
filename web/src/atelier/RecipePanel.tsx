@@ -8,7 +8,7 @@ export function RecipePanel({ recipe, onOverride, onReseed }: Props) {
   const density = recipe.choices.find((c) => c.decision.field === "density")?.decision.value as number | undefined;
   return (
     <section className="atelier-recipe">
-      <h2>receta · semilla {recipe.seed}</h2>
+      <h2>«{recipe.title}» · semilla {recipe.seed}</h2>
       <ol>
         {recipe.choices.map((c) => (
           <li key={c.decision.field} className={`choice-${c.source}`}>

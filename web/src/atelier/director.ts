@@ -2,7 +2,9 @@ import type { ConfigInput } from "../graphics/config/types.ts";
 import { fnv1a } from "../shared/rng";
 import { DEFAULT_ANOMALY, DEFAULT_DENSITY, DIRECTOR_RULES, MAX_COMPLEXITY, WORDS_PER_COMPLEXITY_LEVEL, type Decision } from "./directorRules.ts";
 
-export type Choice = { decision: Decision; because: string; source: "narración" | "defecto" | "humano" };
+export type ChoiceSource = "narración" | "defecto" | "humano" | "pedro";
+
+export type Choice = { decision: Decision; because: string; source: ChoiceSource };
 
 export type Recipe = {
   title: string;
@@ -62,4 +64,13 @@ export function configFor(recipe: Recipe, width: number, height: number): Config
     else input[decision.field] = decision.value;
   }
   return input;
+}
+
+export type Direction = { title: string; choices: Choice[] };
+
+export function withDirection(recipe: Recipe, direction: Direction): Recipe {
+  const directed = new Set(direction.choices.map((c) => c.decision.field));
+  const kept = recipe.choices.filter((c) => c.source === "humano" || !directed.has(c.decision.field));
+  const human = new Set(kept.filter((c) => c.source === "humano").map((c) => c.decision.field));
+  return { ...recipe, title: direction.title, choices: [...kept, ...direction.choices.filter((c) => !human.has(c.decision.field))] };
 }

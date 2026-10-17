@@ -3,10 +3,12 @@ import { composeIllustration } from "../graphics/application/compose.ts";
 import { randomSeed } from "../minigames/kit/dailySeed.ts";
 import { deviceScale } from "../minigames/kit/templeCanvas.ts";
 import { positiveInt, readSearch, replaceSearch } from "../minigames/kit/urlParams.ts";
-import { configFor, direct, override, reseed, type Recipe } from "./director.ts";
+import { configFor, direct, override, reseed, withDirection, type Direction, type Recipe } from "./director.ts";
 import type { Decision } from "./directorRules.ts";
 import { strokeAt } from "./hitTest.ts";
 import { Inspector } from "./Inspector.tsx";
+import { PedroPanel } from "./PedroPanel.tsx";
+import { usePedro } from "./usePedro.ts";
 import { buildManifest, downloadText, strokeLog, svgOf } from "./manifest.ts";
 import { RecipePanel } from "./RecipePanel.tsx";
 import { flattenStrokes, stageBounds, type Stroke } from "./strokes.ts";
@@ -32,11 +34,23 @@ export function Atelier() {
   const strokes = useMemo(() => flattenStrokes(ill.stages), [ill]);
   const stages = useMemo(() => stageBounds(ill.stages), [ill]);
   const drawing = useDrawing(strokes, WIDTH, HEIGHT, scale);
+  const pedro = usePedro();
 
   const apply = (next: Recipe) => {
     setRecipe(next);
     setPicked(null);
     replaceSearch({ n: next.narration, seed: next.seed });
+  };
+
+  const draw = () => {
+    const next = direct(narration);
+    apply(next);
+    pedro.ask(next.narration, next.seed);
+  };
+
+  const drawPedro = (direction: Direction) => {
+    apply(withDirection(recipe, direction));
+    pedro.dismiss();
   };
 
   const pick = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -70,7 +84,7 @@ export function Atelier() {
           <label htmlFor="narration">cuéntale al dibujante qué ver</label>
           <textarea id="narration" value={narration} onChange={(e) => setNarration(e.target.value)} rows={3} />
           <div className="atelier-controls">
-            <button className="primary" onClick={() => apply(direct(narration))}>dibujar</button>
+            <button className="primary" onClick={draw}>dibujar</button>
             <button onClick={() => apply(reseed(recipe, recipe.seed))} title="misma receta, misma semilla, mismo dibujo">volver a dibujar</button>
             <button onClick={() => drawing.setPaused(!drawing.paused)}>{drawing.paused ? "seguir" : "detener"}</button>
             {SPEEDS.map((s) => (
@@ -100,6 +114,7 @@ export function Atelier() {
           </div>
         </section>
         <aside className="atelier-side">
+          <PedroPanel state={pedro.state} onDraw={drawPedro} onDismiss={pedro.dismiss} />
           <RecipePanel
             recipe={recipe}
             onOverride={(decision: Decision, because: string) => apply(override(recipe, decision, because))}

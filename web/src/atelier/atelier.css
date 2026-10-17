@@ -170,6 +170,36 @@ body {
   color: var(--magenta);
 }
 
+.atelier-recipe li.choice-pedro b {
+  color: var(--accent);
+}
+
+.atelier-pedro {
+  border: 1px solid var(--accent);
+  padding: 10px 12px;
+}
+
+.atelier-pedro.thinking,
+.atelier-pedro.silent {
+  border-color: var(--dim);
+  color: var(--dim);
+  font-size: 13px;
+}
+
+.atelier-pedro ol {
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.atelier-pedro li span {
+  display: block;
+  color: var(--dim);
+  font-size: 13px;
+}
+
 .atelier-recipe li.choice-narración b {
   color: var(--turquoise);
 }
