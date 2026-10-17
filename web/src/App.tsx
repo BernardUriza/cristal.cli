@@ -5,6 +5,7 @@ import * as THREE from "three";
 import { Scene } from "./game/Scene";
 import { RoomScene } from "./game/RoomScene";
 import { InteractPrompt } from "./ui/InteractPrompt";
+import { OnboardingHint } from "./ui/OnboardingHint";
 import { ConsoleOverlay } from "./ui/ConsoleOverlay";
 import { DebugHUD } from "./ui/DebugHUD";
 import { RoomPanel } from "./ui/RoomPanel";
@@ -85,6 +86,7 @@ export function App() {
 
   useEffect(() => symbolicBus.subscribe(useGame.getState().setLastSymbol), []);
   useDiscoveryClock();
+  useEffect(() => useGame.getState().reachFunnel("laberinto", Date.now()), []);
 
   return (
     <>
@@ -123,6 +125,7 @@ export function App() {
         <ExplorationHud>
           <ObjectivePanel />
           <InteractPrompt />
+          <OnboardingHint />
           <DebugHUD />
           <DangerBadge />
           <ConsequenceSignal />

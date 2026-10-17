@@ -2,7 +2,9 @@ import { create } from "zustand";
 import { GameMode, type Locomotion } from "./types";
 import type { SymbolicArchetype, SymbolicEvent } from "./symbolicBus";
 import { clamp01 } from "../shared/math";
-import { fnv1a } from "../shared/rng";
+import { fnv1a, mulberry32 } from "../shared/rng";
+import { loadFunnel, randomSessionId, reachFunnelStep, saveFunnel, type FunnelState, type FunnelStep } from "./funnel";
+import { reportFunnelStep } from "./funnelClient";
 import { generateMaze } from "./maze";
 import { MAZE_COLS, MAZE_ROWS, MAZE_SEED } from "./mazeConfig";
 import type { CellCoord } from "./mazeGraph";
@@ -180,6 +182,8 @@ interface GameState {
   inscriptions: WorldInscription[];
   /** seconds-without-a-find meter that feeds starvation relief */
   discovery: DiscoveryState;
+  /** first-five-minutes funnel: seconds since load at which each step was first reached */
+  funnel: FunnelState;
 
   enterConsoleMode: (consoleId: string) => void;
   exitConsoleMode: () => void;
@@ -187,6 +191,8 @@ interface GameState {
   /** a console phrase lands on a wall near the console it was typed into */
   addInscription: (text: string, stance: Stance | null, originCell: CellCoord, accent: string, now: number) => void;
   noteDiscovery: (kind: DiscoveryKind, key: string, now: number) => void;
+  /** first time a funnel step is reached this visit it is saved and reported; later calls are no-ops */
+  reachFunnel: (step: FunnelStep, now: number) => void;
   /** a minute without a find: the labyrinth writes a deformed fragment of the player's words ahead */
   relieveStarvation: (playerCell: CellCoord, now: number) => void;
   setNearbyConsole: (consoleId: string | null) => void;
@@ -375,6 +381,16 @@ export const useGame = create<GameState>((set, get) => {
   verticalSlice: initialVerticalSlice,
   inscriptions: loadInscriptions(),
   discovery: createDiscoveryState(Date.now()),
+  funnel: loadFunnel(randomSessionId(mulberry32(Date.now() >>> 0)), Date.now()),
+
+  reachFunnel: (step, now) =>
+    set((s) => {
+      const next = reachFunnelStep(s.funnel, step, now);
+      if (next.seconds === null) return s;
+      saveFunnel(next.state);
+      reportFunnelStep(next.state.sessionId, step, next.seconds);
+      return { funnel: next.state };
+    }),
 
   addInscription: (text, stance, originCell, accent, now) =>
     set((s) => {
@@ -434,6 +450,7 @@ export const useGame = create<GameState>((set, get) => {
     if (get().mode !== GameMode.Exploration) return;
     const nextSlice = noteConsoleOpened(get().verticalSlice, consoleId.toUpperCase());
     saveVerticalSlice(nextSlice);
+    get().reachFunnel("console_open", Date.now());
     set({ mode: GameMode.Transition, activeConsoleId: consoleId, verticalSlice: nextSlice });
     window.setTimeout(() => {
       // Only settle into Console if we are still transitioning into it.
@@ -555,6 +572,7 @@ export const useGame = create<GameState>((set, get) => {
     // a glyph opens a fresh descent — clear the previous breadcrumb trail
     const verticalSlice = noteGlyphInvoked(get().verticalSlice, glyphId, archetype);
     saveVerticalSlice(verticalSlice);
+    get().reachFunnel("glyph_invoked", Date.now());
     set({ roomHistory: [], verticalSlice });
     loadRoom(seed, archetype, glyphRoomFragments(archetype, verticalSlice), null, true);
   },
@@ -631,6 +649,7 @@ export const useGame = create<GameState>((set, get) => {
     }
     if (shouldOfferSafeExit(room, safeExit, get().transference.worldBehavior) && index === safeExit.index) {
       stabilityEngine?.safeDoorReward();
+      get().reachFunnel("door_crossed", Date.now());
       const verticalSlice = noteRoomCrossed(get().verticalSlice, safeExit.label);
       saveVerticalSlice(verticalSlice);
       set({ lastRoomWhisper: "La puerta no se abre: deja de defenderse.", verticalSlice });
@@ -640,6 +659,7 @@ export const useGame = create<GameState>((set, get) => {
     // a true door rewards a sliver of integrity, then carries the engine forward
     stabilityEngine?.safeDoorReward();
     const exitLabel = room.exits[index] ?? `puerta ${index + 1}`;
+    get().reachFunnel("door_crossed", Date.now());
     const verticalSlice = noteRoomCrossed(get().verticalSlice, exitLabel);
     saveVerticalSlice(verticalSlice);
     set({ lastRoomWhisper: null, verticalSlice });

@@ -112,6 +112,7 @@ export function Player({ maze, spawn, consoles, glyphs }: PlayerProps) {
     if (loco.current !== lastLoco.current) {
       lastLoco.current = loco.current;
       setLocomotion(loco.current);
+      if (loco.current !== "idle") useGame.getState().reachFunnel("first_step", Date.now());
     }
 
     if (group.current) group.current.position.copy(pos.current);

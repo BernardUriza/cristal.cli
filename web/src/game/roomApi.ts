@@ -2,7 +2,8 @@ import type { SymbolicArchetype } from "./symbolicBus";
 import { coerceRoom } from "./RoomContractValidator";
 import type { RoomShape } from "./types";
 
-const BASE_URL = import.meta.env.VITE_CRISTAL_LLM_URL ?? "http://localhost:8131";
+export const API_BASE_URL: string = import.meta.env.VITE_CRISTAL_LLM_URL ?? "http://localhost:8131";
+const BASE_URL = API_BASE_URL;
 
 export interface Room {
   name: string;
