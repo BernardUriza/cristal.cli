@@ -104,7 +104,10 @@ deformado de las palabras del jugador («… pesa …») uno o dos anillos adela
 `hallazgo: Ns · finds · hambre N`. Verificado en dev (localhost:5173, contexto aislado): «me pesa el pecho» → muro
 este de ALPHA, «tengo frío en las manos» → muro oeste (captura
 `~/Documents/personal-assistance/cristal-betatesters/2026-10-17-dev-inscripcion-muro.jpg`); 60.2 s quieto →
-«… pesa …» en (3,1). Pendiente de verificar en prod tras el deploy.
+«… pesa …» en (3,1). **Verificado en prod (deploy `5938ca4`, bundle `laberinto-BqfBLR5e.js`, contexto aislado):**
+«me arde la garganta» → muro este de ALPHA, «tengo las manos heladas» → muro oeste, visible desde la cámara de
+exploración (`~/Documents/personal-assistance/cristal-betatesters/2026-10-17-prod-inscripcion-muro-2.jpg`), HUD
+`hallazgo: 3s · 5 · hambre 0`.
 
 Nota de dev: en localhost el recorrido sintético N,W,N del recetario no llegó a ALPHA (acabó en ROTURA); con el
 handle `window.__player.current.set(-2, 0, -6)` el jugador queda en ALPHA directo. Un Vite de otra sesión ya

@@ -61,7 +61,8 @@ pegada al muro mirando al centro, `deformPhrase` para la ambigüedad, persistenc
 `WallInscription.tsx` (plano con textura canvas, revelado en 1.6 s), `DiscoveryClock.ts` (segundos sin hallazgo:
 nodo, inscripción, frase; umbral 60 s) y `useDiscoveryClock.ts` (muestrea la pose a 12 Hz en exploración; sin
 hallazgo un minuto, el laberinto escribe un fragmento deformado de las palabras del jugador uno o dos anillos
-adelante). El HUD de debug muestra `hallazgo: Ns · finds · hambre N`. El glifo y la puerta como cambios visibles
+adelante). El HUD de debug muestra `hallazgo: Ns · finds · hambre N`. Verificado en dev (hambre real a los 60.2 s) y en prod
+(deploy `5938ca4`: dos frases en los muros este y oeste de ALPHA, captura en `Donde_quedamos.md`). El glifo y la puerta como cambios visibles
 quedan para cuando el cuarto IA (`/generate`) deje de tardar 40 s (`latencia-cristal-api.md`).
 
 **Next.** Punto 3 en orden (primeros cinco minutos: un verbo a la vez, placeholder con ejemplo, embudo instrumentado);
