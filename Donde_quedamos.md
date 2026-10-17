@@ -94,6 +94,16 @@ líneas distintas (la que nombra la confesión, la de presión ≥50 %, las dos 
 Observación menor: tecleando más rápido que el `delayMs` las respuestas retrasadas aparecen después del siguiente echo;
 en juego real el retardo las separa.
 
+### Memorama: semilla del día, resultado compartible, mejor marca, pares distintos (2026-10-17, punto 4)
+
+`memorama.html` abre por defecto el templo del día (`dailySeed(fecha local)`), botón «hoy»; al ganar: «templo del día
+N completo en M movimientos», mejor marca por semilla+pares (`cristal.memorama.best.v1`), fila ▣/▢ por jugada y
+«compartir resultado» (portapapeles en escritorio; hoja nativa solo táctil). Los pares se reparten con rechazo para
+que cada uno difiera en ≥2 rasgos de los demás (`artSignature`). Juice suave y dos tonos cortos con ♪ para apagar.
+Verificado en dev con una partida completa jugada por DOM (hash del canvas identifica los pares): captura
+`~/Documents/personal-assistance/cristal-betatesters/2026-10-17-dev-memorama-won.jpg`; la línea compartida llegó al
+portapapeles del sistema. Pendiente: verificación en prod tras el deploy.
+
 ### Primeros cinco minutos: embudo medido y un verbo a la vez (2026-10-17, punto 3 de `diversion-con-evidencia.md`)
 
 El API vivo es `https://cristal-api.mangobush-0b255aa4.eastus2.azurecontainerapps.io` (el host greendune de la

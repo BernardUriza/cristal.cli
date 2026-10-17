@@ -1,6 +1,6 @@
 # Diversión con evidencia: la consola nunca rechaza, nunca repite, siempre mueve
 
-Status: In progress (puntos 1–3 Done 2026-10-17, embudo persistido y legible; puntos 4–6 Proposed)
+Status: In progress (puntos 1–4 Done 2026-10-17; puntos 5–6 Proposed)
 Proposed: 2026-10-17 by Bernard ("cómo hacer el juego más divertido"; /histerical-search, 6 investigadores, ~40 fuentes)
 
 **Qué es.** Veredicto completo con fuentes: `entregables/como-hacer-el-juego-mas-divertido-2026-10-17.html`.
@@ -81,5 +81,15 @@ quedan para cuando el cuarto IA (`/generate`) deje de tardar 40 s (`latencia-cri
   `cristaltelemetry`, share montado, revisión `cristal-api--0000004` lista; `GET /telemetry/funnel/summary` con el token
   contesta con el JSONL persistido. Los eventos anteriores a la revisión 4 (disco local) se perdieron, como estaba previsto.
 
-**Next.** Punto 4 en orden (memorama: juice suave, distintividad entre pares, semilla del día + resultado compartible);
+**Hecho, punto 4 (2026-10-17).** `web/src/memorama/`: distintividad medida por firma de rasgos (`artSignature`: paleta,
+complejidad, proyección, simetría, densidad en tres cubetas) y reparto con rechazo (`dealArtSeeds`: cada par difiere
+de todos los demás en ≥2 ejes, probado en 120 partidas de 6/8/12 pares); historial de jugadas → resultado compartible
+sin spoiler («CRISTAL memorama · templo del día 8660 · 6 pares · 10 movimientos / ▢▢▢▣▢▣▣▣▣▣ / url»); semilla del día
+(`dailySeed`, FNV de la fecha local) como partida por defecto y botón «hoy»; mejor marca por semilla y pares en
+`localStorage` («nueva mejor marca (antes N)» / «mejor marca N»); juice suave: pulso y halo al acierto, atenuación breve
+al fallo, respiración lenta de los pares resueltos, dos tonos cortos (acierto, victoria) con botón ♪ persistido; sin
+timer ni castigo. Compartir: portapapeles en escritorio, hoja nativa solo con puntero táctil (en Chrome de escritorio
+la hoja nativa deja la promesa colgada). Verificado en dev jugando una partida completa por DOM.
+
+**Next.** Punto 5 en orden (modo viaje: pantalla escasa, ≤3 destellos/s, sin sustos, se juega solo si sueltas);
 y el DM a `me.tikkum` sigue pendiente de Bernard (borrador en `Donde_quedamos.md`).
