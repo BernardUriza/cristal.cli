@@ -1,0 +1,19 @@
+export type FigureScale = {
+  crowd: number;
+  protagonist: number;
+  protagonistOfSite: number;
+  fitShare: number;
+  perched: number;
+  minHeightM: number;
+};
+
+export const FIGURE_SCALE: FigureScale = {
+  crowd: 0.34,
+  protagonist: 0.45,
+  protagonistOfSite: 0.6,
+  fitShare: 0.6,
+  perched: 0.6,
+  minHeightM: 3,
+};
+
+export const PROTAGONIST_NAMES = /gigante|coloso/i;

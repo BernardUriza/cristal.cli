@@ -13,7 +13,7 @@ import { REASON_BODIES } from "../patio/habitar.ts";
 import { miniPatio } from "../patio/index.ts";
 import { habitada, motifsOf, type Inhabitants } from "../patio/mundo.ts";
 import { decorSurface, type FriezeOf } from "../patio/ornamento.ts";
-import { poblado } from "../patio/poblado.ts";
+import { figureHull, poblado } from "../patio/poblado.ts";
 import { solidItems } from "../patio/solidos.ts";
 import { visibleFaces, type Surface } from "../patio/surfaces.ts";
 import type { PatioContext } from "../patio/types.ts";
@@ -84,6 +84,8 @@ export function inhabitProgram(s: ProgramScene, ctx: PatioContext, people?: Inha
 }
 
 export function composeInhabitedProgram(program: ArchitectureProgram, view: ProgramView, look: ProgramLook = {}, people?: Inhabitants): InhabitedProgram {
-  const scene = programScene(program, view);
+  const built = programScene(program, view);
+  const cast = people && people.scene.groups.length ? figureHull(siteOfProgram(built), people.scene) : [];
+  const scene = cast.length ? programScene(program, view, cast) : built;
   return { stages: inhabitProgram(scene, programContext(scene, look), people), scene };
 }

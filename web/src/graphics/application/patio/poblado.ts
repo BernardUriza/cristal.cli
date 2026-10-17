@@ -1,4 +1,7 @@
 import type { Scene } from "../../config/scene.ts";
+import { FIGURE_EXTENT } from "../../config/framing.ts";
+import type { Vec3 } from "../../domain/math/vec3.ts";
+import { figurePoints } from "../framing.ts";
 import type { Palette } from "../../config/palettes.ts";
 import { drawCompiled } from "../../domain/motifs/figures/creature.ts";
 import { creatureOf, type GroupCreature } from "./programa.ts";
@@ -15,6 +18,11 @@ import { creatureHeightM, spotsFor, type Site, type Spot } from "./lugares.ts";
 export type Placed = { items: SceneItem[]; records: RewriteRecord[]; provenance: Provenance };
 
 const THICK = 0.2;
+
+/** Every point the scene's figures occupy in metres, so the framing sees them before they are drawn. */
+export function figureHull(c: Site, scene: Scene): Vec3[] {
+  return scene.groups.flatMap((g) => spotsFor(g, c).flatMap((at) => figurePoints(at, creatureHeightM(g, c), c.projector.forward)));
+}
 
 export function poblado(c: Site, scene: Scene, pal: Palette, detail: MotifParams["detail"], seed: number, mini?: MiniComposer): Placed {
   const spots: Spot[] = scene.groups.flatMap((g, gi) => spotsFor(g, c).map((at) => ({ at, group: gi })));
@@ -37,7 +45,8 @@ export function poblado(c: Site, scene: Scene, pal: Palette, detail: MotifParams
     const lived = habitar(drawn.pieces, id, i % 2 === facadeParity || i === biggest, { ink, seed, mini }, rng);
     records.push(...lived.records);
     const box = { min: [spot.at[0] - THICK, spot.at[1], spot.at[2] - THICK] as const, max: [spot.at[0] + THICK, spot.at[1] + hM, spot.at[2] + THICK] as const };
-    const screen = { minX: foot[0] - heightPx * 0.62, maxX: foot[0] + heightPx * 0.62, minY: foot[1] - heightPx * 1.02, maxY: foot[1] + 2 };
+    const half = heightPx * FIGURE_EXTENT.halfWidth;
+    const screen = { minX: foot[0] - half, maxX: foot[0] + half, minY: foot[1] - heightPx * FIGURE_EXTENT.height, maxY: foot[1] + 2 };
     items.push({ id, kind: "figure", box, screen, depth: c.projector.toNdc(spot.at)[2], shapes: tagRoot(lived.shapes, { root: id, kind: "creature" }) });
   });
   const summary = scene.groups.map((g, gi) => `${g.count} ${g.creature.name} (${bodies[gi].label}) en ${g.arrangement} · ${g.place}`);

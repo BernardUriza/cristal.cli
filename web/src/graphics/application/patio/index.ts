@@ -7,6 +7,9 @@ import { buildPatioBuilding, patioProjector } from "./building.ts";
 import { planta } from "./planta.ts";
 import { simbolos } from "./simbolos.ts";
 import { mundo, type Inhabitants } from "./mundo.ts";
+import { siteOfBuilding } from "./lugares.ts";
+import { figureHull } from "./poblado.ts";
+import type { Vec3 } from "../../domain/math/vec3.ts";
 import { surfacesOf } from "./surfaces.ts";
 import type { MiniScene } from "../../domain/rewrite/portal.ts";
 import type { PatioComposition, PatioContext } from "./types.ts";
@@ -17,13 +20,13 @@ export type { Inhabitants } from "./mundo.ts";
 
 const MINI_PX = 560;
 
-export function patioContext(input: Partial<PatioConfig>, rng?: Rng): PatioContext {
+export function patioContext(input: Partial<PatioConfig>, rng?: Rng, extra: readonly Vec3[] = []): PatioContext {
   const config = resolvePatio(input);
   const building = buildPatioBuilding(config);
   return {
     config,
     building,
-    projector: patioProjector(building, config),
+    projector: patioProjector(building, config, extra),
     pal: PALETTES[config.palette],
     style: patioStyle(config.palette),
     lod: makeLod({ detailScale: 1 }),
@@ -38,7 +41,9 @@ export function miniPatio(config: PatioConfig, seed: number): MiniScene {
 
 /** One axonometric composition in traceable stages: planta, volúmenes, ornamento, símbolos, anomalía, and «habitada» when the scene brings inhabitants. */
 export function composePatio(input: Partial<PatioConfig> = {}, rng?: Rng, people?: Inhabitants): PatioComposition {
-  const ctx = patioContext(input, rng);
+  const built = patioContext(input, rng);
+  const cast = people && people.scene.groups.length ? figureHull(siteOfBuilding(built.building, built.projector), people.scene) : [];
+  const ctx = cast.length ? patioContext(input, rng, cast) : built;
   const surfaces = surfacesOf(ctx);
   const marks = simbolos(ctx, surfaces);
   const twist = anomalia(ctx, surfaces, (cfg) => composePatio(cfg, mulberry32((cfg.seed + 1) * 7919)));
