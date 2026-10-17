@@ -104,8 +104,10 @@ first_step, console_open, first_phrase, glyph_invoked, door_crossed), anónimo. 
 → "W A S D para caminar"), placeholder con ejemplo, HUD `embudo: k/7`.
 
 **Gate de Bernard (`!`, por el `az … create`; el Container App está en `portfolio-rg` / `portfolio-env`, no en `insult-rg` como decían `provision.sh` y la memoria):** `! bash server/telemetry-storage.sh` monta Azure Files en
-`/home/runner/telemetry` y fija el secreto `telemetry-token` desde `~/.secrets/cristal-telemetry-token.txt`. Hasta
-entonces el JSONL vive solo dentro de la revisión y el resumen contesta 503.
+`/home/runner/telemetry` y fija el secreto `telemetry-token` desde `~/.secrets/cristal-telemetry-token.txt`.
+**Corrido 2026-10-17 11:44:** storage account `cristaltelemetry`, share `telemetry`, revisión `cristal-api--0000004`
+lista a los 30 s; el resumen con el token contesta desde el share. Cómo leerlo:
+`curl -H "X-Admin-Token: $(grep -m1 CRISTAL_TELEMETRY_TOKEN= ~/.secrets/cristal-telemetry-token.txt | cut -d= -f2-)" https://cristal-api.mangobush-0b255aa4.eastus2.azurecontainerapps.io/telemetry/funnel/summary`.
 
 Verificado en prod (deploy `aa42ec1`): `POST /telemetry/funnel` 204 con evento válido, 422 con paso inválido, resumen
 503 «CRISTAL_TELEMETRY_TOKEN unset»; en la página, «CLICK PARA MIRAR» visible y `embudo: 1/7` → `2/7` al primer paso

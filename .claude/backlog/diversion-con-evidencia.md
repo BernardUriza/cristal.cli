@@ -1,6 +1,6 @@
 # Diversión con evidencia: la consola nunca rechaza, nunca repite, siempre mueve
 
-Status: In progress (puntos 1–3 Done 2026-10-17; el 3 espera dos gates de Bernard para persistir y leer; puntos 4–6 Proposed)
+Status: In progress (puntos 1–3 Done 2026-10-17, embudo persistido y legible; puntos 4–6 Proposed)
 Proposed: 2026-10-17 by Bernard ("cómo hacer el juego más divertido"; /histerical-search, 6 investigadores, ~40 fuentes)
 
 **Qué es.** Veredicto completo con fuentes: `entregables/como-hacer-el-juego-mas-divertido-2026-10-17.html`.
@@ -77,8 +77,9 @@ quedan para cuando el cuarto IA (`/generate`) deje de tardar 40 s (`latencia-cri
   («me pesa el pecho»). HUD de debug: `embudo: k/7`.
 - **Gate de Bernard, con `!` (`az … create` está vetado en la sesión; el app vive en `portfolio-rg`/`portfolio-env`):** `! bash server/telemetry-storage.sh`
   monta un Azure Files en `/home/runner/telemetry` (sin eso el JSONL muere con cada revisión) y pone el secreto
-  `telemetry-token` (ya generado en `~/.secrets/cristal-telemetry-token.txt`). Investigado contra la doc, no corrido:
-  leer su salida.
+  `telemetry-token` (en `~/.secrets/cristal-telemetry-token.txt`). **Corrido por Bernard 2026-10-17:** storage account
+  `cristaltelemetry`, share montado, revisión `cristal-api--0000004` lista; `GET /telemetry/funnel/summary` con el token
+  contesta con el JSONL persistido. Los eventos anteriores a la revisión 4 (disco local) se perdieron, como estaba previsto.
 
 **Next.** Punto 4 en orden (memorama: juice suave, distintividad entre pares, semilla del día + resultado compartible);
 y el DM a `me.tikkum` sigue pendiente de Bernard (borrador en `Donde_quedamos.md`).
