@@ -1,6 +1,7 @@
 import { useEffect, useRef, type MutableRefObject } from "react";
 import * as THREE from "three";
 import { useGame } from "../store";
+import { markInputActivity } from "../inputActivity";
 
 export interface PointerLook {
   yaw: MutableRefObject<number>;
@@ -30,6 +31,7 @@ export function usePointerLook(
     };
     const onMove = (e: MouseEvent) => {
       if (document.pointerLockElement !== canvas) return;
+      markInputActivity(Date.now());
       yaw.current -= e.movementX * 0.0025;
       pitch.current = THREE.MathUtils.clamp(pitch.current - e.movementY * 0.0025, minPitch, maxPitch);
     };

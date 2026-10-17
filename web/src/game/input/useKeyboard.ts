@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { markInputActivity } from "../inputActivity";
 
 export interface InputState {
   forward: boolean;
@@ -57,6 +58,7 @@ export function useKeyboard(enabled: boolean) {
     const onDown = (e: KeyboardEvent) => {
       const action = KEY_MAP[e.code];
       if (action) {
+        markInputActivity(Date.now());
         if (action === "jump" && !input.current.jump) input.current.jump = true;
         else input.current[action] = true;
         if (e.code === "Space") e.preventDefault();

@@ -77,6 +77,23 @@ export function stepMovement(
   };
 }
 
+export function stepTowards(
+  maze: Maze,
+  pos: THREE.Vector3,
+  target: { x: number; z: number },
+  speed: number,
+  dt: number
+): MoveResult {
+  tmpMove.set(target.x - pos.x, 0, target.z - pos.z);
+  if (tmpMove.lengthSq() < 0.04) return { moving: false, locomotion: "idle", targetYaw: null };
+  tmpMove.normalize();
+  const nextX = pos.x + tmpMove.x * speed * dt;
+  if (isWalkable(maze, nextX, pos.z, PLAYER_RADIUS)) pos.x = nextX;
+  const nextZ = pos.z + tmpMove.z * speed * dt;
+  if (isWalkable(maze, pos.x, nextZ, PLAYER_RADIUS)) pos.z = nextZ;
+  return { moving: true, locomotion: "walk", targetYaw: Math.atan2(tmpMove.x, tmpMove.z) };
+}
+
 export interface VerticalState {
   velY: number;
   grounded: boolean;
