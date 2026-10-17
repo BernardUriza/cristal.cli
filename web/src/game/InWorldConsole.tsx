@@ -3,30 +3,13 @@ import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { useGame } from "./store";
 import { GameMode } from "./types";
+import { makeConsoleLabelTexture } from "./textTexture";
 
 interface InWorldConsoleProps {
   id: string;
   label: string;
   accent: string;
   position: [number, number, number];
-}
-
-function makeConsoleLabel(label: string, accent: string): THREE.CanvasTexture {
-  const canvas = document.createElement("canvas");
-  canvas.width = 256;
-  canvas.height = 96;
-  const ctx = canvas.getContext("2d")!;
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = accent;
-  ctx.font = "700 34px ui-monospace, monospace";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.shadowColor = accent;
-  ctx.shadowBlur = 14;
-  ctx.fillText(label, canvas.width / 2, canvas.height / 2 + 2);
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  return texture;
 }
 
 /**
@@ -38,7 +21,7 @@ export function InWorldConsole({ id, label, accent, position }: InWorldConsolePr
   const nearbyId = useGame((s) => s.nearbyConsoleId);
   const activeId = useGame((s) => s.activeConsoleId);
   const mode = useGame((s) => s.mode);
-  const labelTex = useMemo(() => makeConsoleLabel(label, accent), [label, accent]);
+  const labelTex = useMemo(() => makeConsoleLabelTexture(label, accent), [label, accent]);
 
   useEffect(() => () => labelTex.dispose(), [labelTex]);
 

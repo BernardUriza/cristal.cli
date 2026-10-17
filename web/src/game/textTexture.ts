@@ -1,6 +1,6 @@
 import * as THREE from "three";
 
-interface TextTextureSpec {
+export interface TextTextureSpec {
   width: number;
   height: number;
   font: string;
@@ -52,7 +52,7 @@ function wrapWords(ctx: CanvasRenderingContext2D, text: string, maxWidth: number
   return lines;
 }
 
-function makeTextTexture(text: string, spec: TextTextureSpec, wrap: boolean): THREE.CanvasTexture {
+export function makeTextTexture(text: string, spec: TextTextureSpec, wrap: boolean): THREE.CanvasTexture {
   const canvas = document.createElement("canvas");
   canvas.width = spec.width;
   canvas.height = spec.height;
@@ -74,3 +74,28 @@ function makeTextTexture(text: string, spec: TextTextureSpec, wrap: boolean): TH
 
 export const makeInscriptionTexture = (text: string) => makeTextTexture(text, INSCRIPTION, true);
 export const makeLabelTexture = (label: string) => makeTextTexture(label, DOOR_LABEL, false);
+
+const WALL_INSCRIPTION: Omit<TextTextureSpec, "fill" | "glow"> = {
+  width: 512,
+  height: 144,
+  font: "600 40px ui-monospace, monospace",
+  glowBlur: 18,
+  lineHeight: 48,
+  margin: 40,
+  baselineOffset: 0,
+};
+
+const CONSOLE_LABEL: Omit<TextTextureSpec, "fill" | "glow"> = {
+  width: 256,
+  height: 96,
+  font: "700 34px ui-monospace, monospace",
+  glowBlur: 14,
+  lineHeight: 0,
+  margin: 0,
+  baselineOffset: 2,
+};
+
+export const makeWallInscriptionTexture = (text: string, accent: string) =>
+  makeTextTexture(text, { ...WALL_INSCRIPTION, fill: accent, glow: accent }, true);
+export const makeConsoleLabelTexture = (label: string, accent: string) =>
+  makeTextTexture(label, { ...CONSOLE_LABEL, fill: accent, glow: accent }, false);
