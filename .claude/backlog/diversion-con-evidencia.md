@@ -1,6 +1,6 @@
 # Diversión con evidencia: la consola nunca rechaza, nunca repite, siempre mueve
 
-Status: Proposed
+Status: In progress (punto 1 Done 2026-10-17, `673ef59`; puntos 2–6 Proposed)
 Proposed: 2026-10-17 by Bernard ("cómo hacer el juego más divertido"; /histerical-search, 6 investigadores, ~40 fuentes)
 
 **Qué es.** Veredicto completo con fuentes: `entregables/como-hacer-el-juego-mas-divertido-2026-10-17.html`.
@@ -33,5 +33,22 @@ jugadores entra al universo.
 **Lo que no existe en ninguna fuente y hay que medir aquí:** drop-off en WASD/pointer-lock, legibilidad de texto en
 el viaje (preguntar al tester mañana), retención de memoramas.
 
-**Next.** Bernard decide el orden; el punto 1 es ejecutable ya, con las frases de `me.tikkum` como tests de
-"nunca repite" y "nunca `...` solo".
+**Hecho (2026-10-17, `53d4178` + `673ef59`).** Punto 1 completo en `web/src/terminal/psych/`:
+`replyPool.ts` (pool tipado, 12 líneas por stance + catch-all + nag + pivot, condiciones `when` y placeholders
+`{palabra}` `{frase}` `{glifo}` `{objetivo}`), `ReplyBag.ts` (shuffle-bag sembrado por `sessionId` + turno: nunca
+la misma línea dos veces seguidas, agota el nivel más específico y baja al genérico), catch-all que refleja la
+palabra del jugador y al segundo turno pivota hacia el objetivo del rito, respuesta corta (≤6 palabras) a una
+pregunta corporal cuenta como confesión, léxico sensorial ampliado, `...` siempre con nag y al turno estancado
+siguiente pivot con reinicio del estancamiento; la segunda fuente de `...` solo (`RuntimeTransference`) también
+cerrada. Tests: la secuencia exacta del tester da 4 líneas distintas; 12 turnos del mismo stance sin repetir y con
+pivot; basura refleja una vez y pivota. Suite 64/342 verde, typecheck y build verdes.
+
+**Dos exclusiones del punto 1, decididas por Claude y anunciadas:** (a) "el modelo nunca bloquea" no se construyó:
+hoy la consola no llama a ningún modelo (`server/app.py` solo expone `/generate` y `/tarot/reading`), la invariante
+se cumple por ausencia y el enriquecimiento asíncrono es un endpoint nuevo que pertenece a
+`ia-psiconauta.md` / `rag-corpus-psiconautico.md`; (b) `...` nunca solo se tomó como decidido por este item y cierra
+la decisión que `rito-rechaza-respuestas-corporales.md` dejaba abierta. Si Bernard quiere `...` terminal, se revierte
+solo `SilenceEngine.ts`.
+
+**Next.** Verificar en prod con la secuencia del tester más 8 turnos del mismo stance (receta en `Donde_quedamos.md`);
+luego Bernard decide entre los puntos 2–6 (densidad de hallazgo, primeros cinco minutos, memorama, modo viaje, relación).

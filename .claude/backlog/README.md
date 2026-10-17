@@ -19,5 +19,5 @@ Un archivo por item; status se voltea el día que cambia. Fuente de las ideas de
 | [Betatesters y validación con jugadores](betatesters-y-validacion.md) | In progress | 2026-10-16 |
 | [Proyecto hermano: periodismo de guerrilla con datos duros, de inmobiliarias a museos](periodismo-guerrilla-museos.md) | Proposed (fuera de este repo) | 2026-10-16 |
 | [Latencia de cristal-api /generate: 40–55 s por cuarto, serializado bajo carga](latencia-cristal-api.md) | Proposed | 2026-10-16 |
-| [El rito rechaza respuestas corporales legítimas y luego se calla](rito-rechaza-respuestas-corporales.md) | Done (decisión `...` abierta) | 2026-10-17 |
-| [Diversión con evidencia: la consola nunca rechaza, nunca repite, siempre mueve](diversion-con-evidencia.md) | Proposed | 2026-10-17 |
+| [El rito rechaza respuestas corporales legítimas y luego se calla](rito-rechaza-respuestas-corporales.md) | Done | 2026-10-17 |
+| [Diversión con evidencia: la consola nunca rechaza, nunca repite, siempre mueve](diversion-con-evidencia.md) | In progress (punto 1 Done `673ef59`) | 2026-10-17 |
