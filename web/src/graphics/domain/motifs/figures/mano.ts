@@ -40,6 +40,7 @@ export const mano = defineMotif({
     ...FINGERS.map((f, i): PartSpec => ({ id: `dedo${i + 1}`, role: "support", anchors: { tip: [f.cx, f.tip], base: [f.cx, f.base] }, mask: quad(f.cx - f.w / 2, f.tip, f.cx + f.w / 2, f.base) })),
     { id: "pulgar", role: "connector", anchors: { tip: [-0.48, -0.08], base: [-0.26, 0.1] } },
   ],
+  regions: { cabeza: [-0.28, -0.1], tronco: [0.36, -0.1], punta: [0.28, 0.35], extremidad: [-0.22, 0.3] },
   anchors: [
     sharp(-0.18, 0.5), a(-0.22, 0.3), a(-0.24, 0.26), a(-0.36, 0.12), a(-0.48, -0.02), a(-0.5, -0.1), a(-0.44, -0.14), a(-0.33, -0.06),
     sharp(-0.28, -0.1), a(-0.3, -0.16), a(-0.31, -0.38), a(-0.27, -0.45), a(-0.2, -0.45), a(-0.17, -0.38), sharp(-0.16, -0.16),

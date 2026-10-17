@@ -46,6 +46,7 @@ export const escalera = defineMotif({
     const [x, y] = treadCenter(i);
     return { id: `peldaño${i + 1}`, role: "support", anchors: { left: [x - STEP / 2, y], right: [x + STEP / 2, y], top: [x, y] }, mask: quad(x - STEP / 2, y, x + STEP / 2, y + STEP) };
   }),
+  regions: { cabeza: [-0.071, -0.071], tronco: [0.5, -0.5], punta: [0.5, 0.5], extremidad: [-0.5, 0.5] },
   anchors: stepped(),
   features: () => [],
   ornaments: (fig, p) => {

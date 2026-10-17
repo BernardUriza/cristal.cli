@@ -34,6 +34,7 @@ export const craneo = defineMotif({
     ...[-1, 1].map((s, i): PartSpec => ({ id: `cuenca${i + 1}`, role: "opening", mask: oval(SOCKET[0] * s, SOCKET[1], 0.11, 0.095) })),
     { id: "boca", role: "opening", mask: quad(TEETH.x0 - 0.02, TEETH.y0, TEETH.x1 + 0.02, TEETH.y1) },
   ],
+  regions: { cabeza: [-0.36, -0.36], tronco: [0.36, -0.36], punta: [0.3, 0.26], extremidad: [-0.3, 0.26] },
   anchors: mirrorAnchors([a(0, -0.5), a(0.2, -0.47), a(0.36, -0.36), a(0.43, -0.15), a(0.4, 0.02), a(0.32, 0.1), a(0.3, 0.26), a(0.2, 0.44), sharp(0.08, 0.5), a(0, 0.5)]),
   features: (fig, p) => {
     const shapes: Shape[] = [];
