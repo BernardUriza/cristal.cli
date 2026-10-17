@@ -1,8 +1,8 @@
 import type { Rect } from "../architecture/layout.ts";
 import { shuffle, type Rng } from "../../../shared/rng.ts";
-import { KIND_DIMENSIONS, LAYOUT_RULES, STREET_BY_STYLE } from "./dimensions.ts";
+import { CONTAINER_MARGIN, GAP_INSIDE, KIND_DIMENSIONS, LAYOUT_RULES, STREET_BY_STYLE } from "./dimensions.ts";
 import { bboxArea, bboxOf, candidatesAround, facingSlot, overlaps, sharedEdge, SIDES, translate, type Candidate, type Side } from "./place.ts";
-import { GrammarError, type SpaceEdge, type SpaceGraph, type SpaceNode } from "./types.ts";
+import { GrammarError, type Heading, type SpaceEdge, type SpaceGraph, type SpaceKind, type SpaceNode } from "./types.ts";
 
 export type PlacedSpace = { node: SpaceNode; rect: Rect; level: number; y0: number; y1: number };
 
@@ -13,6 +13,16 @@ type Local = { w: number; d: number; rects: Map<string, Rect> };
 type Solver = { graph: SpaceGraph; rng: Rng; log: string[]; sideOf: Map<string, Side> };
 
 const related = (e: SpaceEdge, id: string): string | undefined => (e.relation === "connects" || e.relation === "faces" ? (e.from === id ? e.to : e.to === id ? e.from : undefined) : undefined);
+
+const SIDE_OF: Record<Heading, Side> = { 0: "east", 90: "south", 180: "west", 270: "north" };
+
+function forcedSide(e: SpaceEdge, kid: SpaceNode, anchor: SpaceNode): Side | undefined {
+  if (e.from === kid.id && kid.heading !== undefined) return SIDE_OF[kid.heading];
+  if (e.from === anchor.id && anchor.heading !== undefined) return SIDE_OF[((anchor.heading + 180) % 360) as Heading];
+  return undefined;
+}
+
+const kindOf = (s: Solver, id: string | undefined): SpaceKind | undefined => (id ? s.graph.nodes.find((n) => n.id === id)?.kind : undefined);
 
 const belowOf = (s: Solver, id: string): string | undefined => s.graph.edges.find((e) => e.relation === "above" && e.from === id)?.to;
 
@@ -35,19 +45,23 @@ function bfsOrder(kids: SpaceNode[], s: Solver): SpaceNode[] {
 
 function candidatesFor(kid: SpaceNode, size: [number, number], placed: Map<string, Rect>, s: Solver): Candidate[] {
   const links = s.graph.edges.filter((e) => related(e, kid.id) && placed.has(related(e, kid.id)!));
-  const anchors = links.length ? links.map((e) => ({ id: related(e, kid.id)!, faces: e.relation === "faces" })) : [...placed.keys()].map((id) => ({ id, faces: false }));
+  const anchors = links.length ? links.map((e) => ({ id: related(e, kid.id)!, faces: e.relation === "faces", e })) : [...placed.keys()].map((id) => ({ id, faces: false, e: undefined }));
   const sides = shuffle(SIDES, s.rng);
   const [a, b] = size;
-  const gap = links.length ? 0 : STREET_BY_STYLE[kid.style] ?? LAYOUT_RULES.street;
-  return anchors.flatMap(({ id, faces }) => {
+  const parentKind = kindOf(s, kid.parent);
+  const gap = links.length ? 0 : (parentKind && GAP_INSIDE[parentKind]) ?? STREET_BY_STYLE[kid.style] ?? LAYOUT_RULES.street;
+  const perpendicular = kid.kind === "bridge" || (kid.kind === "stair" && parentKind === "platform");
+  const rigid = kid.heading !== undefined || s.graph.nodes.some((n) => n.parent === kid.id);
+  return anchors.flatMap(({ id, faces, e }) => {
     const p = placed.get(id)!;
     const r = { x0: p.x0 - gap, z0: p.z0 - gap, x1: p.x1 + gap, z1: p.z1 + gap };
     if (faces) return sides.map((side) => facingSlot(id, r, Math.min(a, b), side));
     const anchorNode = s.graph.nodes.find((n) => n.id === id)!;
-    const allowed = anchorNode.kind === "bridge" ? [s.sideOf.get(id)!] : sides;
+    const forced = e ? forcedSide(e, kid, anchorNode) : undefined;
+    const allowed = forced ? [forced] : anchorNode.kind === "bridge" ? [s.sideOf.get(id)!] : sides;
     return allowed.flatMap((side) => {
       const along = side === "north" || side === "south";
-      const orient: [number, number][] = kid.kind === "bridge" ? [along ? [Math.min(a, b), Math.max(a, b)] : [Math.max(a, b), Math.min(a, b)]] : a === b ? [[a, b]] : [[a, b], [b, a]];
+      const orient: [number, number][] = rigid ? [[a, b]] : perpendicular ? [along ? [Math.min(a, b), Math.max(a, b)] : [Math.max(a, b), Math.min(a, b)]] : a === b ? [[a, b]] : [[a, b], [b, a]];
       return orient.flatMap(([w, d]) => candidatesAround(id, r, w, d, [side]));
     });
   });
@@ -92,7 +106,7 @@ function solve(c: SpaceNode, s: Solver): Local {
     placed.set(kid.id, placed.get(below)!);
   }
   const box = bboxOf([...placed.values()]);
-  const margin = c.kind === "courtyard" ? LAYOUT_RULES.courtyardMargin : LAYOUT_RULES.precinctMargin;
+  const margin = CONTAINER_MARGIN[c.kind] ?? LAYOUT_RULES.precinctMargin;
   const w = Math.max(c.kind === "courtyard" ? c.footprint[0] : 0, box.x1 - box.x0 + 2 * margin);
   const d = Math.max(c.kind === "courtyard" ? c.footprint[1] : 0, box.z1 - box.z0 + 2 * margin);
   const dx = (w - (box.x1 - box.x0)) / 2 - box.x0;
@@ -122,7 +136,7 @@ export function solveLayout(graph: SpaceGraph, rng: Rng): GraphLayout {
     const below = belowOf(s, n.id);
     const parent = n.parent ? placeY(byId.get(n.parent)!) : undefined;
     const base = below ? placeY(byId.get(below)!).y1 : parent ? parent.y1 : 0;
-    const placed = { node: n, rect: shifted.get(n.id)!, level: n.level, y0: base, y1: base + KIND_DIMENSIONS[n.kind].height };
+    const placed = { node: n, rect: shifted.get(n.id)!, level: n.level, y0: base, y1: base + (n.height ?? KIND_DIMENSIONS[n.kind].height) };
     spaces.set(n.id, placed);
     return placed;
   };

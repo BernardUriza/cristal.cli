@@ -28,9 +28,9 @@ describe("program expansion", () => {
     expect(a.map((x) => `${x.rule}@${x.target}`)).toEqual(b.map((x) => `${x.rule}@${x.target}`));
   });
 
-  it("the four test programs give four distinct graph signatures", () => {
+  it("every test program gives its own graph signature", () => {
     const sigs = Object.values(GRAMMAR_PROGRAMS).map((e) => signature(expandProgram(e.program)));
-    expect(new Set(sigs).size).toBe(4);
+    expect(new Set(sigs).size).toBe(sigs.length);
   });
 
   it("each topology carries its defining kinds", () => {

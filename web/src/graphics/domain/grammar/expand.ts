@@ -1,6 +1,7 @@
 import { mulberry32, type Rng } from "../../../shared/rng.ts";
 import { axiom, COMPLETION_BIAS, DEFAULT_BUDGET } from "./axioms.ts";
-import { RULES } from "./rules.ts";
+import { assertGoal, mergeGoals } from "./goal.ts";
+import { RULES, ruleById } from "./rules.ts";
 import { checkBudget, validateCall, validateGraph, validateProgram } from "./validate.ts";
 import { GrammarError, type AppliedRule, type ArchitectureProgram, type GrammarContext, type GrammarRule, type RuleCall, type SpaceEdge, type SpaceGraph, type SpaceKind, type SpaceNode } from "./types.ts";
 
@@ -9,7 +10,7 @@ type State = { nodes: SpaceNode[]; edges: SpaceEdge[]; applied: AppliedRule[]; f
 function seedCounters(nodes: readonly SpaceNode[]): Map<SpaceKind, number> {
   const counters = new Map<SpaceKind, number>();
   for (const n of nodes) {
-    const k = Number(n.id.split("-")[1]);
+    const k = Number(n.id.slice(n.id.lastIndexOf("-") + 1));
     if (Number.isInteger(k)) counters.set(n.kind, Math.max(counters.get(n.kind) ?? 0, k));
   }
   return counters;
@@ -55,7 +56,7 @@ function complete(state: State, program: ArchitectureProgram, rng: Rng, budget: 
   for (let target: SpaceNode | undefined = unexpandedComplexes(state)[0]; target; target = unexpandedComplexes(state).find((n) => !tried.has(n.id))) {
     tried.add(target.id);
     const bias = COMPLETION_BIAS[program.archetype];
-    const options = RULES.filter((r) => r.accepts === "complex" && target.depth < r.maxDepth).map((rule) => ({ rule, w: rule.weight * (bias[rule.id] ?? 1) }));
+    const options = RULES.filter((r) => r.accepts.includes("complex") && target.depth < r.maxDepth).map((rule) => ({ rule, w: rule.weight * (bias[rule.id] ?? 1) })).filter((o) => o.w > 0);
     if (options.length === 0) {
       state.fallbacks.push(`${target.id}: ninguna regla acepta profundidad ${target.depth}; queda como recinto vacío`);
       continue;
@@ -86,7 +87,8 @@ export function expandProgram(program: ArchitectureProgram, budget = DEFAULT_BUD
     apply(state, rule, target, call.params, rng, budget, "program");
   }
   complete(state, program, rng, budget);
-  const graph: SpaceGraph = { archetype: program.archetype, nodes: state.nodes, edges: state.edges, applied: state.applied, fallbacks: state.fallbacks };
+  const goal = mergeGoals([program.goal, ...program.rules.map((c) => ruleById(c.rule)?.goal)]);
+  const graph: SpaceGraph = { archetype: program.archetype, nodes: state.nodes, edges: state.edges, applied: state.applied, fallbacks: state.fallbacks, goal };
   validateGraph(graph);
-  return graph;
+  return { ...graph, topology: assertGoal(graph, goal) };
 }

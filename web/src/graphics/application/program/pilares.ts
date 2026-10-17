@@ -15,7 +15,7 @@ const MIN_PIER_H = 2;
 const MAX_PIER_W = 2.5;
 
 function galleryPiers(s: ProgramScene, faces: readonly TaggedFace[]): Map<string, TaggedFace> {
-  const galleries = new Set(s.layout.spaces.filter((p) => p.node.kind === "gallery").map((p) => p.node.id));
+  const galleries = new Set(s.layout.spaces.filter((p) => p.node.kind === "gallery" || p.node.kind === "ring-gallery").map((p) => p.node.id));
   const best = new Map<string, TaggedFace>();
   for (const f of faces) {
     const [space, part] = f.solid.id.split(":");

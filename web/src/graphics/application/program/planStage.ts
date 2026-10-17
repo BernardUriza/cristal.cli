@@ -17,6 +17,16 @@ const FILL: Record<SpaceKind, keyof Palette> = {
   stair: "gold",
   chamber: "secondary",
   bridge: "accent",
+  sanctuary: "primary",
+  shrine: "secondary",
+  "ring-gallery": "accent",
+  platform: "wall",
+  plaza: "floorB",
+  block: "wall",
+  building: "secondary",
+  street: "floorB",
+  junction: "gold",
+  "street-ring": "floorB",
 };
 
 const LINK: Partial<Record<Relation, { color: keyof Palette; width: number }>> = {
@@ -76,12 +86,14 @@ export function programStage(s: ProgramScene): Stage {
     name: "programa",
     shapes,
     provenance: {
-      algorithm: "gramática de reescritura tipada R1–R6 sobre un grafo espacial; solver de rectángulos por contención, adyacencia con hueco y pasarelas; planta proyectada al suelo",
+      algorithm: "gramática de reescritura tipada R1–R10 sobre un grafo espacial, con meta topológica validada sobre el grafo final; solver de rectángulos por contención, adyacencia con hueco, rumbo de calles y pasarelas; planta proyectada al suelo",
       params: {
         arquetipo: graph.archetype,
         reglas: graph.applied.map((a) => `${a.rule}@${a.target}${a.origin === "completion" ? "*" : ""}`).join(" → "),
         ...Object.fromEntries(Object.entries(kinds).map(([k, v]) => [`n_${k}`, v])),
         ...Object.fromEntries(Object.entries(relations).map(([k, v]) => [`r_${k}`, v])),
+        ...Object.fromEntries(Object.entries(graph.topology ?? {}).map(([k, v]) => [`t_${k}`, v])),
+        meta: Object.entries(graph.goal ?? {}).map(([k, v]) => `${k}=${v}`).join(",") || "ninguna",
       },
       decision: [`* = expansión completada con PRNG sembrado`, ...graph.fallbacks, ...layout.fallbacks].join("; "),
     },

@@ -1,28 +1,11 @@
-import type { Expansion, GrammarContext, GrammarRule, SpaceEdge, SpaceKind, SpaceNode } from "./types.ts";
-
-const GALLERY_DEPTH = 3.5;
-
-const half = (m: number): number => Math.max(2, Math.round(m * 2) / 2);
-
-function node(ctx: GrammarContext, kind: SpaceKind, target: SpaceNode, parent: string | undefined, footprint: [number, number], level = 0): SpaceNode {
-  return { id: ctx.nextId(kind), kind, parent, level, footprint: [half(footprint[0]), half(footprint[1])], style: target.style, depth: target.depth + 1 };
-}
-
-function count(ctx: GrammarContext, key: string, min: number, max: number): number {
-  const given = ctx.params[key];
-  if (typeof given === "number") return given;
-  return min + Math.floor(ctx.rng() * (max - min + 1));
-}
-
-const edge = (from: string, to: string, relation: SpaceEdge["relation"]): SpaceEdge => ({ from, to, relation });
-
-function contained(parent: SpaceNode, nodes: SpaceNode[]): SpaceEdge[] {
-  return nodes.map((n) => edge(parent.id, n.id, "contains"));
-}
+import { contained, count, edge, GALLERY_DEPTH, node } from "./ruleKit.ts";
+import { R7, R8 } from "./templeRules.ts";
+import { R10, R9 } from "./cityRules.ts";
+import type { Expansion, GrammarRule } from "./types.ts";
 
 export const R1: GrammarRule = {
   id: "R1",
-  accepts: "complex",
+  accepts: ["complex"],
   weight: 3,
   maxDepth: 5,
   params: { galleries: { min: 2, max: 4 } },
@@ -36,7 +19,7 @@ export const R1: GrammarRule = {
 
 export const R2: GrammarRule = {
   id: "R2",
-  accepts: "complex",
+  accepts: ["complex"],
   weight: 3,
   maxDepth: 5,
   params: { chambers: { min: 2, max: 6 } },
@@ -50,7 +33,7 @@ export const R2: GrammarRule = {
 
 export const R3: GrammarRule = {
   id: "R3",
-  accepts: "complex",
+  accepts: ["complex"],
   weight: 2,
   maxDepth: 5,
   params: { chambers: { min: 1, max: 3 } },
@@ -67,7 +50,7 @@ export const R3: GrammarRule = {
 
 export const R4: GrammarRule = {
   id: "R4",
-  accepts: "gallery",
+  accepts: ["gallery"],
   weight: 2,
   maxDepth: 6,
   params: {},
@@ -81,7 +64,7 @@ export const R4: GrammarRule = {
 
 export const R5: GrammarRule = {
   id: "R5",
-  accepts: "courtyard",
+  accepts: ["courtyard"],
   weight: 1,
   maxDepth: 3,
   params: { scale: { min: 0.3, max: 0.75 } },
@@ -94,7 +77,7 @@ export const R5: GrammarRule = {
 
 export const R6: GrammarRule = {
   id: "R6",
-  accepts: "hall",
+  accepts: ["hall"],
   weight: 1,
   maxDepth: 3,
   params: {},
@@ -107,7 +90,7 @@ export const R6: GrammarRule = {
   },
 };
 
-export const RULES: readonly GrammarRule[] = [R1, R2, R3, R4, R5, R6];
+export const RULES: readonly GrammarRule[] = [R1, R2, R3, R4, R5, R6, R7, R8, R9, R10];
 
 export function ruleById(id: string): GrammarRule | undefined {
   return RULES.find((r) => r.id === id);

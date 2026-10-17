@@ -118,10 +118,23 @@ def test_program_keeps_known_archetypes_and_rules_only():
     assert [(c["field"], c["value"]) for c in body["choices"]] == [("composition", "programa"), ("program", palace)]
 
 
+def test_program_accepts_the_temple_and_city_productions():
+    programs = [
+        {"archetype": "temple", "rules": [{"rule": "R7", "target": "root", "params": {"shrines": 5}}]},
+        {"archetype": "temple", "rules": [{"rule": "R8", "target": "root", "params": {}}]},
+        {"archetype": "city", "rules": [{"rule": "R9", "target": "root", "params": {"blocks": 4, "buildings": 2}}]},
+        {"archetype": "city", "rules": [{"rule": "R10", "target": "gallery-1", "params": {}}, {"rule": "R10", "target": "street-1", "params": {"frontage": 2}}]},
+    ]
+    for program in programs:
+        client, _ = make_client({"title": "x", "choices": [{"field": "program", "value": program, "because": "b"}]})
+        body = client.post("/atelier/direct", json={"narration": "un templo", "seed": 3}).json()
+        assert [c["value"] for c in body["choices"]] == [program]
+
+
 def test_program_with_one_bad_call_is_dropped_whole():
     bad = [
         {"archetype": "castle", "rules": [{"rule": "R1", "target": "root", "params": {}}]},
-        {"archetype": "city", "rules": [{"rule": "R9", "target": "root", "params": {}}]},
+        {"archetype": "city", "rules": [{"rule": "R11", "target": "root", "params": {}}]},
         {"archetype": "city", "rules": [{"rule": "R3", "target": "root", "params": {"chambers": True}}]},
         {"archetype": "city", "rules": [{"rule": "R3", "target": "root", "params": {"style": "x" * 40}}]},
         {"archetype": "city", "rules": [{"rule": "R3", "target": "", "params": {}}]},
@@ -136,7 +149,7 @@ def test_program_with_one_bad_call_is_dropped_whole():
 
 def test_prompt_teaches_the_program_grammar():
     prompt = open("prompts/atelier.md", encoding="utf-8").read()
-    for word in ('"program"', '"programa"', "R1", "R2", "R3", "R4", "R5", "R6", "palace", "city", "temple", "labyrinth"):
+    for word in ('"program"', '"programa"', "R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8", "R9", "R10", "palace", "city", "temple", "labyrinth"):
         assert word in prompt
 
 

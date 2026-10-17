@@ -6,7 +6,7 @@ import type { ProgramScene } from "./scene.ts";
 const CELL = 1.2;
 const LIFT = 0.01;
 const LOZENGE = 2.4;
-const FLAT: readonly string[] = ["chamber", "gallery", "bridge"];
+const FLAT: readonly string[] = ["chamber", "gallery", "bridge", "building"];
 
 export function isFlatRoof(face: TaggedFace, s: ProgramScene): boolean {
   if (face.normal[1] < 0.9 || face.solid.tag.kind === "floor" || face.solid.tag.kind === "tower-roof") return false;

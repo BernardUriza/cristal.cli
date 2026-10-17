@@ -10,8 +10,11 @@ import { frameOf, mapShapes, projectedSize } from "../patio/frame.ts";
 import { ornamentFor } from "../patio/ornamento.ts";
 import type { Surface, SurfaceRole } from "../patio/surfaces.ts";
 import type { PatioContext } from "../patio/types.ts";
+import type { SpaceKind } from "../../domain/grammar/types.ts";
 import type { ProgramScene } from "./scene.ts";
 import { risingFaces } from "./volumeStage.ts";
+
+const BODY_WALLS: readonly SpaceKind[] = ["building", "shrine", "sanctuary"];
 
 export function roleOf(face: TaggedFace, s: ProgramScene): SurfaceRole | undefined {
   const space = s.layout.spaces.find((p) => p.node.id === face.solid.tag.space);
@@ -19,7 +22,10 @@ export function roleOf(face: TaggedFace, s: ProgramScene): SurfaceRole | undefin
   const vertical = Math.abs(face.normal[1]) < 1e-6;
   const part = face.solid.id.split(":")[1] ?? "";
   if (!vertical) return space.node.kind === "tower" && part === "spire" ? "cubierta-torre" : undefined;
-  if (space.node.kind === "tower" && part === "body") return "torre";
+  if ((space.node.kind === "tower" || space.node.kind === "junction") && part === "body") return "torre";
+  if (BODY_WALLS.includes(space.node.kind) && (part === "body" || part === "crown")) return "muro-exterior";
+  if (space.node.kind === "ring-gallery") return part.startsWith("roof") ? "dintel-arcada" : part.startsWith("pier") ? "pilar" : undefined;
+  if (space.node.kind === "sanctuary" && part === "cornice") return "dintel-arcada";
   if ((space.node.kind === "hall" || space.node.kind === "chamber") && part === "body") return "muro-exterior";
   if (part.startsWith("cell")) return "muro-exterior";
   if (space.node.kind === "gallery") return part === "roof" ? "dintel-arcada" : "pilar";
