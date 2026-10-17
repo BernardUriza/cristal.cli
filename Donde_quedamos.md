@@ -112,7 +112,8 @@ Verificado en prod (deploy `aa42ec1`): `POST /telemetry/funnel` 204 con evento v
 (captura `~/Documents/personal-assistance/cristal-betatesters/2026-10-17-prod-onboarding-hint.jpg`). **Bug encontrado
 ahí mismo:** `navigator.sendBeacon` con un Blob `application/json` falla en Chrome con `net::ERR_FAILED` después del
 preflight (lo vi en la lista de red de la página: dos beacons muertos); `fetch` con `keepalive` desde la misma página
-contesta 204. El reporter quedó solo con `fetch keepalive`.
+contesta 204. El reporter quedó solo con `fetch keepalive` (`d024aef`); reverificado en prod con sesión limpia: la lista de red de
+la página muestra `POST /telemetry/funnel` 204 al cargar (laberinto) y 204 al primer paso.
 
 Lección de sesión: dos llamadas Bash en la misma respuesta comparten cwd y se pisan los `cd`; rutas absolutas o
 `npm --prefix`.
