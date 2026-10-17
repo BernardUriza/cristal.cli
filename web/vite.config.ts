@@ -11,7 +11,7 @@ export default defineConfig({
   assetsInclude: ["**/*.fbx", "**/*.glb", "**/*.gltf"],
   build: {
     rollupOptions: {
-      input: { main: "index.html", laberinto: "laberinto.html", building: "building.html", memorama: "memorama.html" },
+      input: { main: "index.html", laberinto: "laberinto.html", building: "building.html", memorama: "memorama.html", atelier: "atelier.html" },
     },
   },
 });
