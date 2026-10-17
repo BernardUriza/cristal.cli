@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CRISTAL.CLI — cómo hacerlo más divertido, con evidencia (2026-10-17)</title>
+<style>
+  :root { --bg:#06090d; --fg:#d7e6dc; --dim:#8aa092; --acc:#5ef0a8; --acc2:#6fd3ff; --warn:#ffd23d; --bad:#ff6b6b; --card:#0c1218; --line:#1c2a33; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:17px/1.55 ui-monospace, "SF Mono", Menlo, Consolas, monospace; padding:32px 20px 80px; }
+  main { max-width:980px; margin:0 auto; }
+  h1 { font-size:28px; color:var(--acc); margin:0 0 6px; letter-spacing:.5px; }
+  h2 { font-size:21px; color:var(--acc2); margin:44px 0 12px; border-bottom:1px solid var(--line); padding-bottom:6px; }
+  h3 { font-size:17px; color:var(--fg); margin:26px 0 8px; }
+  .sub { color:var(--dim); margin:0 0 28px; }
+  .verdict { background:var(--card); border-left:4px solid var(--acc); padding:18px 22px; border-radius:6px; font-size:18px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:16px 20px; margin:14px 0; }
+  .tag { display:inline-block; font-size:12px; padding:2px 8px; border-radius:999px; margin-left:8px; vertical-align:middle; font-weight:700; letter-spacing:.5px; }
+  .ok { background:#103d2a; color:var(--acc); } .prob { background:#3b3410; color:var(--warn); } .unc { background:#3d1515; color:var(--bad); }
+  table { width:100%; border-collapse:collapse; margin:12px 0 4px; font-size:15px; }
+  th, td { text-align:left; vertical-align:top; padding:9px 10px; border-bottom:1px solid var(--line); }
+  th { color:var(--dim); font-weight:600; }
+  td.n { color:var(--acc2); white-space:nowrap; }
+  ul { padding-left:22px; } li { margin:6px 0; }
+  code { background:#0f1a22; padding:1px 6px; border-radius:4px; color:#bfe7ff; font-size:15px; }
+  .callout { border:1px dashed var(--warn); padding:12px 16px; border-radius:6px; color:#f3e7b3; margin:16px 0; }
+  .bad { color:var(--bad); }
+  .src { font-size:14px; color:var(--dim); }
+  .src li { margin:4px 0; } a { color:var(--acc2); text-decoration:none; } a:hover { text-decoration:underline; }
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; } @media (max-width:760px) { .grid { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<main>
+<h1>Cómo hacer CRISTAL.CLI más divertido</h1>
+<p class="sub">Investigación histérica · 6 investigadores en paralelo · ~40 fuentes · 17 de octubre de 2026 · cruzada contra el inventario real del repo (3 consolas, 3 glifos, rito de 3 pasos, 3 plantillas por stance, memorama sin récord ni compartir)</p>
+
+<div class="verdict">
+<strong>Veredicto.</strong> El juego no necesita reto para ser divertido: la evidencia dice que un juego sin fallo vive de <strong>autonomía</strong>, de <strong>descubrimiento como sustituto de la competencia</strong> y de <strong>ambigüedad que el jugador completa</strong>. Lo que lo mata, con evidencia, son cuatro cosas que CRISTAL hace o hacía: <strong>rechazar la entrada del jugador</strong>, <strong>repetir líneas</strong>, <strong>caminar lento sin hallazgos densos</strong> y <strong>esperar</strong>. La palanca número uno es la consola: que nunca rechace, nunca repita y siempre mueva la escena. Lo demás (memorama compartible, primeros cinco minutos, modo viaje) viene después. Agregar minijuegos antes de que la consola se sienta viva es diluir el diferenciador.
+</div>
+
+<h2>1. Hallazgos por pregunta</h2>
+
+<h3>1.1 ¿Qué hace divertido un juego sin fallo ni reto? <span class="tag prob">PROBABLE</span></h3>
+<div class="card">
+<ul>
+<li><strong>Autodeterminación (Ryan, Rigby &amp; Przybylski 2006, 4 estudios; Przybylski et al. 2010):</strong> el disfrute y las ganas de volver vienen de autonomía, competencia y relación. Sin reto, la competencia se alimenta con <em>descubrimiento</em>: "entendí algo", "abrí algo". Empírico y revisado; viejo pero sólido.</li>
+<li><strong>Walkers (Muscat et al., DiGRA/FDG 2016):</strong> la ambigüedad es "una fuerza motriz primaria"; la UI vacía afina la atención al mundo; los detalles pequeños ganan significado con el tiempo. <span class="bad">Riesgo documentado:</span> el movimiento lento "puede ser fuente de frustración". Análisis de autores, no estudio con jugadores.</li>
+<li><strong>Juul 2018:</strong> quitar la presión de optimizar "da más tiempo para ver cosas" y reduce la responsabilidad por el resultado. Conceptual.</li>
+<li><strong>Lazzaro, 4 llaves:</strong> los éxitos pegan al menos 3 de 4. CRISTAL no tiene Hard Fun ni People Fun, así que Easy Fun (curiosidad) y Serious Fun (el jugador cambia) tienen que cargar todo. Modelo de practicante, 2004, no revisado.</li>
+<li><strong>¿Quitar reto hace menos divertido?</strong> Sin caso limpio. Lomas 2013 (70K jugadores): más fácil = jugaron más. Brändle 2025 (1.8M votos): prefieren dificultad intermedia, pero en juegos que ya tienen reto. No se contradicen; miden cosas distintas.</li>
+</ul>
+</div>
+
+<h3>1.2 Texto libre sin "no te entendí" <span class="tag ok">CONFIRMADO</span></h3>
+<div class="card">
+<ul>
+<li><strong>Façade (Mateas &amp; Stern, GDC 2003 y TIDSE 2004, leídos de primera mano):</strong> los personajes "nunca dicen 'system does not understand'". Mapeo "muchos-a-pocos" fuerte: millones de frases → ~25 actos de discurso, con un catch-all <code>DASystemCannotUnderstand</code> que dispara deflexiones en personaje o cambio de tema. Reglas "deliberadamente permisivas": prefieren falsos positivos a responder "huh?". Nunca repiten una reacción salvo las deflexiones genéricas. El contexto dramático guía al jugador a escribir lo apropiado.</li>
+<li><strong>Emily Short:</strong> "sé más específico" es el antipatrón; una pregunta del NPC sin respuesta recibe un <em>nag</em> y después el NPC "dice algo nuevo" y sigue (2009). Esto es exactamente el <code>...</code> de nuestro tester, resuelto. Pistas que aparecen sólo cuando son relevantes (TADS special topics), no mensajes de rechazo. El fallo se tolera más si es gracioso.</li>
+<li><strong>LLM-NPC 2025 (N=10):</strong> latencia y claridad pesan más que el prompt. El clasificador contesta primero; el modelo nunca bloquea la respuesta.</li>
+<li>No existe estudio controlado de frustración con parsers; esto es literatura de diseño y postmortems, pero son <em>los</em> postmortems.</li>
+</ul>
+</div>
+
+<h3>1.3 Evitar respuestas enlatadas repetidas <span class="tag prob">PROBABLE</span></h3>
+<div class="card">
+<ul>
+<li><strong>Valve (Response Rules, L4D):</strong> por defecto un grupo agota todas sus respuestas antes de repetir; <code>norepeat</code> apaga el grupo al agotarse. La regla más específica gana, las menos específicas son fallback (Ruskin GDC 2012, vía Short y Game Developer). Embarcado.</li>
+<li><strong>Hades (22,000+ líneas, GDC 2021):</strong> cubeta filtrada por condiciones, ponderada por importancia, "no repite hasta agotar lo no usado". Pool grande es la cura principal. Secundario; el video no se leyó.</li>
+<li><strong>L4D Director:</strong> ritmo de intensidad y descanso, no dificultad. Respalda la lógica de presión + silencio, no la variedad de líneas.</li>
+<li><strong>Nuestra causa raíz:</strong> <code>hash(input)</code> elige entre 3 plantillas: el mismo input siempre da la misma línea y tres plantillas se agotan en dos turnos. El tester vio "Lo guardé" dos veces y "Te oí" dos veces incluso con el fix de hoy.</li>
+</ul>
+</div>
+
+<h3>1.4 Diseño para estado alterado <span class="tag unc">INCIERTO</span></h3>
+<div class="card">
+<ul>
+<li><strong>Cero literatura revisada</strong> sobre jugar en psicodélicos. Lo que hay es adyacente.</li>
+<li><strong>Mediano et al. 2024 (LSD 75 µg, n=20, placebo):</strong> el video externo "compite" con la imaginería endógena. Inferencia: pantalla escasa que retrocede, estímulo que responde al jugador pero no es constante ni denso.</li>
+<li><strong>Harm reduction (Palmer &amp; Maynard 2022, n=163):</strong> espacio calmado y preparación correlacionan con menos experiencias difíciles. Un reporte de Erowid: una frase rara puede disparar pánico en estado inestable: <span class="bad">cuidado con el humor negro y los sustos de texto</span>.</li>
+<li><strong>WCAG 2.1 (oficial):</strong> no más de 3 destellos por segundo. Es el estándar duro para "sin strobe".</li>
+<li><strong>Foros (anécdota):</strong> lo competitivo y lo dirigido por objetivos falla a dosis altas; "juegos felices", sensoriales y chistosos funcionan. Everything se juega solo si sueltas el control; Tetris Effect construye el audio-visual con cada acierto.</li>
+<li><strong>Texto legible en el viaje: nadie lo ha documentado.</strong> Tu regla 6 es sensata e inédita. Pregúntale al tester mañana, explícitamente.</li>
+</ul>
+</div>
+
+<h3>1.5 Memorama más divertido sin castigo <span class="tag prob">PROBABLE</span></h3>
+<div class="card">
+<ul>
+<li><strong>Juice (Jonasson &amp; Purho):</strong> máxima salida por mínima entrada; tween, squash y stretch en cada volteo y match. Contrapunto (Folmer Kelly): el exceso rompe inmersión. Para un juego calmado: juice suave.</li>
+<li><strong>Distintividad &gt; detalle:</strong> la ventaja de las imágenes en memoria desaparece cuando se parecen entre sí. Lo del tester ("el de menos detalles") se explica mejor como <em>el que no se parecía a los demás</em>. Riesgo de templos procedurales: que todos se vean igual.</li>
+<li><strong>Wordle (2022):</strong> una semilla compartida para todos, resultado compartible sin spoiler, tres minutos al día y ya. Nuestro <code>?seed=777</code> ya es la mitad del camino.</li>
+<li><strong>Antipatrón:</strong> perder turno al fallar (Memory Twist) es castigo; fuera.</li>
+<li>No hay investigación de retención específica de juegos de pares.</li>
+</ul>
+</div>
+
+<h3>1.6 Primeros cinco minutos <span class="tag prob">PROBABLE</span></h3>
+<div class="card">
+<ul>
+<li>Las peores apps pierden 46 % en el minuto 5, las mejores 17 % (dato Google vía Melnick 2020, móvil). Demos de Steam: mediana 14 min (Zukowski). Direccional, no comparable.</li>
+<li>Enseñar haciendo, un verbo a la vez, feedback claro a cada acción, cero muros de texto (Roblox docs, GDevelop). Reseñas de itch.io: una caja de texto vacía "parece inútil" si no invita.</li>
+<li><span class="bad">No existe</span> dato de drop-off en WASD/pointer-lock ni sobre "premiar el primer texto". Hay que instrumentarlo nosotros.</li>
+</ul>
+</div>
+
+<h2>2. Qué cambia en CRISTAL.CLI, en orden de palanca</h2>
+
+<div class="callout"><strong>Orden (Art. 8):</strong> diferenciador primero. La consola es el diferenciador y hoy es lo más débil. Nada de minijuegos nuevos hasta que la consola nunca rechace, nunca repita y siempre mueva la escena.</div>
+
+<h3>2.1 La consola nunca rechaza, nunca repite, siempre mueve</h3>
+<div class="card">
+<table>
+<tr><th>Cambio</th><th>Dónde</th><th>Evidencia</th></tr>
+<tr><td>Stance catch-all con respuesta real: refleja las palabras del jugador o deflecta en personaje. <code>...</code> jamás solo: si hay silencio, va acompañado de un nag y al segundo turno la consola cambia de tema o abre la siguiente puerta.</td><td class="n">PsychologicalResponseEngine<br>SilenceEngine</td><td>Façade catch-all; Short 2009 nag + seguir</td></tr>
+<tr><td>Shuffle-bag por stance con memoria de las últimas N líneas, en vez de <code>hash(input)</code>. Nunca la misma línea dos veces seguidas; agotar antes de repetir.</td><td class="n">CristalReplyBuilder</td><td>Valve norepeat (embarcado)</td></tr>
+<tr><td>Pool de 8–12 líneas por stance, con variantes por contexto (turno, presión, glifo activo, palabra del jugador). La regla más específica gana.</td><td class="n">CristalReplyBuilder</td><td>Hades pool; Ruskin especificidad</td></tr>
+<tr><td>El clasificador contesta al instante; el modelo (40–55 s) sólo enriquece después, nunca bloquea.</td><td class="n">store / roomApi</td><td>Latencia &gt; prompt (2025)</td></tr>
+<tr><td>Permisividad semántica: adjetivos, estados y sustantivos somáticos cuentan como respuesta a una pregunta sensorial. Preferir falso positivo a "huh?".</td><td class="n">StanceClassifier</td><td>Façade §6</td></tr>
+</table>
+</div>
+
+<h3>2.2 Densidad de hallazgo: cada minuto caminando, algo nuevo que ver</h3>
+<div class="card">
+<ul>
+<li>El descubrimiento sustituye a la competencia. Cada frase tecleada tiene que cambiar algo <em>visible</em> en el mundo, no sólo en el log: la inscripción del cuarto usa las palabras del jugador (el <code>MemoryEchoEngine</code> ya existe), un glifo cambia de color, una puerta aparece.</li>
+<li>Ambigüedad como motor: inscripciones que invitan a interpretar, no que explican. Detalles pequeños que ganan sentido al volver (Proteus, Gone Home).</li>
+<li>Caminar lento sin payoff frustra (Muscat): medir celdas entre hallazgos; si pasan más de ~60 s sin nada, el laberinto pone algo (patrón Director: intensidad y descanso).</li>
+</ul>
+</div>
+
+<h3>2.3 Primeros cinco minutos</h3>
+<div class="card">
+<ul>
+<li>Un verbo a la vez: mover → mirar → E → escribir → glifo → puerta. "Click para mirar" pegado al pointer-lock.</li>
+<li>La primera frase tecleada recibe respuesta visible al instante en el mundo, no sólo texto.</li>
+<li>Caja de texto que invita: placeholder con un ejemplo real, no vacía.</li>
+<li>Instrumentar el embudo: landing → pointer lock → primer paso → consola → primera frase → glifo → puerta. Es el único dato que no existe en ninguna fuente y sí podemos tener.</li>
+</ul>
+</div>
+
+<h3>2.4 Memorama</h3>
+<div class="card">
+<ul>
+<li>Juice suave en volteo y match (tween, un sonido corto, el templo "respira").</li>
+<li>Distintividad entre pares: silueta y un rasgo dominante distintos por par; medir que ningún par se parezca a otro.</li>
+<li>Semilla del día compartida + línea de resultado compartible sin spoiler ("templo 777 · 17 movimientos · ▣▣▢▣…") + mejor marca personal por semilla. Sin timer, sin castigo.</li>
+</ul>
+</div>
+
+<h3>2.5 Modo viaje (regla dura 6)</h3>
+<div class="card">
+<ul>
+<li>Pantalla escasa que retrocede; estímulo que responde, no que insiste (Mediano 2024).</li>
+<li>Regla dura: ≤3 destellos/segundo (WCAG 2.1 2.3.1). Sin sonidos súbitos. Sin textos que asusten o se burlen.</li>
+<li>Si sueltas el teclado, el laberinto se juega solo (Everything). La recompensa audiovisual crece con cada entrada (Tetris Effect).</li>
+<li>Salida clarísima siempre visible. Texto grande: inédito en la literatura, preguntar al tester mañana.</li>
+</ul>
+</div>
+
+<h3>2.6 Relación (la llave que no tenemos)</h3>
+<div class="card">
+<p>SDT dice que la relación predice disfrute igual que la autonomía. Journey la logró con extraños anónimos sin chat. Idea barata y coherente con el universo: la frase que archivas la encuentra, deformada, el siguiente jugador; tú encuentras la de alguien antes. People Fun sin multiplayer. <em>Inferencia, no hallazgo.</em></p>
+</div>
+
+<h2>3. Lo que NO se encontró (honestidad)</h2>
+<div class="card">
+<ul>
+<li>Ningún estudio controlado de juego bajo LSD, ni de legibilidad de texto en el viaje.</li>
+<li>Ningún dato primario de drop-off en WASD / pointer-lock / primer texto tecleado.</li>
+<li>Ningún estudio de retención de juegos de pares.</li>
+<li>Las slides de Ruskin (PDF &gt;10 MB) y el video de Kasavin no se leyeron; sus detalles finos son de segunda mano.</li>
+<li>PDFs de memorabilidad de imágenes (Khosla 2013, Roberts 2023) ilegibles por el fetcher.</li>
+</ul>
+</div>
+
+<h2>4. Fuentes</h2>
+<ol class="src">
+<li><a href="https://pure.ewha.ac.kr/en/publications/the-motivational-pull-of-video-games-a-self-determination-theory-/">Ryan, Rigby &amp; Przybylski 2006 — SDT en videojuegos (4 estudios)</a></li>
+<li><a href="https://repository.essex.ac.uk/7228/">Przybylski, Rigby &amp; Ryan 2010 — Review of General Psychology</a></li>
+<li><a href="https://dl.digra.org/index.php/dl/article/view/777">Muscat et al. 2016 — First-person walkers, DiGRA/FDG</a></li>
+<li><a href="https://www.jesperjuul.net/text/aesthetics3/">Juul 2018 — The aesthetics of the aesthetics of the aesthetics of video games</a></li>
+<li><a href="https://roadtovr.com/nicole-lazzaro-four-keys-fun-virtual-reality/">Lazzaro — Four Keys to Fun (2015)</a></li>
+<li><a href="https://stat.cmu.edu/~brian/463-663/project-part-one/Optimizing%20Challenge.pdf">Lomas et al. CHI 2013 — Optimizing challenge (70K jugadores)</a></li>
+<li><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC12488971/">Brändle, Wu &amp; Schulz 2025 — dificultad preferida (1.8M votos)</a></li>
+<li><a href="https://shacknews.com/article/75483/interview-jenova-chen-looks-back-at-journey">Chen — Journey, el botón de salto (Shacknews)</a></li>
+<li><a href="https://www.cp.eng.chula.ac.th/~vishnu/gameResearch/story_november_2005/MateasSternTIDSE04.pdf">Mateas &amp; Stern TIDSE 2004 — NLU de Façade</a></li>
+<li><a href="https://faculty.cc.gatech.edu/~isbell/classes/reading/papers/MateasSternGDC03.pdf">Mateas &amp; Stern GDC 2003 — Façade, failures of the system</a></li>
+<li><a href="https://emshort.blog/how-to-play/writing-if/my-articles/conversation/">Emily Short — Conversation (overview)</a></li>
+<li><a href="https://emshort.blog/2016/04/09/chatbots-as-narrative-platform/">Emily Short 2016 — Chatbots as narrative platform</a></li>
+<li><a href="https://emshort.blog/2009/08/02/modeling-conversation-flow-open-ended-questions/">Emily Short 2009 — Open-ended questions, nag y seguir</a></li>
+<li><a href="https://arxiv.org/html/2510.25820v1">Symbolically Scaffolded Play 2025 — LLM NPCs, N=10</a></li>
+<li><a href="https://research.tilburguniversity.edu/en/publications/conversational-repair-strategies-to-cope-with-errors-and-breakdow/">Tilburg 2023 — Conversational repair strategies</a></li>
+<li><a href="https://www.christi-kerr.com/post/how-the-dialogue-system-in-hades-rewards-failure">Kerr 2025 — Hades dialogue system</a></li>
+<li><a href="https://gdcvault.com/play/1026975/Breathing-Life-into-Greek-Myth">Kasavin GDC 2021 — Breathing Life into Greek Myth (abstract)</a></li>
+<li><a href="https://emshort.blog/2012/03/16/gdc-2012-talk-on-dynamic-dialogue/">Short 2012 — sobre Ruskin, Dynamic Dialogue</a></li>
+<li><a href="https://www.gamedeveloper.com/game-platforms/creating-behaviours-with-fuzzy-pattern-matching">Game Developer — fuzzy pattern matching (re-implementación de Valve)</a></li>
+<li><a href="https://developer.valvesoftware.com/wiki/Response_rules">Valve Developer Wiki — Response rules (norepeat)</a></li>
+<li><a href="https://www.readkong.com/page/the-ai-systems-of-left-4-dead-michael-booth-valve-9664541">Booth — The AI Systems of Left 4 Dead (slides)</a></li>
+<li><a href="https://pulsegeek.com/articles/dialogue-barks-timing-and-cooldown-best-practices/">Barks: timing y cooldown</a></li>
+<li><a href="https://discovery.ucl.ac.uk/10205002/7/Zamorano%20Lo%CC%81pez_Game%20Software%20Engineering_VoR.pdf">Zamorano et al. ESEM 2024 — reuse vs PCG</a></li>
+<li><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC10853937">Mediano et al. 2024 — LSD, contexto y entropía cerebral</a></li>
+<li><a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC9310449/">Palmer &amp; Maynard 2022 — harm reduction, Harm Reduction Journal</a></li>
+<li><a href="https://www.w3.org/WAI/WCAG21/Understanding/three-flashes-or-below-threshold.html">WCAG 2.1 — Three flashes or below threshold</a></li>
+<li><a href="https://gamesbeat.com/tetsuya-mizuguchi-interview-taking-tetris-on-a-ps-vr-acid-trip/">Mizuguchi — Tetris Effect, sinestesia</a></li>
+<li><a href="https://www.destructoid.com/journey-inspired-by-world-of-warcraft-loneliness/">Chen GDC 2013 — Journey (recap)</a></li>
+<li><a href="https://www.shroomery.org/forums/showflat.php/Number/11791852">Shroomery 2010 — juegos en hongos (anécdota)</a></li>
+<li><a href="https://psychonautwiki.org/wiki/Visual_distortions">PsychonautWiki — Visual distortions</a></li>
+<li><a href="https://www.gamedeveloper.com/design/video-is-your-game-juicy-enough-">Jonasson &amp; Purho — Juice (reporte GDC Europe)</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Picture_superiority_effect">Picture superiority effect y distintividad</a></li>
+<li><a href="https://www.boston.com/news/national-news/2022/01/04/he-made-wordle-for-his-partner-now-its-an-online-hit/">Wordle — perfil NYT 2022 (sindicado)</a></li>
+<li><a href="https://news.northeastern.edu/2022/01/21/what-makes-wordle-so-g-r-e-a-t/">Northeastern 2022 — what makes Wordle great</a></li>
+<li><a href="https://patents.justia.com/patent/7461845">Patente DoubleStar — variantes de Concentration (parte interesada)</a></li>
+<li><a href="https://lloydmelnick.com/2020/06/03/lifetime-value-part-29-increasing-retention/">Melnick 2020 — retención minuto 5 (dato Google)</a></li>
+<li><a href="https://www.steampageanalyzer.com/blog/how-long-should-a-steam-demo-be">Steam demos — mediana 14 min (Zukowski)</a></li>
+<li><a href="https://enclavegames.com/p/browser-games-lose.html">Enclave Games — por qué pierden jugadores los juegos de navegador</a></li>
+<li><a href="https://create.roblox.com/docs/en-us/production/game-design/onboarding-techniques">Roblox docs — onboarding techniques</a></li>
+<li><a href="https://gdevelop.io/blog/improve-game-tutorials">GDevelop 2025 — mejores tutoriales</a></li>
+</ol>
+</main>
+</body>
+</html>
