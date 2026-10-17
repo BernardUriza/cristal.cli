@@ -25,9 +25,34 @@
 
 | Quién | Canal | Estado | Qué recibió |
 |---|---|---|---|
-| `me.tikkum` (Instagram) | DM https://www.instagram.com/direct/t/17847378020577220/ | 2026-10-16 12:40 se ofreció ("Siiii yo puedo ser tu beta-tester"); 12:43 Bernard le mandó el link. Sin feedback aún. 12:55 homework #1 redactado (memorama seed 777 / 8 pares desde el cel + una consola del laberinto desde compu, con screenshots); lo manda Bernard por el DM. | https://cristal.bernarduriza.com/ — va a abrirlo desde el celular: el memorama sí juega en touch (verificado 390x844, sin errores de consola); el laberinto es sólo escritorio (WASD + E + pointer lock), la landing ya lo dice. |
+| `me.tikkum` (Instagram) | DM https://www.instagram.com/direct/t/17847378020577220/ | 2026-10-16 12:40 se ofreció; 12:43 link; ~12:55 homework #1 enviado. **2026-10-16 23:09 y 23:41 entregó las DOS partes** (ver abajo). 2026-10-17 06:20 Bernard contestó "Jaja se trabó / Muchas gracias por la prueba". Pendiente: contestarle con el arreglo cuando esté en prod. | https://cristal.bernarduriza.com/ — memorama desde el cel (touch OK), laberinto desde compu. |
 
 Feedback de betatesters: se registra aquí, con fecha y cita, y lo accionable pasa a `.claude/backlog/`.
+
+### Homework #1 de `me.tikkum` (entregado 2026-10-16 23:09–23:41, leído del DM 2026-10-17 09:10)
+
+Evidencia: `~/Documents/personal-assistance/cristal-betatesters/2026-10-16-me-tikkum-*.png` (fuera del repo: es público).
+
+**Parte 1, memorama `seed=777&pairs=8` desde el cel:** completado, **17 movimientos** (mínimo posible 8).
+Cita: *"Me acordé más del 4° del 2° renglón y 2° del 3er renglón... tal vez por ser el que tenía menos
+detalles"*. Esas dos posiciones son el mismo par (`pairId 2`, `artSeed 192387`): el templo con menos ornamento
+fue el memorable. Dato para la gramática estética: menos detalle = más recordable.
+
+**Parte 2, consola del laberinto desde compu:** escribió `me siento cansado y confundido` (archivada bien),
+invocó `VISION` y `LUNA`, y a la pregunta *"¿Qué temperatura tiene su luz en tu pecho?"* contestó cuatro veces
+desde el cuerpo: `es fría` → `tiene frío` → `sufre por el frío` → `incomodidad`. El rito le respondió dos veces
+*"Escribe desde el cuerpo, no desde la cabeza"*, dos veces *"Aún no me das nada que replicar"* y luego `...`
+y silencio. Bernard: *"Jaja se trabó"*. Reproducido línea por línea con el motor real (vitest, 2026-10-17):
+
+- `StanceClassifier` no tiene en sus léxicos `frío/fría`, `incomodidad`, `cansado`, `confundido`, `sufre`
+  → cero señales → `PsychologicalResponseEngine` cae a los OPENERS de presión, que para el jugador suenan a
+  "respuesta rechazada" aunque respondió exactamente lo que se le pidió.
+- El camino de OPENER no registra turno en `StancePressureTracker`, así que `terminalCore` alimenta a
+  `advanceSilence` con el último stance real (`ritualization` de LUNA) y la misma presión durante cuatro turnos
+  → `stagnantTurns` 1→4 → `ellipsisOnly` → `...`. El sistema castiga su propia sordera con silencio; viola la
+  regla dura 6 (sin castigos, salida clarísima).
+
+Item: `.claude/backlog/rito-rechaza-respuestas-corporales.md`.
 
 ### Recorrido del homework #1 en prod (2026-10-16, Claude como jugador nuevo)
 
