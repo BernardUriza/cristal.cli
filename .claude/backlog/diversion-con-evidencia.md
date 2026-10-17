@@ -1,6 +1,6 @@
 # Diversión con evidencia: la consola nunca rechaza, nunca repite, siempre mueve
 
-Status: In progress (puntos 1–6 Done 2026-10-17; 5 y 6 pendientes de verificar en prod)
+Status: Done (puntos 1–6 en prod 2026-10-17; abiertos solo lo del tester y el DM de Bernard)
 Proposed: 2026-10-17 by Bernard ("cómo hacer el juego más divertido"; /histerical-search, 6 investigadores, ~40 fuentes)
 
 **Qué es.** Veredicto completo con fuentes: `entregables/como-hacer-el-juego-mas-divertido-2026-10-17.html`.
@@ -107,6 +107,13 @@ devuelve una ajena al azar entre las últimas 400. Cliente: al archivarse la con
 (`echoClient.ts`, también al cargar); la hambre escribe primero la frase ajena deformada con acento violeta (fuente
 `echo`) y después las propias. Sin moderación automática, como se dijo al autorizar: el deformado atempera, no filtra.
 
-**Next.** Verificar 5 y 6 en prod tras el deploy; después el item queda Done salvo lo que es del tester (legibilidad
-del texto en el viaje) y de Bernard (DM a `me.tikkum`).
+**Verificado en prod (2026-10-17, deploy `41d32f4`, API revisión `cristal-api--0000006`):** `?viaje=1` → clase, salida
+grande, HUD y minimapa ocultos; el deriva llevó al jugador a ALPHA solo; la confesión disparó `POST /echo` 204 y
+`GET /echo?exclude=…` 200 desde la página; tras el minuto de hambre el laberinto escribió «… miedo aquí» (frase ajena
+deformada, fuente `echo`) en (7,4) junto a ROTURA, adonde el deriva lo había llevado. El embudo sobrevivió a la revisión
+nueva del API (persistencia probada).
+
+**Lo que queda y de quién es.** Del tester: ¿se lee el texto grande en el viaje? (pregunta para `me.tikkum`, nadie lo
+documenta). De Bernard: el DM a `me.tikkum` (borrador en `Donde_quedamos.md`). Lo de la palanca 1 excluido a propósito
+(enriquecer la consola con el modelo) sigue en `ia-psiconauta.md`.
 y el DM a `me.tikkum` sigue pendiente de Bernard (borrador en `Donde_quedamos.md`).
