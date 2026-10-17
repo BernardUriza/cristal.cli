@@ -98,8 +98,9 @@ en juego real el retardo las separa.
 
 Autorizado por Bernard: la confesión archivada viaja anónima a `POST /echo` (cristal-api, JSONL en el share) y el
 laberinto pide una ajena (`GET /echo?exclude=`) al cargar y al confesar; la hambre la escribe primero, deformada y en
-violeta (`source: "echo"`), y después usa las frases propias. Sin moderación. Pendiente de verificar en prod tras el
-deploy.
+violeta (`source: "echo"`), y después usa las frases propias. Sin moderación. **Verificado en prod:** desde la página
+`POST /echo` 204 y `GET /echo?exclude=…` 200 al confesar; al minuto de hambre apareció «… miedo aquí» (frase ajena
+dejada por curl) en el muro oeste de (7,4). Primer eco real en el share: `echo.jsonl`.
 
 ### Modo viaje y tope de parpadeo (2026-10-17, punto 5, `ceadffc`)
 
@@ -108,7 +109,8 @@ del laberinto / de la consola / del cuarto» siempre visible abajo a la izquierd
 deriva a paso lento por la ruta del rito (`autowalk.ts`), y la niebla/luz se abren con cada frase escrita. Tope
 global de parpadeo de luces 2.5 Hz (`flashSafety.ts`); antes la luz del cuarto IA llegaba a 5.9 Hz. Verificado en dev
 (captura `~/Documents/personal-assistance/cristal-betatesters/2026-10-17-dev-viaje-2.jpg`; deriva spawn → ALPHA en
-~4.5 s después de 6 s quieto). Pendiente de verificar en prod tras el deploy. Para el tester: ¿se lee el texto
+~4.5 s después de 6 s quieto). **Verificado en prod (deploy `41d32f4`):** clase, salida, HUD y minimapa ocultos, deriva
+spawn → ALPHA → ROTURA; captura `~/Documents/personal-assistance/cristal-betatesters/2026-10-17-prod-viaje-eco.jpg`. Para el tester: ¿se lee el texto
 grande en el viaje? Nadie lo ha documentado.
 
 ### Memorama: semilla del día, resultado compartible, mejor marca, pares distintos (2026-10-17, punto 4)
