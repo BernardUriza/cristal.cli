@@ -13,6 +13,9 @@ import { paintStars, paintSun } from "./facade/sky.ts";
 import type { Painter } from "./painter.ts";
 import { makeView } from "./projection.ts";
 import type { RewriteRecord } from "../domain/rewrite/rewrite.ts";
+import { tagRoot, type SemanticRoot } from "../domain/semantic.ts";
+
+const TEMPLE: SemanticRoot = { root: "templo", kind: "building" };
 
 export type Provenance = { algorithm: string; params: Record<string, number | string>; decision: string; rewrites?: RewriteRecord[] };
 
@@ -43,9 +46,9 @@ export function composeIllustration(input: ConfigInput = {}): Illustration {
     { name: "cielo", shapes: [...paintSun(p, architecture.sky, width, height), ...paintStars(p, architecture.sky, width, height, rng)] },
     { name: "horizonte", shapes: [rect(0, view.hy, width, 2, solid(p.pal.ink))] },
     { name: "piso", shapes: paintFloor(p, architecture.floor) },
-    { name: "alas", shapes: architecture.wings.flatMap((w) => paintColonnade(p, w)) },
-    { name: "plataforma", shapes: paintPlatform(p, architecture.platform) },
-    { name: "templo", shapes: paintColonnade(p, architecture.main) },
+    { name: "alas", shapes: tagRoot(architecture.wings.flatMap((w) => paintColonnade(p, w)), TEMPLE) },
+    { name: "plataforma", shapes: tagRoot(paintPlatform(p, architecture.platform), TEMPLE) },
+    { name: "templo", shapes: tagRoot(paintColonnade(p, architecture.main), TEMPLE) },
     { name: "marco", shapes: paintFrame(p, width, height) },
   ];
   const layers: DisplayList = stages.flatMap((stage) => stage.shapes);

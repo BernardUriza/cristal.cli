@@ -1,4 +1,6 @@
-import type { DisplayList } from "../../domain/shapes.ts";
+import type { SemanticKind } from "../../domain/semantic.ts";
+import type { DisplayList, Vec2 } from "../../domain/shapes.ts";
+import type { ShapeDescriptor } from "./descriptor.ts";
 
 export type DetailBand = 0 | 1 | 2 | 3;
 
@@ -17,13 +19,17 @@ export type RewriteEntry = {
   rewrites?: readonly RewriteEntry[];
 };
 
+export type SilhouetteUnit = { id: string; semanticRoot: string; kind: SemanticKind; contour: Vec2[]; visibleRatio: number; areaPx: number; descriptor: ShapeDescriptor };
+
+export type SilhouetteReport = { units: number; eligibleUnits: number; distinctClusters: number; effectiveDiversity: number; visibleAreaCoverage: number; monolithic: boolean };
+
 export type BandCoverage = { band: DetailBand; areaPct: number };
 
 export type ComplexityReport = {
   topology: { signature: string; localSignatures: number } | null;
   semanticDepth: number;
   multiscale: { bands: BandCoverage[]; bandsAboveThreshold: number };
-  silhouettes: { candidates: number; families: number };
+  silhouettes: { buildings: SilhouetteReport; creatures: SilhouetteReport };
   occlusionViolations: number | null;
 };
 

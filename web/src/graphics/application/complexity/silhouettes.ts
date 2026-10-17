@@ -1,98 +1,83 @@
-import type { DisplayList, Vec2 } from "../../domain/shapes.ts";
 import type { ComplexityTuning } from "../../config/complexity.ts";
-import { flattenLeaves, polygonArea } from "./leaves.ts";
+import type { SemanticKind } from "../../domain/semantic.ts";
+import type { DisplayList, Style } from "../../domain/shapes.ts";
+import { completeLinkage, effectiveDiversity } from "./cluster.ts";
+import { describe, descriptorDistance, envelope, type ShapeDescriptor } from "./descriptor.ts";
+import { flattenLeaves, type Leaf } from "./leaves.ts";
+import { measureMasks, type MaskShape } from "./masks.ts";
+import { fillPolygon, makeGrid } from "./raster.ts";
+import type { SilhouetteReport, SilhouetteUnit } from "./types.ts";
 
-function centroid(points: readonly Vec2[]): Vec2 {
-  let sx = 0, sy = 0;
-  for (const [x, y] of points) { sx += x; sy += y; }
-  return [sx / points.length, sy / points.length];
+const opaque = (s: Style) => s.fill !== undefined && s.fill !== "none" && s.opacity !== 0;
+
+type Painted = { roots: { id: string; root: string; kind: SemanticKind }[]; owner: Int32Array; projectedPx: number[]; cellPx: number; cols: number; rows: number };
+
+/** Paints every filled piece of a building or creature in list order into one owner grid: the last to cover a cell owns it, as on screen. */
+function paint(list: DisplayList, width: number, height: number, tuning: ComplexityTuning): Painted {
+  const grid = makeGrid(width, height, tuning.silhouetteCellPx);
+  const leaves = flattenLeaves(list, tuning.circleSegments).filter((l) => l.root && l.closed && l.points.length >= 3 && opaque(l.style));
+  const index = new Map<string, number>();
+  const roots: Painted["roots"] = [];
+  const own: Leaf[][] = [];
+  const unitOf = leaves.map((l) => {
+    const id = `${l.root!.kind}:${l.root!.root}`;
+    if (!index.has(id)) { index.set(id, roots.length); roots.push({ id, ...l.root! }); own.push([]); }
+    const u = index.get(id)!;
+    own[u].push(l);
+    return u;
+  });
+  const owner = new Int32Array(grid.cols * grid.rows).fill(-1);
+  leaves.forEach((l, i) => fillPolygon(l.points, grid, (c) => { owner[c] = unitOf[i]; }));
+  const stamp = new Int32Array(owner.length).fill(-1);
+  const area = tuning.silhouetteCellPx ** 2;
+  const projectedPx = own.map((ls, u) => {
+    let n = 0;
+    for (const l of ls) fillPolygon(l.points, grid, (c) => { if (stamp[c] !== u) { stamp[c] = u; n++; } });
+    return n * area;
+  });
+  return { roots, owner, projectedPx, cellPx: grid.cell, cols: grid.cols, rows: grid.rows };
 }
 
-function rayReach(points: readonly Vec2[], c: Vec2, angle: number): number {
-  const dx = Math.cos(angle), dy = Math.sin(angle);
-  let best = 0;
-  for (let i = 0; i < points.length; i++) {
-    const [ax, ay] = points[i];
-    const [bx, by] = points[(i + 1) % points.length];
-    const ex = bx - ax, ey = by - ay;
-    const den = dx * ey - dy * ex;
-    if (Math.abs(den) < 1e-12) continue;
-    const qx = ax - c[0], qy = ay - c[1];
-    const t = (qx * ey - qy * ex) / den;
-    const u = (qx * dy - qy * dx) / den;
-    if (t > 0 && u >= 0 && u <= 1) best = Math.max(best, t);
-  }
-  return best;
+const gridOf = (p: Painted) => ({ cols: p.cols, rows: p.rows, cell: p.cellPx });
+
+/** One unit per semantic root (building or creature), measured on what stays visible after everything painted later. */
+export function silhouetteUnits(list: DisplayList, width: number, height: number, tuning: ComplexityTuning): SilhouetteUnit[] {
+  const p = paint(list, width, height, tuning);
+  const masks = measureMasks(p.owner, gridOf(p), p.roots.length, (u) => u, tuning.silhouetteBins);
+  return p.roots.map((r, u) => ({
+    id: r.id,
+    semanticRoot: r.root,
+    kind: r.kind,
+    contour: envelope(masks[u]),
+    visibleRatio: p.projectedPx[u] > 0 ? masks[u].areaPx / p.projectedPx[u] : 0,
+    areaPx: masks[u].areaPx,
+    descriptor: describe(masks[u], tuning.silhouetteHarmonics),
+  }));
 }
 
-export function silhouetteDescriptor(points: readonly Vec2[], rays: number): number[] {
-  const c = centroid(points);
-  const radii = Array.from({ length: rays }, (_, i) => rayReach(points, c, (i / rays) * Math.PI * 2));
-  const max = Math.max(...radii);
-  return max > 0 ? radii.map((r) => r / max) : radii;
+/** The visible union of every unit of one kind: the composition's silhouette, to compare works with each other. */
+export function compositionSilhouette(list: DisplayList, width: number, height: number, kind: SemanticKind, tuning: ComplexityTuning): ShapeDescriptor | null {
+  const p = paint(list, width, height, tuning);
+  const [mask]: MaskShape[] = measureMasks(p.owner, gridOf(p), 1, (u) => (p.roots[u].kind === kind ? 0 : -1), tuning.silhouetteBins);
+  return mask.areaPx > 0 ? describe(mask, tuning.silhouetteHarmonics) : null;
 }
 
-export function silhouetteDistance(a: readonly number[], b: readonly number[]): number {
-  let best = Infinity;
-  for (let shift = 0; shift < a.length; shift++) {
-    let sum = 0;
-    for (let i = 0; i < a.length; i++) sum += Math.abs(a[i] - b[(i + shift) % b.length]);
-    best = Math.min(best, sum / a.length);
-  }
-  return best;
+export const isEligible = (u: SilhouetteUnit, tuning: ComplexityTuning) => u.visibleRatio >= tuning.silhouetteMinVisibleRatio && u.areaPx >= tuning.silhouetteMinAreaPx;
+
+export function clusterShapes(descriptors: readonly ShapeDescriptor[], tuning: ComplexityTuning): number[] {
+  return completeLinkage(descriptors.length, (i, j) => descriptorDistance(descriptors[i], descriptors[j], tuning.silhouetteWeights), tuning.silhouetteClusterDistance);
 }
 
-export function silhouetteFamilies(descriptors: readonly number[][], threshold: number): number[][] {
-  const families: number[][] = [];
-  for (const d of descriptors) if (!families.some((f) => silhouetteDistance(f, d) < threshold)) families.push(d);
-  return families;
-}
-
-function cross(o: Vec2, a: Vec2, b: Vec2): number {
-  return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
-}
-
-export function convexHull(points: readonly Vec2[]): Vec2[] {
-  const sorted = [...points].sort((a, b) => a[0] - b[0] || a[1] - b[1]);
-  const half = (pts: Vec2[]) => pts.reduce<Vec2[]>((h, p) => {
-    while (h.length >= 2 && cross(h[h.length - 2], h[h.length - 1], p) <= 0) h.pop();
-    h.push(p);
-    return h;
-  }, []);
-  const lower = half(sorted);
-  const upper = half([...sorted].reverse());
-  return [...lower.slice(0, -1), ...upper.slice(0, -1)];
-}
-
-type Box = { x0: number; y0: number; x1: number; y1: number };
-
-function boxOf(points: readonly Vec2[]): Box {
-  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
-  for (const [x, y] of points) { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); }
-  return { x0, y0, x1, y1 };
-}
-
-const touches = (a: Box, b: Box) => a.x0 <= b.x1 && b.x0 <= a.x1 && a.y0 <= b.y1 && b.y0 <= a.y1;
-
-/** Pieces that touch form one mass (a building's faces, a creature's parts); each mass contributes one silhouette. */
-function outlines(list: DisplayList, segments: number, maxArea: number): Vec2[][] {
-  const pieces = flattenLeaves(list, segments).filter((l) => l.closed && l.points.length >= 3 && polygonArea(l.points) <= maxArea);
-  const boxes = pieces.map((l) => boxOf(l.points));
-  const parent = pieces.map((_, i) => i);
-  const find = (i: number): number => (parent[i] === i ? i : (parent[i] = find(parent[i])));
-  for (let i = 0; i < pieces.length; i++) for (let j = i + 1; j < pieces.length; j++) if (touches(boxes[i], boxes[j])) parent[find(i)] = find(j);
-  const masses = new Map<number, Vec2[]>();
-  pieces.forEach((l, i) => { const r = find(i); masses.set(r, [...(masses.get(r) ?? []), ...l.points]); });
-  return [...masses.values()].map(convexHull);
-}
-
-export function silhouetteDescriptors(list: DisplayList, canvasArea: number, tuning: ComplexityTuning): number[][] {
-  const isCandidate = (pts: Vec2[]) => pts.length >= 3 && polygonArea(pts) >= tuning.silhouetteMinAreaPx && polygonArea(pts) <= canvasArea * tuning.backgroundAreaRatio;
-  const shapes = outlines(list, tuning.circleSegments, canvasArea * tuning.backgroundAreaRatio).filter(isCandidate);
-  return shapes.map((points) => silhouetteDescriptor(points, tuning.silhouetteRays));
-}
-
-export function silhouetteDiversity(list: DisplayList, canvasArea: number, tuning: ComplexityTuning): { candidates: number; families: number } {
-  const descriptors = silhouetteDescriptors(list, canvasArea, tuning);
-  return { candidates: descriptors.length, families: silhouetteFamilies(descriptors, tuning.silhouetteThreshold).length };
+export function silhouetteReport(units: readonly SilhouetteUnit[], kind: SemanticKind, canvasArea: number, tuning: ComplexityTuning): SilhouetteReport {
+  const own = units.filter((u) => u.kind === kind);
+  const eligible = own.filter((u) => isEligible(u, tuning));
+  const labels = clusterShapes(eligible.map((u) => u.descriptor), tuning);
+  return {
+    units: own.length,
+    eligibleUnits: eligible.length,
+    distinctClusters: new Set(labels).size,
+    effectiveDiversity: effectiveDiversity(labels),
+    visibleAreaCoverage: eligible.reduce((s, u) => s + u.areaPx, 0) / canvasArea,
+    monolithic: kind === "building" && own.length === 1,
+  };
 }

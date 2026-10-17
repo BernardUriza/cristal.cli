@@ -6,6 +6,7 @@ import { indexBelow, mulberry32 } from "../../../shared/rng.ts";
 import type { Provenance } from "../compose.ts";
 import type { MiniComposer } from "../../domain/rewrite/portal.ts";
 import type { RewriteRecord } from "../../domain/rewrite/rewrite.ts";
+import { tagRoot } from "../../domain/semantic.ts";
 import type { SceneItem } from "./escena.ts";
 import { habitar } from "./habitar.ts";
 import { creatureHeightM, spotsFor, type Site, type Spot } from "./lugares.ts";
@@ -36,7 +37,7 @@ export function poblado(c: Site, scene: Scene, pal: Palette, detail: MotifParams
     records.push(...lived.records);
     const box = { min: [spot.at[0] - THICK, spot.at[1], spot.at[2] - THICK] as const, max: [spot.at[0] + THICK, spot.at[1] + hM, spot.at[2] + THICK] as const };
     const screen = { minX: foot[0] - heightPx * 0.62, maxX: foot[0] + heightPx * 0.62, minY: foot[1] - heightPx * 1.02, maxY: foot[1] + 2 };
-    items.push({ id, kind: "figure", box, screen, depth: c.projector.toNdc(spot.at)[2], shapes: lived.shapes });
+    items.push({ id, kind: "figure", box, screen, depth: c.projector.toNdc(spot.at)[2], shapes: tagRoot(lived.shapes, { root: id, kind: "creature" }) });
   });
   const summary = scene.groups.map((g) => `${g.count} ${g.creature.name} (${Object.entries(g.creature.parts).map(([k, v]) => `${k}=${v}`).join(" ")}) en ${g.arrangement} · ${g.place}`);
   return {
