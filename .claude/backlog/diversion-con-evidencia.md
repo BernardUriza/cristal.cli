@@ -1,6 +1,6 @@
 # Diversión con evidencia: la consola nunca rechaza, nunca repite, siempre mueve
 
-Status: In progress (puntos 1–5 Done 2026-10-17; punto 6 autorizado, en curso)
+Status: In progress (puntos 1–6 Done 2026-10-17; 5 y 6 pendientes de verificar en prod)
 Proposed: 2026-10-17 by Bernard ("cómo hacer el juego más divertido"; /histerical-search, 6 investigadores, ~40 fuentes)
 
 **Qué es.** Veredicto completo con fuentes: `entregables/como-hacer-el-juego-mas-divertido-2026-10-17.html`.
@@ -101,5 +101,12 @@ parpadeo de luces a 2.5 Hz (`flashSafety.ts`): la luz del cuarto IA oscilaba a 5
 presión, fuera de WCAG 2.3.1, para todos los jugadores. Verificado en dev: clase `viaje`, salida, HUD oculto,
 deriva de spawn a ALPHA a los 6 s. Lo que sigue siendo del tester: legibilidad del texto en el viaje (preguntar).
 
-**Next.** Punto 6 (relación: la frase archivada viaja anónima y deformada a cristal-api; autorizado por Bernard 2026-10-17);
+**Hecho, punto 6 (2026-10-17, `8c63e3c` + web).** Bernard autorizó el eco anónimo y deformado. `server/echo.py`:
+`POST /echo` guarda la frase (≤64 chars, sin sesión ni IP) en `echo.jsonl` del share montado; `GET /echo?exclude=`
+devuelve una ajena al azar entre las últimas 400. Cliente: al archivarse la confesión se manda y se pide una ajena
+(`echoClient.ts`, también al cargar); la hambre escribe primero la frase ajena deformada con acento violeta (fuente
+`echo`) y después las propias. Sin moderación automática, como se dijo al autorizar: el deformado atempera, no filtra.
+
+**Next.** Verificar 5 y 6 en prod tras el deploy; después el item queda Done salvo lo que es del tester (legibilidad
+del texto en el viaje) y de Bernard (DM a `me.tikkum`).
 y el DM a `me.tikkum` sigue pendiente de Bernard (borrador en `Donde_quedamos.md`).
