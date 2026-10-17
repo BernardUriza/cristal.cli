@@ -13,7 +13,7 @@ describe("Pedro's program", () => {
 
   it("discards the whole program on any grammar error, never guesses a fix", () => {
     expect(parseProgram({ ...palace, archetype: "castle" }, 1)).toBeNull();
-    expect(parseProgram({ archetype: "palace", rules: [{ rule: "R9", target: "root", params: {} }] }, 1)).toBeNull();
+    expect(parseProgram({ archetype: "palace", rules: [{ rule: "R99", target: "root", params: {} }] }, 1)).toBeNull();
     expect(parseProgram({ archetype: "palace", rules: [{ rule: "R4", target: "root", params: {} }] }, 1)).toBeNull();
     expect(parseProgram({ archetype: "palace", rules: [{ rule: "R6", target: "hall-7", params: {} }] }, 1)).toBeNull();
     expect(parseProgram({ archetype: "palace", rules: [{ rule: "R2", target: "root", params: { chambers: 40 } }] }, 1)).toBeNull();

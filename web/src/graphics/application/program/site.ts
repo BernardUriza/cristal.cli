@@ -49,7 +49,7 @@ function flightOf(s: ProgramScene, stair: PlacedSpace): Flight | undefined {
 /** Where the program lets creatures stand, sized against half the whole precinct so a giant reads as a building: the nearest of the big empty courtyards (or the free strip of a courtyard that holds a precinct, toward the camera; else the hall, or the precinct), tower spires, flat roofs, stair flights, and the sky over the whole. */
 export function siteOfProgram(s: ProgramScene): Site {
   const root = s.layout.spaces.find((p) => !p.node.parent)!;
-  const ground = largest(s, "courtyard", true) ?? largest(s, "courtyard") ?? largest(s, "hall") ?? root;
+  const ground = largest(s, "courtyard", true) ?? largest(s, "courtyard") ?? largest(s, "plaza") ?? largest(s, "hall") ?? root;
   const floorY = ground.node.kind === "hall" ? ground.y0 : ground.y1;
   const of = (kinds: SpaceKind[], lift: number): Footing[] => s.layout.spaces.filter((p) => kinds.includes(p.node.kind)).map((p) => ({ rect: p.rect, y: p.y1 + lift }));
   const top = Math.max(...s.solids.flatMap((x) => x.faces.flatMap((f) => f.points.map((p) => p[1]))));

@@ -1,6 +1,23 @@
 import { ruleById } from "./rules.ts";
 import { ARCHETYPES, GrammarError, type ArchitectureProgram, type GrammarRule, type RuleCall, type SpaceEdge, type SpaceGraph, type SpaceNode } from "./types.ts";
 
+const GOAL_KEYS = ["minBranchNodes", "minCycles", "minIndependentBuildings", "minElevationLevels"];
+
+const MIN_JUNCTION_ANGLE = 45;
+
+function validateJunctions(graph: Pick<SpaceGraph, "nodes" | "edges">): void {
+  const byId = new Map(graph.nodes.map((n) => [n.id, n]));
+  for (const j of graph.nodes.filter((n) => n.kind === "junction")) {
+    const arms = graph.edges.filter((e) => e.relation === "connects" && e.to === j.id).map((e) => byId.get(e.from)!).filter((n) => n.heading !== undefined);
+    const degree = graph.edges.filter((e) => e.relation === "connects" && (e.from === j.id || e.to === j.id)).length;
+    if (degree < 3) throw new GrammarError("bad-junction", `${j.id} has degree ${degree} (min 3)`);
+    for (let i = 1; i < arms.length; i++) {
+      const gap = Math.abs(arms[i].heading! - arms[i - 1].heading!) % 360;
+      if (Math.min(gap, 360 - gap) < MIN_JUNCTION_ANGLE) throw new GrammarError("bad-junction", `${arms[i - 1].id}∠${arms[i].id} < ${MIN_JUNCTION_ANGLE}°`);
+    }
+  }
+}
+
 export function validateParams(rule: GrammarRule, params: RuleCall["params"]): void {
   for (const [key, value] of Object.entries(params)) {
     const range = rule.params[key];
@@ -18,6 +35,9 @@ export function validateProgram(program: ArchitectureProgram): void {
     if (!rule) throw new GrammarError("unknown-rule", call.rule);
     validateParams(rule, call.params);
   }
+  for (const [key, value] of Object.entries(program.goal ?? {})) {
+    if (!GOAL_KEYS.includes(key) || !Number.isInteger(value) || value < 0) throw new GrammarError("bad-param", `goal.${key}=${String(value)}`);
+  }
 }
 
 export function validateCall(nodes: readonly SpaceNode[], call: RuleCall): { rule: GrammarRule; target: SpaceNode } {
@@ -25,7 +45,7 @@ export function validateCall(nodes: readonly SpaceNode[], call: RuleCall): { rul
   if (!rule) throw new GrammarError("unknown-rule", call.rule);
   const target = nodes.find((n) => n.id === call.target);
   if (!target) throw new GrammarError("unknown-target", `${call.rule} → ${call.target}`);
-  if (target.kind !== rule.accepts) throw new GrammarError("incompatible-target", `${rule.id} accepts ${rule.accepts}, ${target.id} is ${target.kind}`);
+  if (!rule.accepts.includes(target.kind)) throw new GrammarError("incompatible-target", `${rule.id} accepts ${rule.accepts.join("|")}, ${target.id} is ${target.kind}`);
   if (target.depth >= rule.maxDepth) throw new GrammarError("depth-exceeded", `${rule.id} on ${target.id} at depth ${target.depth} (max ${rule.maxDepth})`);
   validateParams(rule, call.params);
   return { rule, target };
@@ -57,4 +77,5 @@ export function validateGraph(graph: Pick<SpaceGraph, "nodes" | "edges">): void 
     state.set(id, 2);
   };
   for (const id of ids) visit(id, []);
+  validateJunctions(graph);
 }

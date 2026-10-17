@@ -1,6 +1,8 @@
+import { expandProgram } from "../graphics/domain/grammar/expand.ts";
 import { ruleById } from "../graphics/domain/grammar/rules.ts";
-import type { Archetype, ArchitectureProgram, RuleCall } from "../graphics/domain/grammar/types.ts";
-import { ARCHETYPE_RULES, BIG, DEFAULT_ARCHETYPE, DEFAULT_ARCHETYPE_BECAUSE, DEFAULT_BRIDGES, MAX_BRIDGES, SEQUENCES, SMALL, TOWER_NOUNS, type Step } from "./programRules.ts";
+import { GrammarError, type Archetype, type ArchitectureProgram, type RuleCall } from "../graphics/domain/grammar/types.ts";
+import { ARCHETYPE_RULES, BIG, DEFAULT_ARCHETYPE, DEFAULT_ARCHETYPE_BECAUSE, DEFAULT_BRIDGES, MAX_BRIDGES, SEQUENCES, SMALL, TOWER_NOUNS, VARIANTS, type Step, type Variant } from "./programRules.ts";
+import { chooseVariant } from "./programVariant.ts";
 import { NUMBER_WORDS } from "./sceneRules.ts";
 
 export type ProgramReading = { program: ArchitectureProgram; because: string[]; matched: boolean };
@@ -40,6 +42,7 @@ function paramsOf(step: Step, narration: string, because: string[]): RuleCall["p
     const big = BIG.exec(narration);
     const small = SMALL.exec(narration);
     if (n !== null) params[source.key] = clamp(n, range.min, range.max);
+    else if (source.countOnly) continue;
     else if (big) params[source.key] = range.max;
     else if (small) params[source.key] = range.min;
     else continue;
@@ -48,16 +51,35 @@ function paramsOf(step: Step, narration: string, because: string[]): RuleCall["p
   return params;
 }
 
+function stepsOf(variant: Variant | undefined, archetype: Archetype, narration: string, because: string[]): Step[] {
+  const steps = [...(variant?.steps ?? SEQUENCES[archetype])];
+  if (!variant?.bridges) return steps;
+  const towers = countOf(narration, TOWER_NOUNS);
+  const bridges = towers === null ? DEFAULT_BRIDGES : clamp(towers - 1, 1, MAX_BRIDGES);
+  while (steps.length < 1 + bridges) steps.push(steps[1]);
+  because.push(`${bridges} puentes R4 desde la avenida${towers === null ? "" : ` (contaste ${towers} torres)`}`);
+  return steps;
+}
+
+function programOf(variant: Variant | undefined, archetype: Archetype, narration: string, seed: number, because: string[]): ArchitectureProgram {
+  const rules = stepsOf(variant, archetype, narration, because).map((step) => ({ rule: step.rule, target: step.target, params: paramsOf(step, narration, because) }));
+  return { seed, archetype, rules };
+}
+
+/** The archetype's variant under words and seed; if its topology goal fails on the final graph, the first (classic) variant, said out loud. */
 export function readProgram(narration: string, seed: number): ProgramReading {
   const kind = archetypeOf(narration);
   const because = [kind.because];
-  const steps = [...SEQUENCES[kind.archetype]];
-  if (kind.archetype === "city") {
-    const towers = countOf(narration, TOWER_NOUNS);
-    const bridges = towers === null ? DEFAULT_BRIDGES : clamp(towers - 1, 1, MAX_BRIDGES);
-    while (steps.length < 1 + bridges) steps.push(steps[1]);
-    because.push(`${bridges} puentes R4 desde la avenida${towers === null ? "" : ` (contaste ${towers} torres)`}`);
+  const variants = VARIANTS[kind.archetype];
+  const choice = variants ? chooseVariant(variants, narration, seed) : undefined;
+  if (choice) because.push(choice.because);
+  const program = programOf(choice?.variant, kind.archetype, narration, seed, because);
+  try {
+    expandProgram(program);
+    return { program, because, matched: kind.matched };
+  } catch (err) {
+    if (!(err instanceof GrammarError) || err.code !== "topology-goal" || !variants) throw err;
+    because.push(`fallback: ${choice!.variant.id} no cumplió su meta topológica sobre el grafo final (${err.message}); dibujé ${variants[0].id}`);
+    return { program: programOf(variants[0], kind.archetype, narration, seed, because), because, matched: kind.matched };
   }
-  const rules = steps.map((step) => ({ rule: step.rule, target: step.target, params: paramsOf(step, narration, because) }));
-  return { program: { seed, archetype: kind.archetype, rules }, because, matched: kind.matched };
 }

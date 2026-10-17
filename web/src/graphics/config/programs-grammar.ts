@@ -1,6 +1,8 @@
 import type { ArchitectureProgram } from "../domain/grammar/types.ts";
 
-export type GrammarProgramName = "palacio-secreto" | "ciudad-torres" | "templo-patios" | "laberinto-salones";
+export type GrammarProgramName =
+  | "palacio-secreto" | "ciudad-torres" | "templo-patios" | "laberinto-salones"
+  | "templo-radial" | "templo-terrazas" | "ciudad-manzanas" | "ciudad-ramal";
 
 export type GrammarProgramEntry = { narration: string; program: ArchitectureProgram };
 
@@ -50,6 +52,30 @@ export const GRAMMAR_PROGRAMS: Record<GrammarProgramName, GrammarProgramEntry> =
         { rule: "R2", target: "root", params: { chambers: 6 } },
         { rule: "R6", target: "hall-1", params: {} },
         { rule: "R6", target: "hall-1", params: {} },
+      ],
+    },
+  },
+  "templo-radial": {
+    narration: "santuario rodeado de capillas",
+    program: { seed: 43, archetype: "temple", rules: [{ rule: "R7", target: "root", params: { shrines: 5 } }] },
+  },
+  "templo-terrazas": {
+    narration: "templo en terrazas con escalinatas",
+    program: { seed: 47, archetype: "temple", rules: [{ rule: "R8", target: "root", params: {} }] },
+  },
+  "ciudad-manzanas": {
+    narration: "ciudad de manzanas alrededor de una plaza",
+    program: { seed: 53, archetype: "city", rules: [{ rule: "R9", target: "root", params: { blocks: 4 } }] },
+  },
+  "ciudad-ramal": {
+    narration: "ciudad de calles que se ramifican",
+    program: {
+      seed: 59,
+      archetype: "city",
+      rules: [
+        { rule: "R10", target: "gallery-1", params: {} },
+        { rule: "R10", target: "street-1", params: {} },
+        { rule: "R3", target: "root", params: {} },
       ],
     },
   },

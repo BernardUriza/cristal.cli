@@ -1,8 +1,16 @@
 import type { Rng } from "../../../shared/rng.ts";
 
-export type SpaceKind = "complex" | "courtyard" | "hall" | "gallery" | "tower" | "stair" | "chamber" | "bridge";
+export type SpaceKind =
+  | "complex" | "courtyard" | "hall" | "gallery" | "tower" | "stair" | "chamber" | "bridge"
+  | "sanctuary" | "shrine" | "ring-gallery" | "platform"
+  | "plaza" | "block" | "building" | "street" | "junction" | "street-ring";
 
-export const SPACE_KINDS: readonly SpaceKind[] = ["complex", "courtyard", "hall", "gallery", "tower", "stair", "chamber", "bridge"];
+export const SPACE_KINDS: readonly SpaceKind[] = [
+  "complex", "courtyard", "hall", "gallery", "tower", "stair", "chamber", "bridge",
+  "sanctuary", "shrine", "ring-gallery", "platform", "plaza", "block", "building", "street", "junction", "street-ring",
+];
+
+export type Heading = 0 | 90 | 180 | 270;
 
 export type Relation = "connects" | "contains" | "above" | "faces" | "bridges";
 
@@ -20,13 +28,22 @@ export type SpaceNode = {
   footprint: [number, number];
   style: string;
   depth: number;
+  height?: number;
+  heading?: Heading;
 };
 
 export type SpaceEdge = { from: string; to: string; relation: Relation };
 
 export type RuleCall = { rule: string; target: string; params: Record<string, number | string> };
 
-export type ArchitectureProgram = { seed: number; archetype: Archetype; rules: RuleCall[] };
+export type TopologyGoal = {
+  minBranchNodes?: number;
+  minCycles?: number;
+  minIndependentBuildings?: number;
+  minElevationLevels?: number;
+};
+
+export type ArchitectureProgram = { seed: number; archetype: Archetype; rules: RuleCall[]; goal?: TopologyGoal };
 
 export type Expansion = { nodes: SpaceNode[]; edges: SpaceEdge[] };
 
@@ -39,8 +56,9 @@ export type GrammarContext = {
 
 export type GrammarRule = {
   id: string;
-  accepts: SpaceKind;
+  accepts: readonly SpaceKind[];
   weight: number;
+  goal?: TopologyGoal;
   maxDepth: number;
   params: Record<string, { min: number; max: number }>;
   expand: (target: SpaceNode, ctx: GrammarContext) => Expansion;
@@ -48,7 +66,9 @@ export type GrammarRule = {
 
 export type AppliedRule = { rule: string; target: string; origin: "program" | "completion"; added: string[] };
 
-export type SpaceGraph = { archetype: Archetype; nodes: SpaceNode[]; edges: SpaceEdge[]; applied: AppliedRule[]; fallbacks: string[] };
+export type TopologyMeasure = { branchNodes: number; cycles: number; independentBuildings: number; elevationLevels: number };
+
+export type SpaceGraph = { archetype: Archetype; nodes: SpaceNode[]; edges: SpaceEdge[]; applied: AppliedRule[]; fallbacks: string[]; goal?: TopologyGoal; topology?: TopologyMeasure };
 
 export type GrammarErrorCode =
   | "unknown-archetype"
@@ -59,7 +79,9 @@ export type GrammarErrorCode =
   | "depth-exceeded"
   | "budget-exceeded"
   | "dangling-edge"
-  | "containment-cycle";
+  | "containment-cycle"
+  | "bad-junction"
+  | "topology-goal";
 
 export class GrammarError extends Error {
   readonly code: GrammarErrorCode;

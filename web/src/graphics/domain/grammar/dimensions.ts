@@ -11,7 +11,29 @@ export const KIND_DIMENSIONS: Record<SpaceKind, KindDimensions> = {
   stair: { height: 6, slab: 0.3 },
   chamber: { height: 4.2, slab: 0.35 },
   bridge: { height: 8, slab: 0.5 },
+  sanctuary: { height: 11, slab: 0.5 },
+  shrine: { height: 5.5, slab: 0.35 },
+  "ring-gallery": { height: 0.3, slab: 0.3 },
+  platform: { height: 2.4, slab: 2.4 },
+  plaza: { height: 0.15, slab: 0.15 },
+  block: { height: 0.35, slab: 0.35 },
+  building: { height: 9, slab: 0.4 },
+  street: { height: 0.12, slab: 0.12 },
+  junction: { height: 0.12, slab: 0.12 },
+  "street-ring": { height: 0.12, slab: 0.12 },
 };
+
+export const CONTAINER_MARGIN: Partial<Record<SpaceKind, number>> = {
+  courtyard: 2.5,
+  "ring-gallery": 5,
+  "street-ring": 4,
+  platform: 3,
+  block: 1,
+};
+
+export const GAP_INSIDE: Partial<Record<SpaceKind, number>> = { block: 1.5 };
+
+export const ARCADE = { height: 3.8, slab: 0.4 } as const;
 
 export const OPEN_GROUND_STYLES: readonly string[] = ["city"];
 
@@ -19,7 +41,6 @@ export const STREET_BY_STYLE: Partial<Record<string, number>> = { city: 9 };
 
 export const LAYOUT_RULES = {
   precinctMargin: 2,
-  courtyardMargin: 2.5,
   minShared: 2,
   street: 3,
   slideStep: 1,
@@ -27,4 +48,6 @@ export const LAYOUT_RULES = {
   pillarSpacing: 2.6,
   pillar: 0.55,
   riser: 0.3,
+  kerb: 0.25,
+  obelisk: 0.9,
 } as const;

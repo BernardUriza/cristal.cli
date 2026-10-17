@@ -24,7 +24,7 @@ describe("grammar validator", () => {
 
   it.each<[string, ArchitectureProgram, GrammarErrorCode]>([
     ["unknown archetype", { ...base, archetype: "castle" as ArchitectureProgram["archetype"] }, "unknown-archetype"],
-    ["unknown rule", { ...base, rules: [{ rule: "R9", target: "root", params: {} }] }, "unknown-rule"],
+    ["unknown rule", { ...base, rules: [{ rule: "R99", target: "root", params: {} }] }, "unknown-rule"],
     ["missing target id", { ...base, rules: [{ rule: "R2", target: "hall-7", params: {} }] }, "unknown-target"],
     ["rule incompatible with target", { ...base, rules: [{ rule: "R4", target: "root", params: {} }] }, "incompatible-target"],
     ["param out of range", { ...base, rules: [{ rule: "R2", target: "root", params: { chambers: 9 } }] }, "bad-param"],

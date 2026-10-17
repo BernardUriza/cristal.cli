@@ -19,8 +19,8 @@ export function axiom(archetype: Archetype): { nodes: SpaceNode[]; edges: SpaceE
 }
 
 export const COMPLETION_BIAS: Record<Archetype, Record<string, number>> = {
-  palace: { R1: 0.5, R2: 2, R3: 0.5 },
-  city: { R1: 0.3, R2: 0.5, R3: 3 },
-  temple: { R1: 3, R2: 0.5, R3: 0.3 },
-  labyrinth: { R1: 0.5, R2: 3, R3: 0.3 },
+  palace: { R1: 0.5, R2: 2, R3: 0.5, R7: 0, R8: 0, R9: 0 },
+  city: { R1: 0.3, R2: 0.5, R3: 3, R7: 0, R8: 0, R9: 0 },
+  temple: { R1: 3, R2: 0.5, R3: 0.3, R7: 0, R8: 0, R9: 0 },
+  labyrinth: { R1: 0.5, R2: 3, R3: 0.3, R7: 0, R8: 0, R9: 0 },
 };
