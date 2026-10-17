@@ -65,6 +65,7 @@ export class ResponseEngine {
       applyGlitch: true,
       responseSet: "emotional_psych",
       psychTone: reply.tone,
+      psychStance: reply.stance,
     };
     this.applyStateModifiers(response);
     return response;

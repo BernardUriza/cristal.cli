@@ -73,4 +73,31 @@ describe("TerminalCore psychological pressure integration", () => {
     expect(relieved.pressure).toBeLessThan(secondDeflection.pressure);
     expect(useGame.getState().psychologicalStance).toBe("confession");
   });
+
+  it("replays me.tikkum's console (2026-10-16) and never goes mute on bodily answers", () => {
+    const transcript = [
+      "me siento cansado y confundido",
+      "VISION",
+      "LUNA",
+      "es fría",
+      "tiene frío",
+      "sufre por el frío",
+      "incomodidad",
+    ];
+    for (const line of transcript) {
+      const response = core.processInput(line);
+      const spoken = (response?.lines ?? []).filter((l) => l.trim().length > 0);
+      expect(spoken, line).not.toEqual(["..."]);
+      expect(spoken.join(" "), line).not.toMatch(/Escribe desde el cuerpo|nada que replicar/);
+    }
+  });
+
+  it("does not let unclassified input inherit the previous stance's silence stagnation", () => {
+    core.processInput("soy un arcano roto bajo la luna");
+    for (let i = 0; i < 5; i++) {
+      const response = core.processInput(`zxqv ${i}`);
+      const spoken = (response?.lines ?? []).filter((l) => l.trim().length > 0);
+      expect(spoken, `turn ${i}`).not.toEqual(["..."]);
+    }
+  });
 });

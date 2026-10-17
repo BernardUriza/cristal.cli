@@ -13,6 +13,7 @@ const tracker = new StancePressureTracker();
 function opener(seedLen: number): CristalReply {
   return {
     text: OPENERS[seedLen % OPENERS.length],
+    stance: null,
     tone: "press",
     asksForBody: true,
     forbiddenPhrasePresent: false,

@@ -14,6 +14,7 @@ export interface PressureContext {
 
 export interface CristalReply {
   text: string;
+  stance: Stance | null;
   tone: "mirror" | "interrupt" | "soften" | "press" | "ritual";
   asksForBody: boolean;
   forbiddenPhrasePresent: boolean;
@@ -102,6 +103,7 @@ export function buildResponse(
 
   return {
     text,
+    stance: stance.stance,
     tone,
     asksForBody: ASKS_BODY[stance.stance],
     forbiddenPhrasePresent: FORBIDDEN.test(text),
