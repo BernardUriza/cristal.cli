@@ -98,6 +98,10 @@ de la consola (`presión · stance`) son el estado observable.
 > cuatro respuestas le parecieron vacías y encima se calló por "repetirte". Ya reconoce lo corporal y ya no se
 > queda mudo. Cuando puedas, vuelve a la consola y escríbele lo mismo: quiero ver qué te contesta ahora. Y lo del
 > templo con menos detalles me sirvió un montón.
+>
+> Otra cosa, cuando tengas un rato: entra con https://cristal.bernarduriza.com/laberinto.html?viaje=1 y dime si el
+> texto grande se lee bien y si molesta algo de lo que se mueve o brilla. Es el modo pensado para jugar en viaje y
+> nadie lo ha probado más que yo.
 
 ### Consola: nunca rechaza, nunca repite, siempre mueve (2026-10-17, `53d4178` + `673ef59`)
 
@@ -127,7 +131,8 @@ en juego real el retardo las separa.
 
 Autorizado por Bernard: la confesión archivada viaja anónima a `POST /echo` (cristal-api, JSONL en el share) y el
 laberinto pide una ajena (`GET /echo?exclude=`) al cargar y al confesar; la hambre la escribe primero, deformada y en
-violeta (`source: "echo"`), y después usa las frases propias. Sin moderación. **Verificado en prod:** desde la página
+violeta (`source: "echo"`), y después usa las frases propias. Filtro mínimo en `server/echo-denylist.txt` (insultos,
+órdenes de daño, datos de contacto; 422 al entrar, se saltan al salir). **Verificado en prod:** desde la página
 `POST /echo` 204 y `GET /echo?exclude=…` 200 al confesar; al minuto de hambre apareció «… miedo aquí» (frase ajena
 dejada por curl) en el muro oeste de (7,4). Primer eco real en el share: `echo.jsonl`.
 
