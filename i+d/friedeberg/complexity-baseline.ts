@@ -14,7 +14,7 @@ register(`data:text/javascript,${encodeURIComponent(resolveExtensionless)}`);
 const { direct } = await import("../../web/src/atelier/director.ts");
 const { composeWork } = await import("../../web/src/atelier/work.ts");
 const { workComplexity, workGraph } = await import("../../web/src/atelier/manifest.ts");
-const { ACCEPTANCE, evaluate, silhouetteDescriptors, silhouetteFamilies, topologicalDiversity } = await import("../../web/src/graphics/application/complexity/index.ts");
+const { ACCEPTANCE, clusterShapes, compositionSilhouette, effectiveDiversity, evaluate, isEligible, occlusionBattery, silhouetteUnits, topologicalDiversity } = await import("../../web/src/graphics/application/complexity/index.ts");
 const { COMPLEXITY_TUNING } = await import("../../web/src/graphics/config/complexity.ts");
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -33,13 +33,17 @@ const NARRATIONS = [
 const works = NARRATIONS.flatMap((narration) => SEEDS.map((seed) => {
   const recipe = direct(narration, seed);
   const work = composeWork(recipe, WIDTH, HEIGHT);
-  const silhouettes = silhouetteDescriptors(work.stages.flatMap((s) => s.shapes), WIDTH * HEIGHT, COMPLEXITY_TUNING);
-  return { narration, seed, composition: work.plan.composition, archetype: work.program?.archetype ?? null, graph: workGraph(work), report: workComplexity(work), silhouettes };
+  const list = work.stages.flatMap((s) => s.shapes);
+  const units = silhouetteUnits(list, WIDTH, HEIGHT, COMPLEXITY_TUNING).filter((u) => u.kind === "building" && isEligible(u, COMPLEXITY_TUNING));
+  const composite = compositionSilhouette(list, WIDTH, HEIGHT, "building", COMPLEXITY_TUNING);
+  return { narration, seed, composition: work.plan.composition, archetype: work.program?.archetype ?? null, graph: workGraph(work), report: workComplexity(work), units, composite };
 }));
 
 const graphs = works.flatMap((w) => (w.graph ? [w.graph] : []));
 const topologies = topologicalDiversity(graphs);
-const verdicts = works.map((w) => evaluate(w.report, { topologies }));
+const battery = occlusionBattery();
+const occlusionViolations = battery.reduce((n, r) => n + r.violations, 0);
+const verdicts = works.map((w) => evaluate(w.report, { topologies, occlusionViolations }));
 const median = (xs: number[]) => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)];
 
 const table = verdicts[0].map((row, i) => {
@@ -55,16 +59,27 @@ const table = verdicts[0].map((row, i) => {
   };
 });
 
-const pooledFamilies = silhouetteFamilies(works.flatMap((w) => w.silhouettes), COMPLEXITY_TUNING.silhouetteThreshold).length;
-const byArchetype = Object.fromEntries([...new Set(works.map((w) => w.archetype ?? w.composition))].map((k) => {
-  const own = works.filter((w) => (w.archetype ?? w.composition) === k);
-  return [k, { obras: own.length, topologías: topologicalDiversity(own.flatMap((w) => (w.graph ? [w.graph] : []))), nivelesMax: Math.max(...own.map((w) => w.report.semanticDepth)), siluetasMax: Math.max(...own.map((w) => w.report.silhouettes.families)) }];
+type Run = (typeof works)[number];
+const visualOf = (own: Run[]) => {
+  const composites = own.flatMap((w) => (w.composite ? [w.composite] : []));
+  const labels = clusterShapes(composites, COMPLEXITY_TUNING);
+  const pooled = clusterShapes(own.flatMap((w) => w.units.map((u) => u.descriptor)), COMPLEXITY_TUNING);
+  return { composiciones: new Set(labels).size, dEffComposiciones: Number(effectiveDiversity(labels).toFixed(2)), siluetasEdificioConjunto: new Set(pooled).size };
+};
+const graphsOf = (own: Run[]) => own.flatMap((w) => (w.graph ? [w.graph] : []));
+const keyOf = (w: Run) => w.archetype ?? w.composition;
+const byArchetype = Object.fromEntries([...new Set(works.map(keyOf))].map((k) => {
+  const own = works.filter((w) => keyOf(w) === k);
+  const b = own.map((w) => w.report.silhouettes.buildings);
+  return [k, { obras: own.length, topologías: topologicalDiversity(graphsOf(own)), ...visualOf(own), clústeresMax: Math.max(...b.map((x) => x.distinctClusters)), dEffMax: Number(Math.max(...b.map((x) => x.effectiveDiversity)).toFixed(2)), coberturaMediana: Number(median(b.map((x) => x.visibleAreaCoverage)).toFixed(3)), criaturasDEffMax: Number(Math.max(...own.map((w) => w.report.silhouettes.creatures.effectiveDiversity)).toFixed(2)), nivelesMax: Math.max(...own.map((w) => w.report.semanticDepth)) }];
 }));
+const diversity = { topológica: topologies, visual: visualOf(works) };
 const bandMeans = [0, 1, 2, 3].map((b) => Number((works.reduce((s, w) => s + w.report.multiscale.bands[b].areaPct, 0) / works.length).toFixed(1)));
 const outDir = join(here, "out");
 mkdirSync(outDir, { recursive: true });
-writeFileSync(join(outDir, "complexity-baseline.json"), JSON.stringify({ lienzo: { width: WIDTH, height: HEIGHT }, seeds: SEEDS, narrations: NARRATIONS, acceptance: ACCEPTANCE, topologies, pooledSilhouetteFamilies: pooledFamilies, byArchetype, bandMeansPct: bandMeans, table, works: works.map(({ graph: _g, silhouettes: _s, ...w }) => w) }, null, 2));
+writeFileSync(join(outDir, "complexity-baseline.json"), JSON.stringify({ lienzo: { width: WIDTH, height: HEIGHT }, seeds: SEEDS, narrations: NARRATIONS, acceptance: ACCEPTANCE, diversity, occlusionBattery: battery, byArchetype, bandMeansPct: bandMeans, table, works: works.map(({ graph: _g, units: _u, composite: _c, ...w }) => w) }, null, 2));
 console.table(table);
 console.table(byArchetype);
-console.log(`familias de siluetas sumando las masas de TODAS las obras del conjunto: ${pooledFamilies} (el criterio por obra es la tabla de arriba)`);
+console.table(battery);
+console.log(`diversidad TOPOLÓGICA: ${topologies} grafos distintos; diversidad VISUAL: ${diversity.visual.composiciones} siluetas de composición distintas (D_eff ${diversity.visual.dEffComposiciones}), ${diversity.visual.siluetasEdificioConjunto} clústeres de silueta de edificio en todo el conjunto`);
 console.log(`área media por banda (%): ${bandMeans.join(" / ")}; composiciones: ${[...new Set(works.map((w) => w.composition))].join(", ")}; grafos: ${graphs.length}`);

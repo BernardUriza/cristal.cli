@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { circle, group, line, polygon, rect, solid, stroked, type DisplayList, type Vec2 } from "../../domain/shapes.ts";
+import { line, rect, solid, stroked, type DisplayList } from "../../domain/shapes.ts";
 import { CLOISTER_LAYOUT, CLOISTER_PROGRAM } from "../../config/programs.ts";
 import { buildPlan } from "../../domain/architecture/plan.ts";
 import { COMPLEXITY_TUNING } from "../../config/complexity.ts";
-import { complexityReport, detailBand, evaluate, graphFromPlan, graphSignature, multiscaleCoverage, semanticDepth, silhouetteDiversity, topologicalDiversity, type SpaceGraph } from "./index.ts";
+import { complexityReport, detailBand, evaluate, graphFromPlan, graphSignature, multiscaleCoverage, semanticDepth, topologicalDiversity, type SpaceGraph } from "./index.ts";
 
 const ink = solid("#fff");
 
@@ -51,21 +51,6 @@ describe("topology", () => {
   });
 });
 
-const ngon = (n: number, r: number, cx: number, cy: number, turn: number): Vec2[] =>
-  Array.from({ length: n }, (_, i) => [cx + r * Math.cos(turn + (i / n) * Math.PI * 2), cy + r * Math.sin(turn + (i / n) * Math.PI * 2)] as Vec2);
-
-describe("silhouettes", () => {
-  it("groups a circle with its scaled/rotated copy and keeps a square apart", () => {
-    const list: DisplayList = [
-      circle(100, 100, 40, ink),
-      group([{ translate: [300, 100] }, { rotate: 33 }], [polygon(ngon(48, 90, 0, 0, 0.2), ink)]),
-      rect(400, 300, 80, 80, ink),
-      group([{ translate: [200, 400] }, { rotate: 45 }], [rect(-60, -60, 120, 120, ink)]),
-    ];
-    expect(silhouetteDiversity(list, 1000 * 1000, COMPLEXITY_TUNING)).toEqual({ candidates: 4, families: 2 });
-  });
-});
-
 describe("semantic depth", () => {
   it("reads the longest rewrite chain", () => {
     const entries = [
@@ -85,23 +70,14 @@ describe("evaluate", () => {
   it("reports every criterion against its threshold without summing", () => {
     const report = complexityReport({ list: [rect(0, 0, 50, 50, ink)], width: 200, height: 200 });
     const rows = evaluate(report, { topologies: 1 });
-    expect(rows.map((r) => r.pasa)).toEqual([false, false, false, false, null]);
-    expect(rows[4].valor).toBeNull();
+    expect(rows.map((r) => r.pasa)).toEqual([false, false, false, null, null, null, null, null, null, null]);
+    expect(rows[rows.length - 1].valor).toBeNull();
+    const withBattery = evaluate(report, { topologies: 1, occlusionViolations: 0 });
+    expect(withBattery[withBattery.length - 1].pasa).toBe(true);
   });
 });
 
-describe("masses, not faces", () => {
-  it("touching pieces are one silhouette; separate masses of different shape are two families", async () => {
-    const { silhouetteDiversity } = await import("./silhouettes.ts");
-    const { COMPLEXITY_TUNING } = await import("../../config/complexity.ts");
-    const { polygon, circle, solid } = await import("../../domain/shapes.ts");
-    const face = (x: number) => polygon([[x, 100], [x + 40, 80], [x + 80, 100], [x + 40, 120]], solid("#000"));
-    const oneBuilding = silhouetteDiversity([face(100), face(150), face(200)], 1000 * 1000, COMPLEXITY_TUNING);
-    expect(oneBuilding).toEqual({ candidates: 1, families: 1 });
-    const two = silhouetteDiversity([circle(150, 150, 60, solid("#000")), polygon([[600, 600], [800, 600], [800, 640], [600, 640]], solid("#000"))], 1000 * 1000, COMPLEXITY_TUNING);
-    expect(two).toEqual({ candidates: 2, families: 2 });
-  });
-
+describe("coverage of outlines", () => {
   it("an outlined closed shape covers its interior, not its bounding box", async () => {
     const { multiscaleCoverage } = await import("./bands.ts");
     const { COMPLEXITY_TUNING } = await import("../../config/complexity.ts");

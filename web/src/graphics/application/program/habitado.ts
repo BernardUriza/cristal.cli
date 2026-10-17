@@ -2,6 +2,7 @@ import type { PatioConfig } from "../../config/patio.ts";
 import type { ArchitectureProgram } from "../../domain/grammar/types.ts";
 import { MOTIFS } from "../../domain/motifs/figures/index.ts";
 import type { Ink, RewriteRecord } from "../../domain/rewrite/rewrite.ts";
+import { tagRoot } from "../../domain/semantic.ts";
 import type { Stage } from "../compose.ts";
 import type { TaggedFace } from "../drawings/faces.ts";
 import type { Columns } from "../patio/columnas.ts";
@@ -63,6 +64,8 @@ export function inhabitProgram(s: ProgramScene, ctx: PatioContext, people?: Inha
   for (const x of surfacesOf(s, faces).filter((x) => !columns.bySolid.has(x.face.solid.id))) add(x.face.solid.id, decorSurface(ctx, x, frieze));
   for (const f of faces.filter((f) => isFlatRoof(f, s))) add(f.solid.id, { shapes: roofDecor(f, ctx), records: [] });
   const solids = solidItems(ctx, faces, columns);
+  const spaceOf = new Map(faces.map((f) => [f.solid.id, f.solid.tag.space ?? f.solid.id]));
+  for (const x of solids) tagRoot(x.shapes, { root: spaceOf.get(x.id) ?? x.id, kind: "building" });
   const placed = scene ? poblado(siteOfProgram(s), scene, people!.pal, people!.detail, seed, (k) => miniPatio(ctx.config, k)) : undefined;
   const forward = s.projector.forward;
   const front = placed ? occluders(solids, placed.items, forward) : new Set<string>();

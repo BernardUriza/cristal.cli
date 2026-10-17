@@ -1,6 +1,7 @@
+import { rootOf, type SemanticRoot } from "../../domain/semantic.ts";
 import type { DisplayList, Shape, Style, Transform, Vec2 } from "../../domain/shapes.ts";
 
-export type Leaf = { points: Vec2[]; closed: boolean; style: Style };
+export type Leaf = { points: Vec2[]; closed: boolean; style: Style; root?: SemanticRoot };
 
 function ellipsePoints(cx: number, cy: number, rx: number, ry: number, segments: number): Vec2[] {
   return Array.from({ length: segments }, (_, i) => {
@@ -43,17 +44,18 @@ function isVisible(style: Style): boolean {
   return hasFill || hasStroke;
 }
 
-export function flattenLeaves(list: DisplayList, segments: number, outer: Transform = []): Leaf[] {
+export function flattenLeaves(list: DisplayList, segments: number, outer: Transform = [], inherited?: SemanticRoot): Leaf[] {
   const leaves: Leaf[] = [];
   for (const shape of list) {
+    const root = rootOf(shape) ?? inherited;
     if (shape.kind === "group") {
-      leaves.push(...flattenLeaves(shape.children, segments, [...outer, ...shape.transform]));
+      leaves.push(...flattenLeaves(shape.children, segments, [...outer, ...shape.transform], root));
       continue;
     }
     if (!isVisible(shape.style)) continue;
     const { points, closed } = outline(shape, segments);
     if (points.length === 0) continue;
-    leaves.push({ points: points.map((p) => applyTransform(p, outer)), closed, style: shape.style });
+    leaves.push({ points: points.map((p) => applyTransform(p, outer)), closed, style: shape.style, ...(root ? { root } : {}) });
   }
   return leaves;
 }

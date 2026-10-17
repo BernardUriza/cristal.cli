@@ -4,6 +4,7 @@ import { MOTIFS } from "../../domain/motifs/figures/index.ts";
 import type { MotifParams } from "../../domain/motifs/figures/types.ts";
 import type { MiniComposer } from "../../domain/rewrite/portal.ts";
 import type { Ink, RewriteRecord } from "../../domain/rewrite/rewrite.ts";
+import { tagRoot, type SemanticRoot } from "../../domain/semantic.ts";
 import type { Stage } from "../compose.ts";
 import { columnas, type Columns } from "./columnas.ts";
 import { occluders, paintOrder, type SceneItem } from "./escena.ts";
@@ -21,7 +22,9 @@ export type Inhabitants = { scene: Scene; pal: Palette; detail: MotifParams["det
 
 export type World = { volumenes: Stage; ornamento: Stage; habitada?: Stage };
 
-const REASON_ANOMALY = "La anomalía columna-figura pide que la columna sea un cuerpo";
+const CLOISTER: SemanticRoot = { root: "claustro", kind: "building" };
+
+const REASON_ANOMALY ="La anomalía columna-figura pide que la columna sea un cuerpo";
 
 export function motifsOf(scene: Scene): string[] {
   return [...new Set(scene.groups.flatMap((g) => Object.values(g.creature.parts) as string[]))];
@@ -55,6 +58,7 @@ export function mundo(ctx: PatioContext, surfaces: Surface[], people: Inhabitant
   const motifs = scene ? motifsOf(scene).map((m) => MOTIFS[m]).filter(Boolean) : [];
   const frieze: FriezeOf | undefined = scene ? (s) => friso(ctx, s, ink, motifs, seed, REASON_BODIES) : undefined;
   const solids = solidItems(ctx, faces, columns);
+  for (const s of solids) tagRoot(s.shapes, CLOISTER);
   const placed = scene ? poblado(siteOfBuilding(ctx.building, ctx.projector), scene, people!.pal, people!.detail, seed, mini) : undefined;
   const forward = ctx.projector.forward;
   const front = placed ? occluders(solids, placed.items, forward) : new Set<string>();
