@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { flip, hasPendingPair, isFaceUp, newGame, pairsFound, resolve, totalPairs, type GameState } from "./memorama.ts";
+import { bestKey, dailySeed, flip, hasPendingPair, isFaceUp, MIN_PAIR_DISTANCE, newGame, pairsFound, resolve, resultGlyphs, shareLine, totalPairs, updateBest, type GameState } from "./memorama.ts";
+import { artSignature, signatureDistance } from "./cardArt.ts";
 
 function indicesOfPair(state: GameState, pairId: number): [number, number] {
   const idx = state.cards.map((c, i) => (c.pairId === pairId ? i : -1)).filter((i) => i >= 0);
@@ -91,5 +92,57 @@ describe("flip and resolve", () => {
   it("resolve is a no-op without a pending pair", () => {
     const g = flip(newGame(1, 6), 0);
     expect(resolve(g)).toBe(g);
+  });
+});
+
+describe("distinctiveness between pairs", () => {
+  it("deals pairs whose art signatures differ on at least two axes, across many seeds and sizes", () => {
+    for (const pairs of [6, 8, 12] as const) {
+      for (let seed = 1; seed <= 40; seed++) {
+        const g = newGame(seed * 1013, pairs);
+        const signatures = Array.from({ length: pairs }, (_, p) => artSignature(g.cards.find((c) => c.pairId === p)!.artSeed));
+        for (let i = 0; i < signatures.length; i++) {
+          for (let j = i + 1; j < signatures.length; j++) {
+            expect(signatureDistance(signatures[i], signatures[j]), `seed ${seed * 1013} pairs ${pairs}: ${i} vs ${j}`).toBeGreaterThanOrEqual(MIN_PAIR_DISTANCE);
+          }
+        }
+      }
+    }
+  });
+});
+
+describe("daily seed, share line and best marks", () => {
+  it("gives one seed per calendar day, stable across calls", () => {
+    const a = dailySeed(new Date(2026, 9, 17, 9));
+    const b = dailySeed(new Date(2026, 9, 17, 23));
+    const c = dailySeed(new Date(2026, 9, 18, 0, 1));
+    expect(a).toBe(b);
+    expect(a).not.toBe(c);
+    expect(a).toBeGreaterThan(0);
+    expect(a).toBeLessThanOrEqual(1_000_000);
+  });
+
+  it("records each resolved move as hit or miss and renders glyphs without spoilers", () => {
+    let g = newGame(5, 6);
+    const [a, b] = indicesOfPair(g, 0);
+    const [c] = indicesOfPair(g, 1);
+    g = resolve(flip(flip(g, a), c));
+    g = resolve(flip(flip(g, a), b));
+    expect(g.history).toEqual(["miss", "hit"]);
+    expect(resultGlyphs(g.history)).toBe("▢▣");
+    const line = shareLine(g, { daily: true, url: "https://x/memorama.html?seed=5&pairs=6" });
+    expect(line.split("\n")).toEqual(["CRISTAL memorama · templo del día 5 · 6 pares · 2 movimientos", "▢▣", "https://x/memorama.html?seed=5&pairs=6"]);
+    expect(line).not.toMatch(/artSeed|pairId/);
+  });
+
+  it("keeps the best mark per seed and pair count, and only improves it", () => {
+    const first = updateBest({}, 777, 8, 17);
+    expect(first).toEqual({ best: { [bestKey(777, 8)]: 17 }, isRecord: true, previous: null });
+    const worse = updateBest(first.best, 777, 8, 20);
+    expect(worse.isRecord).toBe(false);
+    expect(worse.best).toBe(first.best);
+    const better = updateBest(first.best, 777, 8, 12);
+    expect(better).toEqual({ best: { [bestKey(777, 8)]: 12 }, isRecord: true, previous: 17 });
+    expect(updateBest(better.best, 777, 12, 30).best[bestKey(777, 12)]).toBe(30);
   });
 });
