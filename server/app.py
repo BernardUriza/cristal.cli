@@ -22,6 +22,7 @@ from fi_runner import BackendError
 from pydantic import BaseModel, Field
 
 from runner import build_runner, build_tarot_runner
+from telemetry import router as telemetry_router
 from voice import router as voice_router
 
 _DEFAULT_ORIGINS = (
@@ -42,6 +43,7 @@ app.add_middleware(
 )
 
 app.include_router(voice_router)
+app.include_router(telemetry_router)
 
 _runner = build_runner()
 _tarot = build_tarot_runner()
