@@ -35,6 +35,12 @@ _PLACES = ("patio", "azoteas", "torres", "cielo", "escalera")
 _ARCH = {"footprint": ("cuadrado", "alargado", "profundo"), "courtyard": ("chico", "medio", "grande"), "heights": ("bajo", "medio", "alto", "vertiginoso")}
 _ARCH_DEFAULT = {"footprint": "cuadrado", "courtyard": "medio", "heights": "medio"}
 _MAX_BECAUSE = 200
+_FAMILIES = ("biped", "quadruped", "serpentine", "radial", "chimera")
+_CREATURE_OPS = ("replace", "graft", "repeat", "architecturalize")
+_SOCKETS = ("head", "torso", "tail", "arm", "leg", "limb", "hand", "foot", "eye")
+_REPEAT = ("radial", "chain", "bilateral")
+_ARCH_GRAMMARS = ("facade", "tower", "gallery")
+_MAX_CREATURE_OPS = 6
 _ARCHETYPES = ("palace", "city", "temple", "labyrinth")
 _GRAMMAR_RULES = ("R1", "R2", "R3", "R4", "R5", "R6")
 _MAX_RULE_CALLS = 8
@@ -83,6 +89,36 @@ def _subset(value: Any, allowed: tuple[str, ...]) -> list[str] | None:
     return kept if kept or allowed is _MOTIFS else None
 
 
+def _creature_op(raw: Any) -> dict[str, Any] | None:
+    if not isinstance(raw, dict) or raw.get("op") not in _CREATURE_OPS or raw.get("socket") not in _SOCKETS:
+        return None
+    op, socket = raw["op"], raw["socket"]
+    if op == "replace":
+        return {"op": op, "socket": socket, "motif": raw["motif"]} if raw.get("motif") in _MOTIFS else None
+    if op == "graft":
+        ok = raw.get("family") in _FAMILIES and raw.get("part") in _SOCKETS
+        return {"op": op, "socket": socket, "family": raw["family"], "part": raw["part"]} if ok else None
+    if op == "repeat":
+        count = raw.get("count")
+        ok = isinstance(count, int) and not isinstance(count, bool) and 2 <= count <= 8 and raw.get("arrangement") in _REPEAT
+        return {"op": op, "socket": socket, "count": count, "arrangement": raw["arrangement"]} if ok else None
+    return {"op": op, "socket": socket, "grammar": raw["grammar"]} if raw.get("grammar") in _ARCH_GRAMMARS else None
+
+
+def _creature_program(value: Any) -> dict[str, Any] | None:
+    """A CreatureProgram is kept whole or dropped whole: one unknown family, op, socket or value drops it."""
+    if not isinstance(value, dict) or value.get("family") not in _FAMILIES:
+        return None
+    raw_ops = value.get("operations", [])
+    if not isinstance(raw_ops, list) or len(raw_ops) > _MAX_CREATURE_OPS:
+        return None
+    ops = [_creature_op(o) for o in raw_ops]
+    if any(o is None for o in ops):
+        return None
+    seed = value.get("seed")
+    return {"family": value["family"], "seed": seed if isinstance(seed, int) and not isinstance(seed, bool) and seed >= 0 else 1, "operations": ops}
+
+
 def _scene(value: Any) -> dict[str, Any] | None:
     if not isinstance(value, dict):
         return None
@@ -93,7 +129,8 @@ def _scene(value: Any) -> dict[str, Any] | None:
         creature = g.get("creature") if isinstance(g.get("creature"), dict) else {}
         raw_parts = creature.get("parts") if isinstance(creature.get("parts"), dict) else {}
         parts = {k: v for k, v in raw_parts.items() if k in _PARTS and v in _MOTIFS}
-        if not parts:
+        program = _creature_program(g.get("program")) if "program" in g else None
+        if not parts and program is None:
             continue
         try:
             count = max(1, min(24, int(round(float(g.get("count", 1))))))
@@ -101,13 +138,16 @@ def _scene(value: Any) -> dict[str, Any] | None:
         except (TypeError, ValueError):
             count, scale = 1, 1.0
         name = str(creature.get("name", "")).strip()[:40] or "figura"
-        groups.append({
-            "creature": {"name": name, "parts": parts},
+        group = {
+            "creature": {"name": name, "parts": parts or {"cuerpo": "mascara"}},
             "count": count,
             "arrangement": g.get("arrangement") if g.get("arrangement") in _ARRANGEMENTS else "fila",
             "place": g.get("place") if g.get("place") in _PLACES else "patio",
             "scale": round(scale, 2),
-        })
+        }
+        if program is not None:
+            group["program"] = program
+        groups.append(group)
     if not groups:
         return None
     arch_in = value.get("architecture") if isinstance(value.get("architecture"), dict) else {}

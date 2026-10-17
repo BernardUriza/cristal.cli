@@ -72,7 +72,12 @@ export type BodyErrorCode =
   | "budget-exceeded"
   | "shared-child"
   | "cycle"
-  | "orphan";
+  | "orphan"
+  | "unknown-op"
+  | "unknown-grammar"
+  | "too-many-ops"
+  | "missing-socket"
+  | "bad-count";
 
 export class BodyGraphError extends Error {
   readonly code: BodyErrorCode;
