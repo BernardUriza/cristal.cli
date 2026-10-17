@@ -23,4 +23,4 @@ Un archivo por item; status se voltea el día que cambia. Fuente de las ideas de
 | [Latencia de cristal-api /generate: 40–55 s por cuarto, serializado bajo carga](latencia-cristal-api.md) | Proposed | 2026-10-16 |
 | [El rito rechaza respuestas corporales legítimas y luego se calla](rito-rechaza-respuestas-corporales.md) | Done | 2026-10-17 |
 | [Diversión con evidencia: la consola nunca rechaza, nunca repite, siempre mueve](diversion-con-evidencia.md) | Done (1–6 en prod; queda la pregunta al tester y el DM) | 2026-10-17 |
-| [Figuras generativas: grafo de partes, esqueletos, híbridos por región, teselas](figuras-generativas.md) | In progress | 2026-10-17 |
+| [Figuras generativas: grafo de partes, esqueletos, híbridos por región, teselas](figuras-generativas.md) | In progress (pasos 1, 3 y 5 hechos) | 2026-10-17 |

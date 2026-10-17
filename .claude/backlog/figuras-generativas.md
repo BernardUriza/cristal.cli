@@ -1,6 +1,6 @@
 # Figuras generativas: que el motor invente figuras en vez de pegar 8 motivos
 
-Status: In progress
+Status: In progress (pasos 1, 3 y 5 hechos 2026-10-17)
 Proposed: 2026-10-17 by Bernard («busca más inspiración para algoritmos de más figuras»; /histerical-search, 5 investigadores)
 
 **Qué es.** Hoy ATELIER tiene 8 siluetas Bézier trazadas a mano (ojo, mano, cráneo, perro, jaguar, escalera, máscara,
@@ -50,7 +50,8 @@ No Man's Sky, canon animal. tactile-js no trae tipos TS y npm dice «SEE LICENSE
 **Decisión de Bernard.** Agregar `polygon-clipping` (MIT) y `tactile-js` (BSD-3, verificar LICENSE) como dependencias.
 
 **Hecho 2026-10-17.**
+- Paso 1 → commit `feat(motifs): grafo de partes con sockets…`: `domain/motifs/figures/body/` (`PartNode`/`Socket`/`PartEdge` con `mirror`, `flip`, `behind` y recursión acotada; familias B1 bípedo, B2 cuadrúpedo, B3 serpentino, B4 radial, B5 quimera con injerto estilo Qud; remates L1 mano, L2 pie, L3 mirada, L4 cuernos; expansor sembrado con presupuesto de piezas; validador con 12 errores tipados; `resolveBody` con transform heredado del socket y procedencia por arista). `creature.ts` corre sobre el grafo (`sixSlotGraph`, salida byte-idéntica a la anterior). Captura `i+d/friedeberg/capturas/figuras-grafo-partes-2026-10-17.png`. Abierto: las cinco familias no llegan a ATELIER ni al patio (la escena del director sólo pide seis ranuras, falta `{ family, seed }`).
 - Paso 3 → `0138e0e`: anclas cabeza/tronco/punta/extremidad en los 8 motivos, `domain/motifs/morph/` (remuestreo por arco, `blendByRegion` con Procrustes y `keepScale`, `caricature` de Brennan). Captura `~/Desktop/morph-hibridos-caricaturas-2026-10-17.png`. Abierto: norma por familia (la de 8 es una mancha y k≥1.7 se autocruza), detector de autointersección, híbridos sin ornamento ni `parts`, y nada del juego los usa todavía.
 - Paso 5 → `b030270`: `domain/motifs/disorder.ts` (Molnár, ~2 %, en las escamas de la sirena) y `figures/flowField.ts` (pelaje del perro en detail 3; perro y sirena pasan a 1.1.0). Captura `i+d/friedeberg/capturas/caracter-flow-desorden-2026-10-17.png`. Abierto: desorden en `bands.ts` (greca y chevrón no tienen procedencia por celda) y flow field en los demás motivos.
 
-**Next.** Paso 1 (grafo de partes) en curso en un worktree; 2 y 4 esperan la decisión de dependencias.
+**Next.** Conectar las familias a la escena del director; 2 y 4 esperan la decisión de dependencias.
