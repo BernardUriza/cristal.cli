@@ -56,7 +56,7 @@ jobs:
         env:
           HOST: ${{ vars.CRISTAL_WEB_HOST || 'cristal.bernarduriza.com' }}
         run: |
-          for path in / /laberinto.html /memorama.html; do
+          for path in / /laberinto.html /memorama.html /atelier.html; do
             for i in $(seq 1 12); do
               code=$(curl -sS -o /dev/null -w "%{http_code}" "https://$HOST$path" || echo "000")
               echo "$path attempt $i: HTTP $code"
