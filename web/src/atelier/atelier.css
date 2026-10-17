@@ -33,23 +33,69 @@ body {
 
 .atelier-main {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 360px;
-  grid-template-areas: "narration side" "easel side";
+  grid-template-columns: 220px minmax(0, 1fr) 360px;
+  grid-template-areas: "wall table side";
   gap: 16px;
+  align-items: start;
 }
 
-.atelier-narration {
-  grid-area: narration;
+.atelier-wall {
+  grid-area: wall;
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.atelier-narration label {
+.atelier-wall h2 {
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+}
+
+.atelier-wall-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+
+.atelier-motif,
+.atelier-sketch {
+  background: #f3e7c6;
+  border: 1px solid #2a2a3a;
+  padding: 4px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: #1a1412;
+  font: inherit;
+  font-size: 12px;
+}
+
+.atelier-motif.active {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.atelier-motif-art svg,
+.atelier-sketch img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.atelier-table {
+  grid-area: table;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.atelier-table label {
   color: var(--dim);
 }
 
-.atelier-narration textarea {
+.atelier-table textarea {
   width: 100%;
   font: inherit;
   font-size: 18px;
@@ -91,14 +137,7 @@ body {
   cursor: default;
 }
 
-.atelier-easel {
-  grid-area: easel;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.atelier-easel canvas {
+.atelier-table canvas {
   width: 100%;
   height: auto;
   aspect-ratio: 4 / 3;
@@ -108,7 +147,7 @@ body {
   display: block;
 }
 
-.atelier-easel input[type="range"] {
+.atelier-table input[type="range"] {
   width: 100%;
   accent-color: var(--accent);
 }
@@ -220,9 +259,13 @@ body {
   font-size: 13px;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1100px) {
   .atelier-main {
     grid-template-columns: 1fr;
-    grid-template-areas: "narration" "easel" "side";
+    grid-template-areas: "table" "side" "wall";
+  }
+
+  .atelier-wall-grid {
+    grid-template-columns: repeat(4, 1fr);
   }
 }

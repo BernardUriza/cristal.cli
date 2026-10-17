@@ -18,13 +18,26 @@ describe("director", () => {
     expect(by.density.decision.value).toBe(0.2);
     expect(by.anomalyRate.decision.value).toBe(0.95);
     expect(by.columns.decision.value).toBe(7);
-    expect(recipe.choices.every((c) => c.source === "narración")).toBe(true);
+    expect(by.composition.decision.value).toBe("templo");
+    expect(by.ornament.decision.value).toEqual(["estrías"]);
+    for (const field of ["palette", "complexity", "density", "anomalyRate", "columns", "composition", "ornament"]) expect(by[field].source).toBe("narración");
+    expect(by.anomaly.source).toBe("defecto");
+    expect(by.motifs.decision.value).toEqual([]);
+  });
+
+  it("reads the studio: composition, motifs, ornament and one anomaly", () => {
+    const by = Object.fromEntries(direct("un patio que se recorre con un ojo que vigila, un jaguar y una escalera que sube al cielo, muros de greca").choices.map((c) => [c.decision.field, c]));
+    expect(by.composition.decision.value).toBe("patio");
+    expect(by.motifs.decision.value).toEqual(["ojo", "jaguar", "escalera"]);
+    expect(by.ornament.decision.value).toEqual(["greca"]);
+    expect(by.anomaly.decision.value).toBe("escalera-imposible");
+    expect(by.motifs.because).toContain("«ojo»");
   });
 
   it("fills what the narration does not say with defaults, marked as such", () => {
     const recipe = direct("algo");
     const defaults = recipe.choices.filter((c) => c.source === "defecto").map((c) => c.decision.field).sort();
-    expect(defaults).toEqual(["anomalyRate", "complexity", "density", "palette"]);
+    expect(defaults).toEqual(["anomaly", "anomalyRate", "complexity", "composition", "density", "motifs", "ornament", "palette"]);
   });
 
   it("an override replaces the choice and is marked human; a reseed keeps the choices", () => {

@@ -45,6 +45,29 @@ def test_keeps_valid_choices_and_drops_the_rest():
     assert "semilla=42" in prompts[0] and "una capilla de noche llena" in prompts[0]
 
 
+def test_studio_fields_composition_motifs_ornament_anomaly():
+    client, _ = make_client(
+        {
+            "title": "Patio del ojo",
+            "choices": [
+                {"field": "composition", "value": "patio", "because": "un lugar que se recorre"},
+                {"field": "motifs", "value": ["ojo", "dragón", "mano", "ojo", "jaguar", "sirena"], "because": "lo que nombraste"},
+                {"field": "ornament", "value": ["greca", "neón"], "because": "laberinto en los muros"},
+                {"field": "anomaly", "value": "escalera-imposible", "because": "dijiste subir"},
+                {"field": "anomaly", "value": "torre-flotante", "because": "repetida"},
+                {"field": "composition", "value": "catedral", "because": "fuera de la gramática"},
+            ],
+        }
+    )
+    body = client.post("/atelier/direct", json={"narration": "un patio con un ojo y una escalera", "seed": 9}).json()
+    assert [(c["field"], c["value"]) for c in body["choices"]] == [
+        ("composition", "patio"),
+        ("motifs", ["ojo", "mano", "jaguar"]),
+        ("ornament", ["greca"]),
+        ("anomaly", "escalera-imposible"),
+    ]
+
+
 def test_tolerates_prose_around_the_json():
     client, _ = make_client('Aquí va:\n{"title": "Sol", "choices": [{"field": "projection", "value": "elevation", "because": "de frente"}]}\nfin')
     body = client.post("/atelier/direct", json={"narration": "un templo de frente", "seed": 1}).json()

@@ -22,7 +22,12 @@ _PALETTES = ("friedeberg", "noche")
 _SYMMETRIES = ("bilateral", "asymmetric")
 _PROJECTIONS = ("perspective", "elevation")
 _COLUMNS = (5, 7, 9)
-_MAX_CHOICES = 7
+_COMPOSITIONS = ("templo", "patio")
+_MOTIFS = ("ojo", "mano", "craneo", "perro", "jaguar", "escalera", "mascara", "sirena")
+_ORNAMENT = ("greca", "chevrón", "ajedrez", "estrías", "roseta", "sierpinski")
+_ANOMALIES = ("none", "escalera-imposible", "edificio-anidado", "torre-flotante", "columna-figura")
+_MAX_LIST = 3
+_MAX_CHOICES = 11
 _MAX_BECAUSE = 200
 
 
@@ -33,7 +38,7 @@ class DirectRequest(BaseModel):
 
 class Choice(BaseModel):
     field: str
-    value: str | int | float
+    value: str | int | float | list[str]
     because: str
     source: str = "pedro"
 
@@ -60,8 +65,23 @@ def _extract_json(text: str) -> dict[str, Any]:
     return json.loads(text[start : end + 1])
 
 
-def _coerce(field: str, value: Any) -> str | int | float | None:
+def _subset(value: Any, allowed: tuple[str, ...]) -> list[str] | None:
+    if not isinstance(value, list):
+        return None
+    kept = [v for v in dict.fromkeys(value) if isinstance(v, str) and v in allowed][:_MAX_LIST]
+    return kept if kept or allowed is _MOTIFS else None
+
+
+def _coerce(field: str, value: Any) -> str | int | float | list[str] | None:
     numeric = isinstance(value, (int, float)) and not isinstance(value, bool)
+    if field == "composition":
+        return value if value in _COMPOSITIONS else None
+    if field == "anomaly":
+        return value if value in _ANOMALIES else None
+    if field == "motifs":
+        return _subset(value, _MOTIFS)
+    if field == "ornament":
+        return _subset(value, _ORNAMENT)
     if field == "palette":
         return value if value in _PALETTES else None
     if field == "symmetry":

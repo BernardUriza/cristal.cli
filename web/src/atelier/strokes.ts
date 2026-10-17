@@ -1,11 +1,11 @@
-import type { Stage } from "../graphics/application/compose.ts";
+import type { Provenance, Stage } from "../graphics/application/compose.ts";
 import type { Shape } from "../graphics/domain/shapes.ts";
 
-export type Stroke = { index: number; stage: string; shape: Shape };
+export type Stroke = { index: number; stage: string; shape: Shape; provenance: Provenance | null };
 
 export function flattenStrokes(stages: Stage[]): Stroke[] {
   const out: Stroke[] = [];
-  for (const stage of stages) for (const shape of stage.shapes) out.push({ index: out.length, stage: stage.name, shape });
+  for (const stage of stages) for (const shape of stage.shapes) out.push({ index: out.length, stage: stage.name, shape, provenance: stage.provenance ?? null });
   return out;
 }
 

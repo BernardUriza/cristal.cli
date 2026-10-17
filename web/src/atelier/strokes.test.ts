@@ -1,17 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { composeIllustration } from "../graphics/application/compose.ts";
 import { circle, rect, solid } from "../graphics/domain/shapes.ts";
-import { configFor, direct } from "./director.ts";
+import { direct } from "./director.ts";
 import { strokeAt } from "./hitTest.ts";
 import { buildManifest, strokeLog } from "./manifest.ts";
 import { describeShape, flattenStrokes, stageBounds } from "./strokes.ts";
+import { composeWork } from "./work.ts";
 
-const ill = composeIllustration(configFor(direct("un templo de día"), 600, 450));
+const ill = composeWork(direct("un templo de día"), 600, 450);
 
 describe("strokes", () => {
   it("flattens the stages in order and keeps every shape", () => {
     const strokes = flattenStrokes(ill.stages);
-    expect(strokes.length).toBe(ill.layers.length);
+    expect(strokes.length).toBe(ill.stages.reduce((n, s) => n + s.shapes.length, 0));
     expect(strokes.map((s) => s.index)).toEqual(strokes.map((_, i) => i));
     const bounds = stageBounds(ill.stages);
     expect(bounds[0]).toEqual({ name: "fondo", from: 0, to: 1 });
@@ -38,8 +38,22 @@ describe("strokes", () => {
     const recipe = direct("un templo de día");
     const m = buildManifest(recipe, ill);
     expect(m.etapas.reduce((n, e) => n + e.trazos, 0)).toBe(m.trazos);
-    expect(m.hashSvg).toBe(buildManifest(recipe, composeIllustration(configFor(recipe, 600, 450))).hashSvg);
+    expect(m.hashSvg).toBe(buildManifest(recipe, composeWork(recipe, 600, 450)).hashSvg);
     expect(m.procedencia.referenciaExterna).toBe("ninguna imagen externa");
     expect(strokeLog(ill).split("\n")).toHaveLength(m.trazos);
+  });
+});
+
+describe("patio work", () => {
+  it("draws the patio in traceable stages and places the asked figures on architectural anchors", () => {
+    const recipe = direct("un patio de noche que se recorre con un ojo que vigila y una escalera que sube");
+    const work = composeWork(recipe, 600, 450);
+    expect(work.plan.composition).toBe("patio");
+    expect(work.stages.map((s) => s.name)).toEqual(["planta", "volúmenes", "ornamento", "símbolos", "anomalía", "figuras"]);
+    const figuras = work.stages[5];
+    expect(figuras.shapes.length).toBeGreaterThan(0);
+    expect(String(figuras.provenance?.params.figuras)).toMatch(/ojo@/);
+    expect(work.stages.every((s) => s.provenance)).toBe(true);
+    expect(composeWork(recipe, 600, 450).stages[5].shapes.length).toBe(figuras.shapes.length);
   });
 });

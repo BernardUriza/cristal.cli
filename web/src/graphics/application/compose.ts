@@ -13,7 +13,9 @@ import { paintStars, paintSun } from "./facade/sky.ts";
 import type { Painter } from "./painter.ts";
 import { makeView } from "./projection.ts";
 
-export type Stage = { name: string; shapes: DisplayList };
+export type Provenance = { algorithm: string; params: Record<string, number | string>; decision: string };
+
+export type Stage = { name: string; shapes: DisplayList; provenance?: Provenance };
 
 export type Illustration = {
   cfg: CompositionConfig;
