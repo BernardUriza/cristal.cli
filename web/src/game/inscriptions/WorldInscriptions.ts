@@ -5,7 +5,7 @@ import { fnv1a, mulberry32 } from "../../shared/rng";
 import type { Stance } from "../../terminal/psych/StanceClassifier";
 
 export type WallSide = "n" | "s" | "e" | "w";
-export type InscriptionSource = "console" | "starvation";
+export type InscriptionSource = "console" | "starvation" | "echo";
 
 export interface WorldInscription {
   id: string;

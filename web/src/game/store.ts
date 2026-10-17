@@ -6,6 +6,7 @@ import { fnv1a, mulberry32 } from "../shared/rng";
 import { loadFunnel, randomSessionId, reachFunnelStep, saveFunnel, type FunnelState, type FunnelStep } from "./funnel";
 import { reportFunnelStep } from "./funnelClient";
 import { loadViaje, saveViaje } from "./viaje";
+import { leaveEcho, takeEcho } from "./echoClient";
 import { generateMaze } from "./maze";
 import { MAZE_COLS, MAZE_ROWS, MAZE_SEED } from "./mazeConfig";
 import type { CellCoord } from "./mazeGraph";
@@ -72,6 +73,7 @@ import {
 // endless descent can't grow the cache without limit.
 const WORLD_MAZE = generateMaze(MAZE_COLS, MAZE_ROWS, MAZE_SEED);
 const STARVATION_ACCENT = "#7dffd0";
+const ECHO_ACCENT = "#c879ff";
 const STARVATION_FALLBACK = ["alguien pasó por aquí", "todavía no has dicho nada", "las paredes esperan una palabra"];
 const ROOM_CACHE_LIMIT = 64;
 const roomCache = new Map<number, Room>();
@@ -187,6 +189,8 @@ interface GameState {
   funnel: FunnelState;
   /** modo viaje: pantalla escasa, texto grande, sin parpadeo, el laberinto camina solo si sueltas */
   viaje: boolean;
+  /** a phrase another player archived, waiting to be written deformed on a wall */
+  foreignEcho: string | null;
 
   enterConsoleMode: (consoleId: string) => void;
   exitConsoleMode: () => void;
@@ -197,6 +201,9 @@ interface GameState {
   /** first time a funnel step is reached this visit it is saved and reported; later calls are no-ops */
   reachFunnel: (step: FunnelStep, now: number) => void;
   setViaje: (on: boolean) => void;
+  setForeignEcho: (text: string | null) => void;
+  /** ask cristal-api for someone else's phrase, excluding the player's own */
+  fetchForeignEcho: () => void;
   /** a minute without a find: the labyrinth writes a deformed fragment of the player's words ahead */
   relieveStarvation: (playerCell: CellCoord, now: number) => void;
   setNearbyConsole: (consoleId: string | null) => void;
@@ -393,6 +400,16 @@ export const useGame = create<GameState>((set, get) => {
     set({ viaje: on });
   },
 
+  foreignEcho: null,
+
+  setForeignEcho: (text) => set({ foreignEcho: text }),
+
+  fetchForeignEcho: () => {
+    void takeEcho(get().verticalSlice.confessionFragment ?? "").then((text) => {
+      if (text) set({ foreignEcho: text });
+    });
+  },
+
   reachFunnel: (step, now) =>
     set((s) => {
       const next = reachFunnelStep(s.funnel, step, now);
@@ -435,7 +452,8 @@ export const useGame = create<GameState>((set, get) => {
       if (s.verticalSlice.confessionFragment) ownWords.push(s.verticalSlice.confessionFragment);
       const pool = ownWords.length > 0 ? ownWords : STARVATION_FALLBACK;
       const seed = (now ^ Math.imul(s.discovery.starvations + 1, 0x9e3779b1)) >>> 0;
-      const phrase = pool[seed % pool.length];
+      const foreign = s.foreignEcho;
+      const phrase = foreign ?? pool[seed % pool.length];
       const slot =
         placeInscription(WORLD_MAZE, playerCell, s.inscriptions, seed, { minRing: 1, maxRing: 2 }) ??
         placeInscription(WORLD_MAZE, playerCell, s.inscriptions, seed);
@@ -447,13 +465,13 @@ export const useGame = create<GameState>((set, get) => {
         cell: slot.cell,
         side: slot.side,
         stance: null,
-        source: "starvation",
-        accent: STARVATION_ACCENT,
+        source: foreign ? "echo" : "starvation",
+        accent: foreign ? ECHO_ACCENT : STARVATION_ACCENT,
         at: now,
       };
       const inscriptions = [...s.inscriptions, inscription].slice(-INSCRIPTION_LIMIT);
       saveInscriptions(inscriptions);
-      return { inscriptions, discovery };
+      return { inscriptions, discovery, foreignEcho: foreign ? null : s.foreignEcho };
     }),
 
   enterConsoleMode: (consoleId) => {
@@ -470,12 +488,17 @@ export const useGame = create<GameState>((set, get) => {
     }, TRANSITION_MS);
   },
 
-  recordConsoleInput: (input) =>
-    set((s) => {
-      const verticalSlice = noteConsoleInput(s.verticalSlice, input);
-      if (verticalSlice !== s.verticalSlice) saveVerticalSlice(verticalSlice);
-      return { verticalSlice };
-    }),
+  recordConsoleInput: (input) => {
+    const before = get().verticalSlice;
+    const verticalSlice = noteConsoleInput(before, input);
+    if (verticalSlice === before) return;
+    saveVerticalSlice(verticalSlice);
+    set({ verticalSlice });
+    if (!before.confessed && verticalSlice.confessed && verticalSlice.confessionFragment) {
+      leaveEcho(verticalSlice.confessionFragment);
+      get().fetchForeignEcho();
+    }
+  },
 
   exitConsoleMode: () => {
     if (get().mode !== GameMode.Console) return;
