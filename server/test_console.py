@@ -1,9 +1,37 @@
 import json
+import textwrap
 
+import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 import console
+import corpus
+
+
+@pytest.fixture(autouse=True)
+def tiny_corpus(tmp_path, monkeypatch):
+    (tmp_path / "sustancias").mkdir()
+    (tmp_path / "interacciones").mkdir()
+    (tmp_path / "urgencias").mkdir()
+    (tmp_path / "sustancias" / "lsd.yml").write_text(textwrap.dedent('''
+        id: lsd
+        nombres: [LSD, ácido]
+        familia: psicodelico-clasico
+        temporalidad: { inicio: [20, 90], pico: [120, 240], duracion: [480, 720], fuentes: [nida-lsd] }
+        acompanamiento:
+          - { texto: "no quedarse solo", fuentes: [samhsa-1] }
+    '''), encoding="utf-8")
+    (tmp_path / "urgencias" / "senales.yml").write_text(textwrap.dedent('''
+        senales:
+          - { id: convulsion, patrones: ["convuls"], senal: "convulsión", accion: urgente, que_decir: "Llama al 911 ahora.", fuentes: [nida-lsd] }
+        reglas_de_voz:
+          - { regla: "no diagnosticar", porque: "x", fuentes: [x] }
+    '''), encoding="utf-8")
+    monkeypatch.setenv("CRISTAL_CORPUS_PATH", str(tmp_path))
+    corpus.corpus.cache_clear()
+    yield
+    corpus.corpus.cache_clear()
 
 
 def make_client(chunks, final=None, fail=False):
@@ -74,6 +102,20 @@ def test_rejects_bad_sessions_and_long_inputs():
     assert client.post("/console/turn", json={**REQ, "session_id": "bad session!"}).status_code == 422
     assert client.post("/console/turn", json={**REQ, "input": "x" * 301}).status_code == 422
     assert client.post("/console/turn", json={**REQ, "recent": [{"role": "player", "text": "a"}] * 9}).status_code == 422
+
+
+def test_corpus_knowledge_and_safety_line_come_before_the_model():
+    client, seen = make_client(["Quédate conmigo."])
+    res = client.post("/console/turn", json={**REQ, "input": "tomé ácido y mi amigo está convulsionando"})
+    ev = events(res)
+    assert ev[1]["type"] == "safety" and ev[1]["accion"] == "urgente" and ev[1]["line"] == "Llama al 911 ahora."
+    assert ev[-1]["type"] == "result"
+    assert "CORPUS PROPIO" in seen["prompt"] and "inicio 20–90 min" in seen["prompt"] and "[samhsa-1]" in seen["prompt"]
+    assert "reglas de voz: no diagnosticar" in seen["prompt"]
+    assert "SEÑAL DE SEGURIDAD detectada: convulsión (urgente)" in seen["prompt"]
+    client, seen = make_client(["ok"])
+    client.post("/console/turn", json=REQ)
+    assert "CORPUS PROPIO" not in seen["prompt"]
 
 
 def test_unconfigured_voice_is_503():

@@ -16,6 +16,8 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
+from corpus import check_signals, context_for, corpus
+
 router = APIRouter(prefix="/console")
 
 MAX_LINE_CHARS = 220
@@ -50,6 +52,16 @@ def use_stream(stream: StreamFn | None) -> None:
 
 def build_prompt(req: ConsoleRequest) -> str:
     parts = []
+    c = corpus()
+    knowledge = context_for(" ".join([req.input, *(t.text for t in req.recent if t.role == "player")]), c)
+    if knowledge:
+        parts.append("CORPUS PROPIO (usa solo esto para hablar de la sustancia; cita la fuente entre corchetes si das un dato; nunca dosis ni mezclas):\n" + knowledge)
+        rules = [str(r.get("regla")) for r in c.reglas_de_voz if r.get("regla")]
+        if rules:
+            parts.append("reglas de voz: " + "; ".join(rules))
+    signals = check_signals(req.input, c)
+    if signals:
+        parts.append("SEÑAL DE SEGURIDAD detectada: " + ", ".join(f"{s.senal} ({s.accion})" for s in signals) + ". La consola ya dijo la línea de seguridad; tú acompañas, no repites instrucciones médicas.")
     if req.recent:
         parts.append("Últimos turnos:\n" + "\n".join(f"{'jugador' if t.role == 'player' else 'cristal'}: {t.text}" for t in req.recent))
     parts.append(f"postura detectada: {req.stance or 'ninguna'} · presión: {req.pressure:.2f}")
@@ -84,6 +96,9 @@ async def turn(req: ConsoleRequest) -> StreamingResponse:
 
     async def events() -> AsyncIterator[str]:
         yield _event({"type": "start"})
+        for signal in check_signals(req.input, corpus()):
+            if signal.que_decir:
+                yield _event({"type": "safety", "senal": signal.senal, "accion": signal.accion, "line": signal.que_decir, "fuentes": signal.fuentes})
         collected: list[str] = []
         try:
             async for event in stream(req.session_id, prompt):

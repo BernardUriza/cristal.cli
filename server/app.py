@@ -24,6 +24,7 @@ from pydantic import BaseModel, Field
 from runner import build_atelier_runner, build_console_runner, build_runner, build_tarot_runner
 import atelier
 import console
+import corpus
 from echo import router as echo_router
 from telemetry import router as telemetry_router
 from voice import router as voice_router
@@ -50,6 +51,7 @@ app.include_router(telemetry_router)
 app.include_router(echo_router)
 app.include_router(atelier.router)
 app.include_router(console.router)
+app.include_router(corpus.router)
 
 _runner = build_runner()
 _tarot = build_tarot_runner()
