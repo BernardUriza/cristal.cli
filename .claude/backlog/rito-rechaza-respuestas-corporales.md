@@ -1,6 +1,6 @@
 # El rito rechaza respuestas corporales legítimas y luego se calla
 
-Status: In progress
+Status: Done (fix en prod 2026-10-17, `acdfe2d`); queda abierta la decisión sobre `...` sin salida
 Proposed: 2026-10-17 by me.tikkum (betatester, DM Instagram 2026-10-16 23:41) — destilado por Claude
 
 **Qué es.** El primer betatester hizo exactamente lo que el rito pidió y el rito lo trató como si no
@@ -39,5 +39,10 @@ cuentan como cuerpo: la pregunta del rito las pide explícitamente.
 (`StanceClassifier.test.ts`, `PsychologicalResponseEngine.test.ts`, `terminalCore.integration.test.ts`);
 los seis tests fallan en el HEAD anterior y pasan con el fix. El `...` sin salida sigue siendo decisión de Bernard.
 
-**Next.** Verificar en prod con la secuencia exacta del tester; contestarle a `me.tikkum` por el DM y pedirle que
-repita la consola.
+**Verificado en prod (2026-10-17 09:25, cristal.bernarduriza.com, consola ALPHA, sesión limpia).** La secuencia
+exacta del tester: `es fría` → "Lo guardé. Ahora vive en mí, contigo." · `tiene frío` → ídem · `sufre por el frío` →
+"Te oí. Pesa. Déjalo pesar un poco más." · `incomodidad` → ídem. Presión 0 %, stance `confession`, ningún opener,
+ningún `...`. Captura: `~/Documents/personal-assistance/cristal-betatesters/2026-10-17-prod-consola-arreglada.jpg`.
+Observación menor: las variantes se repiten por pares porque el hash del input elige entre tres; no es el bug.
+
+**Next.** Contestarle a `me.tikkum` por el DM (borrador en `Donde_quedamos.md`) y pedirle que repita la consola.

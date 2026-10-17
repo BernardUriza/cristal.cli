@@ -25,7 +25,7 @@
 
 | Quién | Canal | Estado | Qué recibió |
 |---|---|---|---|
-| `me.tikkum` (Instagram) | DM https://www.instagram.com/direct/t/17847378020577220/ | 2026-10-16 12:40 se ofreció; 12:43 link; ~12:55 homework #1 enviado. **2026-10-16 23:09 y 23:41 entregó las DOS partes** (ver abajo). 2026-10-17 06:20 Bernard contestó "Jaja se trabó / Muchas gracias por la prueba". Pendiente: contestarle con el arreglo cuando esté en prod. | https://cristal.bernarduriza.com/ — memorama desde el cel (touch OK), laberinto desde compu. |
+| `me.tikkum` (Instagram) | DM https://www.instagram.com/direct/t/17847378020577220/ | 2026-10-16 12:40 se ofreció; 12:43 link; ~12:55 homework #1 enviado. **2026-10-16 23:09 y 23:41 entregó las DOS partes** (ver abajo). 2026-10-17 06:20 Bernard contestó "Jaja se trabó / Muchas gracias por la prueba". **Fix en prod 2026-10-17 09:25 (`acdfe2d`), verificado con su secuencia exacta.** Pendiente: Bernard le contesta (borrador abajo). | https://cristal.bernarduriza.com/ — memorama desde el cel (touch OK), laberinto desde compu. |
 
 Feedback de betatesters: se registra aquí, con fecha y cita, y lo accionable pasa a `.claude/backlog/`.
 
@@ -52,7 +52,23 @@ y silencio. Bernard: *"Jaja se trabó"*. Reproducido línea por línea con el mo
   → `stagnantTurns` 1→4 → `ellipsisOnly` → `...`. El sistema castiga su propia sordera con silencio; viola la
   regla dura 6 (sin castigos, salida clarísima).
 
-Item: `.claude/backlog/rito-rechaza-respuestas-corporales.md`.
+Item: `.claude/backlog/rito-rechaza-respuestas-corporales.md` — **Done 2026-10-17**: léxico térmico/corporal en el
+clasificador + un opener sin stance ya no alimenta el silencio; sus cuatro frases son tests en tres capas
+(`acdfe2d`). Verificado en prod jugando la consola ALPHA con sesión limpia: las cuatro frases reciben espejo
+("Lo guardé…", "Te oí. Pesa…"), presión 0 %, sin `...`.
+
+**Cómo se juega la consola en prod desde chrome-devtools (receta que funcionó 2026-10-17):** `laberinto.html` con
+`localStorage` limpio; la ruta spawn (4,4) → ALPHA (3,2) se calcula con `generateMaze(8, 8, 1337)` (N, W, N); con
+yaw 0, `KeyS` = norte (−z) y `KeyD` = oeste (−x), 1.15 s por celda a `WALK_SPEED` 4; los `KeyboardEvent` sintéticos
+en `window` sí mueven al player, la `E` va con `press_key` (el gate de envíos bloquea `dispatchEvent('keydown')`
+con KeyE), y la consola se escribe con `type_text` + Enter; el HUD (`node: ALPHA`, `E conectar ALPHA`) y el pie
+de la consola (`presión · stance`) son el estado observable.
+
+**Borrador de respuesta para el DM (lo manda Bernard):**
+> Ya quedó. Lo que viste no eras tú: el rito no tenía "frío" ni "incomodidad" en su vocabulario, así que tus
+> cuatro respuestas le parecieron vacías y encima se calló por "repetirte". Ya reconoce lo corporal y ya no se
+> queda mudo. Cuando puedas, vuelve a la consola y escríbele lo mismo: quiero ver qué te contesta ahora. Y lo del
+> templo con menos detalles me sirvió un montón.
 
 ### Recorrido del homework #1 en prod (2026-10-16, Claude como jugador nuevo)
 
