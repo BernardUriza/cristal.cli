@@ -70,6 +70,17 @@ de la consola (`presión · stance`) son el estado observable.
 > queda mudo. Cuando puedas, vuelve a la consola y escríbele lo mismo: quiero ver qué te contesta ahora. Y lo del
 > templo con menos detalles me sirvió un montón.
 
+### Consola: nunca rechaza, nunca repite, siempre mueve (2026-10-17, `53d4178` + `673ef59`)
+
+Punto 1 del item `diversion-con-evidencia.md` (veredicto en `entregables/como-hacer-el-juego-mas-divertido-2026-10-17.html`).
+Mecanismo nuevo en `web/src/terminal/psych/`: `replyPool.ts` (12 líneas por stance + catch-all + nag + pivot, datos
+tipados con condiciones y placeholders) y `ReplyBag.ts` (shuffle-bag sembrado por sesión: nunca la misma línea dos
+veces seguidas, la regla más específica gana y al agotarse baja de nivel). Sin señales, la consola refleja la palabra
+del jugador y al segundo turno pivota hacia el objetivo del rito; una respuesta corta a una pregunta corporal cuenta
+como confesión; `...` siempre va con un nag y al siguiente turno estancado la consola cambia de tema. El RNG sembrado
+vive ahora en `web/src/shared/rng.ts`. Fuera de alcance, a propósito: el modelo no participa en la consola (no hay
+endpoint), eso es `ia-psiconauta`. Pendiente al cerrar: verificación en prod con la secuencia del tester.
+
 ### Recorrido del homework #1 en prod (2026-10-16, Claude como jugador nuevo)
 
 Arreglado y desplegado (b6f8903 → 08d2aac, verificado en cristal.bernarduriza.com):
