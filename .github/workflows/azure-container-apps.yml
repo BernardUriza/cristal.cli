@@ -80,6 +80,30 @@ jobs:
             --output none
           echo "Rolled ${{ vars.AZURE_CONTAINER_APP_NAME }} to ${{ steps.img.outputs.image }}"
 
+      - name: Wait for the NEW revision to run (the old one keeps answering /health while the new one crashes)
+        if: ${{ env.DEPLOY_CONFIGURED == 'true' }}
+        run: |
+          APP="${{ vars.AZURE_CONTAINER_APP_NAME }}"; RG="${{ vars.AZURE_RESOURCE_GROUP }}"
+          REV=$(az containerapp show --name "$APP" --resource-group "$RG" --query "properties.latestRevisionName" -o tsv)
+          echo "Latest revision: $REV"
+          for i in $(seq 1 36); do
+            STATE=$(az containerapp revision show --name "$APP" --resource-group "$RG" --revision "$REV" --query "properties.runningState" -o tsv 2>/dev/null || echo "Unknown")
+            IMAGE=$(az containerapp revision show --name "$APP" --resource-group "$RG" --revision "$REV" --query "properties.template.containers[0].image" -o tsv 2>/dev/null || echo "?")
+            echo "  attempt $i: $REV image=$IMAGE state=$STATE"
+            case "$STATE" in
+              Running|RunningAtMaxScale)
+                [ "$IMAGE" = "${{ steps.img.outputs.image }}" ] || { echo "FAIL — running revision carries another image."; exit 1; }
+                echo "OK — $REV runs the pushed image."; exit 0;;
+              Failed|Degraded)
+                echo "FAIL — revision $REV is $STATE. Console log tail:"
+                az containerapp logs show --name "$APP" --resource-group "$RG" --revision "$REV" --type console --tail 40 || true
+                exit 1;;
+            esac
+            sleep 5
+          done
+          echo "FAIL — revision $REV never reached Running."
+          exit 1
+
       - name: Smoke /health
         if: ${{ env.DEPLOY_CONFIGURED == 'true' }}
         run: |
@@ -87,12 +111,6 @@ jobs:
             --name "${{ vars.AZURE_CONTAINER_APP_NAME }}" \
             --resource-group "${{ vars.AZURE_RESOURCE_GROUP }}" \
             --query "properties.configuration.ingress.fqdn" -o tsv)
-          echo "Probing https://$FQDN/health …"
-          for i in $(seq 1 18); do
-            code=$(curl -sS -o /dev/null -w "%{http_code}" "https://$FQDN/health" || echo "000")
-            echo "  attempt $i: HTTP $code"
-            [ "$code" = "200" ] && { echo "OK — revision is live."; exit 0; }
-            sleep 5
-          done
-          echo "FAIL — /health never returned 200."
-          exit 1
+          code=$(curl -sS -o /dev/null -w "%{http_code}" "https://$FQDN/health" || echo "000")
+          echo "https://$FQDN/health → HTTP $code"
+          [ "$code" = "200" ]
