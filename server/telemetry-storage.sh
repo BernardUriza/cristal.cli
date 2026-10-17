@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Persist the first-five-minutes funnel and protect its summary. Run from the repo root as Bernard
-# (the Container App lives in an Azure account this machine's default `az` login does not see):
+# (the sandboxed session cannot run `az … create`):
 #   ! bash server/telemetry-storage.sh
 # Idempotent. Researched against the Container Apps docs (Azure Files volume via env storage + YAML
 # update), NOT yet run end to end: read its output before trusting the mount.
@@ -8,9 +8,10 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 APP=cristal-api
-RG=insult-rg
-ENV_NAME=prod-env
-LOCATION=eastus2
+RG=portfolio-rg
+ENV_NAME=$(az containerapp show -n "$APP" -g "$RG" --query properties.environmentId -o tsv | awk -F/ '{print $NF}')
+LOCATION=$(az group show -n "$RG" --query location -o tsv)
+[ -n "$ENV_NAME" ] || { echo "could not read the managed environment of $APP in $RG" >&2; exit 1; }
 STORAGE_ACCOUNT=${CRISTAL_TELEMETRY_STORAGE:-cristaltelemetry}
 SHARE=telemetry
 MOUNT_PATH=/home/runner/telemetry

@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
-# One-time Azure provisioning for the CRISTAL.CLI API (Container App cristal-api in insult-rg/prod-env,
-# next to persona-runner). Idempotent. Secrets are read from server/.env.local and ~/.secrets, never printed.
+# One-time Azure provisioning for the CRISTAL.CLI API (Container App cristal-api in portfolio-rg/portfolio-env,
+# the resource group the deploy workflow targets via AZURE_RESOURCE_GROUP). Idempotent. Secrets are read from server/.env.local and ~/.secrets, never printed.
 #   bash server/provision.sh
 set -euo pipefail
 cd "$(dirname "$0")"
 
 APP=cristal-api
-RG=insult-rg
-ENV_NAME=prod-env
+RG=portfolio-rg
+ENV_NAME=portfolio-env
 AAD_CLIENT_ID=5bae4482-4244-4c08-8309-71f1fa505a76
 IMAGE=ghcr.io/bernarduriza/cristal.cli/api:latest
-ORIGINS="https://tarot.bernarduriza.com,https://bernarduriza.com,https://www.bernarduriza.com,http://localhost:5173,http://127.0.0.1:5173,http://localhost:8860,http://127.0.0.1:8860"
+ORIGINS="https://cristal.bernarduriza.com,https://tarot.bernarduriza.com,https://bernarduriza.com,https://www.bernarduriza.com,http://localhost:5173,http://127.0.0.1:5173,http://localhost:8860,http://127.0.0.1:8860"
 
 AIRE_GATE_URL=$(grep -m1 '^AIRE_GATE_URL=' .env.local | cut -d= -f2-)
 AIRE_AUTH_TOKEN=$(grep -m1 '^AIRE_AUTH_TOKEN=' .env.local | cut -d= -f2-)
