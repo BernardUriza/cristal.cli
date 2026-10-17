@@ -79,7 +79,20 @@ veces seguidas, la regla más específica gana y al agotarse baja de nivel). Sin
 del jugador y al segundo turno pivota hacia el objetivo del rito; una respuesta corta a una pregunta corporal cuenta
 como confesión; `...` siempre va con un nag y al siguiente turno estancado la consola cambia de tema. El RNG sembrado
 vive ahora en `web/src/shared/rng.ts`. Fuera de alcance, a propósito: el modelo no participa en la consola (no hay
-endpoint), eso es `ia-psiconauta`. Pendiente al cerrar: verificación en prod con la secuencia del tester.
+endpoint), eso es `ia-psiconauta`.
+
+**Verificado en prod (2026-10-17 10:00, cristal.bernarduriza.com, consola ALPHA, contexto aislado, deploy `d71f1fb`).**
+Bundle `laberinto-DbFnfudU.js` contiene las líneas nuevas y ya no contiene "Escribe desde el cuerpo" ni "nada que
+replicar". Secuencia exacta del tester: `es fría` → "«me siento cansado y confundido» abrió esta puerta. Esto que dices
+la abre más." · `tiene frío` → "Lo guardé. Ahora vive en mí, contigo." · `sufre por el frío` → "Llevas rato aquí
+conmigo. Lo que dices ahora pesa distinto que al principio." · `incomodidad` → "No lo arregles. Nada más dime si se
+mueve o se queda quieto." Presión 0 %, stance `confession`. Diez turnos seguidos de `no siento nada, da igual`: diez
+líneas distintas (la que nombra la confesión, la de presión ≥50 %, las dos de repetición, las genéricas), en el octavo
+`...` + "No hace falta decir más. Una palabra que no hayas dicho basta.", en el noveno el pivot "Vamos a otro cuarto.
+«me siento cansado y confundido» ya abrió uno; ve a ver qué hizo con ella.", y el décimo vuelve a contestar. Presión
+100 %, `anesthesia`. Captura: `~/Documents/personal-assistance/cristal-betatesters/2026-10-17-prod-consola-nunca-repite.jpg`.
+Observación menor: tecleando más rápido que el `delayMs` las respuestas retrasadas aparecen después del siguiente echo;
+en juego real el retardo las separa.
 
 ### Recorrido del homework #1 en prod (2026-10-16, Claude como jugador nuevo)
 

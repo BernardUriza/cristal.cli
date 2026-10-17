@@ -50,5 +50,9 @@ se cumple por ausencia y el enriquecimiento asíncrono es un endpoint nuevo que 
 la decisión que `rito-rechaza-respuestas-corporales.md` dejaba abierta. Si Bernard quiere `...` terminal, se revierte
 solo `SilenceEngine.ts`.
 
-**Next.** Verificar en prod con la secuencia del tester más 8 turnos del mismo stance (receta en `Donde_quedamos.md`);
-luego Bernard decide entre los puntos 2–6 (densidad de hallazgo, primeros cinco minutos, memorama, modo viaje, relación).
+**Verificado en prod (2026-10-17 10:00, deploy `d71f1fb`):** secuencia del tester → 4 líneas distintas, presión 0 %; diez turnos
+de `no siento nada, da igual` → diez líneas distintas, `...` con nag en el octavo, pivot al cuarto de la confesión en el noveno.
+Detalle y captura en `Donde_quedamos.md`.
+
+**Next.** Bernard decide entre los puntos 2–6 (densidad de hallazgo, primeros cinco minutos, memorama, modo viaje, relación);
+y el DM a `me.tikkum` sigue pendiente de Bernard (borrador en `Donde_quedamos.md`).
