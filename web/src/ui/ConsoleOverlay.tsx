@@ -7,6 +7,7 @@ import { ResponseType, TerminalResponse } from "../terminal/types";
 import { objectiveForSlice } from "../game/VerticalSlice";
 import { worldNodeById } from "../game/worldNodes";
 import { parse } from "../terminal/inputParser";
+import { streamVoice, type VoiceTurn } from "../terminal/consoleVoice";
 
 interface Line {
   text: string;
@@ -83,6 +84,8 @@ export function ConsoleOverlay() {
   const linesRef = useRef<HTMLDivElement>(null);
   const pendingTimers = useRef<number[]>([]);
   const lastObjective = useRef<string | null>(null);
+  const voiceAbort = useRef<AbortController | null>(null);
+  const recentTurns = useRef<VoiceTurn[]>([]);
 
   const visible = mode === GameMode.Console || (mode === GameMode.Transition && activeId !== null);
 
@@ -117,9 +120,63 @@ export function ConsoleOverlay() {
     () => () => {
       pendingTimers.current.forEach((id) => window.clearTimeout(id));
       pendingTimers.current = [];
+      voiceAbort.current?.abort();
     },
     []
   );
+
+  const askVoice = (input: string, localLine: string) => {
+    voiceAbort.current?.abort();
+    const controller = new AbortController();
+    voiceAbort.current = controller;
+    const game = useGame.getState();
+    const pressure = getPsychPressure();
+    const stance = pressure.recent[pressure.recent.length - 1] ?? null;
+    recentTurns.current = [...recentTurns.current, { role: "player" as const, text: input }, { role: "cristal" as const, text: localLine }].slice(-8);
+    let voiceIndex = -1;
+    let draft = "";
+    void streamVoice(
+      {
+        sessionId: core.sessionId,
+        input,
+        stance,
+        pressure: pressure.pressure,
+        localLine,
+        confession: game.verticalSlice.confessionFragment ?? null,
+        objective: objectiveForSlice(game.verticalSlice),
+        glyph: game.verticalSlice.invokedGlyph ?? null,
+        recent: recentTurns.current,
+      },
+      {
+        onDelta: (text) => {
+          if (controller.signal.aborted) return;
+          draft += text;
+          const shown = draft.replace(/^["«]+/, "");
+          setLines((prev) => {
+            if (voiceIndex === -1) {
+              voiceIndex = prev.length;
+              return [...prev, { text: shown, cls: "voice", scramble: false }];
+            }
+            const next = [...prev];
+            next[voiceIndex] = { text: shown, cls: "voice", scramble: false };
+            return next;
+          });
+        },
+        onLine: (line) => {
+          if (controller.signal.aborted) return;
+          recentTurns.current = [...recentTurns.current, { role: "cristal" as const, text: line }].slice(-8);
+          setLines((prev) => {
+            if (voiceIndex === -1) return [...prev, { text: line, cls: "voice", scramble: false }];
+            const next = [...prev];
+            next[voiceIndex] = { text: line, cls: "voice", scramble: false };
+            return next;
+          });
+        },
+        onSilence: () => undefined,
+      },
+      controller.signal,
+    );
+  };
 
   if (!visible) return null;
 
@@ -166,6 +223,8 @@ export function ConsoleOverlay() {
       ]);
     }
     if (res) {
+      const localLine = res.lines.map((l) => l.trim()).filter(Boolean).join(" ");
+      if (!parse(trimmed).isCommand) askVoice(trimmed, localLine);
       const appendResponse = () => setLines((prev) => [...prev, ...toLines(res)]);
       if (res.delayMs && res.delayMs > 0) {
         const id = window.setTimeout(() => {

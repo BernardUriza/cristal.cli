@@ -175,6 +175,15 @@ canvas {
 .console-overlay .line.emo {
   color: #ff7ab8;
 }
+.console-overlay .line.voice {
+  color: #9fe8ff;
+  padding-left: 1.2em;
+  text-indent: -1.2em;
+}
+.console-overlay .line.voice::before {
+  content: "∴ ";
+  color: var(--term-dim);
+}
 .console-overlay .line.err {
   color: #ff5c5c;
   text-shadow: 0 0 6px #5c0000;

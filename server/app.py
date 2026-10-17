@@ -21,8 +21,9 @@ from fastapi.responses import StreamingResponse
 from fi_runner import BackendError
 from pydantic import BaseModel, Field
 
-from runner import build_atelier_runner, build_runner, build_tarot_runner
+from runner import build_atelier_runner, build_console_runner, build_runner, build_tarot_runner
 import atelier
+import console
 from echo import router as echo_router
 from telemetry import router as telemetry_router
 from voice import router as voice_router
@@ -48,6 +49,7 @@ app.include_router(voice_router)
 app.include_router(telemetry_router)
 app.include_router(echo_router)
 app.include_router(atelier.router)
+app.include_router(console.router)
 
 _runner = build_runner()
 _tarot = build_tarot_runner()
@@ -59,6 +61,19 @@ async def _direct_text(prompt: str) -> str:
 
 
 atelier.use_runner(_direct_text)
+_console = build_console_runner()
+
+
+async def _console_stream(session_id: str, prompt: str):
+    async for event in _console.run_stream(prompt, session_id=session_id):
+        if event["type"] == "text":
+            yield {"type": "text", "text": event["text"]}
+        elif event["type"] == "result":
+            result = event["result"]
+            yield {"type": "result", "text": (result.answer or result.text), "model": result.model}
+
+
+console.use_stream(_console_stream)
 
 
 class RoomRequest(BaseModel):
