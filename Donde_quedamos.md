@@ -94,6 +94,13 @@ líneas distintas (la que nombra la confesión, la de presión ≥50 %, las dos 
 Observación menor: tecleando más rápido que el `delayMs` las respuestas retrasadas aparecen después del siguiente echo;
 en juego real el retardo las separa.
 
+### Eco entre jugadores (2026-10-17, punto 6, `8c63e3c` + cliente)
+
+Autorizado por Bernard: la confesión archivada viaja anónima a `POST /echo` (cristal-api, JSONL en el share) y el
+laberinto pide una ajena (`GET /echo?exclude=`) al cargar y al confesar; la hambre la escribe primero, deformada y en
+violeta (`source: "echo"`), y después usa las frases propias. Sin moderación. Pendiente de verificar en prod tras el
+deploy.
+
 ### Modo viaje y tope de parpadeo (2026-10-17, punto 5, `ceadffc`)
 
 `laberinto.html?viaje=1` o el botón VIAJE (persistido): HUD mínimo, texto grande, CRT sin parpadeo, botón «salir
