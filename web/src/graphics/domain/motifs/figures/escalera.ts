@@ -2,6 +2,7 @@ import type { Anchor } from "../../bezier.ts";
 import { line, type Shape, type Vec2 } from "../../shapes.ts";
 import { defineMotif, sharp, strokeAt, type Figure } from "./define.ts";
 import { hatch, type Ornament } from "./ornamentador.ts";
+import { quad, type PartSpec } from "./parts.ts";
 
 const STEPS = 7;
 const STEP = 1 / STEPS;
@@ -40,6 +41,11 @@ export const escalera = defineMotif({
   name: "Escalera",
   tags: ["arquitectura", "repetición", "ascenso"],
   version: "1.0.0",
+  role: "support",
+  parts: Array.from({ length: STEPS }, (_, i): PartSpec => {
+    const [x, y] = treadCenter(i);
+    return { id: `peldaño${i + 1}`, role: "support", anchors: { left: [x - STEP / 2, y], right: [x + STEP / 2, y], top: [x, y] }, mask: quad(x - STEP / 2, y, x + STEP / 2, y + STEP) };
+  }),
   anchors: stepped(),
   features: () => [],
   ornaments: (fig, p) => {

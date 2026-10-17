@@ -13,7 +13,8 @@ describe("poblado", () => {
   it("places every creature of every group and says what it placed", () => {
     const c = composePatio({ seed: 3, width: 800, height: 600 });
     const s = poblado(c, robots, PALETTES.friedeberg, 1, 3);
-    expect(s.shapes.length).toBeGreaterThan(8 * 4);
+    expect(s.items).toHaveLength(8);
+    expect(s.items.flatMap((i) => i.shapes).length).toBeGreaterThan(8 * 3);
     expect(s.provenance?.params.figuras).toBe(8);
     expect(s.provenance?.decision).toContain("8 robot");
   });

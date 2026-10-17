@@ -58,7 +58,7 @@ describe("patio work", () => {
     const recipe = direct("un patio de noche que se recorre con un ojo que vigila y una escalera que sube");
     const work = composeWork(recipe, 600, 450);
     expect(work.plan.composition).toBe("patio");
-    expect(work.stages.map((s) => s.name)).toEqual(["planta", "volúmenes", "ornamento", "símbolos", "anomalía", "figuras"]);
+    expect(work.stages.map((s) => s.name)).toEqual(["planta", "volúmenes", "ornamento", "símbolos", "anomalía", "habitada"]);
     const figuras = work.stages[5];
     expect(figuras.shapes.length).toBeGreaterThan(0);
     expect(figuras.provenance?.decision).toMatch(/ojo/);

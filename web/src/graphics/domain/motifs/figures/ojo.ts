@@ -1,6 +1,7 @@
 import { circle, line, type Shape, type Vec2 } from "../../shapes.ts";
 import { a, defineMotif, sharp, strokeAt } from "./define.ts";
 import type { Ornament } from "./ornamentador.ts";
+import { oval } from "./parts.ts";
 
 const IRIS = 0.19;
 const PUPIL = 0.085;
@@ -34,6 +35,8 @@ export const ojo = defineMotif({
   name: "Ojo abierto",
   tags: ["vigilancia", "sueño", "cuerpo"],
   version: "1.0.0",
+  role: "connector",
+  parts: [{ id: "pupila", role: "opening", anchors: { center: [0, -0.01] }, mask: oval(0, -0.01, IRIS * 0.95, IRIS * 0.95) }],
   anchors: [sharp(-0.5, 0.02), a(-0.27, -0.19), a(0, -0.26), a(0.27, -0.19), sharp(0.5, 0.02), a(0.27, 0.17), a(0, 0.24), a(-0.27, 0.17)],
   features: (fig, p) => {
     const c = fig.at([0, -0.01]);

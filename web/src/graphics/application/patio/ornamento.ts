@@ -8,20 +8,22 @@ import { mapShapes } from "./frame.ts";
 import { band, bandLanguage, blindWindow, cellsFor, enabled } from "./ornamentRules.ts";
 import type { Surface } from "./surfaces.ts";
 import type { PatioContext } from "./types.ts";
+import type { Decor } from "./friso.ts";
+import type { RewriteRecord } from "../../domain/rewrite/rewrite.ts";
 
 function ornamentOn(s: Surface, ctx: PatioContext, ink: Ink): Ornament {
   const pxPerM = s.px.w / Math.max(s.frame.width, 1e-6);
   return { ink, sw: ctx.style.edgeWidth * 0.7, level: ctx.config.detail, shows: (m, min) => ctx.lod.shows(m * pxPerM, min) };
 }
 
-function exteriorWall(s: Surface, ctx: PatioContext): Shape[] {
+function exteriorWall(s: Surface, ctx: PatioContext, frieze: boolean): Shape[] {
   const { width: w, height: h } = s.frame;
   const { pal, config } = ctx;
   const o = ornamentOn(s, ctx, inks(pal.ink, pal.secondary, pal.bg, pal.deep));
   const cells = cellsFor(config, w);
   const out: Shape[] = [];
-  if (o.shows(0.5, 4)) out.push(...band(bandLanguage(config, "greca"), 0, 0.25, w, 0.5, cells, o));
-  if (config.detail >= 3 && o.shows(0.16, 3)) out.push(...dotRow(0, 1.0, w, cells, 0.07, pal.ink));
+  if (!frieze && o.shows(0.5, 4)) out.push(...band(bandLanguage(config, "greca"), 0, 0.25, w, 0.5, cells, o));
+  if (!frieze && config.detail >= 3 && o.shows(0.16, 3)) out.push(...dotRow(0, 1.0, w, cells, 0.07, pal.ink));
   if (config.detail >= 2 && h >= 3 && o.shows(1.4, 8)) {
     const n = Math.max(1, Math.floor(w / 2.4));
     const pointed = chance(ctx.rng, 0.5);
@@ -75,9 +77,9 @@ function towerRoof(s: Surface, ctx: PatioContext): Shape[] {
   return sierpinski(w / 2, h - lift - r / 2, r, config.detail, pal.accent, o);
 }
 
-export function ornamentFor(s: Surface, ctx: PatioContext): Shape[] {
+export function ornamentFor(s: Surface, ctx: PatioContext, frieze = false): Shape[] {
   switch (s.role) {
-    case "muro-exterior": return exteriorWall(s, ctx);
+    case "muro-exterior": return exteriorWall(s, ctx, frieze);
     case "torre": return towerWall(s, ctx);
     case "pilar": return pier(s, ctx);
     case "dintel-arcada": return arcadeLintel(s, ctx);
@@ -85,22 +87,33 @@ export function ornamentFor(s: Surface, ctx: PatioContext): Shape[] {
   }
 }
 
-export function ornamento(ctx: PatioContext, surfaces: Surface[]): Stage {
+export type FriezeOf = (s: Surface) => Decor;
+
+export function decorSurface(ctx: PatioContext, s: Surface, frieze?: FriezeOf): Decor {
+  const t4 = frieze ? frieze(s) : { shapes: [], records: [] };
+  const local = ornamentFor(s, ctx, t4.shapes.length > 0);
+  return { shapes: [...mapShapes(local, s.frame, ctx.projector), ...t4.shapes], records: t4.records };
+}
+
+export function ornamento(ctx: PatioContext, surfaces: Surface[], frieze?: FriezeOf): Stage {
   const shapes: Shape[] = [];
+  const records: RewriteRecord[] = [];
   const count: Record<string, number> = {};
   for (const s of surfaces) {
-    const local = ornamentFor(s, ctx);
-    if (local.length === 0) continue;
+    const d = decorSurface(ctx, s, frieze);
+    if (d.shapes.length === 0) continue;
     count[s.role] = (count[s.role] ?? 0) + 1;
-    shapes.push(...mapShapes(local, s.frame, ctx.projector));
+    shapes.push(...d.shapes);
+    records.push(...d.records);
   }
   return {
     name: "ornamento",
     shapes,
     provenance: {
       algorithm: "ornamento por superficie y función: marco local (origen abajo-izquierda, u arista, v vertical), motivo 2D en metros, mapeo punto a punto a 3D y proyección",
-      params: { detalle: ctx.config.detail, densidad: ctx.config.density, lenguajes: ctx.config.ornament.join(","), ...count },
-      decision: "muro exterior → banda bajo cornisa + ventanas ciegas; torre → estrías + roseta alta; arcada → chevrón apilado en pilares y banda en dinteles; cubierta de torre → sierpinski; losas lisas. Tres niveles: bandas / subdivisiones / puntos y rosetas",
+      params: { detalle: ctx.config.detail, densidad: ctx.config.density, lenguajes: ctx.config.ornament.join(","), ...count, frisos_habitados: records.length },
+      decision: "muro exterior → banda bajo cornisa + ventanas ciegas; torre → estrías + roseta alta; arcada → chevrón apilado en pilares y banda en dinteles; cubierta de torre → sierpinski; losas lisas. Tres niveles: bandas / subdivisiones / puntos y rosetas" + (records.length ? `; T4: en ${records.length} muros altos la banda se vuelve friso de celdas habitadas` : ""),
+      ...(records.length ? { rewrites: records } : {}),
     },
   };
 }

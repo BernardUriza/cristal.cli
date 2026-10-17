@@ -2,6 +2,7 @@ import { mirrorAnchors } from "../../bezier.ts";
 import { line, polygon, type Shape, type Vec2 } from "../../shapes.ts";
 import { a, defineMotif, lens, strokeAt } from "./define.ts";
 import { contourLines, hatch, type Ornament } from "./ornamentador.ts";
+import type { PartSpec } from "./parts.ts";
 
 const EYE: Vec2 = [0.2, -0.12];
 const CHEEK: Vec2[] = [[0.24, 0.02], [0.42, 0.04], [0.38, 0.3], [0.2, 0.2]];
@@ -21,6 +22,11 @@ export const mascara = defineMotif({
   name: "Máscara",
   tags: ["transformación", "sueño", "vigilancia"],
   version: "1.0.0",
+  role: "crown",
+  parts: [
+    ...[-1, 1].map((s, i): PartSpec => ({ id: `ojo${i + 1}`, role: "opening", mask: lens(EYE[0] * s, EYE[1], 0.26, 0.13, true) })),
+    { id: "boca", role: "opening", mask: lens(0, 0.26, 0.42, 0.1, true) },
+  ],
   anchors: mirrorAnchors([a(0, -0.5), a(0.2, -0.47), a(0.4, -0.36), a(0.48, -0.12), a(0.45, 0.14), a(0.33, 0.36), a(0.14, 0.48), a(0, 0.5)]),
   features: (fig, p) => {
     const holes: Shape[] = [-1, 1].map((s) => polygon(lens(EYE[0] * s, EYE[1], 0.26, 0.13, true).map(fig.at), { fill: p.ink }));

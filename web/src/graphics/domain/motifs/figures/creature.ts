@@ -1,6 +1,7 @@
 import type { Rng } from "../../../../shared/rng";
 import type { Shape } from "../../shapes.ts";
 import { MOTIFS } from "./index.ts";
+import { renamePart, type Part, type StructuralRole } from "./parts.ts";
 import type { MotifParams, Provenance } from "./types.ts";
 
 export type CreatureParts = Partial<Record<"cabeza" | "ojos" | "cuerpo" | "manos" | "cola" | "pies", string>>;
@@ -18,10 +19,14 @@ const BODY_PLAN: Slot[] = [
 
 const ALONE_SIZE = 0.9;
 
-export function drawCreature(parts: CreatureParts, footX: number, footY: number, heightPx: number, params: Omit<MotifParams, "size">, rng: Rng): { shapes: Shape[]; provenance: Provenance } {
+const SLOT_ROLE: Partial<Record<keyof CreatureParts, StructuralRole>> = { cuerpo: "enclosure", cabeza: "crown", pies: "support", manos: "span" };
+
+export type CreaturePiece = { slot: keyof CreatureParts; part: Part; shapes: Shape[] };
+
+export function drawCreature(parts: CreatureParts, footX: number, footY: number, heightPx: number, params: Omit<MotifParams, "size">, rng: Rng): { shapes: Shape[]; pieces: CreaturePiece[]; provenance: Provenance } {
   const present = BODY_PLAN.filter((s) => parts[s.part] && MOTIFS[parts[s.part]!]);
   const alone = present.length === 1;
-  const shapes: Shape[] = [];
+  const pieces: CreaturePiece[] = [];
   const used: string[] = [];
   for (const slot of present) {
     const motif = MOTIFS[parts[slot.part]!];
@@ -30,12 +35,16 @@ export function drawCreature(parts: CreatureParts, footX: number, footY: number,
     const xs = slot.pair !== undefined && !alone ? [-slot.pair, slot.pair] : [alone ? 0 : slot.dx];
     xs.forEach((dx, i) => {
       const mirror = slot.pair !== undefined && i === 0;
-      shapes.push(...motif.draw(footX + heightPx * dx, cy, { ...params, size, mirror }, rng).shapes);
+      const mp = { ...params, size, mirror };
+      const root = motif.parts(footX + heightPx * dx, cy, mp);
+      const part = { ...renamePart(root, `${slot.part}${xs.length > 1 ? i + 1 : ""}:${motif.id}`), role: SLOT_ROLE[slot.part] ?? root.role };
+      pieces.push({ slot: slot.part, part, shapes: motif.draw(footX + heightPx * dx, cy, mp, rng).shapes });
     });
     used.push(`${slot.part}=${motif.id}${xs.length > 1 ? "×2" : ""}`);
   }
   return {
-    shapes,
+    shapes: pieces.flatMap((p) => p.shapes),
+    pieces,
     provenance: {
       algorithm: "criatura compuesta: plan corporal fijo (cabeza, ojos, cuerpo, manos, cola, pies) con motivos Bézier propios en cada parte",
       params: { partes: used.join(", "), altura_px: Math.round(heightPx) },

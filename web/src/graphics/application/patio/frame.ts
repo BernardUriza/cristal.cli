@@ -1,6 +1,6 @@
-import { regularPolygon } from "../../domain/geometry.ts";
+import { mapShapePoints } from "../../domain/mapPoints.ts";
 import { add, dot, normalize, scale, sub, type Vec3 } from "../../domain/math/vec3.ts";
-import { line, polygon, polyline, type Shape, type Vec2 } from "../../domain/shapes.ts";
+import type { Shape, Vec2 } from "../../domain/shapes.ts";
 import type { Projector } from "../projector.ts";
 
 /** Local 2D frame on a planar face, in metres: origin at the bottom-left seen from the camera, u along the base, v up the face. */
@@ -40,22 +40,5 @@ export function subFrame(frame: LocalFrame, x: number, y: number, widthM: number
 }
 
 export function mapShapes(shapes: readonly Shape[], frame: LocalFrame, projector: Projector, offset: Vec2 = [0, 0]): Shape[] {
-  const at = (p: Vec2): Vec2 => projector.toScreen(toWorld(frame, p[0] + offset[0], p[1] + offset[1]));
-  const out: Shape[] = [];
-  for (const s of shapes) {
-    switch (s.kind) {
-      case "polygon": out.push(polygon(s.points.map(at), s.style)); break;
-      case "polyline": out.push(polyline(s.points.map(at), s.style)); break;
-      case "line": out.push(line(at(s.a), at(s.b), s.style)); break;
-      case "rect": out.push(polygon([at([s.x, s.y]), at([s.x + s.w, s.y]), at([s.x + s.w, s.y + s.h]), at([s.x, s.y + s.h])], s.style)); break;
-      case "circle": out.push(polygon(regularPolygon(s.cx, s.cy, s.r, 12).map(at), s.style)); break;
-      case "ellipse": out.push(polygon(regularPolygon(s.cx, s.cy, 1, 16).map((p): Vec2 => at([s.cx + (p[0] - s.cx) * s.rx, s.cy + (p[1] - s.cy) * s.ry])), s.style)); break;
-      case "path": out.push(polyline(s.segments.flatMap((seg) => ("p" in seg ? [at(seg.p)] : [])), s.style)); break;
-      case "group": {
-        const shift = s.transform.reduce<Vec2>((acc, op) => ("translate" in op ? [acc[0] + op.translate[0], acc[1] + op.translate[1]] : acc), [0, 0]);
-        out.push(...mapShapes(s.children, frame, projector, [offset[0] + shift[0], offset[1] + shift[1]]));
-      }
-    }
-  }
-  return out;
+  return mapShapePoints(shapes, (p) => projector.toScreen(toWorld(frame, p[0] + offset[0], p[1] + offset[1])));
 }

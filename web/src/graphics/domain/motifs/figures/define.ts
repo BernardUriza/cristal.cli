@@ -2,6 +2,7 @@ import type { Rng } from "../../../../shared/rng";
 import { catmullRomCubics, flattenCubics, polygonBounds, transformPoint, transformPoints, type Anchor, type Placement } from "../../bezier.ts";
 import { filled, polygon, polyline, type Shape, type Vec2 } from "../../shapes.ts";
 import type { Ornament } from "./ornamentador.ts";
+import { boxAnchors, placePart, type PartSpec, type StructuralRole } from "./parts.ts";
 import type { MotifDef, MotifParams, MotifTag } from "./types.ts";
 
 export type Figure = {
@@ -18,6 +19,8 @@ export type FigureSpec = {
   tags: MotifTag[];
   version: string;
   anchors: readonly Anchor[];
+  role?: StructuralRole;
+  parts?: PartSpec[];
   tension?: number;
   steps?: number;
   features: (fig: Figure, params: MotifParams) => Shape[];
@@ -62,7 +65,12 @@ export function defineMotif(spec: FigureSpec): MotifDef {
     license: "CC0-1.0",
     version: spec.version,
     algorithm: "bezier_contours",
+    role: spec.role ?? "enclosure",
     silhouette: (params) => figure(0, 0, params).poly,
+    parts: (cx, cy, params) => {
+      const fig = figure(cx, cy, params);
+      return { id: spec.id, role: spec.role ?? "enclosure", geometryId: spec.id, anchors: boxAnchors(fig.poly), mask: fig.poly, children: (spec.parts ?? []).map((c) => placePart(c, fig.at, spec.id)) };
+    },
     draw: (cx, cy, params, rng) => {
       const fig = figure(cx, cy, params);
       const ornaments = spec.ornaments(fig, params, rng);
