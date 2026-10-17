@@ -5,6 +5,8 @@ import { getTerminalCore } from "../terminal/terminalCore";
 import { getPsychPressure } from "../terminal/psych/PsychologicalResponseEngine";
 import { ResponseType, TerminalResponse } from "../terminal/types";
 import { objectiveForSlice } from "../game/VerticalSlice";
+import { worldNodeById } from "../game/worldNodes";
+import { parse } from "../terminal/inputParser";
 
 interface Line {
   text: string;
@@ -131,9 +133,14 @@ export function ConsoleOverlay() {
       objective: objectiveForSlice(game.verticalSlice),
     });
     const pressure = getPsychPressure();
-    useGame
-      .getState()
-      .setPsychologicalPressure(pressure.pressure, pressure.recent[pressure.recent.length - 1] ?? null);
+    const lastStance = pressure.recent[pressure.recent.length - 1] ?? null;
+    useGame.getState().setPsychologicalPressure(pressure.pressure, lastStance);
+    const consoleNode = worldNodeById(game.activeConsoleId);
+    if (consoleNode && !parse(trimmed).isCommand) {
+      useGame
+        .getState()
+        .addInscription(trimmed, lastStance, { x: consoleNode.cell[0], y: consoleNode.cell[1] }, consoleNode.accent, Date.now());
+    }
     const sliceBefore = useGame.getState().verticalSlice;
     useGame.getState().recordConsoleInput(trimmed);
     const sliceAfter = useGame.getState().verticalSlice;

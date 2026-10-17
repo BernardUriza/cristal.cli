@@ -4,6 +4,7 @@ import { Labyrinth } from "./Labyrinth";
 import { InWorldConsole } from "./InWorldConsole";
 import { Player, type ConsoleRef } from "./Player";
 import { RitualGlyph, type GlyphRef } from "./RitualGlyph";
+import { WallInscription } from "./WallInscription";
 import { BackroomFurniture } from "./BackroomFurniture.tsx";
 import { placeBackroomFurniture } from "./BackroomFurniturePlacer";
 import { cellCenter, generateMaze } from "./maze";
@@ -16,6 +17,7 @@ import { GAME_COMPOSITION, TEMPLE_PLACEMENT } from "../graphics/config/compositi
 export function Scene() {
   const maze = useMemo(() => generateMaze(MAZE_COLS, MAZE_ROWS, MAZE_SEED), []);
   const transference = useGame((s) => s.transference);
+  const inscriptions = useGame((s) => s.inscriptions);
   const omittedIds = useMemo(
     () => new Set(transference.absencePlan.omissions.map((item) => item.id)),
     [transference.absencePlan]
@@ -111,6 +113,10 @@ export function Scene() {
           />
         );
       })}
+
+      {inscriptions.map((item) => (
+        <WallInscription key={item.id} maze={maze} inscription={item} />
+      ))}
 
       {furniture.map((item) => (
         <BackroomFurniture

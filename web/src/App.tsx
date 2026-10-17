@@ -19,6 +19,7 @@ import { useGame } from "./game/store";
 import { GameMode } from "./game/types";
 import { symbolicBus } from "./game/symbolicBus";
 import { resolveRoomPressureAtmosphere } from "./game/RoomPressureController";
+import { useDiscoveryClock } from "./game/useDiscoveryClock";
 
 function ModeBadge() {
   const mode = useGame((s) => s.mode);
@@ -83,6 +84,7 @@ export function App() {
   }, []);
 
   useEffect(() => symbolicBus.subscribe(useGame.getState().setLastSymbol), []);
+  useDiscoveryClock();
 
   return (
     <>

@@ -103,3 +103,12 @@ export function isWalkable(maze: Maze, wx: number, wz: number, radius: number): 
   if (cell.n && dz < -0.5 + r) return false;
   return true;
 }
+
+export function cellAt(maze: Maze, wx: number, wz: number): { x: number; y: number } {
+  const offsetX = (maze.cols * CELL) / 2 - CELL / 2;
+  const offsetZ = (maze.rows * CELL) / 2 - CELL / 2;
+  return {
+    x: Math.max(0, Math.min(maze.cols - 1, Math.round((wx + offsetX) / CELL))),
+    y: Math.max(0, Math.min(maze.rows - 1, Math.round((wz + offsetZ) / CELL))),
+  };
+}
