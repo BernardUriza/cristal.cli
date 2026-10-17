@@ -105,7 +105,9 @@ deriva de spawn a ALPHA a los 6 s. Lo que sigue siendo del tester: legibilidad d
 `POST /echo` guarda la frase (≤64 chars, sin sesión ni IP) en `echo.jsonl` del share montado; `GET /echo?exclude=`
 devuelve una ajena al azar entre las últimas 400. Cliente: al archivarse la confesión se manda y se pide una ajena
 (`echoClient.ts`, también al cargar); la hambre escribe primero la frase ajena deformada con acento violeta (fuente
-`echo`) y después las propias. Sin moderación automática, como se dijo al autorizar: el deformado atempera, no filtra.
+`echo`) y después las propias. Filtro mínimo de contenido (`server/echo-denylist.txt`, un término por línea, editable sin
+código): insultos, órdenes de daño («mátate», «kill yourself») y datos de contacto (URLs, @, teléfonos) se rechazan
+al entrar (422) y se saltan al salir; el deformado atempera lo demás. No es moderación humana ni un modelo.
 
 **Verificado en prod (2026-10-17, deploy `41d32f4`, API revisión `cristal-api--0000006`):** `?viaje=1` → clase, salida
 grande, HUD y minimapa ocultos; el deriva llevó al jugador a ALPHA solo; la confesión disparó `POST /echo` 204 y

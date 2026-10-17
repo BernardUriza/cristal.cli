@@ -1,0 +1,52 @@
+# Un término por línea, sin acentos, minúsculas. Se compara contra el fragmento normalizado
+# como palabra completa salvo los que terminan en *, que valen como prefijo.
+# Insultos y hostilidad directa en español
+puto
+puta
+putos
+putas
+pendej*
+verga
+vergas
+chinga*
+chingue*
+mierda
+joto
+jotos
+maricon*
+marica
+maricas
+culero*
+zorra
+perra
+imbecil*
+idiota*
+estupid*
+retrasad*
+mongol*
+naco
+nacos
+nazi*
+# Órdenes de daño
+matate
+suicidate
+suicidense
+muerete
+mueranse
+muere ya
+te mato
+te voy a matar
+los voy a matar
+# Inglés
+fuck*
+shit
+bitch*
+cunt
+whore
+slut
+retard*
+nigg*
+fag*
+kys
+kill yourself
+rape*

@@ -33,3 +33,28 @@ def test_rejects_too_short_or_too_long(tmp_path, monkeypatch):
     assert client.post("/echo", json={"text": "ab"}).status_code == 422
     assert client.post("/echo", json={"text": "x" * 65}).status_code == 422
     assert client.get("/echo").json()["pool"] == 0
+
+
+def test_hostile_fragments_contact_data_and_self_harm_orders_never_enter_the_pool(tmp_path, monkeypatch):
+    client = make_client(tmp_path, monkeypatch)
+    for bad in [
+        "eres un pendejo",
+        "MATATE ya",
+        "muérete",
+        "kill yourself",
+        "escríbeme a https://x.y",
+        "llámame 5512345678",
+        "fucking nothing",
+    ]:
+        assert client.post("/echo", json={"text": bad}).status_code == 422, bad
+    for ok in ["tengo miedo a la muerte", "me siento muerta por dentro"]:
+        assert client.post("/echo", json={"text": ok}).status_code == 204, ok
+    assert client.get("/echo").json()["pool"] == 2
+
+
+def test_get_also_skips_lines_that_slipped_in_before_the_filter(tmp_path, monkeypatch):
+    client = make_client(tmp_path, monkeypatch)
+    (tmp_path / "echo.jsonl").write_text(
+        '{"at":"x","text":"pendejo tú"}\n{"at":"x","text":"me pesa el pecho"}\n', encoding="utf-8"
+    )
+    assert client.get("/echo").json() == {"text": "me pesa el pecho", "pool": 1}
