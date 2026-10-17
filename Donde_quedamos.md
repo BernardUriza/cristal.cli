@@ -3,7 +3,7 @@
 ## Estado Actual: Phase 6.7 - Dream Tunnels Complete
 
 **Version:** 0.6.7
-**Ultima actualizacion:** 2026-10-16
+**Ultima actualizacion:** 2026-10-17
 
 ---
 
@@ -18,6 +18,35 @@
 - Portafolio: proyecto id 8 en portfolio-spring, visible en bernarduriza.com.
 - Pendiente al cerrar la sesión: el dominio estaba en `Validating` en Azure (cert); cuando conteste 200 la
   variable `CRISTAL_WEB_HOST` del repo pasa al dominio y el smoke del workflow lo prueba.
+
+---
+
+## Motor gráfico Friedeberg (2026-10-15 → 17; reportado 2026-10-17)
+
+Qué se hizo, con recibo (detalle y SHAs en `.claude/backlog/gramatica-estetica-procedural.md`,
+`conocimiento-arquitectonico-del-motor.md` y `arsenal-de-render.md`):
+
+- **Gramática procedural por capas** en `web/src/graphics/` (`76846a8`): dominio en metros (columnas, arcos
+  con galería, cúpula, piso, motivos: greca, chevrón, hélice, abanico, roseta, volutas, Sierpinski, dovelas,
+  sigilos), config tipada (`ArtConfig`/`TechConfig`, presets `sparse|base|dense|noche|elevation`), un pintor
+  por elemento de fachada, LOD por tamaño proyectado, anomalías por seed. `layering.test.ts` vigila las fronteras.
+- **Un `DisplayList`, tres medios** (`8b10294`): SVG, Canvas 2D y Three.js (geometría + texturas pintadas por
+  los mismos pintores + GLSL para tablero y nervaduras). El templo está montado al norte del laberinto.
+  Vista previa: `/laberinto.html?view=graphics&preset=dense&backend=svg|canvas|three`.
+- **Edificio computacional v0** (`2c1f2df`): programa espacial → planta → masas → proyectores con matrices
+  propias → planta, alzado, sección, axonometría y escena Three del MISMO modelo; mover la puerta
+  (`--door=0.2`) la mueve en las cinco vistas; validación geométrica/arquitectónica, estructural `not-evaluated`.
+  Página: `/building.html`.
+- **Memorama** (`3826e99`, `74e47ef`): las cartas son templos sembrados por esta gramática.
+- Investigación: `i+d/friedeberg/README.md` (principios matemáticos, parámetros, gramática v2, edificio v0),
+  `auditoria-gramatica-arquitectonica.{md,html}`, capturas en `i+d/friedeberg/capturas/`.
+
+Verificado 2026-10-17: `npx vitest run src/graphics src/memorama` 75/75; prod `cristal.bernarduriza.com`
+sirve `/laberinto.html`, `/memorama.html` y `/building.html` con 200 y el bundle del laberinto lleva los
+uniforms de los shaders del templo. Las capturas del templo y del edificio son de dev (2026-10-15).
+
+Queda: ventanitas de galería que se leen como píldoras y sofito que parece segundo friso; 20 variaciones del
+templete; órdenes clásicos (Vignola) y ornamento por cara en el edificio; shader de pared con colisiones intactas.
 
 ---
 
