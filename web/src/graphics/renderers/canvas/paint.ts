@@ -23,6 +23,7 @@ export interface Canvas2D {
   rect(x: number, y: number, w: number, h: number): void;
   fill(): void;
   stroke(): void;
+  clip(): void;
 }
 
 const GLOW_BLUR = 6;
@@ -102,6 +103,10 @@ export function paintShape(ctx: Canvas2D, shape: Shape): void {
       for (const op of shape.transform) {
         if ("rotate" in op) ctx.rotate((op.rotate * Math.PI) / 180);
         else ctx.translate(op.translate[0], op.translate[1]);
+      }
+      if (shape.clip) {
+        tracePoints(ctx, shape.clip, true);
+        ctx.clip();
       }
       shape.children.forEach((c) => paintShape(ctx, c));
       return ctx.restore();

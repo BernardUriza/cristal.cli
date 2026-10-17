@@ -12,8 +12,9 @@ import { paintFrame } from "./facade/frame.ts";
 import { paintStars, paintSun } from "./facade/sky.ts";
 import type { Painter } from "./painter.ts";
 import { makeView } from "./projection.ts";
+import type { RewriteRecord } from "../domain/rewrite/rewrite.ts";
 
-export type Provenance = { algorithm: string; params: Record<string, number | string>; decision: string };
+export type Provenance = { algorithm: string; params: Record<string, number | string>; decision: string; rewrites?: RewriteRecord[] };
 
 export type Stage = { name: string; shapes: DisplayList; provenance?: Provenance };
 

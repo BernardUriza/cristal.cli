@@ -1,5 +1,6 @@
 import type { DisplayList, Shape, Style, Transform } from "../../domain/shapes.ts";
 import { fmt, fmtPoint, pathData } from "../pathData.ts";
+import { fnv1a } from "../../../shared/rng.ts";
 
 const GLOW_FILTER = `<filter id="glow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="3.0" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>`;
 
@@ -32,8 +33,13 @@ export function shapeToSvg(shape: Shape): string {
       return `<rect x="${fmt(shape.x)}" y="${fmt(shape.y)}" width="${fmt(shape.w)}" height="${fmt(shape.h)}"${styleAttrs(shape.style)}/>`;
     case "path":
       return `<path d="${pathData(shape.segments)}"${styleAttrs(shape.style)}/>`;
-    case "group":
-      return `<g transform="${transformAttr(shape.transform)}">${shape.children.map(shapeToSvg).join("")}</g>`;
+    case "group": {
+      const body = shape.children.map(shapeToSvg).join("");
+      if (!shape.clip) return `<g transform="${transformAttr(shape.transform)}">${body}</g>`;
+      const pts = shape.clip.map(fmtPoint).join(" ");
+      const id = `clip${fnv1a(pts).toString(36)}`;
+      return `<g transform="${transformAttr(shape.transform)}"><clipPath id="${id}"><polygon points="${pts}"/></clipPath><g clip-path="url(#${id})">${body}</g></g>`;
+    }
   }
 }
 

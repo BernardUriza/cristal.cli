@@ -27,7 +27,7 @@ export type Shape =
   | { kind: "line"; a: Vec2; b: Vec2; style: Style }
   | { kind: "rect"; x: number; y: number; w: number; h: number; style: Style }
   | { kind: "path"; segments: PathSegment[]; style: Style }
-  | { kind: "group"; transform: Transform; children: Shape[] };
+  | { kind: "group"; transform: Transform; children: Shape[]; clip?: Vec2[] };
 
 export type DisplayList = Shape[];
 
@@ -38,7 +38,7 @@ export const ellipse = (cx: number, cy: number, rx: number, ry: number, style: S
 export const line = (a: Vec2, b: Vec2, style: Style): Shape => ({ kind: "line", a, b, style });
 export const rect = (x: number, y: number, w: number, h: number, style: Style): Shape => ({ kind: "rect", x, y, w, h, style });
 export const path = (segments: PathSegment[], style: Style): Shape => ({ kind: "path", segments, style });
-export const group = (transform: Transform, children: Shape[]): Shape => ({ kind: "group", transform, children });
+export const group = (transform: Transform, children: Shape[], clip?: Vec2[]): Shape => (clip ? { kind: "group", transform, children, clip } : { kind: "group", transform, children });
 
 export function filled(fill: string, stroke: string, strokeWidth: number, extra: Partial<Style> = {}): Style {
   return { fill, stroke, strokeWidth, ...extra };

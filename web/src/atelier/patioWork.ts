@@ -1,7 +1,6 @@
 import { PALETTES } from "../graphics/config/palettes.ts";
 import { SCENE_LIMITS, type Scene } from "../graphics/config/scene.ts";
 import { composePatio } from "../graphics/application/patio/index.ts";
-import { poblado } from "../graphics/application/patio/poblado.ts";
 import type { MotifParams } from "../graphics/domain/motifs/figures/index.ts";
 import type { Plan, Recipe } from "./director.ts";
 import { readScene } from "./sceneReader.ts";
@@ -36,6 +35,6 @@ export const composePatioWork: Composer = (recipe: Recipe, plan: Plan, width: nu
     azimuth: AZIMUTHS[recipe.seed % AZIMUTHS.length],
     width,
     height,
-  });
-  return [...patio.stages, poblado(patio, scene, PALETTES[plan.palette], detailFor(plan.complexity), recipe.seed)];
+  }, undefined, { scene, pal: PALETTES[plan.palette], detail: detailFor(plan.complexity), seed: recipe.seed });
+  return patio.stages;
 };
