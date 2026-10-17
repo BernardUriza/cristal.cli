@@ -21,6 +21,7 @@ export const jaguar = defineMotif({
   name: "Jaguar caminando",
   tags: ["animal", "transformación", "vigilancia"],
   version: "1.0.0",
+  regions: { cabeza: [-0.49, 0.0], tronco: [-0.32, -0.22], punta: [0.32, -0.19], extremidad: [0.4, -0.14] },
   anchors: [
     sharp(-0.5, -0.08), a(-0.45, -0.2), sharp(-0.37, -0.3), a(-0.32, -0.22), a(-0.24, -0.2), a(-0.1, -0.19), a(0.05, -0.17), a(0.2, -0.17),
     a(0.32, -0.19), a(0.42, -0.25), sharp(0.5, -0.42), a(0.46, -0.28), a(0.4, -0.14), a(0.38, 0.0), a(0.39, 0.16), sharp(0.42, 0.3),

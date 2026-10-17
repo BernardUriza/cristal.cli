@@ -1,6 +1,7 @@
 import type { Rng } from "../../../../shared/rng";
 import type { Shape, Vec2 } from "../../shapes.ts";
 import type { Part, StructuralRole } from "./parts.ts";
+import type { RegionAnchors } from "./regions.ts";
 
 export type MotifTag =
   | "arquitectura"
@@ -41,6 +42,7 @@ export type MotifDef = {
   version: string;
   algorithm: "bezier_contours";
   role: StructuralRole;
+  regions: RegionAnchors;
   silhouette: (params: MotifParams) => Vec2[];
   parts: (cx: number, cy: number, params: MotifParams) => Part;
   draw: (cx: number, cy: number, params: MotifParams, rng: Rng) => MotifDrawing;

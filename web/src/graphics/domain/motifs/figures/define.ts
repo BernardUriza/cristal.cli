@@ -3,6 +3,7 @@ import { catmullRomCubics, flattenCubics, polygonBounds, transformPoint, transfo
 import { filled, polygon, polyline, type Shape, type Vec2 } from "../../shapes.ts";
 import type { Ornament } from "./ornamentador.ts";
 import { boxAnchors, placePart, type PartSpec, type StructuralRole } from "./parts.ts";
+import { REGIONS, type RegionAnchors } from "./regions.ts";
 import type { MotifDef, MotifParams, MotifTag } from "./types.ts";
 
 export type Figure = {
@@ -19,6 +20,7 @@ export type FigureSpec = {
   tags: MotifTag[];
   version: string;
   anchors: readonly Anchor[];
+  regions: RegionAnchors;
   role?: StructuralRole;
   parts?: PartSpec[];
   tension?: number;
@@ -66,6 +68,7 @@ export function defineMotif(spec: FigureSpec): MotifDef {
     version: spec.version,
     algorithm: "bezier_contours",
     role: spec.role ?? "enclosure",
+    regions: Object.fromEntries(REGIONS.map((r) => [r, norm(spec.regions[r])])) as RegionAnchors,
     silhouette: (params) => figure(0, 0, params).poly,
     parts: (cx, cy, params) => {
       const fig = figure(cx, cy, params);

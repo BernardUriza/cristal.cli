@@ -37,6 +37,7 @@ export const ojo = defineMotif({
   version: "1.0.0",
   role: "connector",
   parts: [{ id: "pupila", role: "opening", anchors: { center: [0, -0.01] }, mask: oval(0, -0.01, IRIS * 0.95, IRIS * 0.95) }],
+  regions: { cabeza: [-0.27, 0.17], tronco: [-0.27, -0.19], punta: [0.27, -0.19], extremidad: [0.27, 0.17] },
   anchors: [sharp(-0.5, 0.02), a(-0.27, -0.19), a(0, -0.26), a(0.27, -0.19), sharp(0.5, 0.02), a(0.27, 0.17), a(0, 0.24), a(-0.27, 0.17)],
   features: (fig, p) => {
     const c = fig.at([0, -0.01]);
