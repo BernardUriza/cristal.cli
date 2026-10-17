@@ -1,6 +1,6 @@
 # Diversión con evidencia: la consola nunca rechaza, nunca repite, siempre mueve
 
-Status: In progress (puntos 1–4 Done 2026-10-17; puntos 5–6 Proposed)
+Status: In progress (puntos 1–5 Done 2026-10-17; punto 6 autorizado, en curso)
 Proposed: 2026-10-17 by Bernard ("cómo hacer el juego más divertido"; /histerical-search, 6 investigadores, ~40 fuentes)
 
 **Qué es.** Veredicto completo con fuentes: `entregables/como-hacer-el-juego-mas-divertido-2026-10-17.html`.
@@ -91,5 +91,15 @@ al fallo, respiración lenta de los pares resueltos, dos tonos cortos (acierto, 
 timer ni castigo. Compartir: portapapeles en escritorio, hoja nativa solo con puntero táctil (en Chrome de escritorio
 la hoja nativa deja la promesa colgada). Verificado en dev y en prod (deploy `3a0a0cf`) jugando una partida completa por DOM.
 
-**Next.** Punto 5 en orden (modo viaje: pantalla escasa, ≤3 destellos/s, sin sustos, se juega solo si sueltas);
+**Hecho, punto 5 (2026-10-17, `ceadffc`).** Modo viaje (`?viaje=1` o botón VIAJE, persistido en `cristal.viaje.v1`):
+pantalla escasa (sin HUD de debug, minimapa, badges, beats ni etiqueta de modo), texto grande (objetivo y prompt 24 px,
+hint 32 px, consola 24 px), CRT sin parpadeo, salida grande siempre visible abajo a la izquierda (consola → desconecta,
+cuarto → sale, laberinto → vuelve al selector), el laberinto camina solo hacia el objetivo del rito a paso lento tras
+6 s sin tocar nada (`autowalk.ts` + `stepTowards`; cualquier tecla o movimiento del puntero lo corta), y la niebla y la
+luz ambiente se abren con cada frase escrita (`viajeAtmosphere(rewardLevel(inscripciones))`). Además, tope global de
+parpadeo de luces a 2.5 Hz (`flashSafety.ts`): la luz del cuarto IA oscilaba a 5.9 Hz con dread alto y a 4.6 Hz con
+presión, fuera de WCAG 2.3.1, para todos los jugadores. Verificado en dev: clase `viaje`, salida, HUD oculto,
+deriva de spawn a ALPHA a los 6 s. Lo que sigue siendo del tester: legibilidad del texto en el viaje (preguntar).
+
+**Next.** Punto 6 (relación: la frase archivada viaja anónima y deformada a cristal-api; autorizado por Bernard 2026-10-17);
 y el DM a `me.tikkum` sigue pendiente de Bernard (borrador en `Donde_quedamos.md`).
