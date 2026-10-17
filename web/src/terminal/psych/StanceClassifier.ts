@@ -21,12 +21,16 @@ const BODY_TERMS = [
   "espalda", "vientre", "panza", "musculo", "hombro", "hombros", "pulso", "latido",
   "respiracion", "duele", "dolor", "arde", "aprieta", "tiembla", "nausea", "mareo",
   "nudo", "puno", "sangre", "huesos", "carne", "boca", "ojos",
+  "frio", "fria", "calor", "tibio", "tibia", "helado", "helada", "escalofrio", "temblor",
+  "tenso", "tensa", "tension", "pesado", "pesada", "hueco", "incomod", "sufr", "cansad", "cansancio",
+  "agotad", "ahogo", "asfixia",
 ];
 
 const EMOTION_TERMS = [
   "miedo", "triste", "tristeza", "solo", "sola", "soledad", "ansiedad", "angustia",
   "rabia", "enojo", "culpa", "verguenza", "vulnerable", "fragil", "llorar", "lloro",
   "perdido", "perdida", "dolido", "herido", "asustado", "asustada", "desesperado",
+  "confundid", "confusion", "incomodidad", "cansado", "cansada", "agotado", "agotada", "sufro", "sufre",
 ];
 
 const CAUSAL_TERMS = [

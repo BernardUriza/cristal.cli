@@ -1,5 +1,6 @@
 // Ports of the core enums/structs from the Unity TerminalCore stack
 // (Cristal.CLI.StateMachine / Input / Response).
+import type { Stance } from "./psych/StanceClassifier";
 
 export enum CristalState {
   Bootstrap = "Bootstrap",
@@ -107,6 +108,8 @@ export interface BuiltResponse {
   responseSet?: string;
   /** psychological tone of a stance reply — the arbiter protects it from state effects */
   psychTone?: "mirror" | "interrupt" | "soften" | "press" | "ritual";
+  /** stance the reply answered; null when the classifier found no signal (an opener, not a turn) */
+  psychStance?: Stance | null;
 }
 
 /** Final response handed to the UI. */

@@ -136,21 +136,17 @@ export class TerminalCore {
       built = this.engine.generateResponse(trimmed);
     }
 
-    if (built.responseSet === "emotional_psych") {
-      const pressure = getPsychPressure();
-      const stance = pressure.recent[pressure.recent.length - 1];
-      if (stance) {
-        const next = advanceSilence(this.silenceState, {
-          stance,
-          pressure: pressure.pressure,
-        });
-        this.silenceState = next.state;
-        built = {
-          ...built,
-          lines: applySilencePolicy(built.lines, next.policy),
-          delayMs: next.policy.delayMs,
-        };
-      }
+    if (built.responseSet === "emotional_psych" && built.psychStance) {
+      const next = advanceSilence(this.silenceState, {
+        stance: built.psychStance,
+        pressure: getPsychPressure().pressure,
+      });
+      this.silenceState = next.state;
+      built = {
+        ...built,
+        lines: applySilencePolicy(built.lines, next.policy),
+        delayMs: next.policy.delayMs,
+      };
     }
 
     if (this.firstInput) {

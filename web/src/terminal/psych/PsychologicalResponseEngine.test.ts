@@ -55,4 +55,20 @@ describe("generateCristalPsychReply", () => {
     generateCristalPsychReply("tengo miedo y me siento solo, me duele el pecho");
     expect(getPsychPressure().pressure).toBeLessThan(high);
   });
+
+  it("never presses back when the player answers the temperature question from the body (me.tikkum)", () => {
+    generateCristalPsychReply("me siento cansado y confundido");
+    generateCristalPsychReply("LUNA");
+    for (const answer of ["es fría", "tiene frío", "sufre por el frío", "incomodidad"]) {
+      const reply = generateCristalPsychReply(answer);
+      expect(reply.stance, answer).toBe("confession");
+      expect(reply.tone, answer).toBe("mirror");
+      expect(reply.text, answer).not.toMatch(/Escribe desde el cuerpo|nada que replicar/);
+    }
+  });
+
+  it("marks an opener as unclassified so the silence engine cannot count it as a turn", () => {
+    expect(generateCristalPsychReply("asdfgh qwerty").stance).toBeNull();
+    expect(generateCristalPsychReply("me duele el pecho").stance).toBe("confession");
+  });
 });

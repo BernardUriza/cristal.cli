@@ -55,4 +55,18 @@ describe("classifyStance", () => {
       expect(v).toBeLessThanOrEqual(1);
     }
   });
+
+  it("reads the tester's thermal and bodily answers as confession (me.tikkum, 2026-10-16)", () => {
+    for (const answer of ["es fría", "tiene frío", "sufre por el frío", "incomodidad"]) {
+      const profile = classifyStance(answer);
+      expect(profile.signals, answer).toContain("body-term");
+      expect(profile.stance, answer).toBe("confession");
+    }
+  });
+
+  it("reads tired-and-confused as an emotional confession, not noise", () => {
+    const profile = classifyStance("me siento cansado y confundido");
+    expect(profile.signals).toContain("emotion-term");
+    expect(profile.stance).toBe("confession");
+  });
 });
