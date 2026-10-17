@@ -55,10 +55,13 @@ templete; órdenes clásicos (Vignola) y ornamento por cara en el edificio; shad
 
 - `store.ts` 772 → 24 LOC (slices en `web/src/game/store/`, `c4ad5af`); `RoomScene.tsx` 603 → 132 LOC
   (`web/src/game/room/`, `b8e2290`); kit de minijuegos `web/src/minigames/kit/` (`5d4cd04`); ATELIER
-  (`940976d`, backlog `atelier-estudio-de-dibujo-procedural.md`). Suite completa 390 tests verdes, typecheck y
-  build limpios. Deuda que dejó el corte, sin tocar: `WallInscription.tsx` e `InWorldConsole.tsx` repiten el
-  patrón texto→CanvasTexture que ya vive en `game/room/textures.ts`; `BackroomFurniture.tsx` (528 LOC, 2 commits)
+  (`940976d`, backlog `atelier-estudio-de-dibujo-procedural.md`) y Pedro, el director por LLM en cristal-api
+  (`8854d08` server, `4269a57` web, `3aa2daf` Dockerfile + smoke; verificado en prod: 32–34 s por lectura).
+  Texturas de texto unificadas en `game/textTexture.ts` (`0ee5c9e`). `BackroomFurniture.tsx` (528 LOC, 2 commits)
   se dejó entero a propósito: catálogo de 14 piezas que casi no cambia, partirlo subiría la frontera.
+  Lección: el índice de git es compartido entre sesiones; un `git mv` stageado se fue en el commit de docs de otra
+  sesión (`0047646`) y rompió el deploy web hasta `0ee5c9e`. Y el smoke del API aprobaba con el `/health` de la
+  revisión vieja mientras la nueva moría: ahora espera a la revisión nueva.
 
 ---
 

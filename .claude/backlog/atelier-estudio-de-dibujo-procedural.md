@@ -1,6 +1,6 @@
 # ATELIER — Estudio de dibujo procedural
 
-Status: In progress (v0 publicado; director determinista, falta el director por LLM y colgar la obra en el laberinto)
+Status: In progress (v0 publicado con director local; v1 con Pedro por LLM publicado 2026-10-17; queda colgar la obra en el laberinto, propuesta de ChatGPT sin decisión de Bernard)
 Proposed: 2026-10-17 by Bernard (chat ChatGPT "CRISTAL.CLI Game" t.257, nombre adoptado en t.269; fuente: `fuente-chat-cristal-cli-game-atelier-2026-10-17.md`)
 
 **Qué es.** Un minijuego más de la consola de CRISTAL: el jugador narra, la IA sólo DECIDE ("La IA no genera los
@@ -27,14 +27,26 @@ no-plagiadora, "inspiración matemática", nunca calcar. Sin victoria, sin timer
   dibuja 2504 trazos con la receta correcta (friedeberg, anomalía 0.95, densidad 0.2, complejidad 1), consola sin
   errores, y la landing lista los tres juegos. Captura `i+d/friedeberg/capturas/atelier-prod-2026-10-17.jpg`.
 
+**Pedro, el director por LLM (`8854d08`, `4269a57`, `3aa2daf`; 2026-10-17).** `server/atelier.py` expone `POST /atelier/direct`
+{narration, seed} → {title, choices[{field, value, because, source:"pedro"}]}; persona en `server/prompts/atelier.md`
+(casita AIRE `cristal-atelier`, modo complete, sin herramientas); valores fuera de la gramática se descartan, nunca
+se adivinan. En el web (`atelier/directorApi.ts`, `usePedro.ts`, `PedroPanel.tsx`, `withDirection`): al dibujar, el
+motor dibuja la lectura local al instante y pide la de Pedro sin bloquear; el panel muestra título y decisiones con
+su porqué y el jugador elige; los overrides humanos nunca se pisan; sin API, la lectura local se queda y se dice.
+Verificado en prod 2026-10-17: `curl /atelier/direct` con "una capilla de noche, vacía y torcida, con siete columnas"
+→ 200 en 32 s, 7 decisiones válidas ("Dijiste torcida, no simétrica" → asymmetric; "Pediste vacía" → density 0.2);
+en la página, "un patio imposible de noche con nueve columnas" → Pedro contestó en 34 s con «Patio Imposible
+Nocturno», al aceptarlo la receta cambió de título y las 7 decisiones quedaron marcadas pedro; consola limpia.
+Captura `i+d/friedeberg/capturas/atelier-pedro-prod-2026-10-17.jpg`. Lección del deploy: la revisión 0000008 cayó
+por un `atelier.py` que el Dockerfile no copiaba y el smoke aprobó con el `/health` de la revisión vieja; el
+workflow ahora espera a que la revisión nueva corra la imagen pusheada (`3aa2daf`).
+
 **Canónico a reusar.** `web/src/graphics/` (gramática + pintores + SVG/Canvas), `web/src/minigames/kit/`.
 Para el director por LLM: `cristal-api` (`server/`) y `web/src/game/roomApi.ts` como precedente de llamada;
 la regla dura 2 (no tocar guardrails) y la regla `prompts-as-content-not-code`.
 
-**Decisión de Bernard.** ¿El director v1 por LLM (Claude "se convierte en Pedro", t.257) vive en cristal-api
-como `/direct` devolviendo la misma `Recipe`? ¿p5.js que propuso ChatGPT se descarta por la regla dura 8
-(SVG/Canvas/Three sobre lo que existe)? Hoy se descartó.
+**Decisión de Bernard.** Colgar la obra exportada en un muro del laberinto (t.258) es propuesta de ChatGPT, no
+orden suya: queda aquí hasta que la tome. p5.js se descartó por la regla dura 8.
 
-**Next.** Director por LLM que devuelva `Recipe` (misma forma, mismas reglas de trazabilidad); motivos
-figurativos Bézier (t.262/264); colgar la obra exportada en un muro del laberinto (t.258); el patio imposible
-axonométrico sobre `domain/architecture/` (t.268).
+**Next.** Motivos figurativos Bézier (t.262/264); el patio imposible axonométrico sobre `domain/architecture/`
+(t.268); si Bernard lo toma, colgar la obra en un muro del laberinto (t.258).
