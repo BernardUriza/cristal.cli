@@ -1,9 +1,9 @@
-import { LAYOUT_RULES } from "../../domain/grammar/dimensions.ts";
+import { LAYOUT_RULES, OPEN_GROUND_STYLES } from "../../domain/grammar/dimensions.ts";
 import type { PlacedSpace } from "../../domain/grammar/layout.ts";
 import { sharedEdge } from "../../domain/grammar/place.ts";
 import type { Relation, SpaceKind } from "../../domain/grammar/types.ts";
 import type { Rect } from "../../domain/architecture/layout.ts";
-import { filled, line, polygon, rect, type Shape, type Style, type Vec2 } from "../../domain/shapes.ts";
+import { filled, line, polygon, polyline, rect, stroked, type Shape, type Style, type Vec2 } from "../../domain/shapes.ts";
 import type { Palette } from "../../config/palettes.ts";
 import type { Stage } from "../compose.ts";
 import type { ProgramScene } from "./scene.ts";
@@ -30,6 +30,11 @@ function footprint(s: ProgramScene, r: Rect, y: number, style: Style): Shape {
   return polygon(pts, style);
 }
 
+function streetEdge(s: ProgramScene, r: Rect, style: Style): Shape {
+  const pts: Vec2[] = [[r.x0, r.z0], [r.x1, r.z0], [r.x1, r.z1], [r.x0, r.z1], [r.x0, r.z0]].map(([x, z]) => s.projector.toScreen([x, 0, z]));
+  return polyline(pts, style);
+}
+
 function centre(s: ProgramScene, p: PlacedSpace): Vec2 {
   return s.projector.toScreen([(p.rect.x0 + p.rect.x1) / 2, p.y0, (p.rect.z0 + p.rect.z1) / 2]);
 }
@@ -48,7 +53,11 @@ export function programStage(s: ProgramScene): Stage {
   const byId = new Map(layout.spaces.map((p) => [p.node.id, p]));
   const ground = layout.spaces.filter((p) => p.node.level === 0 || p.node.kind === "bridge").sort((a, b) => a.y0 - b.y0);
   const shapes: Shape[] = [rect(0, 0, projector.viewport.width, projector.viewport.height, { fill: pal.bg })];
-  for (const p of ground) shapes.push(footprint(s, p.rect, p.y0, filled(pal[FILL[p.node.kind]], pal.ink, 1, { opacity: p.node.kind === "complex" ? 0.35 : 0.55 })));
+  for (const p of ground) {
+    const open = !p.node.parent && OPEN_GROUND_STYLES.includes(p.node.style);
+    const look = filled(pal[FILL[p.node.kind]], pal.ink, 1, { opacity: p.node.kind === "complex" ? 0.35 : 0.55 });
+    shapes.push(open ? streetEdge(s, p.rect, stroked(pal.ink, 0.8, { opacity: 0.5 })) : footprint(s, p.rect, p.y0, look));
+  }
   for (const e of graph.edges) {
     const look = LINK[e.relation];
     const a = byId.get(e.from), b = byId.get(e.to);

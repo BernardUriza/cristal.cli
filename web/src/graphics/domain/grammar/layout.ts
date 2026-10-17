@@ -1,6 +1,6 @@
 import type { Rect } from "../architecture/layout.ts";
 import { shuffle, type Rng } from "../../../shared/rng.ts";
-import { KIND_DIMENSIONS, LAYOUT_RULES } from "./dimensions.ts";
+import { KIND_DIMENSIONS, LAYOUT_RULES, STREET_BY_STYLE } from "./dimensions.ts";
 import { bboxArea, bboxOf, candidatesAround, facingSlot, overlaps, sharedEdge, SIDES, translate, type Candidate, type Side } from "./place.ts";
 import { GrammarError, type SpaceEdge, type SpaceGraph, type SpaceNode } from "./types.ts";
 
@@ -38,7 +38,7 @@ function candidatesFor(kid: SpaceNode, size: [number, number], placed: Map<strin
   const anchors = links.length ? links.map((e) => ({ id: related(e, kid.id)!, faces: e.relation === "faces" })) : [...placed.keys()].map((id) => ({ id, faces: false }));
   const sides = shuffle(SIDES, s.rng);
   const [a, b] = size;
-  const gap = links.length ? 0 : LAYOUT_RULES.street;
+  const gap = links.length ? 0 : STREET_BY_STYLE[kid.style] ?? LAYOUT_RULES.street;
   return anchors.flatMap(({ id, faces }) => {
     const p = placed.get(id)!;
     const r = { x0: p.x0 - gap, z0: p.z0 - gap, x1: p.x1 + gap, z1: p.z1 + gap };

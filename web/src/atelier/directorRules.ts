@@ -1,11 +1,13 @@
 import type { PaletteName } from "../graphics/config/palettes.ts";
 import type { ProjectionKind, Symmetry } from "../graphics/config/types.ts";
 import type { Scene } from "../graphics/config/scene.ts";
+import type { ArchitectureProgram } from "../graphics/domain/grammar/types.ts";
 import type { Anomaly, Composition, MotifName, OrnamentLanguage } from "./vocabulary.ts";
 
 export type Decision =
   | { field: "composition"; value: Composition }
   | { field: "scene"; value: Scene }
+  | { field: "program"; value: ArchitectureProgram }
   | { field: "motifs"; value: MotifName[] }
   | { field: "ornament"; value: OrnamentLanguage[] }
   | { field: "anomaly"; value: Anomaly }
@@ -45,9 +47,11 @@ export const ORNAMENT_RULES: OrnamentRule[] = [
 
 export const DEFAULT_ORNAMENT: OrnamentLanguage[] = ["greca", "ajedrez"];
 
+export const DEFAULT_PROGRAM_ORNAMENT: OrnamentLanguage[] = ["greca", "ajedrez", "estrías"];
+
 export const DIRECTOR_RULES: DirectorRule[] = [
-  { match: /patio|claustro|ciudad|edificio|torre|galer[ií]a|mapa|plano|desde arriba|axonom|isom[eé]tric|recorr/i, decision: { field: "composition", value: "patio" }, because: "hablaste de un lugar que se recorre: patio axonométrico con planta real" },
-  { match: /templo|fachada|altar|capilla|columnas?/i, decision: { field: "composition", value: "templo" }, because: "hablaste de un templo: fachada en perspectiva" },
+  { match: /fachada|\bfrente\b/i, decision: { field: "composition", value: "templo" }, because: "nombraste la fachada: templo de frente en perspectiva de un punto" },
+  { match: /claustro (?:único|solo)|(?:único|un solo|solo un) claustro/i, decision: { field: "composition", value: "patio" }, because: "nombraste un claustro único: el patio axonométrico de una sola planta" },
   { match: /escalera|peldañ|subir|bajar/i, decision: { field: "anomaly", value: "escalera-imposible" }, because: "nombraste una escalera: sube y desemboca donde no debería" },
   { match: /dentro de|anidad|adentro|contiene|recursiv|espejo/i, decision: { field: "anomaly", value: "edificio-anidado" }, because: "hablaste de algo dentro de algo: el patio entero cabe en la cara de una torre" },
   { match: /flot|levit|vuel|aire|nube/i, decision: { field: "anomaly", value: "torre-flotante" }, because: "hablaste de flotar: una torre se despega del patio" },
@@ -66,6 +70,8 @@ export const DIRECTOR_RULES: DirectorRule[] = [
   { match: /nueve|9 columnas/i, decision: { field: "columns", value: 9 }, because: "contaste nueve columnas" },
   { match: /cinco|5 columnas/i, decision: { field: "columns", value: 5 }, because: "contaste cinco columnas" },
 ];
+
+export const DEFAULT_COMPOSITION_BECAUSE = "sin fachada ni claustro único nombrados: un programa arquitectónico compuesto con la gramática R1–R6";
 
 export const WORDS_PER_COMPLEXITY_LEVEL = 6;
 export const MAX_COMPLEXITY = 5;

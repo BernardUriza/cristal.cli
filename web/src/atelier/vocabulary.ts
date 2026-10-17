@@ -1,4 +1,4 @@
-export const COMPOSITIONS = ["templo", "patio"] as const;
+export const COMPOSITIONS = ["programa", "templo", "patio"] as const;
 export type Composition = (typeof COMPOSITIONS)[number];
 
 export const MOTIF_NAMES = ["ojo", "mano", "craneo", "perro", "jaguar", "escalera", "mascara", "sirena"] as const;

@@ -11,6 +11,7 @@ import { friso } from "./friso.ts";
 import { REASON_BODIES } from "./habitar.ts";
 import { decorSurface, ornamento, type FriezeOf } from "./ornamento.ts";
 import { poblado } from "./poblado.ts";
+import { siteOfBuilding } from "./lugares.ts";
 import { solidItems } from "./solidos.ts";
 import { visibleFaces, type Surface } from "./surfaces.ts";
 import type { PatioContext } from "./types.ts";
@@ -22,11 +23,11 @@ export type World = { volumenes: Stage; ornamento: Stage; habitada?: Stage };
 
 const REASON_ANOMALY = "La anomalía columna-figura pide que la columna sea un cuerpo";
 
-function motifsOf(scene: Scene): string[] {
+export function motifsOf(scene: Scene): string[] {
   return [...new Set(scene.groups.flatMap((g) => Object.values(g.creature.parts) as string[]))];
 }
 
-function habitada(items: SceneItem[], forward: PatioContext["projector"]["forward"], records: RewriteRecord[], base: Stage["provenance"], deferred: number): Stage {
+export function habitada(items: SceneItem[], forward: PatioContext["projector"]["forward"], records: RewriteRecord[], base: Stage["provenance"], deferred: number): Stage {
   const shapes = paintOrder(items, forward).flatMap((i) => i.shapes);
   const t = (rule: string) => records.filter((r) => r.rule === rule).length;
   return {
@@ -54,7 +55,7 @@ export function mundo(ctx: PatioContext, surfaces: Surface[], people: Inhabitant
   const motifs = scene ? motifsOf(scene).map((m) => MOTIFS[m]).filter(Boolean) : [];
   const frieze: FriezeOf | undefined = scene ? (s) => friso(ctx, s, ink, motifs, seed, REASON_BODIES) : undefined;
   const solids = solidItems(ctx, faces, columns);
-  const placed = scene ? poblado(ctx, scene, people!.pal, people!.detail, seed, mini) : undefined;
+  const placed = scene ? poblado(siteOfBuilding(ctx.building, ctx.projector), scene, people!.pal, people!.detail, seed, mini) : undefined;
   const forward = ctx.projector.forward;
   const front = placed ? occluders(solids, placed.items, forward) : new Set<string>();
   const back = paintOrder(solids.filter((s) => !front.has(s.id)), forward);

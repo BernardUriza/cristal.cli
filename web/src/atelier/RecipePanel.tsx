@@ -23,6 +23,7 @@ export function RecipePanel({ recipe, onOverride, onReseed }: Props) {
         ))}
         <button onClick={() => onOverride({ field: "density", value: Math.min(1, (density ?? 0.6) + 0.2) }, "pediste más ornamento")}>más ornamento</button>
         <button onClick={() => onOverride({ field: "density", value: Math.max(0, (density ?? 0.6) - 0.2) }, "pediste menos ornamento")}>menos ornamento</button>
+        <button onClick={() => onOverride({ field: "composition", value: "programa" }, "pediste el programa arquitectónico")}>programa</button>
         <button onClick={() => onOverride({ field: "composition", value: "patio" }, "pediste el patio")}>patio</button>
         <button onClick={() => onOverride({ field: "composition", value: "templo" }, "pediste el templo")}>templo</button>
         <button onClick={() => onOverride({ field: "anomaly", value: "escalera-imposible" }, "pediste una escalera imposible")}>escalera imposible</button>

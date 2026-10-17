@@ -11,6 +11,10 @@ import type { PatioContext } from "./types.ts";
 import type { Decor } from "./friso.ts";
 import type { RewriteRecord } from "../../domain/rewrite/rewrite.ts";
 
+const STOREY_M = 3;
+
+const TOWER_COURSE_M = 4;
+
 function ornamentOn(s: Surface, ctx: PatioContext, ink: Ink): Ornament {
   const pxPerM = s.px.w / Math.max(s.frame.width, 1e-6);
   return { ink, sw: ctx.style.edgeWidth * 0.7, level: ctx.config.detail, shows: (m, min) => ctx.lod.shows(m * pxPerM, min) };
@@ -27,7 +31,8 @@ function exteriorWall(s: Surface, ctx: PatioContext, frieze: boolean): Shape[] {
   if (config.detail >= 2 && h >= 3 && o.shows(1.4, 8)) {
     const n = Math.max(1, Math.floor(w / 2.4));
     const pointed = chance(ctx.rng, 0.5);
-    for (let i = 0; i < n; i++) out.push(...blindWindow((w / n) * (i + 0.5), h - 2.6, 0.9, 1.4, pointed, o, config.detail >= 3));
+    const storeys = Math.max(1, Math.floor((h - 3.8) / STOREY_M) + 1);
+    for (let k = 0; k < storeys; k++) for (let i = 0; i < n; i++) out.push(...blindWindow((w / n) * (i + 0.5), h - 2.6 - k * STOREY_M, 0.9, 1.4, pointed, o, config.detail >= 3));
   }
   return out;
 }
@@ -42,6 +47,7 @@ function towerWall(s: Surface, ctx: PatioContext): Shape[] {
   const r = Math.min(w, 4) * 0.28;
   if (config.detail >= 2 && enabled(config, "roseta") && o.shows(r * 2, 10)) out.push(...rosette(w / 2, 1.5 + r, r, 8, o));
   if (config.detail >= 3 && o.shows(0.4, 4)) out.push(...band(bandLanguage(config, "greca"), 0, 0.2, w, 0.4, cellsFor(config, w), o));
+  if (config.detail >= 2 && o.shows(0.9, 6)) for (let y = TOWER_COURSE_M; y < h - 2.4; y += TOWER_COURSE_M) out.push(...blindWindow(w / 2, y, 0.9, 1.4, true, o, config.detail >= 3));
   return out;
 }
 
@@ -112,7 +118,7 @@ export function ornamento(ctx: PatioContext, surfaces: Surface[], frieze?: Friez
     provenance: {
       algorithm: "ornamento por superficie y función: marco local (origen abajo-izquierda, u arista, v vertical), motivo 2D en metros, mapeo punto a punto a 3D y proyección",
       params: { detalle: ctx.config.detail, densidad: ctx.config.density, lenguajes: ctx.config.ornament.join(","), ...count, frisos_habitados: records.length },
-      decision: "muro exterior → banda bajo cornisa + ventanas ciegas; torre → estrías + roseta alta; arcada → chevrón apilado en pilares y banda en dinteles; cubierta de torre → sierpinski; losas lisas. Tres niveles: bandas / subdivisiones / puntos y rosetas" + (records.length ? `; T4: en ${records.length} muros altos la banda se vuelve friso de celdas habitadas` : ""),
+      decision: "muro exterior → banda bajo cornisa + ventanas ciegas, una fila por cada piso de 3 m; torre → estrías + roseta alta + una aspillera por cada 4 m de altura; arcada → chevrón apilado en pilares y banda en dinteles; cubierta de torre → sierpinski; losas lisas. Tres niveles: bandas / subdivisiones / puntos y rosetas" + (records.length ? `; T4: en ${records.length} muros altos la banda se vuelve friso de celdas habitadas` : ""),
       ...(records.length ? { rewrites: records } : {}),
     },
   };

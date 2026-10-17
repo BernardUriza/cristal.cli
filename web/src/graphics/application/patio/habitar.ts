@@ -9,10 +9,12 @@ import type { Rng } from "../../../shared/rng.ts";
 
 export type Inhabit = { ink: Ink; seed: number; mini?: MiniComposer };
 
+const T3 = REWRITES.T3_OPENING_AS_PORTAL;
+
 export const REASON_BODIES = "La narración describe cuerpos habitados";
 
 export function creatureRules(asFacade: boolean, mini?: MiniComposer): Rule[] {
-  const t3: Rule = { rewrite: REWRITES.T3_OPENING_AS_PORTAL, produce: portal({ frames: REWRITE_TUNING.corridorFrames, miniPx: REWRITE_TUNING.miniPatioPx, mini }) };
+  const t3: Rule = { rewrite: REWRITES.T3_OPENING_AS_PORTAL, produce: portal({ frames: REWRITE_TUNING.corridorFrames, miniPx: REWRITE_TUNING.miniPatioPx, mini, deepest: T3.constraints.maxDepth, nextMinPx: T3.constraints.minProjectedPx }) };
   return asFacade ? [{ rewrite: REWRITES.T2_BODY_AS_FACADE, produce: facade(REWRITE_TUNING.facadeCellPx) }, t3] : [t3];
 }
 
