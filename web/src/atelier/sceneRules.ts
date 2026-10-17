@@ -1,13 +1,16 @@
 import type { Arrangement, ArchitectureSpec, BodyPart, Place, SceneMotif } from "../graphics/config/scene.ts";
+import type { BodyFamily } from "../graphics/domain/motifs/figures/body/types.ts";
+import { FAMILY_TEMPLATES } from "./creatureWords.ts";
 
 export const NUMBER_WORDS: Record<string, number> = {
   un: 1, una: 1, uno: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5, seis: 6, siete: 7, ocho: 8, nueve: 9, diez: 10,
   once: 11, doce: 12, trece: 13, catorce: 14, quince: 15, veinte: 20, docena: 12, cientos: 24, miles: 24, muchos: 12, muchas: 12, multitud: 24,
 };
 
-export type CreatureTemplate = { match: RegExp; name: string; parts: Partial<Record<BodyPart, SceneMotif>> };
+export type CreatureTemplate = { match: RegExp; name: string; parts: Partial<Record<BodyPart, SceneMotif>>; family?: BodyFamily };
 
 export const CREATURE_TEMPLATES: CreatureTemplate[] = [
+  ...FAMILY_TEMPLATES,
   { match: /robots?|aut[oó]matas?|androides?|m[aá]quinas?|cyborgs?|IA\b/i, name: "robot", parts: { cabeza: "craneo", ojos: "ojo", cuerpo: "escalera", manos: "mano" } },
   { match: /monjes?|sacerdotes?|guardianes?|guardias?|centinelas?/i, name: "guardián", parts: { cabeza: "mascara", ojos: "ojo", cuerpo: "escalera", manos: "mano" } },
   { match: /personas?|gente|hombres?|mujeres?|ni[nñ]os?|peregrinos?|almas?|humanos?/i, name: "persona", parts: { cabeza: "mascara", cuerpo: "sirena", manos: "mano" } },

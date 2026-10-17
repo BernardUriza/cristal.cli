@@ -1,6 +1,7 @@
 import { DEFAULT_ARCHITECTURE, SCENE_LIMITS, type ArchitectureSpec, type Creature, type Group, type Scene } from "../graphics/config/scene.ts";
 import { ARCHITECTURE_RULES, ARRANGEMENT_RULES, CREATURE_TEMPLATES, MATERIAL_WORDS, NUMBER_WORDS, PLACE_RULES } from "./sceneRules.ts";
 import type { MotifName } from "./vocabulary.ts";
+import { familyProgram, maskOpWords, programWords } from "./creatureProgramReader.ts";
 
 const OBJECT_NAMES = ["ojo", "mano", "cráneo", "máscara"];
 const OBJECT_SCALE = 2.2;
@@ -27,9 +28,11 @@ function materials(text: string, after: number): Creature["parts"] {
   return parts;
 }
 
-export function readScene(narration: string, wallMotifs: MotifName[] = []): SceneReading {
+export function readScene(spoken: string, wallMotifs: MotifName[] = []): SceneReading {
+  const narration = maskOpWords(spoken);
   const because: string[] = [];
   const groups: Group[] = [];
+  const at: number[] = [];
   const taken = new Set<string>();
   for (const t of CREATURE_TEMPLATES) {
     if (groups.length === SCENE_LIMITS.groups) break;
@@ -44,9 +47,12 @@ export function readScene(narration: string, wallMotifs: MotifName[] = []): Scen
     const lead = groups.length === 0;
     const arr = lead && !isObject ? ARRANGEMENT_RULES.find((r) => r.match.test(narration)) : undefined;
     const place = lead ? PLACE_RULES.find((r) => r.match.test(narration)) : undefined;
-    groups.push({ creature: { name: t.name, parts }, count, arrangement: arr?.arrangement ?? (count > 4 ? "procesion" : "fila"), place: arr?.place ?? place?.place ?? "patio", scale: isObject ? OBJECT_SCALE : 1 });
+    at.push(m.index);
+    const program = t.family ? familyProgram(t.family, spoken, custom.cabeza ?? t.parts.cabeza) : undefined;
+    groups.push({ creature: { name: t.name, parts }, count, arrangement: arr?.arrangement ?? (count > 4 ? "procesion" : "fila"), place: arr?.place ?? place?.place ?? "patio", scale: isObject ? OBJECT_SCALE : 1, ...(program ? { program } : {}) });
     because.push(`${count} ${t.name} (encontré «${m[0]}»${Object.keys(custom).length ? `, hechos de ${Object.values(custom).join(" y ")}` : ""})${arr ? `; ${arr.because}` : ""}${place && !arr?.place ? `; ${place.because}` : ""}`);
   }
+  because.push(...programWords(spoken, groups, at));
   for (const motif of wallMotifs) {
     if (groups.length === SCENE_LIMITS.groups || groups.some((g) => Object.values(g.creature.parts).includes(motif))) continue;
     groups.push({ creature: { name: motif, parts: { cuerpo: motif } }, count: 1, arrangement: "fila", place: "patio", scale: 1.4 });
@@ -54,7 +60,7 @@ export function readScene(narration: string, wallMotifs: MotifName[] = []): Scen
   }
   const architecture: ArchitectureSpec = { ...DEFAULT_ARCHITECTURE };
   for (const r of ARCHITECTURE_RULES) {
-    if (!r.match.test(narration) || architecture[r.field] !== DEFAULT_ARCHITECTURE[r.field]) continue;
+    if (!r.match.test(spoken) || architecture[r.field] !== DEFAULT_ARCHITECTURE[r.field]) continue;
     (architecture as Record<string, string>)[r.field] = r.value;
     because.push(r.because);
   }

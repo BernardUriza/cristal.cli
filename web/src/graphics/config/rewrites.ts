@@ -29,4 +29,4 @@ export const REWRITES: Record<RuleId, Rewrite> = {
   },
 };
 
-export const REWRITE_TUNING = { miniPatioPx: 90, friezePeriod: [3, 5], friezeHeightM: 1.1, facadeCellPx: 17, corridorFrames: 4 } as const;
+export const REWRITE_TUNING = { miniPatioPx: 90, friezePeriod: [3, 5], friezeHeightM: 1.1, facadeCellPx: 17, towerCellRatio: 0.55, declaredMinPx: 10, corridorFrames: 4 } as const;

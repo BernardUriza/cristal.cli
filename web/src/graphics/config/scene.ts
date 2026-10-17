@@ -1,3 +1,6 @@
+import { readCreatureProgram } from "../domain/motifs/figures/body/program/sanitize.ts";
+import type { CreatureProgram } from "../domain/motifs/figures/body/program/types.ts";
+
 export const BODY_PARTS = ["cabeza", "ojos", "cuerpo", "manos", "cola", "pies"] as const;
 export type BodyPart = (typeof BODY_PARTS)[number];
 
@@ -12,7 +15,9 @@ export type Place = (typeof PLACES)[number];
 
 export type Creature = { name: string; parts: Partial<Record<BodyPart, SceneMotif>> };
 
-export type Group = { creature: Creature; count: number; arrangement: Arrangement; place: Place; scale: number };
+export type Group = { creature: Creature; count: number; arrangement: Arrangement; place: Place; scale: number; program?: CreatureProgram; programRejected?: string };
+
+const PROGRAM_FALLBACK_PARTS: Creature["parts"] = { cuerpo: "mascara" };
 
 export const FOOTPRINTS = ["cuadrado", "alargado", "profundo"] as const;
 export const COURTYARDS = ["chico", "medio", "grande"] as const;
@@ -43,15 +48,19 @@ export function sanitizeScene(raw: unknown): Scene | null {
     const c = (gg.creature ?? {}) as { name?: unknown; parts?: Record<string, unknown> };
     const parts: Creature["parts"] = {};
     for (const part of BODY_PARTS) if (isOneOf(SCENE_MOTIFS, c.parts?.[part])) parts[part] = c.parts![part] as SceneMotif;
-    if (Object.keys(parts).length === 0) continue;
+    const reading = gg.program === undefined ? undefined : readCreatureProgram(gg.program);
+    const program = reading && "program" in reading ? reading.program : undefined;
+    if (Object.keys(parts).length === 0 && !program) continue;
     const count = Math.round(Number(gg.count));
     const scale = Number(gg.scale ?? 1);
     groups.push({
-      creature: { name: typeof c.name === "string" && c.name.trim() ? c.name.trim().slice(0, 40) : "figura", parts },
+      creature: { name: typeof c.name === "string" && c.name.trim() ? c.name.trim().slice(0, 40) : "figura", parts: Object.keys(parts).length ? parts : PROGRAM_FALLBACK_PARTS },
       count: Number.isFinite(count) ? Math.max(1, Math.min(SCENE_LIMITS.count, count)) : 1,
       arrangement: isOneOf(ARRANGEMENTS, gg.arrangement) ? gg.arrangement : "fila",
       place: isOneOf(PLACES, gg.place) ? gg.place : "patio",
       scale: Number.isFinite(scale) ? Math.max(SCENE_LIMITS.scaleMin, Math.min(SCENE_LIMITS.scaleMax, scale)) : 1,
+      ...(program ? { program } : {}),
+      ...(reading && "rejected" in reading ? { programRejected: reading.rejected } : {}),
     });
   }
   const a = r.architecture ?? {};

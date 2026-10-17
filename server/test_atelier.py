@@ -138,3 +138,44 @@ def test_prompt_teaches_the_program_grammar():
     prompt = open("prompts/atelier.md", encoding="utf-8").read()
     for word in ('"program"', '"programa"', "R1", "R2", "R3", "R4", "R5", "R6", "palace", "city", "temple", "labyrinth"):
         assert word in prompt
+
+
+def _scene_with(program):
+    group = {"creature": {"name": "bestia", "parts": {"cabeza": "craneo"}}, "count": 2, "program": program}
+    return {"title": "x", "choices": [{"field": "scene", "because": "b", "value": {"groups": [group]}}]}
+
+
+def test_creature_program_is_kept_when_every_operation_is_known():
+    program = {"family": "quadruped", "seed": 8172, "operations": [
+        {"op": "replace", "socket": "head", "motif": "craneo"},
+        {"op": "graft", "socket": "tail", "family": "serpentine", "part": "tail"},
+        {"op": "repeat", "socket": "arm", "count": 4, "arrangement": "bilateral"},
+        {"op": "architecturalize", "socket": "torso", "grammar": "facade"},
+    ]}
+    client, _ = make_client(_scene_with(program))
+    body = client.post("/atelier/direct", json={"narration": "una bestia", "seed": 3}).json()
+    assert body["choices"][0]["value"]["groups"][0]["program"] == program
+
+
+def test_creature_program_with_one_bad_operation_is_dropped_but_the_group_stays():
+    bad = [
+        {"family": "dragon", "operations": []},
+        {"family": "biped", "operations": [{"op": "melt", "socket": "head"}]},
+        {"family": "biped", "operations": [{"op": "replace", "socket": "wing", "motif": "ojo"}]},
+        {"family": "biped", "operations": [{"op": "replace", "socket": "head", "motif": "dragon"}]},
+        {"family": "biped", "operations": [{"op": "repeat", "socket": "arm", "count": 9, "arrangement": "radial"}]},
+        {"family": "biped", "operations": [{"op": "repeat", "socket": "arm", "count": True, "arrangement": "radial"}]},
+        {"family": "biped", "operations": [{"op": "graft", "socket": "tail", "family": "pez", "part": "tail"}]},
+        {"family": "biped", "operations": [{"op": "architecturalize", "socket": "torso", "grammar": "castle"}]},
+        {"family": "biped", "operations": [{"op": "replace", "socket": "head", "motif": "ojo"}] * 7},
+    ]
+    for program in bad:
+        client, _ = make_client(_scene_with(program))
+        group = client.post("/atelier/direct", json={"narration": "una bestia", "seed": 3}).json()["choices"][0]["value"]["groups"][0]
+        assert "program" not in group and group["creature"]["parts"] == {"cabeza": "craneo"}
+
+
+def test_prompt_teaches_the_creature_program():
+    prompt = open("prompts/atelier.md", encoding="utf-8").read()
+    for word in ("CreatureProgram", '"replace"', '"graft"', '"repeat"', '"architecturalize"', '"serpentine"', '"facade"', "hasta 6 operaciones"):
+        assert word in prompt
