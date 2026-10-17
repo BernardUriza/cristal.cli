@@ -1,5 +1,6 @@
 import { circle, type Shape, type Vec2 } from "../../shapes.ts";
 import { a, defineMotif, sharp, strokeAt } from "./define.ts";
+import { CHARACTER } from "./character.ts";
 import { scales, type Ornament } from "./ornamentador.ts";
 
 const HIP_Y = 0.12;
@@ -14,7 +15,7 @@ export const sirena = defineMotif({
   id: "sirena",
   name: "Sirena",
   tags: ["transformación", "sueño", "cuerpo"],
-  version: "1.0.0",
+  version: "1.1.0",
   role: "connector",
   parts: [
     { id: "torso", role: "enclosure", anchors: { neck: [0.04, -0.29], hip: [0, HIP_Y] }, mask: [[-0.16, -0.27], [0.16, -0.27], [0.24, -0.1], [0.14, HIP_Y], [-0.12, HIP_Y], [-0.2, -0.1]] },
@@ -32,12 +33,12 @@ export const sirena = defineMotif({
     const shapes: Shape[] = [circle(eye[0], eye[1], fig.px(0.012), { fill: p.ink })];
     return shapes;
   },
-  ornaments: (fig, p) => {
+  ornaments: (fig, p, rng) => {
     const out: Ornament[] = [];
     if (p.detail >= 2) {
       const tail = tailRegion(fig.poly, fig.at([0, HIP_Y])[1]);
       const rowH = fig.px(p.detail === 2 ? 0.036 : 0.026);
-      const sc = scales(tail, rowH, { fill: "none", stroke: p.ink, strokeWidth: fig.inkWidth * 0.6 });
+      const sc = scales(tail, rowH, { fill: "none", stroke: p.ink, strokeWidth: fig.inkWidth * 0.6 }, { rng, policy: CHARACTER.disorder });
       const waist = strokeAt(fig, [[-0.12, HIP_Y - 0.02], [0, HIP_Y + 0.02], [0.14, HIP_Y - 0.02]], p.ink);
       const strands = HAIR.map((h) => strokeAt(fig, h, p.ink, fig.inkWidth * 0.7));
       out.push({ shapes: [waist, ...strands, ...sc.shapes], params: { hairStrands: HAIR.length, ...sc.params } });
@@ -49,5 +50,5 @@ export const sirena = defineMotif({
     }
     return out;
   },
-  decision: (p) => `sirena de frente, cola hacia la derecha con aleta; detail ${p.detail}: ${p.detail >= 2 ? "escamas en arcos desde la cadera y mechones" : "solo contorno"}${p.detail >= 3 ? " + perfil y nervaduras de la aleta" : ""}`,
+  decision: (p) => `sirena de frente, cola hacia la derecha con aleta; detail ${p.detail}: ${p.detail >= 2 ? "escamas en arcos desde la cadera con ~2 % interrumpidas (Molnár) y mechones" : "solo contorno"}${p.detail >= 3 ? " + perfil y nervaduras de la aleta" : ""}`,
 });

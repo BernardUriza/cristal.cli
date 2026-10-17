@@ -1,6 +1,7 @@
 import type { Rng } from "../../../../shared/rng";
 import { pointInPolygon, polygonBounds, polygonCentroid } from "../../bezier.ts";
 import { circle, ellipse, group, line, path, polygon, type Shape, type Style, type Vec2 } from "../../shapes.ts";
+import { disorderParams, interrupt, type DisorderPolicy, type RepeatedItem } from "../disorder.ts";
 
 export type Ornament = { shapes: Shape[]; params: Record<string, number | string> };
 
@@ -81,20 +82,24 @@ export function spots(poly: readonly Vec2[], rng: Rng, count: number, rMin: numb
   return { shapes, params: { spotCount: shapes.length, spotRadiusMin: rMin, spotRadiusMax: rMax } };
 }
 
-export function scales(poly: readonly Vec2[], rowH: number, style: Style): Ornament {
+export type DisorderInput = { rng: Rng; policy: DisorderPolicy };
+
+export function scales(poly: readonly Vec2[], rowH: number, style: Style, disorder?: DisorderInput): Ornament {
   const b = polygonBounds(poly);
-  const shapes: Shape[] = [];
+  const items: RepeatedItem[] = [];
   let rows = 0;
   for (let y = b.minY, j = 0; y <= b.maxY; y += rowH, j++) {
     const offset = (j % 2) * rowH;
     for (let x = b.minX - rowH * 2 + offset; x < b.maxX; x += rowH * 2) {
       const l: Vec2 = [x, y], r: Vec2 = [x + rowH * 2, y], bottom: Vec2 = [x + rowH, y + rowH];
       if (!pointInPolygon(l, poly) || !pointInPolygon(r, poly) || !pointInPolygon(bottom, poly)) continue;
-      shapes.push(path([{ op: "M", p: l }, { op: "A", r: rowH, large: 0, sweep: 0, p: r }], style));
+      items.push({ shape: path([{ op: "M", p: l }, { op: "A", r: rowH, large: 0, sweep: 0, p: r }], style), pivot: [x + rowH, y] });
     }
     rows++;
   }
-  return { shapes, params: { scaleRowHeight: Number(rowH.toFixed(2)), scaleRows: rows, scaleCount: shapes.length } };
+  const cut = disorder ? interrupt(items, disorder.rng, disorder.policy, rowH) : { shapes: items.map((i) => i.shape), interrupted: [] };
+  const params = { scaleRowHeight: Number(rowH.toFixed(2)), scaleRows: rows, scaleCount: items.length };
+  return { shapes: cut.shapes, params: disorder ? { ...params, ...disorderParams("scale", cut.interrupted) } : params };
 }
 
 export function contourLines(poly: readonly Vec2[], count: number, style: Style, inset = 0.08): Ornament {
