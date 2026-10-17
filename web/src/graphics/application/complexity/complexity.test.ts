@@ -107,8 +107,8 @@ describe("masses, not faces", () => {
     const { COMPLEXITY_TUNING } = await import("../../config/complexity.ts");
     const { polygon, stroked } = await import("../../domain/shapes.ts");
     const triangle = polygon([[0, 0], [400, 0], [0, 400]], stroked("#000", 1));
-    const band3 = multiscaleCoverage([triangle], 400, 400, COMPLEXITY_TUNING)[3].areaPct;
-    expect(band3).toBeGreaterThan(45);
-    expect(band3).toBeLessThan(55);
+    const band3 = multiscaleCoverage([triangle], 1000, 1000, COMPLEXITY_TUNING)[3].areaPct;
+    expect(band3).toBeGreaterThan(7);
+    expect(band3).toBeLessThan(9);
   });
 });
