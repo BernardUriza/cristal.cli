@@ -17,8 +17,12 @@ function chainLength(id: string, parents: Map<string, string | undefined>, seen:
   return 1 + chainLength(parent, parents, seen);
 }
 
+function withNested(entries: readonly RewriteEntry[]): RewriteEntry[] {
+  return entries.flatMap((e) => [e, ...withNested(e.rewrites ?? [])]);
+}
+
 export function semanticDepth(entries: readonly RewriteEntry[]): number {
-  const rewrites = entries.filter(isRewrite);
+  const rewrites = withNested(entries).filter(isRewrite);
   const parents = new Map<string, string | undefined>();
   for (const r of rewrites) if (r.id !== undefined) parents.set(r.id, r.parent);
   let best = 0;

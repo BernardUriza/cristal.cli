@@ -14,6 +14,7 @@ export type RewriteEntry = {
   id?: string;
   parent?: string;
   params?: Record<string, number | string>;
+  rewrites?: readonly RewriteEntry[];
 };
 
 export type BandCoverage = { band: DetailBand; areaPct: number };

@@ -66,3 +66,13 @@ describe("patio work", () => {
     expect(composeWork(recipe, 600, 450).stages[5].shapes.length).toBe(figuras.shapes.length);
   });
 });
+
+describe("complexity reads what the composer writes", () => {
+  it("the rewrites nested in each stage's provenance count as semantic depth", async () => {
+    const { workComplexity } = await import("./manifest.ts");
+    const work = composeWork(direct("ocho robots hechos de craneos y ojos abiertos que suben escaleras infinitas en las manos del poder"), 1200, 900);
+    const nested = work.stages.flatMap((s) => s.provenance?.rewrites ?? []);
+    expect(nested.length).toBeGreaterThan(0);
+    expect(workComplexity(work).semanticDepth).toBe(Math.max(...nested.map((r) => r.depth)));
+  });
+});
