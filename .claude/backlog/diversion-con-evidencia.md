@@ -89,7 +89,7 @@ sin spoiler («CRISTAL memorama · templo del día 8660 · 6 pares · 10 movimie
 `localStorage` («nueva mejor marca (antes N)» / «mejor marca N»); juice suave: pulso y halo al acierto, atenuación breve
 al fallo, respiración lenta de los pares resueltos, dos tonos cortos (acierto, victoria) con botón ♪ persistido; sin
 timer ni castigo. Compartir: portapapeles en escritorio, hoja nativa solo con puntero táctil (en Chrome de escritorio
-la hoja nativa deja la promesa colgada). Verificado en dev jugando una partida completa por DOM.
+la hoja nativa deja la promesa colgada). Verificado en dev y en prod (deploy `3a0a0cf`) jugando una partida completa por DOM.
 
 **Next.** Punto 5 en orden (modo viaje: pantalla escasa, ≤3 destellos/s, sin sustos, se juega solo si sueltas);
 y el DM a `me.tikkum` sigue pendiente de Bernard (borrador en `Donde_quedamos.md`).

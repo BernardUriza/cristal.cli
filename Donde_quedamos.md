@@ -102,7 +102,9 @@ N completo en M movimientos», mejor marca por semilla+pares (`cristal.memorama.
 que cada uno difiera en ≥2 rasgos de los demás (`artSignature`). Juice suave y dos tonos cortos con ♪ para apagar.
 Verificado en dev con una partida completa jugada por DOM (hash del canvas identifica los pares): captura
 `~/Documents/personal-assistance/cristal-betatesters/2026-10-17-dev-memorama-won.jpg`; la línea compartida llegó al
-portapapeles del sistema. Pendiente: verificación en prod tras el deploy.
+portapapeles del sistema. **Verificado en prod (deploy `3a0a0cf`, bundle `memorama-DLYO_C-X.js`):** el templo del día
+8660 jugado por DOM en cristal.bernarduriza.com, 10 movimientos, «primera marca en este templo», fila ▢▢▢▣▢▣▣▣▣▣, marca
+guardada; captura `~/Documents/personal-assistance/cristal-betatesters/2026-10-17-prod-memorama-won.jpg`.
 
 ### Primeros cinco minutos: embudo medido y un verbo a la vez (2026-10-17, punto 3 de `diversion-con-evidencia.md`)
 
