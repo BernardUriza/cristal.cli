@@ -1,0 +1,9 @@
+export const STABILITY_TICK_SECONDS = 0.25;
+export const EYE_HEIGHT = 1.6;
+export const MOVE_SPEED = 4;
+export const PLAYER_RADIUS = 0.5;
+export const DOOR_RANGE = 2.4;
+export const DOOR_W = 1.4;
+export const DOOR_H = 2.4;
+export const SPAWN_INSET = 1.5;
+export const FLICKER_DREAD_THRESHOLD = 0.5;
