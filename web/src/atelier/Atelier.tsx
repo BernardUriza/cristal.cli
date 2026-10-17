@@ -1,22 +1,26 @@
 import { useMemo, useState } from "react";
-import { composeIllustration } from "../graphics/application/compose.ts";
 import { randomSeed } from "../minigames/kit/dailySeed.ts";
 import { deviceScale } from "../minigames/kit/templeCanvas.ts";
 import { positiveInt, readSearch, replaceSearch } from "../minigames/kit/urlParams.ts";
-import { configFor, direct, override, reseed, withDirection, type Direction, type Recipe } from "./director.ts";
+import { direct, override, planOf, reseed, withDirection, type Direction, type Recipe } from "./director.ts";
 import type { Decision } from "./directorRules.ts";
 import { strokeAt } from "./hitTest.ts";
 import { Inspector } from "./Inspector.tsx";
-import { PedroPanel } from "./PedroPanel.tsx";
-import { usePedro } from "./usePedro.ts";
 import { buildManifest, downloadText, strokeLog, svgOf } from "./manifest.ts";
+import { PedroPanel } from "./PedroPanel.tsx";
 import { RecipePanel } from "./RecipePanel.tsx";
 import { flattenStrokes, stageBounds, type Stroke } from "./strokes.ts";
 import { SPEEDS, useDrawing } from "./useDrawing.ts";
+import { usePedro } from "./usePedro.ts";
+import type { MotifName } from "./vocabulary.ts";
+import { loadWall, pinSketch, saveWall, sketchId, thumbnailOf, type Sketch } from "./wall.ts";
+import { Wall } from "./Wall.tsx";
+import { wallMotifs } from "./wallMotifs.ts";
+import { composeWork } from "./work.ts";
 
-const WIDTH = 900;
-const HEIGHT = 675;
-const DEFAULT_NARRATION = "un templo de noche con siete columnas, lleno de galerías imposibles";
+const WIDTH = 1200;
+const HEIGHT = 900;
+const DEFAULT_NARRATION = "un patio de noche que se recorre como un mapa, con un ojo que vigila desde la torre y una escalera que sube al cielo";
 
 function initialRecipe(): Recipe {
   const q = readSearch();
@@ -28,11 +32,13 @@ export function Atelier() {
   const [narration, setNarration] = useState(() => initialRecipe().narration);
   const [recipe, setRecipe] = useState<Recipe>(initialRecipe);
   const [picked, setPicked] = useState<Stroke | null>(null);
+  const [sketches, setSketches] = useState<Sketch[]>(loadWall);
   const scale = deviceScale();
 
-  const ill = useMemo(() => composeIllustration(configFor(recipe, WIDTH, HEIGHT)), [recipe]);
-  const strokes = useMemo(() => flattenStrokes(ill.stages), [ill]);
-  const stages = useMemo(() => stageBounds(ill.stages), [ill]);
+  const work = useMemo(() => composeWork(recipe, WIDTH, HEIGHT), [recipe]);
+  const strokes = useMemo(() => flattenStrokes(work.stages), [work]);
+  const stages = useMemo(() => stageBounds(work.stages), [work]);
+  const motifs = useMemo(wallMotifs, []);
   const drawing = useDrawing(strokes, WIDTH, HEIGHT, scale);
   const pedro = usePedro();
 
@@ -53,6 +59,12 @@ export function Atelier() {
     pedro.dismiss();
   };
 
+  const toggleMotif = (id: MotifName) => {
+    const current = planOf(recipe).motifs;
+    const next = current.includes(id) ? current.filter((m) => m !== id) : [...current, id].slice(-3);
+    apply(override(recipe, { field: "motifs", value: next }, current.includes(id) ? `quitaste ${id} de la pared` : `pediste ${id} de la pared`));
+  };
+
   const pick = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const box = e.currentTarget.getBoundingClientRect();
     const x = ((e.clientX - box.left) / box.width) * WIDTH;
@@ -60,11 +72,19 @@ export function Atelier() {
     setPicked(strokeAt(strokes, [x, y], WIDTH * HEIGHT, drawing.drawn));
   };
 
+  const hang = () => {
+    const canvas = drawing.canvasRef.current;
+    if (!canvas) return;
+    const sketch: Sketch = { id: sketchId(recipe), title: recipe.title, seed: recipe.seed, narration: recipe.narration, recipe, thumbnail: thumbnailOf(canvas), at: Date.now() };
+    const next = pinSketch(sketches, sketch);
+    setSketches(next);
+    saveWall(next);
+  };
+
   const exportAll = () => {
-    const manifest = buildManifest(recipe, ill);
-    downloadText(`atelier-${recipe.seed}.svg`, svgOf(ill), "image/svg+xml");
-    downloadText(`atelier-${recipe.seed}.receta.json`, JSON.stringify(manifest, null, 2), "application/json");
-    downloadText(`atelier-${recipe.seed}.trazos.txt`, strokeLog(ill), "text/plain");
+    downloadText(`atelier-${recipe.seed}.svg`, svgOf(work), "image/svg+xml");
+    downloadText(`atelier-${recipe.seed}.receta.json`, JSON.stringify(buildManifest(recipe, work), null, 2), "application/json");
+    downloadText(`atelier-${recipe.seed}.trazos.txt`, strokeLog(work), "text/plain");
   };
 
   const currentStage = stages.find((s) => drawing.drawn > s.from && drawing.drawn <= s.to)?.name ?? (drawing.finished ? "terminado" : "listo");
@@ -75,12 +95,14 @@ export function Atelier() {
         <a className="minigame-home" href="/">← CRISTAL.CLI</a>
         <h1>atelier</h1>
         <div className="minigame-stats">
+          <span>{work.plan.composition}</span>
           <span>trazo {drawing.drawn}/{strokes.length}</span>
           <span>etapa {currentStage}</span>
         </div>
       </header>
       <main className="atelier-main">
-        <section className="atelier-narration">
+        <Wall motifs={motifs} active={work.plan.motifs} onToggle={toggleMotif} sketches={sketches} onOpen={(s) => { setNarration(s.narration); apply(s.recipe); }} />
+        <section className="atelier-table" aria-label="mesa de trabajo">
           <label htmlFor="narration">cuéntale al dibujante qué ver</label>
           <textarea id="narration" value={narration} onChange={(e) => setNarration(e.target.value)} rows={3} />
           <div className="atelier-controls">
@@ -91,9 +113,7 @@ export function Atelier() {
               <button key={s} className={s === drawing.speed ? "active" : ""} onClick={() => drawing.setSpeed(s)}>×{s}</button>
             ))}
           </div>
-        </section>
-        <section className="atelier-easel">
-          <canvas ref={drawing.canvasRef} width={WIDTH * scale} height={HEIGHT * scale} onClick={pick} aria-label="mesa de trabajo" />
+          <canvas ref={drawing.canvasRef} width={WIDTH * scale} height={HEIGHT * scale} onClick={pick} aria-label="lienzo" />
           <input
             type="range"
             min={0}
@@ -113,7 +133,7 @@ export function Atelier() {
             ))}
           </div>
         </section>
-        <aside className="atelier-side">
+        <aside className="atelier-side" aria-label="el director">
           <PedroPanel state={pedro.state} onDraw={drawPedro} onDismiss={pedro.dismiss} />
           <RecipePanel
             recipe={recipe}
@@ -125,6 +145,7 @@ export function Atelier() {
             <Inspector stroke={picked} total={strokes.length} />
           </section>
           <div className="atelier-controls">
+            <button onClick={hang} disabled={!drawing.finished}>colgar en la pared</button>
             <button onClick={exportAll} disabled={!drawing.finished}>exportar obra.svg + receta + trazos</button>
           </div>
         </aside>

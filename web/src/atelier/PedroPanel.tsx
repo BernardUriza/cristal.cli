@@ -13,7 +13,7 @@ export function PedroPanel({ state, onDraw, onDismiss }: Props) {
       <ol>
         {state.direction.choices.map((c) => (
           <li key={c.decision.field}>
-            <b>{c.decision.field}</b> = {String(c.decision.value)} <span>{c.because}</span>
+            <b>{c.decision.field}</b> = {Array.isArray(c.decision.value) ? c.decision.value.join(", ") || "ninguno" : String(c.decision.value)} <span>{c.because}</span>
           </li>
         ))}
       </ol>

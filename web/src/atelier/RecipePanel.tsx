@@ -12,7 +12,7 @@ export function RecipePanel({ recipe, onOverride, onReseed }: Props) {
       <ol>
         {recipe.choices.map((c) => (
           <li key={c.decision.field} className={`choice-${c.source}`}>
-            <b>{c.decision.field}</b> = {String(c.decision.value)} <span>{c.because}</span>
+            <b>{c.decision.field}</b> = {Array.isArray(c.decision.value) ? (c.decision.value.length ? c.decision.value.join(", ") : "ninguno") : String(c.decision.value)} <span>{c.because}</span>
           </li>
         ))}
       </ol>
@@ -22,6 +22,11 @@ export function RecipePanel({ recipe, onOverride, onReseed }: Props) {
         ))}
         <button onClick={() => onOverride({ field: "density", value: Math.min(1, (density ?? 0.6) + 0.2) }, "pediste más ornamento")}>más ornamento</button>
         <button onClick={() => onOverride({ field: "density", value: Math.max(0, (density ?? 0.6) - 0.2) }, "pediste menos ornamento")}>menos ornamento</button>
+        <button onClick={() => onOverride({ field: "composition", value: "patio" }, "pediste el patio")}>patio</button>
+        <button onClick={() => onOverride({ field: "composition", value: "templo" }, "pediste el templo")}>templo</button>
+        <button onClick={() => onOverride({ field: "anomaly", value: "escalera-imposible" }, "pediste una escalera imposible")}>escalera imposible</button>
+        <button onClick={() => onOverride({ field: "anomaly", value: "edificio-anidado" }, "pediste el patio dentro de la torre")}>edificio anidado</button>
+        <button onClick={() => onOverride({ field: "anomaly", value: "torre-flotante" }, "pediste que una torre flote")}>torre flotante</button>
         <button onClick={() => onOverride({ field: "anomalyRate", value: 0.95 }, "pediste que algo se rompa")}>rómpelo</button>
         <button onClick={onReseed}>otra semilla</button>
       </div>
