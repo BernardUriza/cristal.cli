@@ -1,0 +1,72 @@
+id: cannabis
+nombres: [cannabis, marihuana, mariguana, mota, hierba, weed, THC, delta-9-tetrahidrocannabinol, CBD, cannabidiol, comestible, comestibles]
+familia: cannabinoide
+identidad:
+  quimica: "planta con cannabinoides; los más estudiados son THC (efecto intoxicante) y CBD (cannabidiol). Los cannabinoides sintéticos (K2/Spice) son sustancias de laboratorio químicamente parecidas a los de la planta, con efectos a menudo muy distintos: se tratan como riesgo aparte."
+  fuentes: [nida-cannabis-2024, fda-cbd-2020, nida-sinteticos-2023]
+mecanismo:
+  texto: "El THC fumado aparece en plasma de inmediato y su metabolito activo 11-OH-THC alcanza su máximo unos 13 min después de empezar a fumar; por vía oral la absorción es más lenta, el pico es menor y los efectos se extienden más. El CBD purificado (Epidiolex) está aprobado solo como medicamento con receta para ciertas epilepsias; no hay otros productos de CBD aprobados."
+  limites: "estas fuentes describen farmacocinética, no la relación entre receptor y experiencia subjetiva; el CBD de venta libre varía en contenido y puede traer contaminantes o THC"
+  fuentes: [huestis-2007, fda-cbd-2020]
+temporalidad:
+  - via: inhalado
+    inicio: [0, 10]
+    pico: [15, 45]
+    duracion: [150, 300]
+    limites: "inicio, pico y duración subjetivos vienen de reportes comunitarios (confianza baja); el dato medido (Huestis) es plasmático: THC en sangre tras fumar alcanza su máximo a ~9 min y baja a ≤5 ng/ml en 2 h, sin equivaler a la intoxicación subjetiva"
+    fuentes: [psychonautwiki-cannabis, huestis-2007]
+  - via: comestible
+    inicio: [20, 60]
+    pico: [60, 300]
+    duracion: [240, 600]
+    limites: "inicio y duración subjetivos vienen de reportes comunitarios; el pico de THC en plasma tras una galleta con THC fue de 1 a 5 h (hasta 4-6 h con cápsulas en aceite). NIDA y CDC solo dicen que el efecto tarda más y es retrasado o impredecible, sin dar minutos"
+    fuentes: [psychonautwiki-cannabis, huestis-2007, nida-cannabis-2024, cdc-about-2024]
+efectos:
+  - { tipo: perceptivo, texto: "puede cambiar el estado de ánimo, los pensamientos y la percepción de la realidad, y alterar la percepción del tiempo", fuentes: [nida-cannabis-2024] }
+  - { tipo: cognitivo, texto: "puede deteriorar el pensamiento, la memoria y el movimiento del cuerpo", fuentes: [nida-cannabis-2024] }
+  - { tipo: fisico, texto: "puede hacer más lentos el tiempo de reacción y la toma de decisiones, y afectar la coordinación; mezclarlo con alcohol aumenta el deterioro", fuentes: [cdc-health-effects-2024] }
+  - { tipo: emocional, texto: "ansiedad, miedo, desconfianza, pánico o alucinaciones, más frecuentes con cantidades grandes, productos más fuertes o poca experiencia previa", fuentes: [nida-cannabis-2024] }
+  - { tipo: fisico, texto: "CBD purificado: somnolencia (a veces insomnio), molestias digestivas (diarrea, menos apetito, dolor abdominal) e irritabilidad o agitación; mejoran al suspenderlo o reducirlo", fuentes: [fda-cbd-2020] }
+riesgos:
+  - { texto: "ansiedad, pánico o desconfianza agudos durante la intoxicación; más probables con cantidades grandes, productos más fuertes o poca experiencia", gravedad: moderada, fuentes: [nida-cannabis-2024] }
+  - { texto: "la intoxicación puede inducir un episodio psicótico temporal en algunas personas, sobre todo con dosis altas; el consumo intenso se ha vinculado con psicosis más temprana en personas con riesgo genético", gravedad: grave, fuentes: [nida-cannabis-2024, kcl-diforti-2019] }
+  - { texto: "síndrome de hiperemesis cannabinoide: náuseas, vómitos y dolor abdominal tras consumo intenso y prolongado; la revisión describe vómito cíclico severo y alivio temporal con baños calientes, y la mejoría llega al dejar el cannabis", gravedad: moderada, fuentes: [nida-cannabis-2024, sorensen-2017, monte-2019] }
+  - { texto: "conducción y accidentes: el cannabis puede afectar la capacidad de manejar; las revisiones hallan un aumento pequeño pero significativo del riesgo de choque tras el consumo agudo", gravedad: grave, fuentes: [nida-cannabis-2024, cdc-health-effects-2024, preuss-2021] }
+  - { texto: "los comestibles tardan más en actuar y esa demora lleva a tomar más, lo que eleva el riesgo de efectos graves; los comestibles se asociaron con más síntomas psiquiátricos agudos y cardiovasculares que lo esperado por su parte de las ventas", gravedad: moderada, fuentes: [nida-cannabis-2024, cdc-health-effects-2024, monte-2019] }
+  - { texto: "CBD: puede causar lesión hepática detectable solo con análisis de sangre, interactuar con otros medicamentos y sumar sedación con alcohol o depresores; el contenido real de los productos puede diferir de la etiqueta", gravedad: moderada, fuentes: [fda-cbd-2020] }
+  - { texto: "cannabinoides sintéticos (K2/Spice): riesgo aparte, no equivalente al cannabis; NIDA los asocia con problemas de salud graves que pueden poner en peligro la vida y con efectos a menudo muy distintos a los del cannabis", gravedad: grave, fuentes: [nida-sinteticos-2023] }
+senales_de_urgencia:
+  - { texto: "un niño que pudo ingerir un producto con THC (comestibles con aspecto de dulce o botana): puede enfermar gravemente; en la revisión sistemática el signo más común fue letargo (71%) seguido de ataxia (14%); llamar de inmediato a un centro de toxicología o al número de emergencias", fuentes: [cdc-health-effects-2024, richards-2017] }
+  - { texto: "vómito severo y repetido con dolor abdominal tras consumo frecuente: es el cuadro del síndrome de hiperemesis cannabinoide, que llega a urgencias", fuentes: [sorensen-2017, monte-2019] }
+  - { texto: "episodio psicótico (alucinaciones, desconfianza intensa, pérdida del contacto con la realidad) durante o después de la intoxicación: puede ser temporal, pero requiere atención", fuentes: [nida-cannabis-2024] }
+  - { texto: "síntomas cardiovasculares tras un comestible, o cualquier malestar importante tras un producto que pudo ser cannabinoide sintético (puede poner en peligro la vida): centro de toxicología o emergencias", fuentes: [monte-2019, nida-sinteticos-2023] }
+investigacion:
+  - { texto: "estudio caso-control en 11 sitios: consumo diario se asoció con ~3 veces más probabilidad de un primer episodio psicótico y consumo diario de alta potencia (>10% THC) con ~5 veces; la potencia se infirió del tipo de cannabis referido, el consumo es autorreportado y es asociación, no causalidad probada", tipo: observacional, poblacion: "901 pacientes con primer episodio psicótico y 1,237 controles, Europa y Brasil, 2010-2015", fuentes: [kcl-diforti-2019] }
+  - { texto: "revisión sistemática del síndrome de hiperemesis cannabinoide: seis rasgos asociados (vómito cíclico severo, consumo al menos semanal, alivio con baños calientes, resolución al suspender, inicio de consumo en la adolescencia, inicio de síntomas en la tercera década); evidencia de baja o muy baja calidad, sin ensayos aleatorizados y con diagnóstico tardío (~4 años en promedio)", tipo: revision, poblacion: "211 pacientes de reportes y series de casos", fuentes: [sorensen-2017] }
+  - { texto: "revisión de metaanálisis y estudios de culpabilidad: aumento pequeño pero significativo del riesgo de choque tras consumo agudo (OR agrupados entre ~1.26 y ~2.66, heterogeneidad alta); no hay un umbral de THC en sangre científicamente respaldado; el efecto del CBD solo sobre el riesgo de choque no se ha estudiado", tipo: revision, poblacion: "conductores en estudios observacionales y de laboratorio", fuentes: [preuss-2021] }
+  - { texto: "revisión retrospectiva de urgencias en un hospital de Colorado: la inhalación generó más visitas, con más hiperemesis; los comestibles, más intoxicación, síntomas psiquiátricos agudos y cardiovasculares; la dosis constaba en ~5% de los casos, la vía era mayormente autorreportada y es un solo centro", tipo: observacional, poblacion: "2,567 visitas atribuibles a cannabis (2012-2016), 238 por comestibles", fuentes: [monte-2019] }
+fenomenologia:
+  - { texto: "testimonio: la distorsión del tiempo se describe como leve y casi siempre como expansión del tiempo", fuentes: [psychonautwiki-cannabis] }
+  - { texto: "testimonio: puede suprimir o aumentar la ansiedad según la persona y la situación; a dosis altas se describe paranoia", fuentes: [psychonautwiki-cannabis] }
+  - { texto: "testimonio: euforia, risa intensa y mayor inmersión en tareas y actividades; las alucinaciones se describen como muy leves y poco definidas frente a las de los alucinógenos", fuentes: [psychonautwiki-cannabis] }
+acompanamiento:
+  - { texto: "si fue un comestible, esperar: el efecto tarda más que fumado y esa demora lleva a tomar más, que es lo que eleva el riesgo de efectos graves; no repetir mientras se espera", fuentes: [nida-cannabis-2024, cdc-about-2024, huestis-2007] }
+  - { texto: "no manejar mientras haya efecto (reacción, coordinación y percepción alteradas) y evitar sumar alcohol, que aumenta el deterioro", fuentes: [cdc-health-effects-2024, nida-cannabis-2024] }
+  - { texto: "entorno: la ansiedad puede subir o bajar según la situación; un lugar conocido y tranquilo y una persona de confianza cerca son consistentes con ese reporte, pero la fuente es comunitaria (confianza baja)", fuentes: [psychonautwiki-cannabis] }
+contradicciones:
+  - { texto: "conducción: NIDA cita análisis con mayor riesgo de choque tras el consumo y un estudio de NHTSA sin aumento significativo; CDC dice que se necesita más investigación; Preuss 2021 integra OR entre ~1.26 y ~2.66 con heterogeneidad alta y sin umbral de THC. El corpus no afirma un riesgo numérico único", fuentes: [nida-cannabis-2024, cdc-health-effects-2024, preuss-2021] }
+  - { texto: "psicosis: NIDA habla de un episodio temporal por intoxicación y de adelanto de la psicosis en personas con riesgo genético; CDC solo señala asociación con esquizofrenia y dice que la relación no se entiende del todo; el estudio de Di Forti es observacional. Asociación sí; causalidad individual no establecida", fuentes: [nida-cannabis-2024, cdc-health-effects-2024, kcl-diforti-2019] }
+  - { texto: "tiempos: NIDA y CDC no dan minutos; los rangos subjetivos son comunitarios y la medición plasmática de Huestis (pico oral 1-5 h) no coincide exactamente con ellos; se dan rangos, nunca un número suelto", fuentes: [psychonautwiki-cannabis, huestis-2007, nida-cannabis-2024] }
+fuentes:
+  - { id: nida-cannabis-2024, titulo: "Cannabis (Marijuana) — NIDA", organismo: NIDA, url: "https://nida.nih.gov/research-topics/cannabis-marijuana", publicado: 2024-09-24, revisado: 2026-10-17, tipo: ficha-oficial, confianza: alta }
+  - { id: cdc-health-effects-2024, titulo: "Health Effects of Cannabis — CDC", organismo: CDC, url: "https://www.cdc.gov/cannabis/health-effects/index.html", publicado: 2024-02-16, revisado: 2026-10-17, tipo: ficha-oficial, confianza: alta }
+  - { id: cdc-about-2024, titulo: "About Cannabis — CDC", organismo: CDC, url: "https://www.cdc.gov/cannabis/about/index.html", publicado: 2024-02-15, revisado: 2026-10-17, tipo: ficha-oficial, confianza: alta }
+  - { id: fda-cbd-2020, titulo: "What You Need to Know (And What We're Working to Find Out) About Products Containing Cannabis or Cannabis-derived Compounds, Including CBD — FDA Consumer Update", organismo: FDA, url: "https://www.fda.gov/consumers/consumer-updates/what-you-need-know-and-what-were-working-find-out-about-products-containing-cannabis-or-cannabis", publicado: 2020-03-05, revisado: 2026-10-17, tipo: ficha-oficial, confianza: alta }
+  - { id: nida-sinteticos-2023, titulo: "Synthetic Cannabinoids (K2/Spice) — NIDA", organismo: NIDA, url: "https://nida.nih.gov/research-topics/synthetic-cannabinoids-k2spice", publicado: 2023-10-11, revisado: 2026-10-17, tipo: ficha-oficial, confianza: alta }
+  - { id: huestis-2007, titulo: "Human Cannabinoid Pharmacokinetics (Chem Biodivers 4(8):1770-1804, doi 10.1002/cbdv.200790152, PMID 17712819)", organismo: PubMed, url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC2689518/", publicado: "2007-08", revisado: 2026-10-17, tipo: revision, confianza: alta }
+  - { id: sorensen-2017, titulo: "Cannabinoid Hyperemesis Syndrome: Diagnosis, Pathophysiology, and Treatment — a Systematic Review (J Med Toxicol 13(1):71-87, doi 10.1007/s13181-016-0595-z, PMID 28000146)", organismo: PubMed, url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC5330965", publicado: 2016-12-20, revisado: 2026-10-17, tipo: revision-sistematica, confianza: alta }
+  - { id: preuss-2021, titulo: "Cannabis Use and Car Crashes: A Review (Front Psychiatry 12:643315, doi 10.3389/fpsyt.2021.643315)", organismo: revista, url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC8195290/", publicado: "2021", revisado: 2026-10-17, tipo: revision, confianza: alta }
+  - { id: monte-2019, titulo: "Acute Illness Associated With Cannabis Use, by Route of Exposure: An Observational Study (Ann Intern Med 170(8):531-537, doi 10.7326/M18-2809)", organismo: revista, url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC6788289", publicado: 2019-03-26, revisado: 2026-10-17, tipo: observacional, confianza: alta }
+  - { id: richards-2017, titulo: "Unintentional Cannabis Ingestion in Children: A Systematic Review (J Pediatr 190:142-152, doi 10.1016/j.jpeds.2017.07.005)", organismo: revista, url: "https://www.em-consulte.com/article/1167887/resume/unintentional-cannabis-ingestion-in-children-a-sys", publicado: "2017-11", revisado: 2026-10-17, tipo: revision-sistematica, confianza: alta }
+  - { id: kcl-diforti-2019, titulo: "High potency cannabis linked to higher rates of psychosis — King's College London, sobre Di Forti et al., Lancet Psychiatry 2019 (doi 10.1016/S2215-0366(19)30048-3; artículo original no abierto)", organismo: revista, url: "https://www.kcl.ac.uk/news/high-potency-cannabis-linked-to-higher-rates-of-psychosis", publicado: 2019-03-19, revisado: 2026-10-17, tipo: prensa, confianza: media }
+  - { id: psychonautwiki-cannabis, titulo: "Cannabis — PsychonautWiki (comunitaria; solo fenomenología y tiempos subjetivos)", organismo: comunidad, url: "https://psychonautwiki.org/wiki/Cannabis", publicado: null, revisado: 2026-10-17, tipo: testimonio, confianza: baja }

@@ -1,0 +1,11 @@
+sustancia: ketamina
+interacciones:
+  - { con: alcohol, clase: sustancia, mecanismo: "suma de depresión del sistema nervioso central", riesgo: "más sedación y riesgo cardiopulmonar; 71.5% de las visitas a urgencias por ketamina en EE. UU. en 2011 involucraron alcohol", gravedad: grave, evidencia: media, fuentes: [statpearls-ketamina-2023, spravato-fda-2025] }
+  - { con: benzodiacepinas, clase: medicamento, mecanismo: "suma de depresión del SNC", riesgo: "más sedación; la ficha de esketamina pide vigilar la sedación", gravedad: moderada, evidencia: alta, fuentes: [spravato-fda-2025, statpearls-ketamina-2023] }
+  - { con: "opioides (incluido tramadol)", clase: medicamento, mecanismo: "suma de depresión del SNC", riesgo: "más sedación y riesgo respiratorio", gravedad: grave, evidencia: alta, fuentes: [spravato-fda-2025, statpearls-ketamina-2023] }
+  - { con: "estimulantes (anfetaminas, metilfenidato, MDMA, cocaína)", clase: sustancia, mecanismo: "la ketamina sube presión y pulso; los estimulantes suman", riesgo: "los psicoestimulantes pueden aumentar la presión arterial; la mezcla es frecuente", gravedad: moderada, evidencia: alta, fuentes: [spravato-fda-2025, statpearls-ketamina-2023] }
+  - { con: IMAO, clase: medicamento, mecanismo: "según la ficha de esketamina, el uso conjunto puede aumentar la presión", riesgo: "elevación de la presión arterial", gravedad: moderada, evidencia: alta, fuentes: [spravato-fda-2025] }
+  - { con: hipertensión o enfermedad cardiovascular grave, clase: condicion, mecanismo: "taquicardia e hipertensión frecuentes con ketamina", riesgo: "mayor riesgo de ictus en enfermedad cardiovascular grave o hipertensión", gravedad: grave, evidencia: media, fuentes: [statpearls-ketamina-2023, spravato-fda-2025] }
+fuentes:
+  - { id: statpearls-ketamina-2023, titulo: "Ketamine Toxicity (StatPearls, NBK541087)", organismo: toxicología, url: "https://www.ncbi.nlm.nih.gov/books/NBK541087/", publicado: 2023-01-30, revisado: 2026-10-17, tipo: guia, confianza: alta }
+  - { id: spravato-fda-2025, titulo: "SPRAVATO (esketamine) - prescribing information, secciones 7.1-7.3 (FDA)", organismo: FDA, url: "https://www.accessdata.fda.gov/drugsatfda_docs/label/2025/211243s019lbl.pdf", publicado: "2025", revisado: 2026-10-17, tipo: ficha-oficial, confianza: alta }

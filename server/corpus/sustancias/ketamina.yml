@@ -1,0 +1,75 @@
+id: ketamina
+nombres: [ketamina, ketamina racémica, esketamina, keta, special K, kit kat]
+familia: disociativo
+identidad:
+  quimica: "arilciclohexilamina; la ketamina racémica es la mezcla de arketamina y esketamina (el enantiómero S); anestésico disociativo análogo estructural de la fenciclidina"
+  fuentes: [fda-spravato-label-2025, ng-hk-2010]
+mecanismo:
+  texto: "antagonista no competitivo del receptor NMDA de glutamato; la esketamina tiene como metabolito mayor la noresketamina, activa en el mismo receptor con menor afinidad"
+  limites: "la etiqueta de la FDA declara que el mecanismo por el que la esketamina ejerce su efecto antidepresivo se desconoce"
+  fuentes: [fda-spravato-label-2025, ng-hk-2010]
+temporalidad:
+  - via: intranasal-esketamina-clinica
+    pico: [20, 40]
+    duracion: [120, 240]
+    limites: "esketamina farmacéutica en adultos con depresión resistente: pico 20 a 40 min tras el último disparo; la presión sube con pico hacia el minuto 40 y dura alrededor de 4 horas; a las 2 horas el rendimiento cognitivo era comparable a placebo; observación clínica mínima de 2 horas"
+    fuentes: [fda-spravato-label-2025]
+  - via: intranasal-aspirada
+    inicio: [1, 3]
+    pico: [15, 45]
+    duracion: [60, 120]
+    limites: "descripción de la comunidad, no medición (confianza baja); efectos posteriores de 2 a 12 horas"
+    fuentes: [psychonautwiki-ketamina]
+  - via: oral
+    inicio: [10, 30]
+    pico: [45, 90]
+    duracion: [180, 360]
+    limites: "descripción de la comunidad, no medición; varía mucho entre personas y productos"
+    fuentes: [psychonautwiki-ketamina]
+efectos:
+  - { tipo: perceptivo, texto: "distorsiona cómo se perciben vistas y sonidos; a dosis altas puede producir desapego extremo del cuerpo y de la realidad", fuentes: [nida-ketamina-2024] }
+  - { tipo: perceptivo, texto: "en ensayos clínicos con esketamina, 61% a 84% tuvo cambios disociativos o perceptivos: distorsión del tiempo y del espacio, ilusiones, desrealización y despersonalización", fuentes: [fda-spravato-label-2025] }
+  - { tipo: cognitivo, texto: "una dosis única de esketamina deterioró el rendimiento cognitivo a los 40 minutos; a las 2 horas era comparable a placebo", fuentes: [fda-spravato-label-2025] }
+  - { tipo: fisico, texto: "sedación (48% a 61% en ensayos, con 0.3% a 0.4% de pérdida de conciencia), mareo, náusea, vértigo y aumento de la presión arterial", fuentes: [fda-spravato-label-2025, nida-ketamina-2024] }
+  - { tipo: emocional, texto: "puede sentirse felicidad o flotar fuera del cuerpo, y también ansiedad (10% a 13% en ensayos con esketamina) o sensación de borrachera", fuentes: [nida-ketamina-2024, fda-spravato-label-2025] }
+riesgos:
+  - { texto: "la disociación, el mareo y el deterioro de atención y coordinación aumentan el riesgo de caídas y accidentes; en 233 consultas de urgencias por ketamina en Hong Kong, 7 llegaron por una lesión; la etiqueta de esketamina exige no manejar hasta el día siguiente después de dormir bien", gravedad: moderada, fuentes: [fda-spravato-label-2025, ng-hk-2010, adf-disociativos-2026] }
+  - { texto: "sedación o pérdida de conciencia con respiración disminuida (paro respiratorio en reportes raros con esketamina) y vómito; el riesgo sube al mezclar con alcohol, benzodiazepinas u opioides, que pueden frenar la respiración", gravedad: grave, fuentes: [fda-spravato-label-2025, ng-hk-2010, nida-ketamina-2024, adf-disociativos-2026] }
+  - { texto: "daño vesical y urinario por uso crónico (cistitis por ketamina): síntomas urinarios en más de 25% de quienes la usan de forma recreativa; con cese temprano suele mejorar, pero el daño avanzado probablemente no se resuelve; se describe falla renal crónica tras uso prolongado", gravedad: grave, fuentes: [anderson-cistitis-2022, vizgan-uropatia-2023, nida-ketamina-2024, fda-spravato-label-2025] }
+  - { texto: "tolerancia y dependencia con uso frecuente: la etiqueta de la FDA documenta tolerancia y dependencia física; el antojo se describe como la causa principal de fracaso al intentar dejarla; con uso repetido se han reportado deterioro cognitivo y de memoria", gravedad: moderada, fuentes: [fda-spravato-label-2025, kokane-2020, nida-ketamina-2024] }
+senales_de_urgencia:
+  - { texto: "respiración muy lenta o superficial, o que parece haberse detenido; persona que no responde o no se puede despertar: llamar a emergencias (en México, 911)", fuentes: [nida-ketamina-2024, fda-spravato-label-2025, hse-emergencia-drogas-2026] }
+  - { texto: "pérdida de conciencia: sin respuesta y respirando, se coloca de lado y se llama a emergencias", fuentes: [ng-hk-2010, hse-emergencia-drogas-2026] }
+  - { texto: "dolor de pecho, falta de aire, dolor de cabeza intenso y súbito, alteraciones visuales, convulsiones o confusión: signos de crisis hipertensiva que la etiqueta manda referir de inmediato a urgencias", fuentes: [fda-spravato-label-2025] }
+  - { texto: "se mezcló con opioides, GHB, benzodiazepinas o alcohol y aparece somnolencia profunda o respiración lenta", fuentes: [nida-ketamina-2024, ng-hk-2010, adf-disociativos-2026] }
+investigacion:
+  - { texto: "revisión sistemática y metaanálisis de 36 ensayos (alrededor de 2,900 adultos, 28 en depresión resistente): respuesta RR 2.14 y remisión RR 1.64 frente a placebo; límites: heterogeneidad alta, sesgo de publicación (tras ajustar, RR de respuesta 1.48), seguimiento máximo de 8 semanas. No es indicación de uso ni promesa de curación", tipo: revision-sistematica, poblacion: "adultos, sobre todo con depresión unipolar resistente, en entornos clínicos", fuentes: [bahji-2022] }
+  - { texto: "la FDA aprobó la esketamina nasal para depresión resistente con un programa REMS por los riesgos de sedación, disociación, depresión respiratoria, abuso y mal uso; la seguridad se evaluó en 1,709 adultos; la etiqueta recoge cistitis en uso no médico", tipo: ensayo, poblacion: "adultos con depresión resistente tratados en consultorio certificado con observación mínima de 2 horas", fuentes: [fda-spravato-label-2025, fda-spravato-aprobacion-2019] }
+  - { texto: "revisión sistemática de 27 estudios sobre síntomas urológicos con ketamina terapéutica: 0% a 24.5% con síntomas, casi siempre leves o moderados; límites: sólo 15% con bajo riesgo de sesgo, seguimiento corto; no extrapolable al uso recreativo crónico", tipo: revision-sistematica, poblacion: "pacientes psiquiátricos con ketamina supervisada, no usuarios recreativos", fuentes: [kerr-gaffney-2025] }
+  - { texto: "revisión narrativa de uropatía por ketamina: 875 pacientes, 193 con cirugía reconstructiva; hidronefrosis u obstrucción en 44 de 86 antes de operar; calidad de los estudios descrita como pobre", tipo: observacional, poblacion: "pacientes con uropatía grave por uso crónico", fuentes: [vizgan-uropatia-2023, anderson-cistitis-2022] }
+fenomenologia:
+  - { texto: "testimonio: a dosis altas se describe un estado de trance llamado k-hole, con experiencia de salir del cuerpo o de cercanía a la muerte, o de desconexión completa del cuerpo", fuentes: [psychonautwiki-ketamina] }
+  - { texto: "en la clínica, las descripciones más comunes son cambios en la percepción del tiempo y del espacio, ilusiones, desrealización y despersonalización; también sensación de flotar o de estar en otro lugar", fuentes: [fda-spravato-label-2025] }
+  - { texto: "NIDA describe desapego extremo del cuerpo y de la realidad a dosis altas; el uso frecuente recreativo se asocia con delirios que pueden durar hasta un mes tras dejarla", fuentes: [nida-ketamina-2024] }
+acompanamiento:
+  - { texto: "si la persona respira pero no responde, ponerla de lado en posición de recuperación, no inducir el vómito, revisar su respiración de forma continua y llamar a emergencias aunque no estés seguro", fuentes: [hse-emergencia-drogas-2026] }
+  - { texto: "no dejar sola a la persona: quedarse hasta que llegue la ayuda; usar sola es una situación de riesgo mayor", fuentes: [hse-emergencia-drogas-2026, fda-spravato-label-2025, adf-disociativos-2026] }
+  - { texto: "entorno: lugar tranquilo y seguro, sin multitud; descansar semirreclinado; evitar caminar mientras esté deteriorada la coordinación; no manejar hasta el día siguiente tras dormir bien; si pide ayuda, decir todo lo que se sabe de lo que se consumió", fuentes: [fda-spravato-label-2025, adf-disociativos-2026, hse-emergencia-drogas-2026] }
+contradicciones:
+  - { texto: "retirada: la etiqueta de la FDA reporta síntomas tras dejar dosis grandes frecuentes; una revisión de 2023 dice que no hay síndrome de abstinencia específico; otra de 2020 lo llama evidencia conflictiva. No resuelto", fuentes: [fda-spravato-label-2025, vizgan-uropatia-2023, kokane-2020] }
+  - { texto: "reversibilidad del daño urinario: una revisión dice que dejarla en cistitis temprana basta; otra dice que el daño avanzado no se resuelve. Depende del estadio", fuentes: [anderson-cistitis-2022, vizgan-uropatia-2023] }
+  - { texto: "riesgo urinario terapéutico frente a recreativo: la revisión de 2025 no ve aumento en uso clínico (evidencia limitada); la etiqueta registra más síntomas que con placebo y el uso recreativo supera 25%; poblaciones no comparables", fuentes: [kerr-gaffney-2025, fda-spravato-label-2025, anderson-cistitis-2022] }
+  - { texto: "adicción: NIDA dice que falta investigar qué tan adictiva es; la etiqueta de la FDA documenta tolerancia y dependencia física", fuentes: [nida-ketamina-2024, fda-spravato-label-2025] }
+fuentes:
+  - { id: nida-ketamina-2024, titulo: "Ketamine (NIDA, Research Topics)", organismo: NIDA, url: "https://nida.nih.gov/research-topics/ketamine", publicado: 2024-04-09, revisado: 2026-10-17, tipo: ficha-oficial, confianza: alta }
+  - { id: fda-spravato-label-2025, titulo: "SPRAVATO (esketamine) nasal spray, CIII - Prescribing Information", organismo: FDA, url: "https://www.accessdata.fda.gov/drugsatfda_docs/label/2025/211243s019lbl.pdf", publicado: "2025-04", revisado: 2026-10-17, tipo: ficha-oficial, confianza: alta }
+  - { id: fda-spravato-aprobacion-2019, titulo: "NDA 211243 approval letter, Spravato (esketamine) nasal spray", organismo: FDA, url: "https://www.accessdata.fda.gov/drugsatfda_docs/appletter/2019/211243Orig1s000ltr.pdf", publicado: "2019", revisado: 2026-10-17, tipo: ficha-oficial, confianza: alta }
+  - { id: hse-emergencia-drogas-2026, titulo: "What to do in a drug emergency or overdose (HSE, Irlanda)", organismo: HSE, url: "https://www.hse.ie/living-well/drugs/emergencies/what-to-do/", publicado: 2026-01-15, revisado: 2026-10-17, tipo: guia, confianza: alta }
+  - { id: adf-disociativos-2026, titulo: "Dissociatives (Alcohol and Drug Foundation, Australia)", organismo: ADF, url: "https://adf.org.au/drug-facts/dissociatives/", publicado: 2026-04-08, revisado: 2026-10-17, tipo: guia, confianza: media }
+  - { id: bahji-2022, titulo: "Efficacy and Safety of Racemic Ketamine and Esketamine for Depression: A Systematic Review and Meta-Analysis (PMID 35231204)", organismo: PubMed, url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC9949988/", publicado: 2022-03-09, revisado: 2026-10-17, tipo: revision-sistematica, confianza: alta }
+  - { id: anderson-cistitis-2022, titulo: "Ketamine-Induced Cystitis: A Comprehensive Review (PMID 36118982)", organismo: PubMed, url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC9476224/", publicado: 2022-09-15, revisado: 2026-10-17, tipo: revision, confianza: media }
+  - { id: vizgan-uropatia-2023, titulo: "Ketamine-induced uropathy: A narrative systemic review of surgical outcomes (PMID 37334018)", organismo: PubMed, url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC10268589/", publicado: "2023", revisado: 2026-10-17, tipo: revision, confianza: media }
+  - { id: kerr-gaffney-2025, titulo: "Urological symptoms following ketamine treatment for psychiatric disorders: A systematic review (PMID 40583492)", organismo: PubMed, url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC12572349/", publicado: 2025-06-30, revisado: 2026-10-17, tipo: revision-sistematica, confianza: alta }
+  - { id: kokane-2020, titulo: "Overlap in the neural circuitry underlying ketamine abuse and its use as an antidepressant (PMID 32061748)", organismo: PubMed, url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC7469509/", publicado: 2020-02-13, revisado: 2026-10-17, tipo: revision, confianza: media }
+  - { id: ng-hk-2010, titulo: "Emergency department presentation of ketamine abusers in Hong Kong: a review of 233 cases (Hong Kong Med J 16(1):6-11)", organismo: toxicología, url: "https://www.hkmj.org/system/files/hkm1002p6.pdf", publicado: "2010-02", revisado: 2026-10-17, tipo: observacional, confianza: media }
+  - { id: psychonautwiki-ketamina, titulo: "Ketamine (PsychonautWiki)", organismo: comunidad, url: "https://psychonautwiki.org/wiki/Ketamine", publicado: null, revisado: 2026-10-17, tipo: testimonio, confianza: baja }

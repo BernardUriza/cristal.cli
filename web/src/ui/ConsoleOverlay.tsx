@@ -173,6 +173,10 @@ export function ConsoleOverlay() {
           });
         },
         onSilence: () => undefined,
+        onSafety: (safety) => {
+          if (controller.signal.aborted) return;
+          setLines((prev) => [...prev, { text: safety.line, cls: safety.accion === "urgente" ? "safety urgent" : "safety", scramble: false }]);
+        },
       },
       controller.signal,
     );

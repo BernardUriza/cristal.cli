@@ -184,6 +184,17 @@ canvas {
   content: "∴ ";
   color: var(--term-dim);
 }
+.console-overlay .line.safety {
+  color: #ffd166;
+  font-size: 1.15em;
+  padding: 4px 8px;
+  border-left: 3px solid #ffd166;
+}
+.console-overlay .line.safety.urgent {
+  color: #fff;
+  background: #7a1f1f;
+  border-left-color: #ff5c5c;
+}
 .console-overlay .line.err {
   color: #ff5c5c;
   text-shadow: 0 0 6px #5c0000;

@@ -1,0 +1,83 @@
+# El motor normaliza el texto (minúsculas, sin acentos) antes de comparar. Si coinciden urgente y atencion, gana urgente.
+senales:
+  - id: convulsion
+    patrones: ["convuls", "ataque epil", "se esta sacudiendo", "temblando sin parar", "tiembla sin parar", "se le va la mirada y se sacude"]
+    senal: "convulsión"
+    accion: urgente
+    que_decir: "Esto es una emergencia: llama al 911 ahora mismo. Si hay alguien contigo, que sea quien marque. Ponla de lado y no le metas nada en la boca."
+    fuentes: [fireside-2026, freidel-2024, malcolm-thomas-2021, hse-emergencia-drogas-2026]
+  - id: inconsciencia
+    patrones: ["no responde", "no reacciona", "no despierta", "se desmayo", "se desvanecio", "perdio el conocimiento", "perdi el conocimiento", "inconsciente", "no lo puedo despertar", "no la puedo despertar"]
+    senal: "pérdida de conciencia / no responde"
+    accion: urgente
+    que_decir: "Llama al 911 ya: alguien que no responde necesita ayuda médica urgente. Si respira, ponla de lado y quédate a su lado hasta que llegue la ayuda."
+    fuentes: [fireside-2026, statpearls-ketamina-2023, hse-emergencia-drogas-2026]
+  - id: dificultad_respiratoria
+    patrones: ["no puedo respirar", "no puede respirar", "me falta el aire", "le falta el aire", "me ahogo", "respira muy poco", "respira raro", "se puso morado", "labios morados", "dejo de respirar"]
+    senal: "dificultad respiratoria"
+    accion: urgente
+    que_decir: "Llama al 911 ahora: respirar mal es una emergencia, no esperes a que se pase."
+    fuentes: [fireside-2026, statpearls-ketamina-2023, spravato-fda-2025]
+  - id: hipertermia
+    patrones: ["muy caliente", "esta ardiendo", "me estoy quemando por dentro", "ya no suda", "no suda", "deje de sudar", "piel seca y caliente", "mucha fiebre", "me sobrecalento", "se sobrecalento", "mucho calor y me siento mal"]
+    senal: "hipertermia"
+    accion: urgente
+    que_decir: "Llama al 911 ya: el sobrecalentamiento puede ser grave. Mientras llega ayuda, ve a un lugar fresco, quita capas de ropa y no tomes agua en exceso."
+    fuentes: [victoria-hipertermia, statpearls-mdma-2024, elkattawy-2021]
+  - id: dolor_pecho
+    patrones: ["dolor de pecho", "me duele el pecho", "presion en el pecho", "opresion en el pecho", "se me aprieta el pecho", "me late muy fuerte el corazon y me duele"]
+    senal: "dolor de pecho"
+    accion: urgente
+    que_decir: "Llama al 911 ahora: el dolor de pecho es una emergencia médica. Siéntate, no te muevas y que alguien se quede contigo."
+    fuentes: [fireside-2026, statpearls-mdma-2024]
+  - id: agitacion_violencia
+    patrones: ["fuera de control", "esta agresivo", "esta violento", "me quiere pegar", "quiere pegarme", "va a lastimar a alguien", "va a lastimarse", "se quiere aventar", "no lo podemos controlar", "no la podemos controlar", "esta gritando y golpeando"]
+    senal: "agitación extrema / violencia"
+    accion: urgente
+    que_decir: "Aléjate de cualquier peligro, no lo enfrentes y llama al 911 para que manden ayuda médica."
+    fuentes: [fireside-2026, statpearls-mdma-2024, statpearls-ketamina-2023]
+  - id: confusion_grave
+    patrones: ["no sabe donde esta", "no se donde estoy", "no sabe quien es", "no se quien soy", "no reconoce a nadie", "esta delirando", "ya no tiene sentido lo que dice"]
+    senal: "confusión grave / no sabe dónde está"
+    accion: urgente
+    que_decir: "Esto necesita atención médica: llama al 911 ahora y no te quedes solo ni dejes sola a la persona mientras llega la ayuda."
+    fuentes: [victoria-hipertermia, malcolm-thomas-2021, statpearls-mdma-2024]
+  - id: vomito_somnolencia
+    patrones: ["vomito y tiene mucho sueno", "vomitando y se queda dormido", "vomitando y se queda dormida", "vomito y no despierta bien", "vomitando y cada vez mas dormido", "vomita y esta muy adormilado", "vomitando y no responde"]
+    senal: "vómito con somnolencia"
+    accion: urgente
+    que_decir: "Vomitar y estar cada vez más dormido es una señal de alarma: llama al 911 ya. No la dejes sola ni boca arriba; ponla de lado."
+    fuentes: [fireside-2026, statpearls-ketamina-2023, hse-emergencia-drogas-2026]
+  - id: autolesion
+    patrones: ["me quiero morir", "quiero morirme", "quiero matarme", "voy a matarme", "me voy a matar", "ya no quiero vivir", "no quiero seguir viviendo", "quiero acabar con todo", "quiero hacerme dano", "voy a hacerme dano", "quiero lastimarme", "me quiero lastimar"]
+    senal: "ideación de hacerse daño"
+    accion: urgente
+    que_decir: "Te escucho y quiero que estés a salvo. Llama ahora a la Línea de la Vida, 800 911 2000, gratis y las 24 horas, o al 911 si estás en peligro. No te quedes solo."
+    fuentes: [gob-linea-vida-2025, fireside-2026]
+  - id: panico
+    patrones: ["ataque de panico", "panico", "me va a dar un ataque", "me estoy volviendo loco", "me estoy volviendo loca", "me voy a volver loco", "me voy a volver loca", "tengo mucho miedo", "estoy aterrado", "estoy aterrada", "no puedo calmarme", "siento que me voy a morir", "esto no se va a acabar"]
+    senal: "ansiedad intensa / pánico"
+    accion: atencion
+    que_decir: "Estás a salvo y esto va a pasar. Respira lento, mira a tu alrededor y nombra lo que ves. Busca a alguien de confianza que se quede contigo."
+    fuentes: [fireside-2026, maps-dificiles-2010, nida-psilocibina-2024]
+reglas_de_voz:
+  - { regla: "no diagnosticar", porque: "una línea de pares como Fireside no da evaluación médica y remite al 911 cuando hay riesgo físico; el corpus orienta, no diagnostica", fuentes: [fireside-linea-2026, fireside-2026] }
+  - { regla: "no recomendar mezclas ni dosis", porque: "las interacciones del corpus (litio, IMAO, ISRS, tramadol, depresores) pueden causar convulsiones, síndrome serotoninérgico o depresión respiratoria", fuentes: [malcolm-thomas-2021, nayak-2021, fireside-2026] }
+  - { regla: "no validar delirios como hechos", porque: "la guía de acompañamiento es estar presente y observar, no confirmar ni discutir el contenido", fuentes: [maps-dificiles-2010, fireside-2026] }
+  - { regla: "si la sustancia no está identificada, decirlo", porque: "lo vendido como éxtasis o molly suele contener otras sustancias; responder con la sustancia equivocada puede dañar", fuentes: [statpearls-mdma-2024] }
+  - { regla: "ante una señal urgente, nunca sugerir esperar a que se pase", porque: "Fireside indica llamar al 911 ante inconsciencia, dificultad para respirar, convulsiones, dolor de pecho o riesgo físico; hipertermia e hiponatremia evolucionan rápido", fuentes: [fireside-2026, victoria-hipertermia, elkattawy-2021] }
+fuentes:
+  - { id: fireside-2026, titulo: "I Took Too Much: What to Do When a Psychedelic Experience Feels Overwhelming (Fireside Project)", organismo: comunidad, url: "https://firesideproject.org/blog/i-took-too-much-what-to-do-when-a-psychedelic-experience-feels-overwhelming", publicado: 2026-01-16, revisado: 2026-10-17, tipo: guia, confianza: media }
+  - { id: fireside-linea-2026, titulo: "Psychedelic Support Line (Fireside Project)", organismo: comunidad, url: "https://firesideproject.org/psychedelic-support-line", publicado: null, revisado: 2026-10-17, tipo: guia, confianza: media }
+  - { id: victoria-hipertermia, titulo: "MDMA and other stimulants in hot environments (Department of Health, Victoria, Australia)", organismo: gobierno, url: "https://health.vic.gov.au/drug-alerts/mdma-and-other-stimulants-in-hot-environments", publicado: 2026-01-16, revisado: 2026-10-17, tipo: guia, confianza: media }
+  - { id: maps-dificiles-2010, titulo: "How to Work with Difficult Psychedelic Experiences (MAPS, 2010)", organismo: comunidad, url: "https://maps.org/resources/psychedelic-harm-reduction/how-to-work-with-difficult-psychedelic-experiences/", publicado: 2010-05-05, revisado: 2026-10-17, tipo: guia, confianza: media }
+  - { id: gob-linea-vida-2025, titulo: "La Línea de la Vida, te escucha 800 911 2000 (CONASAMA, Secretaría de Salud)", organismo: CONASAMA, url: "https://www.gob.mx/conasama/articulos/linea-de-la-vida-800-911-2000", publicado: 2025-10-23, revisado: 2026-10-17, tipo: ficha-oficial, confianza: alta }
+  - { id: hse-emergencia-drogas-2026, titulo: "What to do in a drug emergency or overdose (HSE, Irlanda)", organismo: HSE, url: "https://www.hse.ie/living-well/drugs/emergencies/what-to-do/", publicado: 2026-01-15, revisado: 2026-10-17, tipo: guia, confianza: alta }
+  - { id: statpearls-mdma-2024, titulo: "MDMA Toxicity (StatPearls, NBK538482)", organismo: toxicología, url: "https://www.ncbi.nlm.nih.gov/books/NBK538482/", publicado: 2024-01-17, revisado: 2026-10-17, tipo: guia, confianza: alta }
+  - { id: statpearls-ketamina-2023, titulo: "Ketamine Toxicity (StatPearls, NBK541087)", organismo: toxicología, url: "https://www.ncbi.nlm.nih.gov/books/NBK541087/", publicado: 2023-01-30, revisado: 2026-10-17, tipo: guia, confianza: alta }
+  - { id: spravato-fda-2025, titulo: "SPRAVATO (esketamine) nasal spray - prescribing information (FDA)", organismo: FDA, url: "https://www.accessdata.fda.gov/drugsatfda_docs/label/2025/211243s019lbl.pdf", publicado: "2025", revisado: 2026-10-17, tipo: ficha-oficial, confianza: alta }
+  - { id: elkattawy-2021, titulo: "MDMA-Induced Hyponatremia: Case Report and Literature Review (Cureus; PMID 34188977)", organismo: revista, url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC8232921/", publicado: "2021", revisado: 2026-10-17, tipo: observacional, confianza: media }
+  - { id: nida-psilocibina-2024, titulo: "Psilocybin (Magic Mushrooms) - NIDA", organismo: NIDA, url: "https://nida.nih.gov/research-topics/psilocybin-magic-mushrooms", publicado: 2024-01-24, revisado: 2026-10-17, tipo: ficha-oficial, confianza: alta }
+  - { id: freidel-2024, titulo: "Psychedelics, epilepsy, and seizures: a review (Front Pharmacol; doi 10.3389/fphar.2023.1326815)", organismo: revista, url: "https://www.frontiersin.org/articles/10.3389/fphar.2023.1326815/full", publicado: 2024-01-12, revisado: 2026-10-17, tipo: revision, confianza: media }
+  - { id: malcolm-thomas-2021, titulo: "Serotonin toxicity of serotonergic psychedelics (Psychopharmacology; PMID 34251464)", organismo: PubMed, url: "https://pubmed.ncbi.nlm.nih.gov/34251464/", publicado: "2021", revisado: 2026-10-17, tipo: revision, confianza: alta }
+  - { id: nayak-2021, titulo: "Classic Psychedelic Coadministration with Lithium, but Not Lamotrigine, is Associated with Seizures (PMID 34348413)", organismo: PubMed, url: "https://pubmed.ncbi.nlm.nih.gov/34348413/", publicado: "2021", revisado: 2026-10-17, tipo: observacional, confianza: media }

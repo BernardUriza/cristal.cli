@@ -1,0 +1,73 @@
+id: lsd
+nombres: [LSD, dietilamida del ácido lisérgico, ácido, acido, lucy, papel, un papel, tripi, tripis]
+familia: psicodelico-clasico
+identidad:
+  quimica: "dietilamida del ácido lisérgico (LSD); SAMHSA la clasifica entre los psicodélicos clásicos"
+  fuentes: [samhsa-alucinogenos]
+mecanismo:
+  texto: "Los efectos psicodélicos dependen sobre todo del receptor de serotonina 5-HT2A. En un ensayo, bloquear ese receptor con ketanserina eliminó la mayor parte de la respuesta."
+  limites: "Fue un estudio con 16 adultos sanos. No explica por qué la experiencia cambia tanto de una persona a otra."
+  fuentes: [holze-2021]
+temporalidad:
+  inicio: [30, 60]
+  duracion: [402, 1440]
+  limites: "no hay fuente oficial del pico subjetivo; el único pico medido es en plasma (1.2 a 1.5 h, Holze 2021) y no equivale a la experiencia"
+  fuentes: [merck-alucinogenos, holze-2021]
+efectos:
+  - { tipo: perceptivo, texto: "Pueden aparecer formas, colores y escenas muy vívidas.", fuentes: [nida-psicodelicos] }
+  - { tipo: emocional, texto: "El ánimo puede ir de una felicidad intensa y sensación de conexión al miedo, la ansiedad y la confusión.", fuentes: [nida-psicodelicos] }
+  - { tipo: cognitivo, texto: "Cambian el ánimo, los pensamientos y la percepción de la realidad. Los efectos son difíciles de predecir y dependen de la dosis, la persona y el entorno.", fuentes: [nida-psicodelicos] }
+  - { tipo: cognitivo, texto: "En un estudio controlado se reportaron mala concentración, inquietud, debilidad y pérdida de equilibrio.", fuentes: [holze-2022-seguridad] }
+  - { tipo: fisico, texto: "Suben de forma moderada la presión arterial y el pulso. En el estudio ningún valor llegó a nivel grave.", fuentes: [holze-2021, holze-2022-seguridad] }
+  - { tipo: fisico, texto: "La temperatura pudo pasar de 38 °C en una parte de las sesiones: 0 % con la dosis más baja y 34 % con la más alta del estudio. El máximo fue 38.8 °C.", fuentes: [holze-2022-seguridad] }
+  - { tipo: fisico, texto: "Pupilas dilatadas, sudor, palpitaciones y visión borrosa.", fuentes: [merck-alucinogenos] }
+riesgos:
+  - { texto: "Una experiencia aterradora (miedo, confusión, pánico) puede ocurrir. Con la dosis más alta del estudio hubo ansiedad significativa. Con apoyo verbal bajó.", gravedad: moderada, fuentes: [nida-psicodelicos, holze-2021, holze-2022-seguridad] }
+  - { texto: "La percepción alterada lleva a conductas inusuales o peligrosas y a lesiones, sobre todo si no hay nadie presente. En investigación se documentaron personas desorientadas que intentaron salir del lugar.", gravedad: grave, fuentes: [nida-psicodelicos, johnson-2008] }
+  - { texto: "Efectos perceptivos persistentes (HPPD): destellos de luz, halos y otras alteraciones que reaparecen después de que pasó el efecto, a veces durante años. Se describe como rara. No hay una cifra de prevalencia sólida. Una revisión de casos clínicos encontró que en 38 % los síntomas eran nuevos, no repetían el viaje.", gravedad: moderada, fuentes: [nida-hppd, samhsa-alucinogenos, merck-alucinogenos, vis-2021-hppd] }
+  - { texto: "En personas con predisposición, los psicodélicos pueden desencadenar o empeorar un cuadro psicótico. El riesgo en ensayos y en población general fue bajo, pero la calidad de los estudios es baja.", gravedad: grave, fuentes: [nida-psicodelicos, merck-alucinogenos, molpsych-2025-psicosis] }
+  - { texto: "En una encuesta, 1 % de quienes usaron LSD en el último año buscó atención de urgencia, sobre todo por ansiedad, confusión y paranoia. Los motivos más citados fueron entorno inadecuado, estado de ánimo inadecuado y mezclas con otras sustancias.", gravedad: moderada, fuentes: [kopra-2022] }
+  - { texto: "Los productos ilegales pueden estar contaminados. NIDA lo señala para psicodélicos en general, no específicamente para LSD.", gravedad: moderada, fuentes: [nida-psicodelicos] }
+senales_de_urgencia:
+  - { texto: "Temperatura corporal muy alta (hipertermia) o latidos muy irregulares. Requieren atención inmediata y enfriamiento.", fuentes: [samhsa-alucinogenos, merck-alucinogenos] }
+  - { texto: "Convulsiones.", fuentes: [samhsa-alucinogenos] }
+  - { texto: "Agitación extrema o conducta violenta.", fuentes: [samhsa-alucinogenos] }
+  - { texto: "Pérdida de conciencia, dificultad para respirar, o confusión tal que la persona no puede responder.", fuentes: [samhsa-alucinogenos] }
+  - { texto: "Peligro inmediato para la persona o para otros: llamar al número de emergencias local (la fuente da números de EE. UU.; en México, 911).", fuentes: [nida-psicodelicos] }
+investigacion:
+  - { texto: "Ensayo cruzado con placebo en laboratorio. Midió efectos agudos, presión, pulso y ansiedad. No hubo eventos adversos graves.", tipo: ensayo, poblacion: "16 adultos sanos de 25 a 52 años", fuentes: [holze-2021] }
+  - { texto: "Análisis conjunto de cuatro ensayos controlados. Concluye que una sola administración fue segura en un entorno de investigación. Seis personas (7 %) reportaron flashbacks breves entre 24 y 86 horas después. Nadie reportó cambios perceptivos persistentes.", tipo: ensayo, poblacion: "83 adultos sanos, mayormente jóvenes, 131 administraciones", fuentes: [holze-2022-seguridad] }
+  - { texto: "Seguimiento abierto a 12 meses de un ensayo en personas con ansiedad. Los puntajes de ansiedad autoinformados bajaron frente a la línea base. No hay grupo control a largo plazo ni se estableció un tratamiento. No hubo flashbacks clínicamente relevantes ni HPPD.", tipo: ensayo, poblacion: "39 personas elegibles con trastornos de ansiedad, con o sin enfermedad que amenaza la vida; 35 respondieron el seguimiento", fuentes: [holze-2024-seguimiento] }
+  - { texto: "Encuesta transversal de 2017 sobre urgencias tras usar LSD: 1.0 % buscó atención; 54.5 % de ellos fue ingresado a hospital; 59 % volvió a la normalidad en 24 horas y 11 % siguió con efectos más de 4 semanas. Es autorreporte, retrospectivo y sin pureza verificada.", tipo: observacional, poblacion: "10293 personas que usaron LSD el último año, mayormente jóvenes, hombres y blancas", fuentes: [kopra-2022] }
+  - { texto: "Metaanálisis de psicosis inducida por psicodélicos: alrededor de 0.002 % en estudios poblacionales, 0.2 % en ensayos no controlados y 0.6 % en ensayos aleatorizados. La mayoría de los estudios es de baja calidad y la definición de psicosis inducida no está cerrada.", tipo: revision, poblacion: "131 publicaciones con LSD, psilocibina, mescalina, DMT y MDMA; metaanálisis de 9 estudios", fuentes: [molpsych-2025-psicosis] }
+  - { texto: "NIDA cita una revisión de 34 estudios clínicos con LSD, psilocibina o ayahuasca que no encontró efectos adversos de largo plazo. La página no detalla poblaciones ni límites.", tipo: revision, poblacion: "estudios clínicos con psicodélicos, sin detalle en la fuente", fuentes: [nida-psicodelicos] }
+fenomenologia:
+  - { texto: "Testimonio de comunidad, no evidencia: la distorsión del tiempo se describe como una vivencia central, normalmente de tiempo más lento. No es universal.", fuentes: [psychonautwiki-lsd] }
+  - { texto: "Testimonio de comunidad, no evidencia: se describe pérdida del yo, que puede sentirse como euforia o como disforia según la persona y el contexto.", fuentes: [psychonautwiki-lsd] }
+  - { texto: "Testimonio de comunidad, no evidencia: se describen patrones geométricos muy detallados con los ojos abiertos o cerrados. No todas las personas los experimentan.", fuentes: [psychonautwiki-lsd] }
+  - { texto: "Medido con cuestionarios en laboratorio: la disolución del yo y la ansiedad fueron mayores con la dosis más alta del estudio. Es fenomenología autoinformada, no un mecanismo.", fuentes: [holze-2021] }
+acompanamiento:
+  - { texto: "Un entorno tranquilo y calmante, con la tranquilización de que los pensamientos, imágenes y sonidos raros se deben a la sustancia.", fuentes: [merck-alucinogenos] }
+  - { texto: "No quedarse solo. Las guías de investigación ponen a una o dos personas de apoyo cerca y vigilan que nadie salga desorientado del lugar. NIDA señala que el riesgo de lesiones aumenta si no hay nadie.", fuentes: [johnson-2008, nida-psicodelicos] }
+  - { texto: "Primero apoyo y tranquilización, no discutir ni intentar bajar a la persona con argumentos, porque puede empeorar la reacción. Recordarle que el efecto es temporal y pasará. En un estudio el apoyo verbal redujo la ansiedad.", fuentes: [johnson-2008, holze-2022-seguridad] }
+  - { texto: "Un ambiente cómodo y no clínico, sin objetos peligrosos ni acceso fácil a ventanas, reduce las reacciones de ansiedad. En la encuesta, el entorno inadecuado fue el motivo más citado.", fuentes: [johnson-2008, kopra-2022] }
+  - { texto: "Tiempo: esperar a que el efecto pase del todo, no manejar ni hacer actividades peligrosas el resto del día, y revisar al día siguiente si quedan alteraciones perceptivas.", fuentes: [johnson-2008] }
+contradicciones:
+  - { texto: "Duración. Merck da 12 a 24 horas de efecto. Holze 2021 midió 6.7 a 11 horas de efectos subjetivos en laboratorio. Se conserva el rango completo en minutos; la fuente de Merck no dice de dónde sale su rango.", fuentes: [merck-alucinogenos, holze-2021] }
+  - { texto: "Temperatura. Holze 2021 no encontró efecto sobre la temperatura. El análisis conjunto de Holze 2022 (más sesiones) encontró más de 38 °C en 0 a 34 % según la dosis. SAMHSA y Merck listan la temperatura elevada como efecto posible.", fuentes: [holze-2021, holze-2022-seguridad, samhsa-alucinogenos, merck-alucinogenos] }
+  - { texto: "HPPD. NIDA y SAMHSA la llaman rara y no dan cifra. Merck dice que los usuarios habituales, sobre todo de LSD, la experimentan. Vis 2021 cita 4.2 % del DSM-5 y dice que faltan prevalencias sólidas. Holze 2022 no vio cambios persistentes en 83 personas, pero sin seguimiento largo.", fuentes: [nida-hppd, samhsa-alucinogenos, merck-alucinogenos, vis-2021-hppd, holze-2022-seguridad] }
+  - { texto: "Duración de los flashbacks. NIDA los describe breves (segundos o minutos, dentro de la primera semana). Merck dice que tienden a ceder en 6 a 12 meses y pueden reaparecer por años.", fuentes: [nida-psicodelicos, nida-hppd, merck-alucinogenos] }
+  - { texto: "Psicosis. NIDA y Merck advierten riesgo en personas con predisposición. El metaanálisis de 2025 da incidencias bajas y dice que la esquizofrenia quizá no sea un criterio de exclusión definitivo; también advierte que se recomienda cautela.", fuentes: [nida-psicodelicos, merck-alucinogenos, molpsych-2025-psicosis] }
+fuentes:
+  - { id: nida-psicodelicos, titulo: "Psychedelic and Dissociative Drugs (NIDA)", organismo: NIDA, url: "https://nida.nih.gov/research-topics/psychedelic-dissociative-drugs", publicado: 2026-01-08, revisado: 2026-10-17, tipo: ficha-oficial, confianza: alta }
+  - { id: nida-hppd, titulo: "Hallucinogens, sección HPPD (NIDA)", organismo: NIDA, url: "https://nida.nih.gov/research-topics/hallucinogens", publicado: 2026-01-08, revisado: 2026-10-17, tipo: ficha-oficial, confianza: alta }
+  - { id: samhsa-alucinogenos, titulo: "Hallucinogens (SAMHSA)", organismo: SAMHSA, url: "https://www.samhsa.gov/substance-use/learn/hallucinogens", publicado: null, revisado: 2026-10-17, tipo: ficha-oficial, confianza: alta }
+  - { id: merck-alucinogenos, titulo: "Hallucinogens (Merck Manual, edición profesional)", organismo: toxicología, url: "https://www.merckmanuals.com/professional/special-subjects/illicit-drugs-and-intoxicants/hallucinogens", publicado: 2026-06-01, revisado: 2026-10-17, tipo: guia, confianza: alta }
+  - { id: holze-2021, titulo: "Acute dose-dependent effects of lysergic acid diethylamide in a double-blind placebo-controlled study in healthy subjects. Neuropsychopharmacology 46:537-544. PMID 33059356. DOI 10.1038/s41386-020-00883-6", organismo: PubMed, url: "https://pubmed.ncbi.nlm.nih.gov/33059356/", publicado: 2020-10-15, revisado: 2026-10-17, tipo: ensayo, confianza: alta }
+  - { id: holze-2022-seguridad, titulo: "Safety pharmacology of acute LSD administration in healthy subjects. Psychopharmacology 239(6):1893-1905 (PMC9166834)", organismo: PubMed, url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC9166834/", publicado: "2022", revisado: 2026-10-17, tipo: ensayo, confianza: alta }
+  - { id: kopra-2022, titulo: "Adverse experiences resulting in emergency medical treatment seeking following the use of LSD. J Psychopharmacol 36(8):956-964 (PMC9353972)", organismo: PubMed, url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC9353972/", publicado: 2022-06-07, revisado: 2026-10-17, tipo: observacional, confianza: media }
+  - { id: holze-2024-seguimiento, titulo: "LSD-assisted therapy in patients with anxiety: open-label prospective 12-month follow-up. Br J Psychiatry 225(3):362-370 (PMC11536188)", organismo: PubMed, url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC11536188/", publicado: "2024-09", revisado: 2026-10-17, tipo: ensayo, confianza: media }
+  - { id: vis-2021-hppd, titulo: "On Perception and Consciousness in HPPD: A Systematic Review. Front Neurosci 15:675768. PMID 34456666. DOI 10.3389/fnins.2021.675768", organismo: PubMed, url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC8385145/", publicado: 2021-08-11, revisado: 2026-10-17, tipo: revision-sistematica, confianza: media }
+  - { id: molpsych-2025-psicosis, titulo: "Reconsidering evidence for psychedelic-induced psychosis: overview of reviews, systematic review and meta-analysis. Mol Psychiatry 30(3):1223-1255. DOI 10.1038/s41380-024-02800-5", organismo: revista, url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC11835720/", publicado: 2024-11-27, revisado: 2026-10-17, tipo: revision-sistematica, confianza: media }
+  - { id: johnson-2008, titulo: "Human hallucinogen research: guidelines for safety. J Psychopharmacol 22(6):603-620. DOI 10.1177/0269881108093587", organismo: PubMed, url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC3056407/", publicado: "2008-08", revisado: 2026-10-17, tipo: guia, confianza: media }
+  - { id: psychonautwiki-lsd, titulo: "LSD (PsychonautWiki), solo fenomenología", organismo: comunidad, url: "https://psychonautwiki.org/wiki/LSD", publicado: null, revisado: 2026-10-17, tipo: testimonio, confianza: baja }

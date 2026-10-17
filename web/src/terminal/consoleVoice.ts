@@ -18,7 +18,9 @@ export type VoiceRequest = {
 export const VOICE_TIMEOUT_MS = 90000;
 export const RECENT_TURNS = 8;
 
-type Handlers = { onDelta: (text: string) => void; onLine: (line: string) => void; onSilence: () => void };
+export type SafetyLine = { senal: string; accion: "urgente" | "atencion"; line: string };
+
+type Handlers = { onDelta: (text: string) => void; onLine: (line: string) => void; onSilence: () => void; onSafety?: (safety: SafetyLine) => void };
 
 export async function streamVoice(req: VoiceRequest, handlers: Handlers, signal: AbortSignal): Promise<void> {
   const controller = new AbortController();
@@ -54,8 +56,9 @@ export async function streamVoice(req: VoiceRequest, handlers: Handlers, signal:
       buffer = lines.pop() ?? "";
       for (const raw of lines) {
         if (!raw.trim()) continue;
-        const event = JSON.parse(raw) as { type: string; text?: string; line?: string };
-        if (event.type === "text" && event.text) handlers.onDelta(event.text);
+        const event = JSON.parse(raw) as { type: string; text?: string; line?: string; senal?: string; accion?: string };
+        if (event.type === "safety" && event.line) handlers.onSafety?.({ senal: event.senal ?? "", accion: event.accion === "urgente" ? "urgente" : "atencion", line: event.line });
+        else if (event.type === "text" && event.text) handlers.onDelta(event.text);
         else if (event.type === "result" && event.line) {
           handlers.onLine(event.line);
           settled = true;

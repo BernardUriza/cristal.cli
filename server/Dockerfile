@@ -8,8 +8,9 @@ RUN mamba clean --all --yes && mamba env update -n base -f environment.yml \
  && mamba clean --all --yes \
  && find /opt/conda/ -follow -type f -name '*.pyc' -delete
 
-COPY app.py runner.py voice.py telemetry.py echo.py atelier.py console.py echo-denylist.txt entrypoint.sh /app/
+COPY app.py runner.py voice.py telemetry.py echo.py atelier.py console.py corpus.py echo-denylist.txt entrypoint.sh /app/
 COPY prompts /app/prompts
+COPY corpus /app/corpus
 RUN chmod +x /app/entrypoint.sh
 
 RUN useradd --create-home --shell /bin/bash --uid 10001 runner \
