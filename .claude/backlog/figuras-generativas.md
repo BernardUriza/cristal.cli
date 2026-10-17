@@ -49,4 +49,8 @@ No Man's Sky, canon animal. tactile-js no trae tipos TS y npm dice «SEE LICENSE
 
 **Decisión de Bernard.** Agregar `polygon-clipping` (MIT) y `tactile-js` (BSD-3, verificar LICENSE) como dependencias.
 
-**Next.** 2026-10-17: pasos 1, 3 y 5 en curso en tres worktrees paralelos (sin dependencias nuevas); 2 y 4 esperan la decisión de dependencias.
+**Hecho 2026-10-17.**
+- Paso 3 → `0138e0e`: anclas cabeza/tronco/punta/extremidad en los 8 motivos, `domain/motifs/morph/` (remuestreo por arco, `blendByRegion` con Procrustes y `keepScale`, `caricature` de Brennan). Captura `~/Desktop/morph-hibridos-caricaturas-2026-10-17.png`. Abierto: norma por familia (la de 8 es una mancha y k≥1.7 se autocruza), detector de autointersección, híbridos sin ornamento ni `parts`, y nada del juego los usa todavía.
+- Paso 5 → `b030270`: `domain/motifs/disorder.ts` (Molnár, ~2 %, en las escamas de la sirena) y `figures/flowField.ts` (pelaje del perro en detail 3; perro y sirena pasan a 1.1.0). Captura `i+d/friedeberg/capturas/caracter-flow-desorden-2026-10-17.png`. Abierto: desorden en `bands.ts` (greca y chevrón no tienen procedencia por celda) y flow field en los demás motivos.
+
+**Next.** Paso 1 (grafo de partes) en curso en un worktree; 2 y 4 esperan la decisión de dependencias.
