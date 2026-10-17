@@ -2,8 +2,8 @@
 # Persist the first-five-minutes funnel and protect its summary. Run from the repo root as Bernard
 # (the sandboxed session cannot run `az … create`):
 #   ! bash server/telemetry-storage.sh
-# Idempotent. Researched against the Container Apps docs (Azure Files volume via env storage + YAML
-# update), NOT yet run end to end: read its output before trusting the mount.
+# Idempotent. Ran end to end on 2026-10-17: storage account cristaltelemetry, share telemetry mounted at
+# /home/runner/telemetry on revision cristal-api--0000004, summary answered with the token.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
