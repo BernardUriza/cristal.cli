@@ -94,6 +94,16 @@ líneas distintas (la que nombra la confesión, la de presión ≥50 %, las dos 
 Observación menor: tecleando más rápido que el `delayMs` las respuestas retrasadas aparecen después del siguiente echo;
 en juego real el retardo las separa.
 
+### Modo viaje y tope de parpadeo (2026-10-17, punto 5, `ceadffc`)
+
+`laberinto.html?viaje=1` o el botón VIAJE (persistido): HUD mínimo, texto grande, CRT sin parpadeo, botón «salir
+del laberinto / de la consola / del cuarto» siempre visible abajo a la izquierda; sin input durante 6 s el jugador
+deriva a paso lento por la ruta del rito (`autowalk.ts`), y la niebla/luz se abren con cada frase escrita. Tope
+global de parpadeo de luces 2.5 Hz (`flashSafety.ts`); antes la luz del cuarto IA llegaba a 5.9 Hz. Verificado en dev
+(captura `~/Documents/personal-assistance/cristal-betatesters/2026-10-17-dev-viaje-2.jpg`; deriva spawn → ALPHA en
+~4.5 s después de 6 s quieto). Pendiente de verificar en prod tras el deploy. Para el tester: ¿se lee el texto
+grande en el viaje? Nadie lo ha documentado.
+
 ### Memorama: semilla del día, resultado compartible, mejor marca, pares distintos (2026-10-17, punto 4)
 
 `memorama.html` abre por defecto el templo del día (`dailySeed(fecha local)`), botón «hoy»; al ganar: «templo del día
