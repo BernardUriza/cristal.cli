@@ -1,6 +1,6 @@
 # El rito rechaza respuestas corporales legítimas y luego se calla
 
-Status: Proposed
+Status: In progress
 Proposed: 2026-10-17 by me.tikkum (betatester, DM Instagram 2026-10-16 23:41) — destilado por Claude
 
 **Qué es.** El primer betatester hizo exactamente lo que el rito pidió y el rito lo trató como si no
@@ -35,5 +35,9 @@ cuentan como cuerpo: la pregunta del rito las pide explícitamente.
 - Si `...` puede existir como respuesta terminal sin una salida visible (regla 6), o siempre debe ir
   acompañado de un prompt de escape.
 
-**Next.** Corregir 1 y 2 con las cuatro frases del tester como tests; desplegar; contestarle a `me.tikkum`
-por el DM con el arreglo en prod y pedirle que repita la consola.
+**Hecho (2026-10-17, `acdfe2d`).** 1 y 2 corregidos con sus cuatro frases como tests en tres capas
+(`StanceClassifier.test.ts`, `PsychologicalResponseEngine.test.ts`, `terminalCore.integration.test.ts`);
+los seis tests fallan en el HEAD anterior y pasan con el fix. El `...` sin salida sigue siendo decisión de Bernard.
+
+**Next.** Verificar en prod con la secuencia exacta del tester; contestarle a `me.tikkum` por el DM y pedirle que
+repita la consola.
