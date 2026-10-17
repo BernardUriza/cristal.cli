@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { bestKey, dailySeed, flip, hasPendingPair, isFaceUp, MIN_PAIR_DISTANCE, newGame, pairsFound, resolve, resultGlyphs, shareLine, totalPairs, updateBest, type GameState } from "./memorama.ts";
-import { artSignature, signatureDistance } from "./cardArt.ts";
+import { artSignature, signatureDistance } from "../minigames/kit/templeArt.ts";
 
 function indicesOfPair(state: GameState, pairId: number): [number, number] {
   const idx = state.cards.map((c, i) => (c.pairId === pairId ? i : -1)).filter((i) => i >= 0);
