@@ -94,6 +94,22 @@ líneas distintas (la que nombra la confesión, la de presión ≥50 %, las dos 
 Observación menor: tecleando más rápido que el `delayMs` las respuestas retrasadas aparecen después del siguiente echo;
 en juego real el retardo las separa.
 
+### Densidad de hallazgo: las frases del jugador en los muros (2026-10-17, punto 2 de `diversion-con-evidencia.md`)
+
+Cada frase tecleada en una consola (no los comandos) se escribe en un muro de la celda de esa consola y después en
+anillos hacia afuera, con el acento de la consola, atenuada si el stance fue evasivo; persiste en
+`localStorage` (`cristal.inscriptions.v1`, tope 24). Un reloj de hallazgos (`DiscoveryClock`: nodo cercano,
+inscripción cercana, frase) corre en exploración; a los 60 s sin hallazgo el laberinto escribe un fragmento
+deformado de las palabras del jugador («… pesa …») uno o dos anillos adelante. HUD de debug:
+`hallazgo: Ns · finds · hambre N`. Verificado en dev (localhost:5173, contexto aislado): «me pesa el pecho» → muro
+este de ALPHA, «tengo frío en las manos» → muro oeste (captura
+`~/Documents/personal-assistance/cristal-betatesters/2026-10-17-dev-inscripcion-muro.jpg`); 60.2 s quieto →
+«… pesa …» en (3,1). Pendiente de verificar en prod tras el deploy.
+
+Nota de dev: en localhost el recorrido sintético N,W,N del recetario no llegó a ALPHA (acabó en ROTURA); con el
+handle `window.__player.current.set(-2, 0, -6)` el jugador queda en ALPHA directo. Un Vite de otra sesión ya
+escuchaba en 5173 (pid 10172, desde el 16 oct): se usa, no se mata.
+
 ### Recorrido del homework #1 en prod (2026-10-16, Claude como jugador nuevo)
 
 Arreglado y desplegado (b6f8903 → 08d2aac, verificado en cristal.bernarduriza.com):
