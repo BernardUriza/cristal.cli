@@ -14,4 +14,9 @@ items aquí. La semilla fija del memorama (`?seed=777&pairs=8`) hace comparables
 **Decisión de Bernard.** Si el laberinto necesita versión touch para que un betatester de celular lo
 pruebe, o si los betatesters de laberinto se reclutan con compu.
 
-**Next.** Recibir el homework #1; convertir lo que diga en items.
+**Homework #1 recibido (2026-10-16 23:09–23:41).** Memorama en 17 movimientos; el par memorable fue el de menos
+detalle. La consola se "trabó": cuatro respuestas corporales legítimas rechazadas y luego `...`. Registro con citas
+en `Donde_quedamos.md` › Betatesters; item: `rito-rechaza-respuestas-corporales.md`. Evidencia en `~/Documents/personal-assistance/cristal-betatesters/`.
+
+**Next.** Arreglar el item, desplegar, y pedirle a `me.tikkum` que repita la consola. Segunda vuelta anunciada por
+él mismo: *"mañana con ácido otra vez"* — la prueba que importa para la regla dura 6.
