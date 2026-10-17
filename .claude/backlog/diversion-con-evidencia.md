@@ -75,7 +75,7 @@ quedan para cuando el cuarto IA (`/generate`) deje de tardar 40 s (`latencia-cri
 - Un verbo a la vez: `web/src/ui/OnboardingHint.tsx` muestra "click para mirar" hasta el pointer lock y "W A S D para
   caminar" hasta el primer paso; después manda el rito del `ObjectivePanel`. Placeholder de la consola con ejemplo real
   («me pesa el pecho»). HUD de debug: `embudo: k/7`.
-- **Dos gates de Bernard, con `!` (el `az` de esta máquina no ve `insult-rg`):** `! bash server/telemetry-storage.sh`
+- **Gate de Bernard, con `!` (`az … create` está vetado en la sesión; el app vive en `portfolio-rg`/`portfolio-env`):** `! bash server/telemetry-storage.sh`
   monta un Azure Files en `/home/runner/telemetry` (sin eso el JSONL muere con cada revisión) y pone el secreto
   `telemetry-token` (ya generado en `~/.secrets/cristal-telemetry-token.txt`). Investigado contra la doc, no corrido:
   leer su salida.

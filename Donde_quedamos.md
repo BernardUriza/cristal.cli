@@ -103,7 +103,7 @@ first_step, console_open, first_phrase, glyph_invoked, door_crossed), anónimo. 
 `X-Admin-Token` da sesiones, alcanzados por paso, mediana y caída. En el cliente: `OnboardingHint` ("click para mirar"
 → "W A S D para caminar"), placeholder con ejemplo, HUD `embudo: k/7`.
 
-**Gates de Bernard (`!`, el `az` local no ve `insult-rg`):** `! bash server/telemetry-storage.sh` monta Azure Files en
+**Gate de Bernard (`!`, por el `az … create`; el Container App está en `portfolio-rg` / `portfolio-env`, no en `insult-rg` como decían `provision.sh` y la memoria):** `! bash server/telemetry-storage.sh` monta Azure Files en
 `/home/runner/telemetry` y fija el secreto `telemetry-token` desde `~/.secrets/cristal-telemetry-token.txt`. Hasta
 entonces el JSONL vive solo dentro de la revisión y el resumen contesta 503.
 
