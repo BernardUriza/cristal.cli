@@ -1,6 +1,6 @@
 # Diversión con evidencia: la consola nunca rechaza, nunca repite, siempre mueve
 
-Status: In progress (puntos 1 y 2 Done 2026-10-17; puntos 3–6 Proposed)
+Status: In progress (puntos 1–3 Done 2026-10-17; el 3 espera dos gates de Bernard para persistir y leer; puntos 4–6 Proposed)
 Proposed: 2026-10-17 by Bernard ("cómo hacer el juego más divertido"; /histerical-search, 6 investigadores, ~40 fuentes)
 
 **Qué es.** Veredicto completo con fuentes: `entregables/como-hacer-el-juego-mas-divertido-2026-10-17.html`.
@@ -65,5 +65,20 @@ adelante). El HUD de debug muestra `hallazgo: Ns · finds · hambre N`. Verifica
 (deploy `5938ca4`: dos frases en los muros este y oeste de ALPHA, captura en `Donde_quedamos.md`). El glifo y la puerta como cambios visibles
 quedan para cuando el cuarto IA (`/generate`) deje de tardar 40 s (`latencia-cristal-api.md`).
 
-**Next.** Punto 3 en orden (primeros cinco minutos: un verbo a la vez, placeholder con ejemplo, embudo instrumentado);
+**Hecho, punto 3 (2026-10-17; Bernard eligió el endpoint en cristal-api para el embudo).**
+- Embudo: `web/src/game/funnel.ts` (siete pasos: laberinto → pointer_lock → first_step → console_open → first_phrase →
+  glyph_invoked → door_crossed; segundos desde la carga, una vez por visita, en `sessionStorage`), `funnelClient.ts`
+  (`sendBeacon` a `POST /telemetry/funnel`, anónimo: id aleatorio de 12 letras, paso, segundos, build; nunca el texto
+  ni la IP), `server/telemetry.py` (JSONL en `CRISTAL_TELEMETRY_PATH`, `GET /telemetry/funnel/summary` con
+  `X-Admin-Token` = `CRISTAL_TELEMETRY_TOKEN`: sesiones, alcanzados por paso, mediana de segundos, caída respecto al
+  paso anterior; 503 si el token no está), tests en `server/test_telemetry.py`.
+- Un verbo a la vez: `web/src/ui/OnboardingHint.tsx` muestra "click para mirar" hasta el pointer lock y "W A S D para
+  caminar" hasta el primer paso; después manda el rito del `ObjectivePanel`. Placeholder de la consola con ejemplo real
+  («me pesa el pecho»). HUD de debug: `embudo: k/7`.
+- **Dos gates de Bernard, con `!` (el `az` de esta máquina no ve `insult-rg`):** `! bash server/telemetry-storage.sh`
+  monta un Azure Files en `/home/runner/telemetry` (sin eso el JSONL muere con cada revisión) y pone el secreto
+  `telemetry-token` (ya generado en `~/.secrets/cristal-telemetry-token.txt`). Investigado contra la doc, no corrido:
+  leer su salida.
+
+**Next.** Punto 4 en orden (memorama: juice suave, distintividad entre pares, semilla del día + resultado compartible);
 y el DM a `me.tikkum` sigue pendiente de Bernard (borrador en `Donde_quedamos.md`).
