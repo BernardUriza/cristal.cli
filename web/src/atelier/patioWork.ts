@@ -1,58 +1,29 @@
 import { PALETTES } from "../graphics/config/palettes.ts";
-import { MOTIFS, type MotifParams } from "../graphics/domain/motifs/figures/index.ts";
-import { composePatio, type Anchor } from "../graphics/application/patio/index.ts";
-import type { Stage } from "../graphics/application/compose.ts";
-import type { Shape } from "../graphics/domain/shapes.ts";
-import { mulberry32 } from "../shared/rng";
+import { SCENE_LIMITS, type Scene } from "../graphics/config/scene.ts";
+import { composePatio } from "../graphics/application/patio/index.ts";
+import { poblado } from "../graphics/application/patio/poblado.ts";
+import type { MotifParams } from "../graphics/domain/motifs/figures/index.ts";
 import type { Plan, Recipe } from "./director.ts";
-import type { MotifName } from "./vocabulary.ts";
+import { readScene } from "./sceneReader.ts";
 import type { Composer } from "./work.ts";
 
-const ANCHOR_ORDER: Anchor["kind"][] = ["patio-centro", "torre-cima", "muro-exterior", "cornisa", "ventana"];
-const COLUMN_FIGURES: MotifName[] = ["mano", "sirena"];
-const FIGURE_SCALE = 0.9;
+const AZIMUTHS = [0.55, 0.38, 0.72, 0.46, 0.64];
+
+
+export function sceneFor(plan: Plan): Scene {
+  const raw = plan.scene ?? readScene("", plan.motifs).scene;
+  const isWallOnly = (g: Scene["groups"][number]) => Object.keys(g.creature.parts).length === 1 && g.creature.name === g.creature.parts.cuerpo;
+  const base = { ...raw, groups: raw.groups.filter((g) => !isWallOnly(g) || plan.motifs.includes(g.creature.name as never)) };
+  const missing = plan.motifs.filter((m) => !base.groups.some((g) => Object.values(g.creature.parts).includes(m)));
+  return missing.length ? { ...base, groups: [...base.groups, ...readScene("", missing).scene.groups].slice(0, SCENE_LIMITS.groups) } : base;
+}
 
 export function detailFor(complexity: number): MotifParams["detail"] {
   return complexity <= 2 ? 1 : complexity === 3 ? 2 : 3;
 }
 
-function placeMotif(id: MotifName, anchor: Anchor, plan: Plan, seed: number) {
-  const pal = PALETTES[plan.palette];
-  const params: MotifParams = { size: anchor.sizePx * FIGURE_SCALE, detail: detailFor(plan.complexity), fill: pal.bg, ink: pal.ink, accent: pal.primary };
-  return MOTIFS[id].draw(anchor.screen[0], anchor.screen[1], params, mulberry32(seed ^ anchor.id.length));
-}
-
-export function figuresStage(anchors: Anchor[], plan: Plan, seed: number): Stage {
-  const placed: { motif: MotifName; anchor: string }[] = [];
-  const shapes: Shape[] = [];
-  const byKind = (kind: Anchor["kind"]) => anchors.filter((a) => a.kind === kind);
-  const picked: Anchor[] = [];
-  for (const kind of ANCHOR_ORDER) for (const a of byKind(kind)) if (picked.length < plan.motifs.length) picked.push(a);
-  plan.motifs.forEach((motif, i) => {
-    const anchor = picked[i];
-    if (!anchor) return;
-    shapes.push(...placeMotif(motif, anchor, plan, seed + i).shapes);
-    placed.push({ motif, anchor: anchor.id });
-  });
-  if (plan.anomaly === "columna-figura") {
-    byKind("columna-figura").forEach((anchor, i) => {
-      const motif = COLUMN_FIGURES[i % COLUMN_FIGURES.length];
-      shapes.push(...placeMotif(motif, anchor, plan, seed + 100 + i).shapes);
-      placed.push({ motif, anchor: anchor.id });
-    });
-  }
-  return {
-    name: "figuras",
-    shapes,
-    provenance: {
-      algorithm: "bezier_contours (siluetas propias) + ornamentador matemático, colocadas en anclas de la arquitectura",
-      params: { figuras: placed.map((p) => `${p.motif}@${p.anchor}`).join(", ") || "ninguna", detalle: detailFor(plan.complexity) },
-      decision: plan.motifs.length > 0 ? `pediste ${plan.motifs.join(", ")}: van al centro del patio, la cima de la torre y el muro mayor` : "no pediste figuras de la pared",
-    },
-  };
-}
-
 export const composePatioWork: Composer = (recipe: Recipe, plan: Plan, width: number, height: number) => {
+  const scene = sceneFor(plan);
   const patio = composePatio({
     seed: recipe.seed,
     palette: plan.palette,
@@ -61,8 +32,10 @@ export const composePatioWork: Composer = (recipe: Recipe, plan: Plan, width: nu
     ornament: plan.ornament,
     anomaly: plan.anomaly,
     towers: plan.symmetry === "asymmetric" ? 2 : 4,
+    architecture: scene.architecture,
+    azimuth: AZIMUTHS[recipe.seed % AZIMUTHS.length],
     width,
     height,
   });
-  return [...patio.stages, figuresStage(patio.anchors, plan, recipe.seed)];
+  return [...patio.stages, poblado(patio, scene, PALETTES[plan.palette], detailFor(plan.complexity), recipe.seed)];
 };

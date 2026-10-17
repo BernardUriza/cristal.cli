@@ -2,6 +2,7 @@ import type { CloisterLayout } from "../domain/architecture/layout.ts";
 import type { DrawingStyle } from "./drawings.ts";
 import { PALETTES, type PaletteName } from "./palettes.ts";
 import { CLOISTER_LAYOUT } from "./programs.ts";
+import { DEFAULT_ARCHITECTURE, type ArchitectureSpec } from "./scene.ts";
 
 export type OrnamentLanguage = "greca" | "chevrón" | "ajedrez" | "estrías" | "roseta" | "sierpinski";
 
@@ -18,6 +19,7 @@ export type PatioConfig = {
   anomaly: PatioAnomaly;
   azimuth: number;
   towers: 2 | 4;
+  architecture: ArchitectureSpec;
   width: number;
   height: number;
 };
@@ -35,6 +37,7 @@ export const DEFAULT_PATIO: PatioConfig = {
   anomaly: "none",
   azimuth: 0.55,
   towers: 4,
+  architecture: DEFAULT_ARCHITECTURE,
   width: 1400,
   height: 1000,
 };
@@ -50,6 +53,48 @@ export const PATIO_LAYOUT: CloisterLayout = {
   openings: { ...CLOISTER_LAYOUT.openings, arch: { width: 2.4, height: 2.6, sill: 0 } },
   openingOverrides: {},
 };
+
+const COURTYARD_M: Record<ArchitectureSpec["courtyard"], { width: number; depth: number }> = {
+  chico: { width: 12, depth: 10 },
+  medio: { width: 18, depth: 14 },
+  grande: { width: 24, depth: 20 },
+};
+
+const FOOTPRINT_STRETCH: Record<ArchitectureSpec["footprint"], { width: number; depth: number }> = {
+  cuadrado: { width: 0, depth: 0 },
+  alargado: { width: 12, depth: -2 },
+  profundo: { width: -2, depth: 12 },
+};
+
+const HEIGHT_SCALE: Record<ArchitectureSpec["heights"], { body: number; tower: number }> = {
+  bajo: { body: 0.8, tower: 0.7 },
+  medio: { body: 1, tower: 1 },
+  alto: { body: 1.25, tower: 1.5 },
+  vertiginoso: { body: 1.4, tower: 2.4 },
+};
+
+const RING_M = 16;
+const MIN_COURT_M = 8;
+
+/** The same cloister program at another scale: courtyard size, footprint stretch and storey heights come from the scene. */
+export function patioLayout(arch: ArchitectureSpec): CloisterLayout {
+  const court = COURTYARD_M[arch.courtyard];
+  const stretch = FOOTPRINT_STRETCH[arch.footprint];
+  const k = HEIGHT_SCALE[arch.heights];
+  const h = PATIO_LAYOUT.heights;
+  const courtyard = { width: Math.max(MIN_COURT_M, court.width + stretch.width), depth: Math.max(MIN_COURT_M, court.depth + stretch.depth) };
+  return {
+    ...PATIO_LAYOUT,
+    courtyard,
+    footprint: { width: courtyard.width + RING_M, depth: courtyard.depth + RING_M },
+    heights: { ...h, room: h.room * k.body, gallery: h.gallery * k.body, vestibule: h.vestibule * k.body, tower: h.tower * k.tower, towerRoof: h.towerRoof * Math.sqrt(k.tower) },
+  };
+}
+
+export function patioHeights(arch: ArchitectureSpec): Record<string, number> {
+  const k = HEIGHT_SCALE[arch.heights].body;
+  return Object.fromEntries(Object.entries(PATIO_HEIGHTS).map(([id, m]) => [id, m * k]));
+}
 
 export const PATIO_APRON = 5;
 

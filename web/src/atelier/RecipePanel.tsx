@@ -1,3 +1,4 @@
+import { formatValue } from "./formatValue.ts";
 import { PALETTE_NAMES } from "../graphics/config/palettes.ts";
 import type { Recipe } from "./director.ts";
 import type { Decision } from "./directorRules.ts";
@@ -12,7 +13,7 @@ export function RecipePanel({ recipe, onOverride, onReseed }: Props) {
       <ol>
         {recipe.choices.map((c) => (
           <li key={c.decision.field} className={`choice-${c.source}`}>
-            <b>{c.decision.field}</b> = {Array.isArray(c.decision.value) ? (c.decision.value.length ? c.decision.value.join(", ") : "ninguno") : String(c.decision.value)} <span>{c.because}</span>
+            <b>{c.decision.field}</b> = {formatValue(c.decision)} <span>{c.because}</span>
           </li>
         ))}
       </ol>

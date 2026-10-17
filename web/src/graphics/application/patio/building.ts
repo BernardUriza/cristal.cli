@@ -1,4 +1,4 @@
-import { PATIO_APRON, PATIO_HEIGHTS, PATIO_LAYOUT, type PatioConfig } from "../../config/patio.ts";
+import { PATIO_APRON, patioHeights, patioLayout, type PatioConfig } from "../../config/patio.ts";
 import { CLOISTER_PROGRAM } from "../../config/programs.ts";
 import { buildMass, type Building, type Face, type Solid } from "../../domain/architecture/mass.ts";
 import { buildPlan, type Plan, type Space } from "../../domain/architecture/plan.ts";
@@ -22,7 +22,7 @@ function withHeights(plan: Plan, heights: Record<string, number>): Plan {
 }
 
 export function buildPatioBuilding(config: PatioConfig): Building {
-  return buildMass(withHeights(buildPlan(patioProgram(config.towers), PATIO_LAYOUT), PATIO_HEIGHTS));
+  return buildMass(withHeights(buildPlan(patioProgram(config.towers), patioLayout(config.architecture)), patioHeights(config.architecture)));
 }
 
 export const FLOAT_RATIO = 0.9;

@@ -45,6 +45,15 @@ describe("strokes", () => {
 });
 
 describe("patio work", () => {
+  it("Bernard's narration draws eight composite robots on a bigger, taller building", () => {
+    const work = composeWork(direct("ocho robots hechos de craneos y ojos abiertos que suben escaleras infinitas simulando la IA en las manos del poder"), 600, 450);
+    const figuras = work.stages[work.stages.length - 1];
+    expect(figuras.provenance?.params.figuras).toBe(9);
+    expect(figuras.provenance?.decision).toContain("8 robot (cabeza=craneo ojos=ojo cuerpo=escalera) en escalera");
+    expect(figuras.provenance?.decision).toContain("1 mano (cuerpo=mano) en fila · patio");
+    expect(figuras.provenance?.params.arquitectura).toBe("cuadrado/grande/vertiginoso");
+  });
+
   it("draws the patio in traceable stages and places the asked figures on architectural anchors", () => {
     const recipe = direct("un patio de noche que se recorre con un ojo que vigila y una escalera que sube");
     const work = composeWork(recipe, 600, 450);
@@ -52,7 +61,7 @@ describe("patio work", () => {
     expect(work.stages.map((s) => s.name)).toEqual(["planta", "volúmenes", "ornamento", "símbolos", "anomalía", "figuras"]);
     const figuras = work.stages[5];
     expect(figuras.shapes.length).toBeGreaterThan(0);
-    expect(String(figuras.provenance?.params.figuras)).toMatch(/ojo@/);
+    expect(figuras.provenance?.decision).toMatch(/ojo/);
     expect(work.stages.every((s) => s.provenance)).toBe(true);
     expect(composeWork(recipe, 600, 450).stages[5].shapes.length).toBe(figuras.shapes.length);
   });

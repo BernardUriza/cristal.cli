@@ -4,6 +4,7 @@ import type { Decision } from "./directorRules.ts";
 
 export const DIRECT_TIMEOUT_MS = 90000;
 
+import { sanitizeScene } from "../graphics/config/scene.ts";
 import { ANOMALIES, COMPOSITIONS, MAX_LANGUAGES, MAX_MOTIFS, MOTIF_NAMES, ORNAMENT_LANGUAGES, isOneOf } from "./vocabulary.ts";
 
 type WireChoice = { field: string; value: unknown; because: string };
@@ -17,6 +18,10 @@ function subset<T extends string>(list: readonly T[], value: unknown, max: numbe
 
 function decisionOf(raw: WireChoice): Decision | null {
   const { field, value } = raw;
+  if (field === "scene") {
+    const scene = sanitizeScene(value);
+    return scene && scene.groups.length > 0 ? { field, value: scene } : null;
+  }
   if (field === "composition") return isOneOf(COMPOSITIONS, value) ? { field, value } : null;
   if (field === "anomaly") return isOneOf(ANOMALIES, value) ? { field, value } : null;
   if (field === "motifs") {

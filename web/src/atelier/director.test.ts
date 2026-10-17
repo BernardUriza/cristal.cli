@@ -37,7 +37,7 @@ describe("director", () => {
   it("fills what the narration does not say with defaults, marked as such", () => {
     const recipe = direct("algo");
     const defaults = recipe.choices.filter((c) => c.source === "defecto").map((c) => c.decision.field).sort();
-    expect(defaults).toEqual(["anomaly", "anomalyRate", "complexity", "composition", "density", "motifs", "ornament", "palette"]);
+    expect(defaults).toEqual(["anomaly", "anomalyRate", "complexity", "composition", "density", "motifs", "ornament", "palette", "scene"]);
   });
 
   it("an override replaces the choice and is marked human; a reseed keeps the choices", () => {

@@ -68,6 +68,19 @@ def test_studio_fields_composition_motifs_ornament_anomaly():
     ]
 
 
+def test_scene_is_clamped_to_the_grammar():
+    client, _ = make_client({"title": "x", "choices": [{"field": "scene", "because": "b", "value": {
+        "groups": [
+            {"creature": {"name": "robot", "parts": {"cabeza": "craneo", "alas": "ojo", "cuerpo": "dragon"}}, "count": 80, "arrangement": "escalera", "place": "luna", "scale": 9},
+            {"creature": {"name": "nada", "parts": {"cola": "unicornio"}}, "count": 2},
+        ],
+        "architecture": {"courtyard": "grande", "heights": "nube"},
+    }}]})
+    value = client.post("/atelier/direct", json={"narration": "robots", "seed": 2}).json()["choices"][0]["value"]
+    assert value["groups"] == [{"creature": {"name": "robot", "parts": {"cabeza": "craneo"}}, "count": 24, "arrangement": "escalera", "place": "patio", "scale": 2.5}]
+    assert value["architecture"] == {"footprint": "cuadrado", "courtyard": "grande", "heights": "medio"}
+
+
 def test_tolerates_prose_around_the_json():
     client, _ = make_client('Aquí va:\n{"title": "Sol", "choices": [{"field": "projection", "value": "elevation", "because": "de frente"}]}\nfin')
     body = client.post("/atelier/direct", json={"narration": "un templo de frente", "seed": 1}).json()

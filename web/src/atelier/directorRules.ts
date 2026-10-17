@@ -1,9 +1,11 @@
 import type { PaletteName } from "../graphics/config/palettes.ts";
 import type { ProjectionKind, Symmetry } from "../graphics/config/types.ts";
+import type { Scene } from "../graphics/config/scene.ts";
 import type { Anomaly, Composition, MotifName, OrnamentLanguage } from "./vocabulary.ts";
 
 export type Decision =
   | { field: "composition"; value: Composition }
+  | { field: "scene"; value: Scene }
   | { field: "motifs"; value: MotifName[] }
   | { field: "ornament"; value: OrnamentLanguage[] }
   | { field: "anomaly"; value: Anomaly }

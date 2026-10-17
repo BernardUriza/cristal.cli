@@ -40,5 +40,6 @@ export function composePatio(input: Partial<PatioConfig> = {}, rng?: Rng): Patio
     width: ctx.config.width,
     height: ctx.config.height,
     building: ctx.building,
+    projector: ctx.projector,
   };
 }
