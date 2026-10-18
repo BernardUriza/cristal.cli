@@ -1,3 +1,4 @@
+import { figureCap } from "../graphics/config/detail.ts";
 import { PALETTES } from "../graphics/config/palettes.ts";
 import { composeInhabitedProgram } from "../graphics/application/program/habitado.ts";
 import { expandProgram } from "../graphics/domain/grammar/expand.ts";
@@ -30,7 +31,7 @@ export const composeProgramWork: Composer = (recipe, plan, width, height) => {
   const scene = sceneFor(plan);
   const view = { width, height, palette: plan.palette, azimuth: AZIMUTHS[recipe.seed % AZIMUTHS.length] };
   const look = { seed: recipe.seed, density: plan.density, detail: detailFor(plan.complexity), ornament: plan.ornament, anomalyRate: plan.anomalyRate };
-  const people = { scene, pal: PALETTES[plan.palette], detail: detailFor(plan.complexity), seed: recipe.seed };
+  const people = { scene, pal: PALETTES[plan.palette], detail: figureCap(plan.complexity), seed: recipe.seed };
   const { stages } = composeInhabitedProgram(program, view, look, people);
   if (!fallback) return stages;
   const [first, ...rest] = stages;

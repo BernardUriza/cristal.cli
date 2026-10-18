@@ -1,4 +1,5 @@
 import type { Rng } from "../../../../../shared/rng.ts";
+import type { DetailChoice } from "../../../lod.ts";
 import { polygonBounds } from "../../../bezier.ts";
 import type { Shape, Vec2 } from "../../../shapes.ts";
 import { renamePart, type Part } from "../parts.ts";
@@ -8,7 +9,7 @@ import { drawKind, kindName, socketNamed, unitPolygon } from "./kinds.ts";
 import { BODY_TUNING } from "./tuning.ts";
 import type { BodyGraph, PartEdge, PartNode } from "./types.ts";
 
-export type BodyPiece = { node: string; instance: string; part: Part; shapes: Shape[] };
+export type BodyPiece = { node: string; instance: string; part: Part; shapes: Shape[]; lod?: DetailChoice };
 
 export type EdgeTrace = { edge: string; joint: string; instances: string[]; mirrored: boolean; copies: number };
 
@@ -78,7 +79,7 @@ export function resolveBody(graph: BodyGraph, footX: number, footY: number, heig
   const pieces: BodyPiece[] = [];
   for (const p of placed) {
     const drawn = drawKind(p.node.kind, p.node.role, map(p.frame), params, rng);
-    if (drawn) pieces.push({ node: p.node.id, instance: p.name, part: renamePart(drawn.part, p.name), shapes: drawn.shapes });
+    if (drawn) pieces.push({ node: p.node.id, instance: p.name, part: renamePart(drawn.part, p.name), shapes: drawn.shapes, ...(drawn.lod ? { lod: drawn.lod } : {}) });
   }
   return { shapes: pieces.flatMap((p) => p.shapes), pieces, edges };
 }

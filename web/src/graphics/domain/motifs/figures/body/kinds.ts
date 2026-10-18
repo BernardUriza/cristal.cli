@@ -1,4 +1,5 @@
 import type { Rng } from "../../../../../shared/rng.ts";
+import { detailAt, type DetailChoice } from "../../../lod.ts";
 import { filled, polygon, type Shape, type Vec2 } from "../../../shapes.ts";
 import { MOTIFS } from "../index.ts";
 import { boxAnchors, oval, type Part, type StructuralRole } from "../parts.ts";
@@ -63,14 +64,15 @@ export function socketsOf(k: PartKind): Socket[] {
 
 export const socketNamed = (k: PartKind, name: string): Socket | undefined => socketsOf(k).find((s) => s.name === name);
 
-export type DrawnPiece = { part: Part; shapes: Shape[] };
+export type DrawnPiece = { part: Part; shapes: Shape[]; lod?: DetailChoice };
 
 export function drawKind(k: PartKind, role: StructuralRole, f: BodyFrame, params: Omit<MotifParams, "size">, rng: Rng): DrawnPiece | undefined {
   if ("motif" in k) {
     const motif = MOTIFS[k.motif];
     const morph = k.morph ? { contour: k.morph.contour, features: k.morph.features } : {};
-    const mp: MotifParams = { ...params, ...morph, size: f.s, mirror: f.flip, ...(f.rot ? { rotate: f.rot } : {}) };
-    return { part: { ...motif.parts(f.o[0], f.o[1], mp), role }, shapes: motif.draw(f.o[0], f.o[1], mp, rng).shapes };
+    const lod = params.lodPx ? detailAt(f.s, params.lodPx, params.detail) : undefined;
+    const mp: MotifParams = { ...params, ...morph, detail: lod?.detail ?? params.detail, size: f.s, mirror: f.flip, ...(f.rot ? { rotate: f.rot } : {}) };
+    return { part: { ...motif.parts(f.o[0], f.o[1], mp), role }, shapes: motif.draw(f.o[0], f.o[1], mp, rng).shapes, ...(lod ? { lod } : {}) };
   }
   if (k.primitive === "pivot") return undefined;
   const poly = PRIMITIVES[k.primitive].map((p) => toWorld(f, p));

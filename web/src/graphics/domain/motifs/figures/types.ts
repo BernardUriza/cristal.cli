@@ -20,6 +20,7 @@ export type MotifParams = {
   rotate?: number;
   mirror?: boolean;
   detail: 1 | 2 | 3;
+  lodPx?: readonly number[];
   fill: string;
   ink: string;
   accent: string;

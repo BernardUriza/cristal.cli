@@ -1,5 +1,6 @@
 import type { Rng } from "../../../../shared/rng";
 import type { MorphPolicy } from "../../../config/morph.ts";
+import type { DetailChoice } from "../../lod.ts";
 import type { Shape } from "../../shapes.ts";
 import { compileProgram, fromSixSlot } from "./body/program/compile.ts";
 import type { ArchGrammar, CompiledCreature, CreatureProgram } from "./body/program/types.ts";
@@ -10,7 +11,7 @@ import type { MotifParams, Provenance } from "./types.ts";
 
 export type CreatureParts = Partial<Record<SixSlot, string>>;
 
-export type CreaturePiece = { slot: string; part: Part; shapes: Shape[]; grammar?: ArchGrammar };
+export type CreaturePiece = { slot: string; part: Part; shapes: Shape[]; grammar?: ArchGrammar; lod?: DetailChoice };
 
 export type DrawnCreature = { shapes: Shape[]; pieces: CreaturePiece[]; provenance: Provenance; edges: EdgeTrace[] };
 
@@ -37,7 +38,7 @@ export function drawCompiled(c: CompiledCreature, footX: number, footY: number, 
   const legacy = c.program.family === "seis-ranuras" && c.trace.length === 0;
   return {
     shapes: body.shapes,
-    pieces: body.pieces.map((p) => ({ slot: p.node, part: p.part, shapes: p.shapes, ...(c.grammars[p.node] ? { grammar: c.grammars[p.node] } : {}) })),
+    pieces: body.pieces.map((p) => ({ slot: p.node, part: p.part, shapes: p.shapes, ...(c.grammars[p.node] ? { grammar: c.grammars[p.node] } : {}), ...(p.lod ? { lod: p.lod } : {}) })),
     edges: body.edges,
     provenance: legacy ? legacyProvenance(c, heightPx) : programProvenance(c, body.pieces.length, heightPx),
   };
