@@ -38,6 +38,8 @@ export const CONTAINER_MARGIN: Partial<Record<SpaceKind, number>> = {
 
 export const GAP_INSIDE: Partial<Record<SpaceKind, number>> = { block: 1.5 };
 
+export const BANQUETTE = { width: 6, height: 2.6 } as const;
+
 export const ARCADE = { height: 3.8, slab: 0.4 } as const;
 
 export const OPEN_GROUND_STYLES: readonly string[] = ["city"];

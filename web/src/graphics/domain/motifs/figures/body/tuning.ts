@@ -47,4 +47,9 @@ export const SIX_SLOT_PLAN: readonly SixSlotEntry[] = [
 
 export const SIX_SLOT_ALONE = { dy: -0.5, size: 0.9 };
 
+/** How the slots join the trunk: `overlap` of each piece into its host (share of its own size), shoulder band and rows as shares of trunk height from its top. */
+export type SixSlotJoin = { overlap: number; shoulders: readonly [number, number]; tailRow: number; footRow: number; eyeRow: number; eyeDy: number; pairShare: number };
+
+export const SIX_SLOT_JOIN: SixSlotJoin = { overlap: 0.12, shoulders: [0.15, 0.6], tailRow: 0.7, footRow: 0.97, eyeRow: 0.3, eyeDy: -0.04, pairShare: 0.6 };
+
 export const SIX_SLOT_ROLE: Partial<Record<SixSlot, StructuralRole>> = { cuerpo: "enclosure", cabeza: "crown", pies: "support", manos: "span" };

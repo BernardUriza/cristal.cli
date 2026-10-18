@@ -84,7 +84,8 @@ export type GrammarErrorCode =
   | "dangling-edge"
   | "containment-cycle"
   | "bad-junction"
-  | "topology-goal";
+  | "topology-goal"
+  | "blocked-gate";
 
 export class GrammarError extends Error {
   readonly code: GrammarErrorCode;

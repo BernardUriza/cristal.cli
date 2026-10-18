@@ -8,6 +8,7 @@ describe("drawCreature", () => {
   it("composes a robot from skull head, eye pair and stair body, all inside its height", () => {
     const one = drawCreature({ cabeza: "craneo", ojos: "ojo", cuerpo: "escalera" }, 100, 300, 200, P, mulberry32(1));
     expect(one.provenance.params.partes).toBe("cuerpo=escalera, cabeza=craneo, ojos=ojo×2");
+    expect(one.provenance.decision).toContain("una sola masa conectada");
     expect(one.shapes.length).toBeGreaterThan(4);
     const two = drawCreature({ cabeza: "craneo" }, 100, 300, 200, P, mulberry32(1));
     expect(two.provenance.decision).toContain("una sola parte");

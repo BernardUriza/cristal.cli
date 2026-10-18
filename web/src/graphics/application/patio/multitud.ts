@@ -4,6 +4,7 @@ import type { Box3, Vec3 } from "../../domain/math/vec3.ts";
 import { arrange } from "./acomodo.ts";
 import { bodyClears } from "./holgura.ts";
 import { crowdOf } from "./protagonista.ts";
+import { perchOn } from "./remate.ts";
 import { minSideOf, type Flight, type Footing, type Site } from "./sitio.ts";
 
 export type Regrouped = { from: Group["arrangement"]; to: Group["arrangement"] };
@@ -110,9 +111,9 @@ function onGround(g: Group, c: Site, h: number, clear: (at: Vec3) => boolean): P
   return { spots: most(LINEAR.has(g.arrangement) ? [file(c.walks), ...singles] : singles) };
 }
 
-/** One figure per tower top, in site order; whoever is left walks the site's ground. */
+/** One figure per tower crown (the ledge at its spire's foot, see remate.ts), in site order; whoever is left walks the site's ground. */
 function onTowers(g: Group, c: Site, h: number, clear: (at: Vec3) => boolean): Placement {
-  const top = c.towers.slice(0, g.count).map((t): Candidate => ({ at: centre(t, 0) })).filter((x) => clear(x.at));
+  const top = c.towers.slice(0, g.count).map((t): Candidate => ({ at: perchOn(t, c.projector.forward) })).filter((x) => clear(x.at));
   if (top.length >= g.count) return { spots: top, perched: top.length };
   const rest = onGround({ ...g, count: g.count - top.length }, c, h, clear);
   return { spots: [...top, ...rest.spots], perched: top.length, regrouped: rest.regrouped };
@@ -121,7 +122,7 @@ function onTowers(g: Group, c: Site, h: number, clear: (at: Vec3) => boolean): P
 /** Where a group stands off the ground (spires, roofs, stair flights, the sky), or null when its place is the ground. */
 export function liftedSpots(g: Group, c: Site, h: number): Vec3[] | null {
   const rise = h * STEP_RISE;
-  if (g.place === "torres" && c.towers.length) return c.towers.slice(0, g.count).map((t) => centre(t, 0));
+  if (g.place === "torres" && c.towers.length) return c.towers.slice(0, g.count).map((t) => perchOn(t, c.projector.forward));
   if (g.place === "azoteas" && c.roofs.length) return Array.from({ length: g.count }, (_, i) => centre(c.roofs[(i * 3) % c.roofs.length], 0));
   if (g.place === "cielo") return arrange({ ...g, arrangement: g.arrangement === "escalera" ? "escalera" : "circulo" }, c.sky.rect, c.sky.y, rise);
   if (g.place === "escalera" && c.stairs.length) return onFlights(g.count, c.stairs, rise);
