@@ -14,6 +14,9 @@ import { tagRoot } from "../../domain/semantic.ts";
 import type { SceneItem } from "./escena.ts";
 import { habitar } from "./habitar.ts";
 import { creatureHeightM, spotsFor, type Site, type Spot } from "./lugares.ts";
+import { crowdNote } from "./nota.ts";
+import { crowdOn } from "./multitud.ts";
+import { isProtagonist } from "./protagonista.ts";
 
 export type Placed = { items: SceneItem[]; records: RewriteRecord[]; provenance: Provenance };
 
@@ -49,12 +52,12 @@ export function poblado(c: Site, scene: Scene, pal: Palette, detail: MotifParams
     const screen = { minX: foot[0] - half, maxX: foot[0] + half, minY: foot[1] - heightPx * FIGURE_EXTENT.height, maxY: foot[1] + 2 };
     items.push({ id, kind: "figure", box, screen, depth: c.projector.toNdc(spot.at)[2], shapes: tagRoot(lived.shapes, { root: id, kind: "creature" }) });
   });
-  const summary = scene.groups.map((g, gi) => `${g.count} ${g.creature.name} (${bodies[gi].label}) en ${g.arrangement} · ${g.place}`);
+  const summary = scene.groups.map((g, gi) => `${g.count} ${g.creature.name} (${bodies[gi].label}) en ${g.arrangement} · ${g.place}${isProtagonist(g) ? "" : crowdNote(crowdOn(g, c), g.count)}`);
   return {
     items,
     records,
     provenance: {
-      algorithm: "escena del director: criaturas compuestas con partes de la pared, colocadas en METROS sobre la arquitectura (patio, azoteas, torres, cielo, escalera) y proyectadas con el mismo proyector isométrico",
+      algorithm: "escena del director: criaturas compuestas con partes de la pared, colocadas en METROS sobre la arquitectura (el suelo caminable: calles, plaza, anillos, terrazas, patio; azoteas, torres, cielo, escalera) sin que ningún cuerpo entre en un sólido y proyectadas con el mismo proyector isométrico",
       params: { grupos: scene.groups.length, figuras: spots.length, arquitectura: `${scene.architecture.footprint}/${scene.architecture.courtyard}/${scene.architecture.heights}` },
       decision: summary.join("; ") || "sin figuras en la escena",
     },

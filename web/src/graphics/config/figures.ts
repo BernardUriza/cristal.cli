@@ -5,6 +5,9 @@ export type FigureScale = {
   fitShare: number;
   perched: number;
   minHeightM: number;
+  crowdFloorM: number;
+  crowdShrinkSteps: number;
+  crowdSamples: number;
 };
 
 export const FIGURE_SCALE: FigureScale = {
@@ -14,6 +17,9 @@ export const FIGURE_SCALE: FigureScale = {
   fitShare: 0.6,
   perched: 0.6,
   minHeightM: 3,
+  crowdFloorM: 1.7,
+  crowdShrinkSteps: 10,
+  crowdSamples: 96,
 };
 
 export const PROTAGONIST_NAMES = /gigante|coloso/i;

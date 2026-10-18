@@ -7,6 +7,7 @@ import { boxCenter, boundsOf, type Vec3 } from "../../domain/math/vec3.ts";
 import { roomOn } from "../patio/protagonista.ts";
 import { boxesOf, minSideOf, type Flight, type Footing, type Site } from "../patio/sitio.ts";
 import type { ProgramScene } from "./scene.ts";
+import { walksOfProgram } from "./suelo.ts";
 
 const SKY_MARGIN = 4;
 
@@ -21,6 +22,8 @@ const NEAR_ENOUGH = 0.5;
 const MIN_STRIP = 2;
 
 const OPEN_GROUND: readonly SpaceKind[] = ["courtyard", "plaza", "platform", "ring-gallery", "complex"];
+
+const WALK_FLOORS: readonly SpaceKind[] = ["courtyard", "plaza"];
 
 function largest(s: ProgramScene, kind: SpaceKind, free = false): PlacedSpace | undefined {
   const holds = (p: PlacedSpace) => s.graph.edges.some((e) => e.relation === "contains" && e.from === p.node.id);
@@ -46,7 +49,7 @@ function flightOf(s: ProgramScene, stair: PlacedSpace): Flight | undefined {
     const b = boundsOf(steps[k].faces.flatMap((f) => f.points));
     return [boxCenter(b)[0], b.max[1], boxCenter(b)[2]];
   };
-  return { from: top(0), to: top(steps.length - 1) };
+  return { from: top(0), to: top(steps.length - 1), steps: boxesOf(steps) };
 }
 
 /** The open ground with the widest narrow side (a courtyard's free strip or a plaza), where a protagonist fits best. */
@@ -66,18 +69,20 @@ function openGround(s: ProgramScene, floor: Footing): Footing[] {
   return open.length ? open.sort((a, b) => roomOn(b, s) - roomOn(a, s)) : [floor];
 }
 
-/** Where the program lets creatures stand, sized against half the whole precinct so a giant reads as a building: the nearest of the big empty courtyards (or the free strip of a courtyard that holds a precinct, toward the camera; else the hall, or the precinct), tower spires, flat roofs, stair flights, and the sky over the whole. */
+/** Where the program lets creatures stand (crowds walk its streets, plaza, rings and terraces; see suelo.ts), sized against half the whole precinct so a giant reads as a building: the nearest of the big empty courtyards (or the free strip of a courtyard that holds a precinct, toward the camera; else the hall, or the precinct), tower spires, flat roofs, stair flights, and the sky over the whole. */
 export function siteOfProgram(s: ProgramScene): Site {
   const root = s.layout.spaces.find((p) => !p.node.parent)!;
   const ground = largest(s, "courtyard", true) ?? largest(s, "courtyard") ?? largest(s, "plaza") ?? largest(s, "hall") ?? root;
   const floorY = ground.node.kind === "hall" ? ground.y0 : ground.y1;
   const floor: Footing = { rect: ground.node.kind === "courtyard" ? openFloor(s, ground) : ground.rect, y: floorY, ...(ground.node.kind === "hall" ? { ceiling: ground.y1 } : {}) };
   const of = (kinds: SpaceKind[], lift: number): Footing[] => s.layout.spaces.filter((p) => kinds.includes(p.node.kind)).map((p) => ({ rect: p.rect, y: p.y1 + lift }));
+  const walks = walksOfProgram(s);
   const top = Math.max(...s.solids.flatMap((x) => x.faces.flatMap((f) => f.points.map((p) => p[1]))));
   return {
     projector: s.projector,
     span: Math.max(minSide(ground), minSide(root) * SPAN_OF_WHOLE),
     floor,
+    walks: WALK_FLOORS.includes(ground.node.kind) ? [{ ...floor, label: ground.node.kind === "plaza" ? "plaza" : "patio" }, ...walks] : walks.length ? walks : [floor],
     stages: openGround(s, floor),
     towers: of(["tower"], LAYOUT_RULES.towerRoof),
     roofs: of(["chamber", "gallery", "bridge"], 0),
