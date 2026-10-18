@@ -49,6 +49,26 @@ describe("flow field fill (Hobbs)", () => {
     expect(mermaid.provenance.params.scaleInterrupted).toBe(Math.round(count * CHARACTER.disorder.fraction));
   });
 
+  it("jaguar fur grows between the rosettes, never over them, and leaves detail 2 untouched", () => {
+    const params = { size: 300, detail: 3 as const, fill: "#000", ink: "#fff", accent: "#f0f" };
+    const d3 = MOTIFS.jaguar.draw(0, 0, params, mulberry32(5));
+    const rings = d3.shapes.filter((s) => s.kind === "circle" && s.style.fill === "none");
+    const r = Number(d3.provenance.params.rosetteRadius);
+    expect(rings.length).toBe(d3.provenance.params.rosettes);
+    const fur = d3.shapes.filter((s) => s.kind === "polyline" && s.style.opacity === CHARACTER.pelt.opacity);
+    expect(fur.length).toBeGreaterThan(30);
+    for (const f of fur) if (f.kind === "polyline") for (const p of f.points) for (const c of rings) if (c.kind === "circle") expect(Math.hypot(p[0] - c.cx, p[1] - c.cy)).toBeGreaterThanOrEqual(r * CHARACTER.pelt.clearance - 0.5);
+    const d2 = MOTIFS.jaguar.draw(0, 0, { ...params, detail: 2 }, mulberry32(5));
+    expect(d2.provenance.params.flowLines).toBeUndefined();
+  });
+
+  it("the avoid predicate keeps every stroke out of the hole", () => {
+    const hole = (p: Vec2) => Math.hypot(p[0], p[1]) < 30;
+    const a = flowField(star, mulberry32(8), { ...fill, avoid: hole }, policy);
+    expect(a.shapes.length).toBeGreaterThan(10);
+    for (const s of a.shapes) if (s.kind === "polyline") for (const p of s.points) expect(hole(p)).toBe(false);
+  });
+
   it("scales without disorder keep their previous params", () => {
     const box: Vec2[] = [[0, 0], [100, 0], [100, 60], [0, 60]];
     const plain = scales(box, 10, { stroke: "#fff", strokeWidth: 1 });

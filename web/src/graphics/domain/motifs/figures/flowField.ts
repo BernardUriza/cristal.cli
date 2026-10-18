@@ -5,7 +5,7 @@ import type { Ornament } from "./ornamentador.ts";
 
 export type FlowPolicy = { noiseCells: number; turns: number; baseAngle: number; steps: number; jitter: number };
 
-export type FlowFill = { spacing: number; stepLen: number; style: Style };
+export type FlowFill = { spacing: number; stepLen: number; style: Style; avoid?: (p: Vec2) => boolean };
 
 const smooth = (t: number) => t * t * (3 - 2 * t);
 const clamp01 = (t: number) => Math.min(Math.max(t, 0), 1);
@@ -32,13 +32,13 @@ export function angleField(poly: readonly Vec2[], rng: Rng, policy: FlowPolicy):
   return (p) => base + noise((p[0] - b.minX) / w, (p[1] - b.minY) / h) * policy.turns * 2 * Math.PI;
 }
 
-export function traceStream(start: Vec2, poly: readonly Vec2[], angle: (p: Vec2) => number, stepLen: number, steps: number): Vec2[] {
+export function traceStream(start: Vec2, poly: readonly Vec2[], angle: (p: Vec2) => number, stepLen: number, steps: number, avoid?: (p: Vec2) => boolean): Vec2[] {
   const pts: Vec2[] = [start];
   let p = start;
   for (let k = 0; k < steps; k++) {
     const a = angle(p);
     const q: Vec2 = [p[0] + Math.cos(a) * stepLen, p[1] + Math.sin(a) * stepLen];
-    if (!pointInPolygon(q, poly)) break;
+    if (!pointInPolygon(q, poly) || avoid?.(q)) break;
     pts.push(q);
     p = q;
   }
@@ -52,8 +52,8 @@ export function flowField(poly: readonly Vec2[], rng: Rng, fill: FlowFill, polic
   for (let y = b.minY + fill.spacing / 2; y < b.maxY; y += fill.spacing) {
     for (let x = b.minX + fill.spacing / 2; x < b.maxX; x += fill.spacing) {
       const start: Vec2 = [x + (rng() - 0.5) * fill.spacing * policy.jitter, y + (rng() - 0.5) * fill.spacing * policy.jitter];
-      if (!pointInPolygon(start, poly)) continue;
-      const pts = traceStream(start, poly, angle, fill.stepLen, policy.steps);
+      if (!pointInPolygon(start, poly) || fill.avoid?.(start)) continue;
+      const pts = traceStream(start, poly, angle, fill.stepLen, policy.steps, fill.avoid);
       if (pts.length >= 3) shapes.push(polyline(pts, fill.style));
     }
   }
