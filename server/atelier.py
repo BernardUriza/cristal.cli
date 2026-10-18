@@ -36,7 +36,9 @@ _ARCH = {"footprint": ("cuadrado", "alargado", "profundo"), "courtyard": ("chico
 _ARCH_DEFAULT = {"footprint": "cuadrado", "courtyard": "medio", "heights": "medio"}
 _MAX_BECAUSE = 200
 _FAMILIES = ("biped", "quadruped", "serpentine", "radial", "chimera")
-_CREATURE_OPS = ("replace", "graft", "repeat", "architecturalize")
+_CREATURE_OPS = ("replace", "graft", "repeat", "architecturalize", "blend", "caricature")
+_REGIONS = ("cabeza", "tronco", "punta", "extremidad")
+_CARICATURE_K = (0.5, 2.5)
 _SOCKETS = ("head", "torso", "tail", "arm", "leg", "limb", "hand", "foot", "eye")
 _REPEAT = ("radial", "chain", "bilateral")
 _ARCH_GRAMMARS = ("facade", "tower", "gallery")
@@ -102,7 +104,18 @@ def _creature_op(raw: Any) -> dict[str, Any] | None:
         count = raw.get("count")
         ok = isinstance(count, int) and not isinstance(count, bool) and 2 <= count <= 8 and raw.get("arrangement") in _REPEAT
         return {"op": op, "socket": socket, "count": count, "arrangement": raw["arrangement"]} if ok else None
+    if op == "blend":
+        weight = raw.get("weight")
+        ok = raw.get("motif") in _MOTIFS and raw.get("region") in _REGIONS and _number(weight) and 0 < weight <= 1
+        return {"op": op, "socket": socket, "motif": raw["motif"], "region": raw["region"], "weight": weight} if ok else None
+    if op == "caricature":
+        k = raw.get("k")
+        return {"op": op, "socket": socket, "k": k} if _number(k) and _CARICATURE_K[0] <= k <= _CARICATURE_K[1] else None
     return {"op": op, "socket": socket, "grammar": raw["grammar"]} if raw.get("grammar") in _ARCH_GRAMMARS else None
+
+
+def _number(v: Any) -> bool:
+    return isinstance(v, (int, float)) and not isinstance(v, bool)
 
 
 def _creature_program(value: Any) -> dict[str, Any] | None:

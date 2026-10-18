@@ -3,14 +3,16 @@ import { expandBody } from "../expand.ts";
 import { kindName } from "../kinds.ts";
 import { BODY_TUNING } from "../tuning.ts";
 import { BodyGraphError, type PartEdge, type PartNode } from "../types.ts";
+import type { MorphPolicy } from "../../../../../config/morph.ts";
+import { blend, caricatureOp } from "./morphOps.ts";
 import { GRAFT_ANCHOR, resolveSocket, semanticName } from "./sockets.ts";
 import { cloned, parentEdge, subtreeOf, without, type Graph, type Subtree } from "./subtree.ts";
 import { PROGRAM_TUNING } from "./tuning.ts";
 import type { ArchGrammar, CreatureOp, OpTrace } from "./types.ts";
 
-export type OpState = { graph: Graph; grammars: Record<string, ArchGrammar>; seed: number; index: number };
+export type OpState = { graph: Graph; grammars: Record<string, ArchGrammar>; seed: number; index: number; morph?: MorphPolicy };
 
-export type OpResult = Pick<OpTrace, "targets" | "added" | "removed" | "detail">;
+export type OpResult = Pick<OpTrace, "targets" | "added" | "removed" | "detail" | "morph">;
 
 function targetsOf(s: OpState, socket: string): PartNode[] {
   if (!semanticName(socket)) throw new BodyGraphError("missing-socket", `"${socket}" is not a semantic socket`);
@@ -106,5 +108,7 @@ export function applyOp(s: OpState, op: CreatureOp): OpResult {
   if (op.op === "graft") return graft(s, op);
   if (op.op === "repeat") return repeat(s, op);
   if (op.op === "architecturalize") return architecturalize(s, op);
+  if (op.op === "blend") return blend(s, op, targetsOf(s, op.socket));
+  if (op.op === "caricature") return caricatureOp(s, op, targetsOf(s, op.socket));
   throw new BodyGraphError("unknown-op", String((op as { op: unknown }).op));
 }

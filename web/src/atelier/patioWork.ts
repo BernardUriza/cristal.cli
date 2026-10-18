@@ -3,6 +3,7 @@ import { SCENE_LIMITS, type Scene } from "../graphics/config/scene.ts";
 import { composePatio } from "../graphics/application/patio/index.ts";
 import type { MotifParams } from "../graphics/domain/motifs/figures/index.ts";
 import type { Plan, Recipe } from "./director.ts";
+import { usesMotif } from "./morphReader.ts";
 import { readScene } from "./sceneReader.ts";
 import type { Composer } from "./work.ts";
 
@@ -13,7 +14,7 @@ export function sceneFor(plan: Plan): Scene {
   const raw = plan.scene ?? readScene("", plan.motifs).scene;
   const isWallOnly = (g: Scene["groups"][number]) => Object.keys(g.creature.parts).length === 1 && g.creature.name === g.creature.parts.cuerpo;
   const base = { ...raw, groups: raw.groups.filter((g) => !isWallOnly(g) || plan.motifs.includes(g.creature.name as never)) };
-  const missing = plan.motifs.filter((m) => !base.groups.some((g) => Object.values(g.creature.parts).includes(m)));
+  const missing = plan.motifs.filter((m) => !base.groups.some((g) => usesMotif(g, m)));
   return missing.length ? { ...base, groups: [...base.groups, ...readScene("", missing).scene.groups].slice(0, SCENE_LIMITS.groups) } : base;
 }
 

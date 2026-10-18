@@ -56,7 +56,7 @@ export function defineMotif(spec: FigureSpec): MotifDef {
       at: (p) => transformPoint(norm(p), place),
       px: (unit) => unit * params.size * fit,
       inkWidth: Math.max(1, params.size * 0.012),
-      poly: transformPoints(unitPoly, place),
+      poly: transformPoints(params.contour ?? unitPoly, place),
     };
   };
   return {
@@ -78,7 +78,7 @@ export function defineMotif(spec: FigureSpec): MotifDef {
       const fig = figure(cx, cy, params);
       const ornaments = spec.ornaments(fig, params, rng);
       const outline = polygon(fig.poly, filled(params.fill, params.ink, fig.inkWidth, { join: "round" }));
-      const shapes = [outline, ...spec.features(fig, params), ...ornaments.flatMap((o) => o.shapes)];
+      const shapes = [outline, ...(params.features === false ? [] : spec.features(fig, params)), ...ornaments.flatMap((o) => o.shapes)];
       const params_: Record<string, number | string> = { size: params.size, detail: params.detail, anchors: spec.anchors.length };
       for (const o of ornaments) Object.assign(params_, o.params);
       return { shapes, provenance: { algorithm: `bezier_contours@${spec.version}`, params: params_, decision: spec.decision(params) } };

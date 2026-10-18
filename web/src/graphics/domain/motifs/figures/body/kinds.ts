@@ -29,12 +29,13 @@ const PRIMITIVES: Record<Primitive, Vec2[]> = {
   pivot: [],
 };
 
-export const kindName = (k: PartKind): string => ("motif" in k ? k.motif : k.primitive);
+export const kindName = (k: PartKind): string => ("motif" in k ? (k.morph?.label ?? k.motif) : k.primitive);
 
 export const kindExists = (k: PartKind): boolean => ("motif" in k ? Boolean(MOTIFS[k.motif]) : k.primitive in PRIMITIVES);
 
 export function unitPolygon(k: PartKind): Vec2[] {
   if ("primitive" in k) return PRIMITIVES[k.primitive] ?? [];
+  if (k.morph) return k.morph.contour;
   return MOTIFS[k.motif]?.silhouette(UNIT) ?? [];
 }
 
@@ -67,7 +68,8 @@ export type DrawnPiece = { part: Part; shapes: Shape[] };
 export function drawKind(k: PartKind, role: StructuralRole, f: BodyFrame, params: Omit<MotifParams, "size">, rng: Rng): DrawnPiece | undefined {
   if ("motif" in k) {
     const motif = MOTIFS[k.motif];
-    const mp: MotifParams = { ...params, size: f.s, mirror: f.flip, ...(f.rot ? { rotate: f.rot } : {}) };
+    const morph = k.morph ? { contour: k.morph.contour, features: k.morph.features } : {};
+    const mp: MotifParams = { ...params, ...morph, size: f.s, mirror: f.flip, ...(f.rot ? { rotate: f.rot } : {}) };
     return { part: { ...motif.parts(f.o[0], f.o[1], mp), role }, shapes: motif.draw(f.o[0], f.o[1], mp, rng).shapes };
   }
   if (k.primitive === "pivot") return undefined;

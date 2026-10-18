@@ -1,10 +1,13 @@
 import type { Rng } from "../../../../../shared/rng.ts";
 import type { Vec2 } from "../../../shapes.ts";
+import type { RegionWeights } from "../../morph/blend.ts";
 import type { StructuralRole } from "../parts.ts";
 
 export type Primitive = "capsule" | "barrel" | "disc" | "spike" | "pivot";
 
-export type PartKind = { motif: string } | { primitive: Primitive };
+export type MotifMorph = { label: string; contour: Vec2[]; features: boolean; spec: { with?: string; weights?: RegionWeights; k?: number } };
+
+export type PartKind = { motif: string; morph?: MotifMorph } | { primitive: Primitive };
 
 export type BodyFamily = "biped" | "quadruped" | "serpentine" | "radial" | "chimera";
 
@@ -77,7 +80,13 @@ export type BodyErrorCode =
   | "unknown-grammar"
   | "too-many-ops"
   | "missing-socket"
-  | "bad-count";
+  | "bad-count"
+  | "bad-weight"
+  | "bad-k"
+  | "unknown-region"
+  | "not-a-motif"
+  | "blend-conflict"
+  | "no-morph-policy";
 
 export class BodyGraphError extends Error {
   readonly code: BodyErrorCode;

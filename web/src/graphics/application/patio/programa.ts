@@ -1,3 +1,4 @@
+import { MORPH_POLICY } from "../../config/morph.ts";
 import type { Group } from "../../config/scene.ts";
 import { compileProgram, fromSixSlot } from "../../domain/motifs/figures/body/program/compile.ts";
 import type { CompiledCreature } from "../../domain/motifs/figures/body/program/types.ts";
@@ -13,8 +14,8 @@ export function creatureOf(g: Group): GroupCreature {
   if (g.programRejected) return { compiled: legacy(), label: `${partsLabel(g)}; programa descartado: ${g.programRejected}` };
   if (!g.program) return { compiled: legacy(), label: partsLabel(g) };
   try {
-    const compiled = compileProgram(g.program);
-    const ops = compiled.trace.map((t) => `${t.op} ${t.socket}`).join(", ");
+    const compiled = compileProgram(g.program, MORPH_POLICY);
+    const ops = compiled.trace.map((t) => `${t.op} ${t.socket}${t.morph ? ` (${t.morph})` : ""}`).join(", ");
     return { compiled, label: `programa ${g.program.family}#${g.program.seed}${ops ? `: ${ops}` : ""}` };
   } catch (err) {
     if (!(err instanceof BodyGraphError)) throw err;

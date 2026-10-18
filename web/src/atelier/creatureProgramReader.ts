@@ -1,15 +1,17 @@
+import { MORPH_POLICY } from "../graphics/config/morph.ts";
 import { SCENE_LIMITS, type Group, type SceneMotif } from "../graphics/config/scene.ts";
 import { compileProgram } from "../graphics/domain/motifs/figures/body/program/compile.ts";
 import { PROGRAM_LIMITS, type CreatureProgram } from "../graphics/domain/motifs/figures/body/program/types.ts";
 import type { BodyFamily } from "../graphics/domain/motifs/figures/body/types.ts";
 import { fnv1a } from "../shared/rng";
 import { OP_WORDS, OP_WORD_GROUP } from "./creatureWords.ts";
+import { MORPH_PATTERNS } from "./morphWords.ts";
 
 const blank = (m: string) => " ".repeat(m.length);
 
 /** The modifier words are not creatures: «cola de sirena» must not summon a mermaid group. Indices stay put. */
 export function maskOpWords(text: string): string {
-  return OP_WORDS.reduce((t, w) => t.replace(new RegExp(w.match.source, "gi"), blank), text);
+  return [...OP_WORDS.map((w) => w.match), ...MORPH_PATTERNS].reduce((t, re) => t.replace(new RegExp(re.source, "gi"), blank), text);
 }
 
 export function familyProgram(family: BodyFamily, narration: string, head?: SceneMotif): CreatureProgram {
@@ -18,7 +20,7 @@ export function familyProgram(family: BodyFamily, narration: string, head?: Scen
 
 const compiles = (p: CreatureProgram): boolean => {
   try {
-    compileProgram(p);
+    compileProgram(p, MORPH_POLICY);
     return true;
   } catch {
     return false;

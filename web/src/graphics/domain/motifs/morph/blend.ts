@@ -1,13 +1,15 @@
+import type { MorphPolicy } from "../../../config/morph.ts";
 import type { Vec2 } from "../../shapes.ts";
 import { REGIONS, type Region } from "../figures/regions.ts";
 import { regionSlice, regionStart, type RegionContour } from "./contour.ts";
+import { firstSimple, type Safety } from "./relax.ts";
 import { applySim, IDENTITY, procrustes, simFromPair, type Similarity } from "./similarity.ts";
 
 export type RegionWeights = Partial<Record<Region, number>>;
 
 export type RegionSource = { region: Region; weight: number; from: string; start: number; count: number };
 
-export type Hybrid = { contour: RegionContour; provenance: { algorithm: string; align: boolean; keepScale: number; regions: RegionSource[] } };
+export type Hybrid = { contour: RegionContour; provenance: { algorithm: string; align: boolean; keepScale: number; regions: RegionSource[]; safety?: Safety } };
 
 const lerp = (p: Vec2, q: Vec2, w: number): Vec2 => [p[0] + (q[0] - p[0]) * w, p[1] + (q[1] - p[1]) * w];
 
@@ -26,7 +28,7 @@ function sourceOf(a: string, b: string, w: number): string {
   return w <= 0 ? a : w >= 1 ? b : `${a}×${b}`;
 }
 
-export function blendByRegion(a: RegionContour, b: RegionContour, weights: RegionWeights, keepScale: number, align = true): Hybrid {
+function rawBlend(a: RegionContour, b: RegionContour, weights: RegionWeights, keepScale: number, align: boolean): Hybrid {
   if (a.perRegion !== b.perRegion) throw new Error(`particiones distintas: ${a.perRegion} vs ${b.perRegion}`);
   const toA = align ? procrustes(b.points, a.points) : IDENTITY;
   const bA: RegionContour = { ...b, points: b.points.map((p) => applySim(toA, p)) };
@@ -45,4 +47,12 @@ export function blendByRegion(a: RegionContour, b: RegionContour, weights: Regio
   });
   const id = `${a.id}+${b.id}`;
   return { contour: { id, points, perRegion: a.perRegion }, provenance: { algorithm: "anclas_semanticas+arco@1.0.0", align, keepScale, regions } };
+}
+
+const scaled = (w: RegionWeights, f: number): RegionWeights => Object.fromEntries(Object.entries(w).map(([r, v]) => [r, Number(((v ?? 0) * f).toFixed(4))]));
+
+/** Region blend that never crosses itself: every weight shrinks by the same ladder factor until the contour is simple, and the provenance says so. */
+export function blendByRegion(a: RegionContour, b: RegionContour, weights: RegionWeights, policy: Pick<MorphPolicy, "keepScale" | "relaxLadder">, align = true): Hybrid {
+  const r = firstSimple(policy.relaxLadder, (f) => rawBlend(a, b, scaled(weights, f), policy.keepScale, align), (h) => h.contour);
+  return { contour: r.value.contour, provenance: { ...r.value.provenance, algorithm: "anclas_semanticas+arco+sin_autocruce@1.1.0", safety: r.safety } };
 }
