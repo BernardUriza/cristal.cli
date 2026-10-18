@@ -1,3 +1,4 @@
+import { figureCap } from "../graphics/config/detail.ts";
 import { PALETTES } from "../graphics/config/palettes.ts";
 import { SCENE_LIMITS, type Scene } from "../graphics/config/scene.ts";
 import { composePatio } from "../graphics/application/patio/index.ts";
@@ -37,6 +38,6 @@ export const composePatioWork: Composer = (recipe: Recipe, plan: Plan, width: nu
     azimuth: AZIMUTHS[recipe.seed % AZIMUTHS.length],
     width,
     height,
-  }, undefined, { scene, pal: PALETTES[plan.palette], detail: detailFor(plan.complexity), seed: recipe.seed });
+  }, undefined, { scene, pal: PALETTES[plan.palette], detail: figureCap(plan.complexity), seed: recipe.seed });
   return patio.stages;
 };
