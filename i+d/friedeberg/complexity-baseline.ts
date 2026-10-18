@@ -70,18 +70,20 @@ const visualOf = (own: Run[]) => {
 };
 const graphsOf = (own: Run[]) => own.flatMap((w) => (w.graph ? [w.graph] : []));
 const keyOf = (w: Run) => w.archetype ?? w.composition;
-const byArchetype = Object.fromEntries([...new Set(works.map(keyOf))].map((k) => {
-  const own = works.filter((w) => keyOf(w) === k);
+const summary = (own: Run[]) => {
   const b = own.map((w) => w.report.silhouettes.buildings);
-  return [k, { obras: own.length, topologías: topologicalDiversity(graphsOf(own)), ...visualOf(own), clústeresMax: Math.max(...b.map((x) => x.distinctClusters)), dEffMax: Number(Math.max(...b.map((x) => x.effectiveDiversity)).toFixed(2)), coberturaMediana: Number(median(b.map((x) => x.visibleAreaCoverage)).toFixed(3)), criaturasDEffMax: Number(Math.max(...own.map((w) => w.report.silhouettes.creatures.effectiveDiversity)).toFixed(2)), nivelesMax: Math.max(...own.map((w) => w.report.semanticDepth)) }];
-}));
+  return { obras: own.length, topologías: topologicalDiversity(graphsOf(own)), ...visualOf(own), clústeresMax: Math.max(...b.map((x) => x.distinctClusters)), dEffMax: Number(Math.max(...b.map((x) => x.effectiveDiversity)).toFixed(2)), coberturaMediana: Number(median(b.map((x) => x.visibleAreaCoverage)).toFixed(3)), criaturasDEffMax: Number(Math.max(...own.map((w) => w.report.silhouettes.creatures.effectiveDiversity)).toFixed(2)), nivelesMax: Math.max(...own.map((w) => w.report.semanticDepth)) };
+};
+const byArchetype = Object.fromEntries([...new Set(works.map(keyOf))].map((k) => [k, summary(works.filter((w) => keyOf(w) === k))]));
+const byNarration = Object.fromEntries(NARRATIONS.map((n) => [n.slice(0, 40), summary(works.filter((w) => w.narration === n))]));
 const diversity = { topológica: topologies, visual: visualOf(works) };
 const bandMeans = [0, 1, 2, 3].map((b) => Number((works.reduce((s, w) => s + w.report.multiscale.bands[b].areaPct, 0) / works.length).toFixed(1)));
 const outDir = join(here, "out");
 mkdirSync(outDir, { recursive: true });
-writeFileSync(join(outDir, "complexity-baseline.json"), JSON.stringify({ lienzo: { width: WIDTH, height: HEIGHT }, seeds: SEEDS, narrations: NARRATIONS, acceptance: ACCEPTANCE, diversity, occlusionBattery: battery, byArchetype, bandMeansPct: bandMeans, table, works: works.map(({ graph: _g, units: _u, composite: _c, ...w }) => w) }, null, 2));
+writeFileSync(join(outDir, "complexity-baseline.json"), JSON.stringify({ lienzo: { width: WIDTH, height: HEIGHT }, seeds: SEEDS, narrations: NARRATIONS, acceptance: ACCEPTANCE, diversity, occlusionBattery: battery, byArchetype, byNarration, bandMeansPct: bandMeans, table, works: works.map(({ graph: _g, units: _u, composite: _c, ...w }) => w) }, null, 2));
 console.table(table);
 console.table(byArchetype);
+console.table(byNarration);
 console.table(battery);
 console.log(`diversidad TOPOLÓGICA: ${topologies} grafos distintos; diversidad VISUAL: ${diversity.visual.composiciones} siluetas de composición distintas (D_eff ${diversity.visual.dEffComposiciones}), ${diversity.visual.siluetasEdificioConjunto} clústeres de silueta de edificio en todo el conjunto`);
 console.log(`área media por banda (%): ${bandMeans.join(" / ")}; composiciones: ${[...new Set(works.map((w) => w.composition))].join(", ")}; grafos: ${graphs.length}`);

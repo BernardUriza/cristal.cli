@@ -2,6 +2,7 @@ import { pyramid, type Solid } from "../architecture/mass.ts";
 import type { Rect } from "../architecture/layout.ts";
 import { ARCADE, CONTAINER_MARGIN, KIND_DIMENSIONS, LAYOUT_RULES } from "./dimensions.ts";
 import type { PlacedSpace } from "./layout.ts";
+import { causeway, crest, precinct, steppedBody, summitTemple } from "./pyramidVolumes.ts";
 import { gable, steppedDome } from "./roofs.ts";
 import { frameStrips, grow, part, pillarsAlong, walled } from "./solidKit.ts";
 
@@ -68,10 +69,10 @@ function sanctuary(p: PlacedSpace): Solid[] {
   return [...shell, ...steppedDome(`${p.node.id}:dome`, roofTag(p), r, p.y1, 5, 1.2)];
 }
 
-/** Volumetry of the R7–R10 spaces; rings and streets are circulation (floor strips), never a solid mass. */
+/** Volumetry of the R7–R10 spaces (R8 bodies in pyramidVolumes); rings and streets are circulation (floor strips), never a solid mass. */
 export function civicSolids(p: PlacedSpace): Solid[] {
   switch (p.node.kind) {
-    case "sanctuary": return sanctuary(p);
+    case "sanctuary": return p.node.style === "pyramid" ? summitTemple(p) : sanctuary(p);
     case "shrine": return shrine(p);
     case "ring-gallery": return arcade(p);
     case "street-ring": return frame(p, "street-ring").map((r, i) => part(p, `lane${i}`, "floor", r, p.y0, p.y1));
@@ -79,6 +80,10 @@ export function civicSolids(p: PlacedSpace): Solid[] {
     case "junction": return junction(p);
     case "building": return building(p);
     case "platform":
+    case "altar": return steppedBody(p);
+    case "crest": return crest(p);
+    case "causeway": return causeway(p);
+    case "precinct": return precinct(p);
     case "plaza":
     case "block": return slab(p);
     default: return [];

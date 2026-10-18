@@ -27,6 +27,10 @@ const FILL: Record<SpaceKind, keyof Palette> = {
   street: "floorB",
   junction: "gold",
   "street-ring": "floorB",
+  altar: "gold",
+  causeway: "floorB",
+  crest: "primary",
+  precinct: "wall",
 };
 
 const LINK: Partial<Record<Relation, { color: keyof Palette; width: number }>> = {

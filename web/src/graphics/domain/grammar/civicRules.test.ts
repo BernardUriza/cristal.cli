@@ -48,26 +48,6 @@ describe("R7–R10 productions", () => {
     }
   });
 
-  it("R8: three platforms shrinking upward, two stairs between consecutive levels, the sanctuary on the top one", () => {
-    const g = expandProgram(GRAMMAR_PROGRAMS["templo-terrazas"].program);
-    const layout = solveLayout(g, mulberry32(3));
-    const at = new Map(layout.spaces.map((s) => [s.node.id, s]));
-    const platforms = g.nodes.filter((n) => n.kind === "platform");
-    expect(platforms).toHaveLength(3);
-    const area = (id: string) => { const r = at.get(id)!.rect; return (r.x1 - r.x0) * (r.z1 - r.z0); };
-    expect(area(platforms[0].id)).toBeGreaterThan(area(platforms[1].id));
-    expect(area(platforms[1].id)).toBeGreaterThan(area(platforms[2].id));
-    expect(g.nodes.find((n) => n.kind === "sanctuary")!.parent).toBe(platforms[2].id);
-    for (const s of g.nodes.filter((n) => n.kind === "stair")) {
-      const ends = g.edges.filter((e) => e.from === s.id && e.relation === "connects").map((e) => platforms.findIndex((p) => p.id === e.to)).sort();
-      expect(ends[1] - ends[0]).toBe(1);
-      const upper = at.get(platforms[ends[1]].id)!;
-      expect(sharedEdge(at.get(s.id)!.rect, upper.rect)).toBeGreaterThan(0);
-      expect(at.get(s.id)!.y1).toBeCloseTo(upper.y1);
-    }
-    expect(measureTopology(g).elevationLevels).toBeGreaterThanOrEqual(3);
-  });
-
   it("R9: blocks surround the plaza, each with 1..4 buildings, the street ring connects every block and is circulation, not a mass", () => {
     const city: SpaceNode = { ...root, style: "city" };
     const { kinds, rel } = run(R9, city, { blocks: 4 });

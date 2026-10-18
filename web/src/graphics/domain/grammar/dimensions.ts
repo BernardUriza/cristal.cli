@@ -21,14 +21,19 @@ export const KIND_DIMENSIONS: Record<SpaceKind, KindDimensions> = {
   street: { height: 0.12, slab: 0.12 },
   junction: { height: 0.12, slab: 0.12 },
   "street-ring": { height: 0.12, slab: 0.12 },
+  altar: { height: 1.8, slab: 0.3 },
+  causeway: { height: 0.6, slab: 0.6 },
+  crest: { height: 5, slab: 0.3 },
+  precinct: { height: 0.3, slab: 0.3 },
 };
 
 export const CONTAINER_MARGIN: Partial<Record<SpaceKind, number>> = {
   courtyard: 2.5,
   "ring-gallery": 5,
   "street-ring": 4,
-  platform: 3,
+  platform: 2,
   block: 1,
+  precinct: 8,
 };
 
 export const GAP_INSIDE: Partial<Record<SpaceKind, number>> = { block: 1.5 };

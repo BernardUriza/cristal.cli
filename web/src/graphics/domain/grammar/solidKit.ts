@@ -1,4 +1,5 @@
-import { box, type Solid, type SolidKind } from "../architecture/mass.ts";
+import { box, type Face, type Solid, type SolidKind } from "../architecture/mass.ts";
+import { cross, normalize, sub, type Vec3 } from "../math/vec3.ts";
 import type { Rect } from "../architecture/layout.ts";
 import { KIND_DIMENSIONS, LAYOUT_RULES } from "./dimensions.ts";
 import type { PlacedSpace } from "./layout.ts";
@@ -39,3 +40,20 @@ export function frameStrips(r: Rect, m: number): Rect[] {
     { x0: r.x1 - m, x1: r.x1, z0: r.z0 + m, z1: r.z1 - m },
   ];
 }
+
+const corners = (r: Rect, y: number): Vec3[] => [[r.x0, y, r.z0], [r.x0, y, r.z1], [r.x1, y, r.z1], [r.x1, y, r.z0]];
+
+/** A truncated pyramid from `bottom` at y0 to `top` at y1: the talud of a stepped body; open on top unless capped. */
+export function frustum(p: PlacedSpace, name: string, kind: SolidKind, bottom: Rect, top: Rect, y0: number, y1: number, capped = false): Solid {
+  const b = corners(bottom, y0);
+  const t = corners(top, y1);
+  const faces: Face[] = b.map((_, i) => {
+    const j = (i + 1) % 4;
+    return { points: [b[i], b[j], t[j], t[i]], normal: normalize(cross(sub(b[j], b[i]), sub(t[j], b[i]))) };
+  });
+  faces.push({ points: [...b].reverse(), normal: [0, -1, 0] });
+  if (capped) faces.push({ points: t, normal: [0, 1, 0] });
+  return { id: `${p.node.id}:${name}`, tag: { kind, space: p.node.id }, faces };
+}
+
+export const withoutTop = (s: Solid): Solid => ({ ...s, faces: s.faces.filter((f) => f.normal[1] < 0.5) });

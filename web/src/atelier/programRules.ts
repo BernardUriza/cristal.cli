@@ -49,7 +49,7 @@ export const VARIANTS: Partial<Record<Archetype, Variant[]>> = {
   temple: [
     { id: "patios", words: /patios?\b|claustros?|sucesiv\w*|galer[ií]as?/gi, steps: SEQUENCES.temple, because: "patios sucesivos: un patio rodeado de galerías y dentro otro patio con las suyas (R1 → R5 → R1)" },
     { id: "radial", words: /santuarios?|capillas?|altar(?:es)?|centro|rode\w*|alrededor|c[ií]rculos?|procesi[oó]n/gi, steps: [{ rule: "R7", target: "root", params: [{ key: "shrines", nouns: /capilla|altar|nicho|ermita/i, countOnly: true }] }], because: "templo radial: un santuario dentro de una galería anular, con capillas de formas distintas alrededor (R7)" },
-    { id: "terrazas", words: /terrazas?|escaleras?|escalinatas?|pir[aá]mides?|cimas?|niveles?|suben?|ascien\w*/gi, steps: [{ rule: "R8", target: "root", params: [] }], because: "templo en terrazas: tres plataformas que se encogen hacia arriba, dos escaleras y el santuario en la cima (R8)" },
+    { id: "terrazas", words: /terrazas?|escaleras?|escalinatas?|pir[aá]mides?|cimas?|niveles?|suben?|ascien\w*/gi, steps: [{ rule: "R8", target: "root", params: [] }], because: "templo en terrazas: pirámide de 3 a 7 cuerpos en talud-tablero, nichos o talud maya, con 1, 2 o 4 escalinatas, templo con crestería en la cima, adoratorios en las terrazas, plaza con altar y calzada (R8)" },
   ],
   city: [
     { id: "torres", words: /torres?\b|puentes?|rascacielos/gi, steps: SEQUENCES.city, bridges: true, because: "torres: torre, escalera y cámaras apiladas, y puentes desde la avenida hacia más torres (R3 → R4)" },

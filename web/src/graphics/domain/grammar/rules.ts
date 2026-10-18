@@ -1,5 +1,6 @@
 import { contained, count, edge, GALLERY_DEPTH, node } from "./ruleKit.ts";
-import { R7, R8 } from "./templeRules.ts";
+import { R8 } from "./pyramidRule.ts";
+import { R7 } from "./templeRules.ts";
 import { R10, R9 } from "./cityRules.ts";
 import type { Expansion, GrammarRule } from "./types.ts";
 
