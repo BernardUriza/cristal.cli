@@ -16,6 +16,7 @@ export const perro = defineMotif({
   name: "Perro sentado",
   tags: ["animal", "vigilancia", "memoria"],
   version: "1.1.0",
+  trunk: true,
   regions: { cabeza: [-0.45, -0.04], tronco: [0.0, -0.28], punta: [0.34, 0.22], extremidad: [0.44, 0.5] },
   anchors: [
     sharp(-0.5, -0.12), a(-0.42, -0.2), a(-0.3, -0.3), a(-0.22, -0.35), sharp(-0.12, -0.5), a(-0.05, -0.38), a(0.0, -0.28),

@@ -10,11 +10,11 @@ export type Rewrite = {
   constraints: { preserveBounds: boolean; preserveAnchors: boolean; maxDepth: number; minProjectedPx: number };
 };
 
-export type RewriteRecord = { operation: "rewrite"; rule: string; sourceNode: string; outputNode: string; depth: number; seed: number; reason: string };
+export type RewriteRecord = { operation: "rewrite"; rule: string; sourceNode: string; outputNode: string; depth: number; seed: number; reason: string; region?: string };
 
 export type Ink = { fill: string; ink: string; accent: string; deep: string; line: number; detail: 1 | 2 | 3 };
 
-export type RewriteEnv = { depth: number; seed: number; reason: string; rng: Rng; ink: Ink };
+export type RewriteEnv = { depth: number; seed: number; reason: string; rng: Rng; ink: Ink; region?: string };
 
 export type LocalSpace = { w: number; h: number; mask?: Vec2[]; pxPerUnit: number };
 
@@ -80,7 +80,7 @@ export function applyRewrite(rule: Rule, source: Part, env: RewriteEnv, rules: r
   const mask = source.mask ?? (rw.constraints.preserveBounds ? quad(0, 0, frame.w, frame.h).map(at) : undefined);
   const part: Part = { ...out, anchors: rw.constraints.preserveAnchors ? { ...out.anchors, ...source.anchors } : out.anchors, mask, frame };
   const depth = env.depth + 1;
-  const record: RewriteRecord = { operation: "rewrite", rule: rw.id, sourceNode: source.id, outputNode: part.id, depth, seed: env.seed, reason: env.reason };
+  const record: RewriteRecord = { operation: "rewrite", rule: rw.id, sourceNode: source.id, outputNode: part.id, depth, seed: env.seed, reason: env.reason, ...(env.region ? { region: env.region } : {}) };
   const nested = rewriteTree(part, rules, { ...env, depth }, false);
   const shapes = [...mapShapePoints(made.shapes, at), ...nested.shapes];
   return { part, shapes: [group([], shapes, mask)], records: [record, ...nested.records] };

@@ -1,5 +1,6 @@
 import { polygonBounds, type Bounds } from "../../bezier.ts";
 import type { Vec2 } from "../../shapes.ts";
+import type { RegionAnchors } from "./regions.ts";
 
 export type StructuralRole = "support" | "span" | "enclosure" | "opening" | "crown" | "connector";
 
@@ -13,6 +14,7 @@ export type Part = {
   children: Part[];
   mask?: Vec2[];
   frame?: Frame2;
+  regions?: RegionAnchors;
 };
 
 export type PartSpec = { id: string; role: StructuralRole; anchors?: Record<string, Vec2>; mask?: Vec2[]; children?: PartSpec[] };

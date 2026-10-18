@@ -3,7 +3,7 @@ import { catmullRomCubics, flattenCubics, polygonBounds, transformPoint, transfo
 import { filled, polygon, polyline, type Shape, type Vec2 } from "../../shapes.ts";
 import type { Ornament } from "./ornamentador.ts";
 import { boxAnchors, placePart, type PartSpec, type StructuralRole } from "./parts.ts";
-import { REGIONS, type RegionAnchors } from "./regions.ts";
+import { REGIONS, type Region, type RegionAnchors } from "./regions.ts";
 import type { MotifDef, MotifParams, MotifTag } from "./types.ts";
 
 export type Figure = {
@@ -22,6 +22,7 @@ export type FigureSpec = {
   anchors: readonly Anchor[];
   regions: RegionAnchors;
   role?: StructuralRole;
+  trunk?: boolean;
   parts?: PartSpec[];
   tension?: number;
   steps?: number;
@@ -39,6 +40,12 @@ export function placement(cx: number, cy: number, params: MotifParams): Placemen
 
 export function strokeAt(fig: Figure, pts: readonly Vec2[], ink: string, width = fig.inkWidth): Shape {
   return polyline(pts.map(fig.at), { fill: "none", stroke: ink, strokeWidth: width });
+}
+
+function regionsOn(spec: FigureSpec, fig: Figure, params: MotifParams): RegionAnchors {
+  const c = params.contour;
+  const at = (r: Region, k: number): Vec2 => (c ? transformPoint(c[Math.floor((k * c.length) / REGIONS.length)], fig.place) : fig.at(spec.regions[r]));
+  return Object.fromEntries(REGIONS.map((r, k) => [r, at(r, k)])) as RegionAnchors;
 }
 
 export function defineMotif(spec: FigureSpec): MotifDef {
@@ -72,7 +79,8 @@ export function defineMotif(spec: FigureSpec): MotifDef {
     silhouette: (params) => figure(0, 0, params).poly,
     parts: (cx, cy, params) => {
       const fig = figure(cx, cy, params);
-      return { id: spec.id, role: spec.role ?? "enclosure", geometryId: spec.id, anchors: boxAnchors(fig.poly), mask: fig.poly, children: (spec.parts ?? []).map((c) => placePart(c, fig.at, spec.id)) };
+      const part = { id: spec.id, role: spec.role ?? "enclosure", geometryId: spec.id, anchors: boxAnchors(fig.poly), mask: fig.poly, children: (spec.parts ?? []).map((c) => placePart(c, fig.at, spec.id)) };
+      return spec.trunk ? { ...part, regions: regionsOn(spec, fig, params) } : part;
     },
     draw: (cx, cy, params, rng) => {
       const fig = figure(cx, cy, params);
