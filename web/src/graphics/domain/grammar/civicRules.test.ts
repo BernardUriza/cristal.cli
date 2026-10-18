@@ -102,6 +102,23 @@ describe("R7–R10 productions", () => {
     }
   });
 
+  it("R10: STREET_C may close onto the parallel street of the previous junction; the cross street reaches both and the goal rises to one cycle", () => {
+    const program = (loop?: number): ArchitectureProgram => ({ seed: 59, archetype: "city", rules: [{ rule: "R10", target: "gallery-1", params: {} }, { rule: "R10", target: "street-1", params: loop === undefined ? {} : { loop } }] });
+    const open = expandProgram(program(0));
+    expect(open.topology!.cycles).toBe(0);
+    expect(open.goal!.minCycles).toBeUndefined();
+    const closed = expandProgram(program(1));
+    expect(closed.goal!.minCycles).toBe(1);
+    expect(closed.topology!.cycles).toBe(1);
+    const cross = closed.nodes.find((n) => n.kind === "street" && closed.edges.filter((e) => e.from === n.id && e.relation === "connects").length === 2)!;
+    const ends = closed.edges.filter((e) => e.from === cross.id).map((e) => e.to);
+    const at = new Map(solveLayout(closed, mulberry32(59)).spaces.map((s) => [s.node.id, s.rect]));
+    for (const id of ends) expect(sharedEdge(at.get(cross.id)!, at.get(id)!), id).toBeGreaterThanOrEqual(2);
+    const bySeed = [1, 2, 3, 5, 8, 13].map((seed) => expandProgram({ ...program(), seed }).topology!.cycles);
+    expect(bySeed).toEqual([1, 2, 3, 5, 8, 13].map((seed) => expandProgram({ ...program(), seed }).topology!.cycles));
+    expect(new Set(bySeed)).toEqual(new Set([0, 1]));
+  });
+
   it("a junction under 45° or under degree 3 is a typed error on the final graph", () => {
     const g = expandProgram(GRAMMAR_PROGRAMS["ciudad-ramal"].program);
     const bent = { ...g, nodes: g.nodes.map((n) => (n.id === "street-2" ? { ...n, heading: g.nodes.find((m) => m.id === "street-1")!.heading } : n)) };

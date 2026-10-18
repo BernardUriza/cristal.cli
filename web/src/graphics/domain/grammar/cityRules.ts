@@ -1,3 +1,4 @@
+import { closeLoop, matchLength, parallelSibling, wantsLoop } from "./cityLoop.ts";
 import { between, contained, count, edge, node } from "./ruleKit.ts";
 import type { Expansion, GrammarContext, GrammarRule, Heading, SpaceNode } from "./types.ts";
 
@@ -42,7 +43,7 @@ export const R10: GrammarRule = {
   accepts: ["street", "gallery"],
   weight: 1,
   maxDepth: 6,
-  params: { length: { min: 8, max: 18 }, frontage: { min: 0, max: 2 } },
+  params: { length: { min: 8, max: 18 }, frontage: { min: 0, max: 2 }, loop: { min: 0, max: 1 } },
   goal: { minBranchNodes: 1 },
   expand(t, ctx): Expansion {
     const h = headingOf(t);
@@ -53,9 +54,13 @@ export const R10: GrammarRule = {
       return node(ctx, "street", t, t.parent, fp, 0, { heading });
     };
     const branches = [street(turn(h, 90)), street(h), street(turn(h, -90))];
+    const sibling = parallelSibling(t, branches[2].heading!, ctx);
     const lots = branches.map((b) => Array.from({ length: count(ctx, "frontage", 1, 2) }, () => building(ctx, t, t.parent ?? b.id, FRONTAGE_TALLEST)));
-    const parent = t.parent ? contained({ ...t, id: t.parent }, [junction, ...branches, ...lots.flat()]) : [];
+    const loop = sibling && wantsLoop(ctx) ? closeLoop(ctx, t, turn(h, 180), branches[2], sibling, STREET_WIDTH) : { nodes: [], edges: [] };
+    if (sibling && loop.nodes.length) branches[2] = matchLength(branches[2], sibling);
+    const parent = t.parent ? contained({ ...t, id: t.parent }, [junction, ...branches, ...lots.flat(), ...loop.nodes]) : [];
     const fronts = branches.flatMap((b, i) => lots[i].map((l) => edge(l.id, b.id, "connects")));
-    return { nodes: [junction, ...branches, ...lots.flat()], edges: [...parent, edge(junction.id, t.id, "connects"), ...branches.map((b) => edge(b.id, junction.id, "connects")), ...fronts] };
+    const edges = [...parent, edge(junction.id, t.id, "connects"), ...branches.map((b) => edge(b.id, junction.id, "connects")), ...fronts, ...loop.edges];
+    return { nodes: [junction, ...branches, ...lots.flat(), ...loop.nodes], edges, goal: loop.goal };
   },
 };
