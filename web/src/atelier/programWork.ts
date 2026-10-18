@@ -29,7 +29,7 @@ export const composeProgramWork: Composer = (recipe, plan, width, height) => {
   const { program, fallback } = programFor(plan, recipe);
   const scene = sceneFor(plan);
   const view = { width, height, palette: plan.palette, azimuth: AZIMUTHS[recipe.seed % AZIMUTHS.length] };
-  const look = { seed: recipe.seed, density: plan.density, detail: detailFor(plan.complexity), ornament: plan.ornament };
+  const look = { seed: recipe.seed, density: plan.density, detail: detailFor(plan.complexity), ornament: plan.ornament, anomalyRate: plan.anomalyRate };
   const people = { scene, pal: PALETTES[plan.palette], detail: detailFor(plan.complexity), seed: recipe.seed };
   const { stages } = composeInhabitedProgram(program, view, look, people);
   if (!fallback) return stages;

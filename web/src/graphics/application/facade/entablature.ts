@@ -1,5 +1,6 @@
 import type { Colonnade } from "../../domain/architecture/types.ts";
-import { greca } from "../../domain/motifs/bands.ts";
+import { grecaBand } from "../../domain/motifs/bands.ts";
+import { facadeBand } from "./bandCut.ts";
 import { rosette } from "../../domain/motifs/radial.ts";
 import { filled, line, polygon, rect, stroked, type Shape } from "../../domain/shapes.ts";
 import { ornament, palInks, quad, type Painter } from "../painter.ts";
@@ -43,6 +44,6 @@ export function paintEntablature(p: Painter, col: Colonnade): Shape[] {
   }
   const cw = F.s * (halfWidth + 0.3) * 2;
   out.push(rect(F.X(xc - halfWidth - 0.3), F.Y(e.y + e.h + CORNICE_H), cw, F.s * CORNICE_H, filled(pal.primary, pal.ink, F.sw)));
-  if (p.lod.shows(F.s * CORNICE_H, 9)) out.push(...greca(F.X(xc - halfWidth - 0.3), F.Y(e.y + e.h + CORNICE_H) + 1, cw, F.s * CORNICE_H - 2, e.triglyphs * 2, ornament(p, palInks(pal, pal.primary, pal.primary, pal.accent), F.sw * 0.6)));
+  if (p.lod.shows(F.s * CORNICE_H, 9)) out.push(...facadeBand(p, `entablamento @${col.z.toFixed(2)}`, "cornisa", e.triglyphs * 2, (d) => grecaBand(F.X(xc - halfWidth - 0.3), F.Y(e.y + e.h + CORNICE_H) + 1, cw, F.s * CORNICE_H - 2, e.triglyphs * 2, ornament(p, palInks(pal, pal.primary, pal.primary, pal.accent), F.sw * 0.6), d)));
   return out;
 }

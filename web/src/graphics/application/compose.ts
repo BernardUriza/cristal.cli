@@ -11,6 +11,7 @@ import { paintFloor, paintPlatform } from "./facade/floor.ts";
 import { paintFrame } from "./facade/frame.ts";
 import { paintStars, paintSun } from "./facade/sky.ts";
 import type { Painter } from "./painter.ts";
+import { cutsParams, type Cut } from "./ornamentDisorder.ts";
 import { makeView } from "./projection.ts";
 import type { RewriteRecord } from "../domain/rewrite/rewrite.ts";
 import { tagRoot, type SemanticRoot } from "../domain/semantic.ts";
@@ -41,15 +42,21 @@ export function composeIllustration(input: ConfigInput = {}): Illustration {
   const architecture = buildArchitecture(cfg.art, rng);
   const view = makeView(cfg.tech, architecture.main.z);
   const p: Painter = { view, pal: PALETTES[cfg.art.palette], art: cfg.art, lod: makeLod(cfg.tech.lod) };
+  const traced = (name: string, paint: (q: Painter) => DisplayList): Stage => {
+    const cuts: Cut[] = [];
+    const shapes = paint({ ...p, cuts });
+    if (cuts.length === 0) return { name, shapes };
+    return { name, shapes, provenance: { algorithm: "gramática de fachada proyectada a un punto de fuga; greca y chevrón por celda con la simetría interrumpida de Molnár", params: { seed: cfg.art.seed, anomalyRate: cfg.art.anomalyRate, ...cutsParams(cuts) }, decision: `pintor «${name}» sobre la arquitectura en metros; unas pocas celdas giran, faltan o se desplazan, sembradas por obra y elemento` } };
+  };
   const stages: Stage[] = [
     { name: "fondo", shapes: [rect(0, 0, width, height, solid(p.pal.bg))] },
     { name: "cielo", shapes: [...paintSun(p, architecture.sky, width, height), ...paintStars(p, architecture.sky, width, height, rng)] },
     { name: "horizonte", shapes: [rect(0, view.hy, width, 2, solid(p.pal.ink))] },
-    { name: "piso", shapes: paintFloor(p, architecture.floor) },
-    { name: "alas", shapes: tagRoot(architecture.wings.flatMap((w) => paintColonnade(p, w)), TEMPLE) },
-    { name: "plataforma", shapes: tagRoot(paintPlatform(p, architecture.platform), TEMPLE) },
-    { name: "templo", shapes: tagRoot(paintColonnade(p, architecture.main), TEMPLE) },
-    { name: "marco", shapes: paintFrame(p, width, height) },
+    traced("piso", (q) => paintFloor(q, architecture.floor)),
+    traced("alas", (q) => tagRoot(architecture.wings.flatMap((w) => paintColonnade(q, w)), TEMPLE)),
+    traced("plataforma", (q) => tagRoot(paintPlatform(q, architecture.platform), TEMPLE)),
+    traced("templo", (q) => tagRoot(paintColonnade(q, architecture.main), TEMPLE)),
+    traced("marco", (q) => paintFrame(q, width, height)),
   ];
   const layers: DisplayList = stages.flatMap((stage) => stage.shapes);
   return { cfg, architecture, stages, layers, width, height };

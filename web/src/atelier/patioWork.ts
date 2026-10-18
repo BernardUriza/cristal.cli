@@ -31,6 +31,7 @@ export const composePatioWork: Composer = (recipe: Recipe, plan: Plan, width: nu
     detail: detailFor(plan.complexity),
     ornament: plan.ornament,
     anomaly: plan.anomaly,
+    anomalyRate: plan.anomalyRate,
     towers: plan.symmetry === "asymmetric" ? 2 : 4,
     architecture: scene.architecture,
     azimuth: AZIMUTHS[recipe.seed % AZIMUTHS.length],

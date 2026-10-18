@@ -4,11 +4,15 @@ import type { Box3, Vec3 } from "../../domain/math/vec3.ts";
 import { arrange } from "./acomodo.ts";
 import { bodyClears } from "./holgura.ts";
 import { crowdOf } from "./protagonista.ts";
-import type { Flight, Footing, Site } from "./sitio.ts";
+import { minSideOf, type Flight, type Footing, type Site } from "./sitio.ts";
 
-export type Crowd = { spots: Vec3[]; heightM: number; wantedM: number; ground: string[] };
+export type Regrouped = { from: Group["arrangement"]; to: Group["arrangement"] };
+
+export type Crowd = { spots: Vec3[]; heightM: number; wantedM: number; ground: string[]; perched?: number; regrouped?: Regrouped };
 
 type Candidate = { at: Vec3; label?: string };
+
+type Placement = { spots: Candidate[]; perched?: number; regrouped?: Regrouped };
 
 type Segment = { from: Vec3; to: Vec3; side: [number, number]; width: number; label?: string };
 
@@ -16,6 +20,7 @@ const STEP_RISE = 0.35;
 const SWAY = 0.25;
 const SWAY_TURNS = 2;
 const LINEAR = new Set<Group["arrangement"]>(["fila", "procesion", "escalera"]);
+const AREAL = new Set<Group["arrangement"]>(["circulo", "corona", "espiral", "reticula"]);
 
 export const crowdWantedM = (g: Group, c: Site) => Math.max(FIGURE_SCALE.minHeightM, (c.span * FIGURE_SCALE.crowd * g.scale) / crowdOf(g));
 
@@ -81,24 +86,42 @@ const centre = (f: Footing, lift: number): Vec3 => [(f.rect.x0 + f.rect.x1) / 2,
 
 const nearness = (f: Footing, c: Site) => c.projector.toNdc(centre(f, 0))[2];
 
-/** The crowd's own arrangement on the first walk that holds it whole (the site's floor, then nearest first); else, for a file, the route through every walk; else whichever keeps the most. */
-function onGround(g: Group, c: Site, h: number, clear: (at: Vec3) => boolean): Candidate[] {
-  const rise = g.arrangement === "escalera" ? h * STEP_RISE : 0;
-  const file = (walks: readonly Footing[]) => fileOn(g, route(walks, c), clear, rise);
-  const lay = (f: Footing): Candidate[] => arrange(g, f.rect, f.y, rise).filter(clear).map((at): Candidate => ({ at, label: f.label }));
+const most = (xs: readonly Candidate[][]): Candidate[] => xs.reduce((best, x) => (x.length > best.length ? x : best), [] as Candidate[]);
+
+/** Walks in the order a crowd tries them: an areal arrangement (circle, grid, spiral) the widest first; a file the site's floor, then nearest first. */
+function walkOrder(g: Group, c: Site): Footing[] {
+  if (AREAL.has(g.arrangement)) return [...c.walks].sort((a, b) => minSideOf(b.rect) - minSideOf(a.rect) || nearness(a, c) - nearness(b, c));
   const [first, ...rest] = c.walks;
-  const singles = [first, ...rest.sort((a, b) => nearness(a, c) - nearness(b, c))].filter(Boolean).map(lay);
-  const linear = LINEAR.has(g.arrangement);
+  return [first, ...rest.sort((a, b) => nearness(a, c) - nearness(b, c))].filter(Boolean);
+}
+
+/** The crowd's own arrangement on the first walk that holds it whole; an areal one that fits no walk becomes a procession along the chained route; a file takes the route; else whichever keeps the most. */
+function onGround(g: Group, c: Site, h: number, clear: (at: Vec3) => boolean): Placement {
+  const rise = g.arrangement === "escalera" ? h * STEP_RISE : 0;
+  const file = (walks: readonly Footing[], as: Group = g) => fileOn(as, route(walks, c), clear, rise);
+  const lay = (f: Footing): Candidate[] => arrange(g, f.rect, f.y, rise).filter(clear).map((at): Candidate => ({ at, label: f.label }));
+  const singles = walkOrder(g, c).map(lay);
   const whole = singles.find((x) => x.length >= g.count);
-  if (whole) return whole;
-  const options = linear ? [file(c.walks), ...singles] : singles;
-  return options.reduce((best, x) => (x.length > best.length ? x : best), [] as Candidate[]);
+  if (whole) return { spots: whole };
+  if (AREAL.has(g.arrangement) && c.walks.length > 1) {
+    const walked = file(c.walks, { ...g, arrangement: "procesion" });
+    if (walked.length >= g.count) return { spots: walked, regrouped: { from: g.arrangement, to: "procesion" } };
+  }
+  return { spots: most(LINEAR.has(g.arrangement) ? [file(c.walks), ...singles] : singles) };
+}
+
+/** One figure per tower top, in site order; whoever is left walks the site's ground. */
+function onTowers(g: Group, c: Site, h: number, clear: (at: Vec3) => boolean): Placement {
+  const top = c.towers.slice(0, g.count).map((t): Candidate => ({ at: centre(t, 0) })).filter((x) => clear(x.at));
+  if (top.length >= g.count) return { spots: top, perched: top.length };
+  const rest = onGround({ ...g, count: g.count - top.length }, c, h, clear);
+  return { spots: [...top, ...rest.spots], perched: top.length, regrouped: rest.regrouped };
 }
 
 /** Where a group stands off the ground (spires, roofs, stair flights, the sky), or null when its place is the ground. */
 export function liftedSpots(g: Group, c: Site, h: number): Vec3[] | null {
   const rise = h * STEP_RISE;
-  if (g.place === "torres" && c.towers.length) return Array.from({ length: g.count }, (_, i) => centre(c.towers[i % c.towers.length], Math.floor(i / c.towers.length) * h));
+  if (g.place === "torres" && c.towers.length) return c.towers.slice(0, g.count).map((t) => centre(t, 0));
   if (g.place === "azoteas" && c.roofs.length) return Array.from({ length: g.count }, (_, i) => centre(c.roofs[(i * 3) % c.roofs.length], 0));
   if (g.place === "cielo") return arrange({ ...g, arrangement: g.arrangement === "escalera" ? "escalera" : "circulo" }, c.sky.rect, c.sky.y, rise);
   if (g.place === "escalera" && c.stairs.length) return onFlights(g.count, c.stairs, rise);
@@ -107,13 +130,14 @@ export function liftedSpots(g: Group, c: Site, h: number): Vec3[] | null {
 
 const keyOf = (b: Box3) => [...b.min, ...b.max].map((v) => v.toFixed(3)).join(",");
 
-function attempt(g: Group, c: Site, h: number): Candidate[] {
+function attempt(g: Group, c: Site, h: number): Placement {
   const own = g.place === "escalera" ? new Set(c.stairs.flatMap((f) => f.steps ?? []).map(keyOf)) : new Set<string>();
   const obstacles = own.size ? c.obstacles.filter((b) => !own.has(keyOf(b))) : c.obstacles;
   const clear = (at: Vec3) => bodyClears(at, h, c.projector.forward, obstacles);
-  if (g.place === "escalera" && c.stairs.length) return fileOn({ ...g, arrangement: "escalera" }, c.stairs.map(flightLine), clear, 0);
+  if (g.place === "escalera" && c.stairs.length) return { spots: fileOn({ ...g, arrangement: "escalera" }, c.stairs.map(flightLine), clear, 0) };
+  if (g.place === "torres" && c.towers.length) return onTowers(g, c, h, clear);
   const lifted = liftedSpots(g, c, h);
-  if (lifted) return lifted.filter(clear).map((at) => ({ at }));
+  if (lifted) return { spots: lifted.filter(clear).map((at) => ({ at })) };
   const ground = g.place === "escalera" ? { ...g, arrangement: "escalera" as const } : g;
   return onGround(ground, c, h, clear);
 }
@@ -123,15 +147,16 @@ function placeCrowd(g: Group, c: Site): Crowd {
   const wantedM = crowdWantedM(g, c);
   const floor = Math.min(FIGURE_SCALE.crowdFloorM, wantedM);
   const steps = FIGURE_SCALE.crowdShrinkSteps;
-  let best: { spots: Candidate[]; h: number } = { spots: [], h: wantedM };
+  let best: Placement & { h: number } = { spots: [], h: wantedM };
   for (let k = 0; k <= steps; k++) {
     const h = wantedM - ((wantedM - floor) * k) / steps;
-    const spots = attempt(g, c, h);
-    if (spots.length > best.spots.length) best = { spots, h };
-    if (spots.length >= g.count) break;
+    const placed = attempt(g, c, h);
+    if (placed.spots.length > best.spots.length) best = { ...placed, h };
+    if (placed.spots.length >= g.count) break;
   }
   const ground = [...new Set(best.spots.flatMap((x) => (x.label ? [x.label] : [])))];
-  return { spots: best.spots.map((x) => x.at), heightM: best.h, wantedM, ground };
+  const extra = { ...(best.perched !== undefined ? { perched: best.perched } : {}), ...(best.regrouped ? { regrouped: best.regrouped } : {}) };
+  return { spots: best.spots.map((x) => x.at), heightM: best.h, wantedM, ground, ...extra };
 }
 
 const memo = new WeakMap<Site, WeakMap<Group, Crowd>>();

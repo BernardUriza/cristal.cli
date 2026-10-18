@@ -1,5 +1,6 @@
 import type { OrnamentLanguage, PatioConfig } from "../../config/patio.ts";
-import { chevronBand, greca } from "../../domain/motifs/bands.ts";
+import { chevronCells, grecaBand, type BandDrawing } from "../../domain/motifs/bands.ts";
+import type { DisorderInput } from "../../domain/motifs/disorder.ts";
 import type { Ornament } from "../../domain/motifs/ornament.ts";
 import { filled, polygon, rect, stroked, type Shape, type Vec2 } from "../../domain/shapes.ts";
 
@@ -29,12 +30,12 @@ export function checkerBand(x: number, y: number, w: number, h: number, cells: n
   return out;
 }
 
-export function band(lang: OrnamentLanguage | undefined, x: number, y: number, w: number, h: number, cells: number, o: Ornament, dots = false): Shape[] {
+export function bandDrawing(lang: OrnamentLanguage | undefined, x: number, y: number, w: number, h: number, cells: number, o: Ornament, dots = false, disorder?: DisorderInput): BandDrawing {
   switch (lang) {
-    case "greca": return greca(x, y, w, h, cells, o);
-    case "chevrón": return chevronBand(x, y, w, h, cells, o, dots);
-    case "ajedrez": return checkerBand(x, y, w, h, cells, o);
-    default: return [];
+    case "greca": return grecaBand(x, y, w, h, cells, o, disorder);
+    case "chevrón": return chevronCells(x, y, w, h, cells, o, dots, disorder);
+    case "ajedrez": return { shapes: checkerBand(x, y, w, h, cells, o), params: {} };
+    default: return { shapes: [], params: {} };
   }
 }
 

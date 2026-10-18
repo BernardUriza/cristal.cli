@@ -1,5 +1,6 @@
 import type { Floor, Platform } from "../../domain/architecture/types.ts";
-import { greca } from "../../domain/motifs/bands.ts";
+import { grecaBand } from "../../domain/motifs/bands.ts";
+import { facadeBand } from "./bandCut.ts";
 import { midpoint } from "../../domain/geometry.ts";
 import { ellipse, filled, polygon, type Shape } from "../../domain/shapes.ts";
 import { ornament, palInks, quad, type Painter } from "../painter.ts";
@@ -45,7 +46,7 @@ export function paintPlatform(p: Painter, platform: Platform): Shape[] {
     out.push(polygon(quad(view.project(-hw, y1, z), view.project(hw, y1, z), view.project(hw, y0, z), view.project(-hw, y0, z)), filled(even ? pal.gold : pal.secondary, pal.ink, 0.9, { join: "round" })));
     const F = facade(view, z);
     if (p.lod.shows(F.s * stepHeight, 10)) {
-      out.push(...greca(F.X(-hw), F.Y(y1) + 1, F.s * hw * 2, F.s * stepHeight - 2, Math.round((hw * 2) / 0.6), ornament(p, palInks(pal, pal.gold, even ? pal.gold : pal.secondary, pal.accent), 0.5)));
+      out.push(...facadeBand(p, "plataforma", `escalón ${i}`, Math.round((hw * 2) / 0.6), (d) => grecaBand(F.X(-hw), F.Y(y1) + 1, F.s * hw * 2, F.s * stepHeight - 2, Math.round((hw * 2) / 0.6), ornament(p, palInks(pal, pal.gold, even ? pal.gold : pal.secondary, pal.accent), 0.5), d)));
     }
   }
   return out;

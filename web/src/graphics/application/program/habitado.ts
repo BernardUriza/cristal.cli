@@ -12,7 +12,8 @@ import { friso, type Decor } from "../patio/friso.ts";
 import { REASON_BODIES } from "../patio/habitar.ts";
 import { miniPatio } from "../patio/index.ts";
 import { habitada, motifsOf, type Inhabitants } from "../patio/mundo.ts";
-import { decorSurface, type FriezeOf } from "../patio/ornamento.ts";
+import { decorSurface, SYMMETRY_NOTE, type FriezeOf } from "../patio/ornamento.ts";
+import { cutsParams, type Cut } from "../ornamentDisorder.ts";
 import { figureHull, poblado } from "../patio/poblado.ts";
 import { solidItems } from "../patio/solidos.ts";
 import { visibleFaces, type Surface } from "../patio/surfaces.ts";
@@ -29,7 +30,7 @@ import { volumeStage } from "./volumeStage.ts";
 
 export type InhabitedProgram = { stages: Stage[]; scene: ProgramScene };
 
-export type ProgramLook = Partial<Pick<PatioConfig, "seed" | "density" | "detail" | "ornament">>;
+export type ProgramLook = Partial<Pick<PatioConfig, "seed" | "density" | "detail" | "ornament" | "anomalyRate">>;
 
 function surfacesOf(s: ProgramScene, faces: readonly TaggedFace[]): Surface[] {
   return faces.flatMap((face) => {
@@ -61,7 +62,8 @@ export function inhabitProgram(s: ProgramScene, ctx: PatioContext, people?: Inha
   const frieze: FriezeOf | undefined = scene ? (x) => friso(ctx, x, ink, motifs, seed, REASON_BODIES) : undefined;
   const decor = new Map<string, Decor[]>();
   const add = (id: string, d: Decor) => decor.set(id, [...(decor.get(id) ?? []), d]);
-  for (const x of surfacesOf(s, faces).filter((x) => !columns.bySolid.has(x.face.solid.id))) add(x.face.solid.id, decorSurface(ctx, x, frieze));
+  const cuts: Cut[] = [];
+  for (const x of surfacesOf(s, faces).filter((x) => !columns.bySolid.has(x.face.solid.id))) add(x.face.solid.id, decorSurface(ctx, x, frieze, cuts));
   for (const f of faces.filter((f) => isFlatRoof(f, s))) add(f.solid.id, { shapes: roofDecor(f, ctx), records: [] });
   const solids = solidItems(ctx, faces, columns);
   const spaceOf = new Map(faces.map((f) => [f.solid.id, f.solid.tag.space ?? f.solid.id]));
@@ -76,7 +78,7 @@ export function inhabitProgram(s: ProgramScene, ctx: PatioContext, people?: Inha
   const stages = [
     programStage(s),
     stage(vol, "volúmenes", [...ground.shapes, ...back.flatMap((i) => i.shapes)], { pilares_figura: columns.records.length, solidos_delante: front.size, patios_ajedrez: ground.tiled }, columns.records, columns.records.length ? `; T1: ${columns.records.length} pilares de galería SON figuras, de la base a la losa` : ""),
-    stage({ ...vol, provenance: { algorithm: "ornamento por superficie (patio/ornamento.ts) pintado JUNTO con su sólido en el orden de precedencia: lo de atrás queda tapado por lo de enfrente", params: { superficies: [...decor.values()].flat().length }, decision: "torre → estrías y roseta; muro de salón → banda, ventanas ciegas y friso; pilar → chevrón; losa y cornisa → greca; aguja → sierpinski" } }, "ornamento", decorated(back, decor).flatMap((i) => i.shapes), { frisos_habitados: t4(back).length }, t4(back), ""),
+    stage({ ...vol, provenance: { algorithm: "ornamento por superficie (patio/ornamento.ts) pintado JUNTO con su sólido en el orden de precedencia: lo de atrás queda tapado por lo de enfrente", params: { superficies: [...decor.values()].flat().length, anomalyRate: ctx.config.anomalyRate, ...cutsParams(cuts) }, decision: `torre → estrías y roseta; muro de salón → banda, ventanas ciegas y friso; pilar → chevrón; losa y cornisa → greca; aguja → sierpinski; ${SYMMETRY_NOTE}` } }, "ornamento", decorated(back, decor).flatMap((i) => i.shapes), { frisos_habitados: t4(back).length }, t4(back), ""),
   ];
   if (!placed) return stages;
   const ahead = decorated(solids.filter((x) => front.has(x.id)), decor);

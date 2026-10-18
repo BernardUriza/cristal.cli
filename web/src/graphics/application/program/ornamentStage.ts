@@ -7,7 +7,8 @@ import { mulberry32 } from "../../../shared/rng.ts";
 import type { Stage } from "../compose.ts";
 import { paintFaces, type TaggedFace } from "../drawings/faces.ts";
 import { frameOf, mapShapes, projectedSize } from "../patio/frame.ts";
-import { ornamentFor } from "../patio/ornamento.ts";
+import { ornamentFor, SYMMETRY_NOTE } from "../patio/ornamento.ts";
+import { cutsParams, type Cut } from "../ornamentDisorder.ts";
 import type { Surface, SurfaceRole } from "../patio/surfaces.ts";
 import type { PatioContext } from "../patio/types.ts";
 import type { SpaceKind } from "../../domain/grammar/types.ts";
@@ -47,13 +48,14 @@ export function ornamentStage(s: ProgramScene): Stage {
   const ctx = programContext(s);
   const shapes: Shape[] = [];
   const count: Record<string, number> = {};
+  const cuts: Cut[] = [];
   for (const face of risingFaces(s)) {
     shapes.push(...paintFaces([face], s.projector, s.style));
     const role = roleOf(face, s);
     if (!role) continue;
     const frame = frameOf(face.points, face.normal, s.projector);
     const surface: Surface = { face, role, frame, px: projectedSize(frame, s.projector), space: face.solid.tag.space };
-    const local = ornamentFor(surface, ctx);
+    const local = ornamentFor(surface, ctx, false, cuts);
     if (local.length === 0) continue;
     count[role] = (count[role] ?? 0) + 1;
     shapes.push(...mapShapes(local, frame, s.projector));
@@ -63,8 +65,8 @@ export function ornamentStage(s: ProgramScene): Stage {
     shapes,
     provenance: {
       algorithm: "hook a los pintores de patio/ornamento.ts (ornamentFor) con Surface construida desde la cara; cada cara se repinta en orden painter's y su ornamento va inmediatamente después, así lo de atrás queda ocluido",
-      params: { detalle: ctx.config.detail, densidad: ctx.config.density, ...count },
-      decision: "torre → estrías y roseta; muro de salón o cámara → banda bajo cornisa y ventanas ciegas; pilar de galería → chevrón; losa de galería y cornisa → greca; aguja de torre → sierpinski",
+      params: { detalle: ctx.config.detail, densidad: ctx.config.density, ...count, anomalyRate: ctx.config.anomalyRate, ...cutsParams(cuts) },
+      decision: `torre → estrías y roseta; muro de salón o cámara → banda bajo cornisa y ventanas ciegas; pilar de galería → chevrón; losa de galería y cornisa → greca; aguja de torre → sierpinski; ${SYMMETRY_NOTE}`,
     },
   };
 }

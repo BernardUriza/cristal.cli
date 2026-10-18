@@ -4,8 +4,9 @@ import type { Lod } from "../domain/lod.ts";
 import { inks, type Ink, type Ornament } from "../domain/motifs/ornament.ts";
 import type { Vec2 } from "../domain/shapes.ts";
 import type { View } from "./projection.ts";
+import type { Cut } from "./ornamentDisorder.ts";
 
-export type Painter = { view: View; pal: Palette; art: ArtConfig; lod: Lod };
+export type Painter = { view: View; pal: Palette; art: ArtConfig; lod: Lod; cuts?: Cut[] };
 
 export function ornament(p: Painter, ink: Ink, sw: number, level = 1): Ornament {
   return { ink, sw, level, shows: p.lod.shows };
