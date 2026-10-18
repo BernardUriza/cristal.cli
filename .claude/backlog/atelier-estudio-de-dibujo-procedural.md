@@ -10,7 +10,7 @@ inspector de trazo, replay «ver cómo fue dibujada», exportar obra.svg + recet
 procedencia; "Referencia externa: ninguna imagen externa utilizada". Filosofía de Bernard (t.269): IA artista
 no-plagiadora, "inspiración matemática", nunca calcar. Sin victoria, sin timer, sin castigo.
 
-**Ya aterrizado (`940976d`, 2026-10-17).** `web/atelier.html` → `web/src/atelier/`:
+**Ya aterrizado (`874ca67`, 2026-10-17).** `web/atelier.html` → `web/src/atelier/`:
 - `directorRules.ts` (reglas declaradas: patrón → decisión → porqué) y `director.ts` (narración → `Recipe`
   con `choices` marcadas `narración | defecto | humano`; `override`, `reseed`, `configFor`). Determinista: la
   semilla sale de la narración (fnv1a) salvo que la url traiga `seed`.
@@ -27,7 +27,7 @@ no-plagiadora, "inspiración matemática", nunca calcar. Sin victoria, sin timer
   dibuja 2504 trazos con la receta correcta (friedeberg, anomalía 0.95, densidad 0.2, complejidad 1), consola sin
   errores, y la landing lista los tres juegos. Captura `i+d/friedeberg/capturas/atelier-prod-2026-10-17.jpg`.
 
-**Pedro, el director por LLM (`8854d08`, `4269a57`, `3aa2daf`; 2026-10-17).** `server/atelier.py` expone `POST /atelier/direct`
+**Pedro, el director por LLM (`da9d344`, `de68984`, `78605f3`; 2026-10-17).** `server/atelier.py` expone `POST /atelier/direct`
 {narration, seed} → {title, choices[{field, value, because, source:"pedro"}]}; persona en `server/prompts/atelier.md`
 (casita AIRE `cristal-atelier`, modo complete, sin herramientas); valores fuera de la gramática se descartan, nunca
 se adivinan. En el web (`atelier/directorApi.ts`, `usePedro.ts`, `PedroPanel.tsx`, `withDirection`): al dibujar, el
@@ -39,9 +39,9 @@ en la página, "un patio imposible de noche con nueve columnas" → Pedro contes
 Nocturno», al aceptarlo la receta cambió de título y las 7 decisiones quedaron marcadas pedro; consola limpia.
 Captura `i+d/friedeberg/capturas/atelier-pedro-prod-2026-10-17.jpg`. Lección del deploy: la revisión 0000008 cayó
 por un `atelier.py` que el Dockerfile no copiaba y el smoke aprobó con el `/health` de la revisión vieja; el
-workflow ahora espera a que la revisión nueva corra la imagen pusheada (`3aa2daf`).
+workflow ahora espera a que la revisión nueva corra la imagen pusheada (`78605f3`).
 
-**Escena (`41a7b87`, 2026-10-17) y la crítica de Bernard: «sigue muy simple».** El director ya escribe una escena
+**Escena (`504d432`, 2026-10-17) y la crítica de Bernard: «sigue muy simple».** El director ya escribe una escena
 (criaturas compuestas, cantidad, acomodo, lugar, escala del edificio), pero el edificio sigue siendo el mismo claustro
 y las criaturas son collage. Se le contó a Astra en el chat «CRISTAL.CLI Game» y respondió con tres commits concretos
 (fuente literal: `fuente-astra-atelier-no-simple-2026-10-17.md`): `architecture-grammar` (grafo espacial, R1–R6,

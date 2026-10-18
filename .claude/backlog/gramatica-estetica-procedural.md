@@ -20,8 +20,8 @@ misma seed [226]. ChatGPT, adoptado por Bernard en [229].
 | `5ada384` | Auditoría del motor y ruta incremental hacia gramática arquitectónica computacional (`i+d/friedeberg/auditoria-gramatica-arquitectonica.{md,html}`). Ese commit borró el generador por arrastre del índice; `e655ef8` lo restauró. |
 | `76846a8` | Refactor a capas en `web/src/graphics/`: `domain/` (rng, shapes, geometry, lod, motifs, architecture en metros), `config/` (`ArtConfig`/`TechConfig`, paletas, presets, `resolveConfig`), `application/` (compose, projection, un pintor por elemento de fachada), `renderers/svg`. `layering.test.ts` vigila que las dependencias apunten hacia abajo y que no haya ciclos. Los cuatro archivos viejos de `game/` quedaron borrados y repuntados. |
 | `8b10294` | Mismo `DisplayList` pintado por Canvas 2D (`renderers/canvas/paint.ts`) y levantado por Three.js (`renderers/three/buildTemple.ts`: cilindros, toros, esferas; texturas por los mismos pintores vía `textureView.ts`; GLSL para tablero del piso y nervaduras de cúpula). Vista previa `/laberinto.html?view=graphics&preset=…&backend=svg\|canvas\|three`. El templo se monta en el laberinto al norte (`config/composition.ts`, `Scene.tsx`). Capturas: `i+d/friedeberg/capturas/dense-{svg,canvas,three}.jpg`, `game-temple-north.jpg`. |
-| `3826e99`, `74e47ef` | El memorama usa la gramática como arte de cartas (`web/src/memorama/cardArt.ts`), con pares que difieren en ≥2 rasgos de la firma (paleta, complejidad, proyección, simetría, densidad). |
-| `53d4178` | El RNG sembrado sube a `shared/` para que el terminal no dependa de `graphics/`. |
+| `3826e99`, `ecb9df4` | El memorama usa la gramática como arte de cartas (`web/src/memorama/cardArt.ts`), con pares que difieren en ≥2 rasgos de la firma (paleta, complejidad, proyección, simetría, densidad). |
+| `0439029` | El RNG sembrado sube a `shared/` para que el terminal no dependa de `graphics/`. |
 
 Recibos 2026-10-17: `npx vitest run src/graphics src/memorama` → 18 archivos, 75 tests verdes.
 Prod (`https://cristal.bernarduriza.com`): `/laberinto.html` 200 y su bundle lleva los uniforms de los

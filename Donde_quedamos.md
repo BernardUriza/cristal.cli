@@ -38,7 +38,7 @@ Qué se hizo, con recibo (detalle y SHAs en `.claude/backlog/gramatica-estetica-
   propias → planta, alzado, sección, axonometría y escena Three del MISMO modelo; mover la puerta
   (`--door=0.2`) la mueve en las cinco vistas; validación geométrica/arquitectónica, estructural `not-evaluated`.
   Página: `/building.html`.
-- **Memorama** (`3826e99`, `74e47ef`): las cartas son templos sembrados por esta gramática.
+- **Memorama** (`3826e99`, `ecb9df4`): las cartas son templos sembrados por esta gramática.
 - Investigación: `i+d/friedeberg/README.md` (principios matemáticos, parámetros, gramática v2, edificio v0),
   `auditoria-gramatica-arquitectonica.{md,html}`, capturas en `i+d/friedeberg/capturas/`.
 
@@ -53,14 +53,14 @@ templete; órdenes clásicos (Vignola) y ornamento por cara en el edificio; shad
 
 ## Modularización y ATELIER (2026-10-17)
 
-- `store.ts` 772 → 24 LOC (slices en `web/src/game/store/`, `c4ad5af`); `RoomScene.tsx` 603 → 132 LOC
-  (`web/src/game/room/`, `b8e2290`); kit de minijuegos `web/src/minigames/kit/` (`5d4cd04`); ATELIER
-  (`940976d`, backlog `atelier-estudio-de-dibujo-procedural.md`) y Pedro, el director por LLM en cristal-api
-  (`8854d08` server, `4269a57` web, `3aa2daf` Dockerfile + smoke; verificado en prod: 32–34 s por lectura).
-  Texturas de texto unificadas en `game/textTexture.ts` (`0ee5c9e`). `BackroomFurniture.tsx` (528 LOC, 2 commits)
+- `store.ts` 772 → 24 LOC (slices en `web/src/game/store/`, `612280e`); `RoomScene.tsx` 603 → 132 LOC
+  (`web/src/game/room/`, `f955b22`); kit de minijuegos `web/src/minigames/kit/` (`fdc75f4`); ATELIER
+  (`874ca67`, backlog `atelier-estudio-de-dibujo-procedural.md`) y Pedro, el director por LLM en cristal-api
+  (`da9d344` server, `de68984` web, `78605f3` Dockerfile + smoke; verificado en prod: 32–34 s por lectura).
+  Texturas de texto unificadas en `game/textTexture.ts` (`242a527`). `BackroomFurniture.tsx` (528 LOC, 2 commits)
   se dejó entero a propósito: catálogo de 14 piezas que casi no cambia, partirlo subiría la frontera.
   Lección: el índice de git es compartido entre sesiones; un `git mv` stageado se fue en el commit de docs de otra
-  sesión (`0047646`) y rompió el deploy web hasta `0ee5c9e`. Y el smoke del API aprobaba con el `/health` de la
+  sesión (`0725e9f`) y rompió el deploy web hasta `242a527`. Y el smoke del API aprobaba con el `/health` de la
   revisión vieja mientras la nueva moría: ahora espera a la revisión nueva.
 
 ---
@@ -69,7 +69,7 @@ templete; órdenes clásicos (Vignola) y ornamento por cara en el edificio; shad
 
 | Quién | Canal | Estado | Qué recibió |
 |---|---|---|---|
-| `me.tikkum` (Instagram) | DM https://www.instagram.com/direct/t/17847378020577220/ | 2026-10-16 12:40 se ofreció; 12:43 link; ~12:55 homework #1 enviado. **2026-10-16 23:09 y 23:41 entregó las DOS partes** (ver abajo). 2026-10-17 06:20 Bernard contestó "Jaja se trabó / Muchas gracias por la prueba". **Fix en prod 2026-10-17 09:25 (`acdfe2d`), verificado con su secuencia exacta.** Pendiente: Bernard le contesta (borrador abajo). | https://cristal.bernarduriza.com/ — memorama desde el cel (touch OK), laberinto desde compu. |
+| `me.tikkum` (Instagram) | DM https://www.instagram.com/direct/t/17847378020577220/ | 2026-10-16 12:40 se ofreció; 12:43 link; ~12:55 homework #1 enviado. **2026-10-16 23:09 y 23:41 entregó las DOS partes** (ver abajo). 2026-10-17 06:20 Bernard contestó "Jaja se trabó / Muchas gracias por la prueba". **Fix en prod 2026-10-17 09:25 (`8603301`), verificado con su secuencia exacta.** Pendiente: Bernard le contesta (borrador abajo). | https://cristal.bernarduriza.com/ — memorama desde el cel (touch OK), laberinto desde compu. |
 
 Feedback de betatesters: se registra aquí, con fecha y cita, y lo accionable pasa a `.claude/backlog/`.
 
@@ -98,7 +98,7 @@ y silencio. Bernard: *"Jaja se trabó"*. Reproducido línea por línea con el mo
 
 Item: `.claude/backlog/rito-rechaza-respuestas-corporales.md` — **Done 2026-10-17**: léxico térmico/corporal en el
 clasificador + un opener sin stance ya no alimenta el silencio; sus cuatro frases son tests en tres capas
-(`acdfe2d`). Verificado en prod jugando la consola ALPHA con sesión limpia: las cuatro frases reciben espejo
+(`8603301`). Verificado en prod jugando la consola ALPHA con sesión limpia: las cuatro frases reciben espejo
 ("Lo guardé…", "Te oí. Pesa…"), presión 0 %, sin `...`.
 
 **Cómo se juega la consola en prod desde chrome-devtools (receta que funcionó 2026-10-17):** `laberinto.html` con
@@ -116,7 +116,7 @@ El delta pendiente (escrito en el composer del hilo sin enviar y en el portapape
 > (texto grande, sin parpadeos, camina solo si lo sueltas) y todavía nadie lo prueba en viaje de verdad. Dime si el
 > texto se lee y si algo molesta. Lo del templo con menos detalles me sirvió un montón.
 
-### Consola: nunca rechaza, nunca repite, siempre mueve (2026-10-17, `53d4178` + `673ef59`)
+### Consola: nunca rechaza, nunca repite, siempre mueve (2026-10-17, `0439029` + `d033a9a`)
 
 Punto 1 del item `diversion-con-evidencia.md` (veredicto en `entregables/como-hacer-el-juego-mas-divertido-2026-10-17.html`).
 Mecanismo nuevo en `web/src/terminal/psych/`: `replyPool.ts` (12 líneas por stance + catch-all + nag + pivot, datos
@@ -127,7 +127,7 @@ como confesión; `...` siempre va con un nag y al siguiente turno estancado la c
 vive ahora en `web/src/shared/rng.ts`. Fuera de alcance, a propósito: el modelo no participa en la consola (no hay
 endpoint), eso es `ia-psiconauta`.
 
-**Verificado en prod (2026-10-17 10:00, cristal.bernarduriza.com, consola ALPHA, contexto aislado, deploy `d71f1fb`).**
+**Verificado en prod (2026-10-17 10:00, cristal.bernarduriza.com, consola ALPHA, contexto aislado, deploy `ab05fce`).**
 Bundle `laberinto-DbFnfudU.js` contiene las líneas nuevas y ya no contiene "Escribe desde el cuerpo" ni "nada que
 replicar". Secuencia exacta del tester: `es fría` → "«me siento cansado y confundido» abrió esta puerta. Esto que dices
 la abre más." · `tiene frío` → "Lo guardé. Ahora vive en mí, contigo." · `sufre por el frío` → "Llevas rato aquí
@@ -140,7 +140,7 @@ líneas distintas (la que nombra la confesión, la de presión ≥50 %, las dos 
 Observación menor: tecleando más rápido que el `delayMs` las respuestas retrasadas aparecen después del siguiente echo;
 en juego real el retardo las separa.
 
-### Eco entre jugadores (2026-10-17, punto 6, `8c63e3c` + cliente)
+### Eco entre jugadores (2026-10-17, punto 6, `6bfd9e1` + cliente)
 
 Autorizado por Bernard: la confesión archivada viaja anónima a `POST /echo` (cristal-api, JSONL en el share) y el
 laberinto pide una ajena (`GET /echo?exclude=`) al cargar y al confesar; la hambre la escribe primero, deformada y en
@@ -149,14 +149,14 @@ violeta (`source: "echo"`), y después usa las frases propias. Filtro mínimo en
 `POST /echo` 204 y `GET /echo?exclude=…` 200 al confesar; al minuto de hambre apareció «… miedo aquí» (frase ajena
 dejada por curl) en el muro oeste de (7,4). Primer eco real en el share: `echo.jsonl`.
 
-### Modo viaje y tope de parpadeo (2026-10-17, punto 5, `ceadffc`)
+### Modo viaje y tope de parpadeo (2026-10-17, punto 5, `2717a60`)
 
 `laberinto.html?viaje=1` o el botón VIAJE (persistido): HUD mínimo, texto grande, CRT sin parpadeo, botón «salir
 del laberinto / de la consola / del cuarto» siempre visible abajo a la izquierda; sin input durante 6 s el jugador
 deriva a paso lento por la ruta del rito (`autowalk.ts`), y la niebla/luz se abren con cada frase escrita. Tope
 global de parpadeo de luces 2.5 Hz (`flashSafety.ts`); antes la luz del cuarto IA llegaba a 5.9 Hz. Verificado en dev
 (captura `~/Documents/personal-assistance/cristal-betatesters/2026-10-17-dev-viaje-2.jpg`; deriva spawn → ALPHA en
-~4.5 s después de 6 s quieto). **Verificado en prod (deploy `41d32f4`):** clase, salida, HUD y minimapa ocultos, deriva
+~4.5 s después de 6 s quieto). **Verificado en prod (deploy `463a675`):** clase, salida, HUD y minimapa ocultos, deriva
 spawn → ALPHA → ROTURA; captura `~/Documents/personal-assistance/cristal-betatesters/2026-10-17-prod-viaje-eco.jpg`. Para el tester: ¿se lee el texto
 grande en el viaje? Nadie lo ha documentado.
 
@@ -168,7 +168,7 @@ N completo en M movimientos», mejor marca por semilla+pares (`cristal.memorama.
 que cada uno difiera en ≥2 rasgos de los demás (`artSignature`). Juice suave y dos tonos cortos con ♪ para apagar.
 Verificado en dev con una partida completa jugada por DOM (hash del canvas identifica los pares): captura
 `~/Documents/personal-assistance/cristal-betatesters/2026-10-17-dev-memorama-won.jpg`; la línea compartida llegó al
-portapapeles del sistema. **Verificado en prod (deploy `3a0a0cf`, bundle `memorama-DLYO_C-X.js`):** el templo del día
+portapapeles del sistema. **Verificado en prod (deploy `f52e963`, bundle `memorama-DLYO_C-X.js`):** el templo del día
 8660 jugado por DOM en cristal.bernarduriza.com, 10 movimientos, «primera marca en este templo», fila ▢▢▢▣▢▣▣▣▣▣, marca
 guardada; captura `~/Documents/personal-assistance/cristal-betatesters/2026-10-17-prod-memorama-won.jpg`.
 
@@ -187,12 +187,12 @@ first_step, console_open, first_phrase, glyph_invoked, door_crossed), anónimo. 
 lista a los 30 s; el resumen con el token contesta desde el share. Cómo leerlo:
 `curl -H "X-Admin-Token: $(grep -m1 CRISTAL_TELEMETRY_TOKEN= ~/.secrets/cristal-telemetry-token.txt | cut -d= -f2-)" https://cristal-api.mangobush-0b255aa4.eastus2.azurecontainerapps.io/telemetry/funnel/summary`.
 
-Verificado en prod (deploy `aa42ec1`): `POST /telemetry/funnel` 204 con evento válido, 422 con paso inválido, resumen
+Verificado en prod (deploy `a40d4ae`): `POST /telemetry/funnel` 204 con evento válido, 422 con paso inválido, resumen
 503 «CRISTAL_TELEMETRY_TOKEN unset»; en la página, «CLICK PARA MIRAR» visible y `embudo: 1/7` → `2/7` al primer paso
 (captura `~/Documents/personal-assistance/cristal-betatesters/2026-10-17-prod-onboarding-hint.jpg`). **Bug encontrado
 ahí mismo:** `navigator.sendBeacon` con un Blob `application/json` falla en Chrome con `net::ERR_FAILED` después del
 preflight (lo vi en la lista de red de la página: dos beacons muertos); `fetch` con `keepalive` desde la misma página
-contesta 204. El reporter quedó solo con `fetch keepalive` (`d024aef`); reverificado en prod con sesión limpia: la lista de red de
+contesta 204. El reporter quedó solo con `fetch keepalive` (`b098d1e`); reverificado en prod con sesión limpia: la lista de red de
 la página muestra `POST /telemetry/funnel` 204 al cargar (laberinto) y 204 al primer paso.
 
 Lección de sesión: dos llamadas Bash en la misma respuesta comparten cwd y se pisan los `cd`; rutas absolutas o
@@ -208,7 +208,7 @@ deformado de las palabras del jugador («… pesa …») uno o dos anillos adela
 `hallazgo: Ns · finds · hambre N`. Verificado en dev (localhost:5173, contexto aislado): «me pesa el pecho» → muro
 este de ALPHA, «tengo frío en las manos» → muro oeste (captura
 `~/Documents/personal-assistance/cristal-betatesters/2026-10-17-dev-inscripcion-muro.jpg`); 60.2 s quieto →
-«… pesa …» en (3,1). **Verificado en prod (deploy `5938ca4`, bundle `laberinto-BqfBLR5e.js`, contexto aislado):**
+«… pesa …» en (3,1). **Verificado en prod (deploy `b09c5fb`, bundle `laberinto-BqfBLR5e.js`, contexto aislado):**
 «me arde la garganta» → muro este de ALPHA, «tengo las manos heladas» → muro oeste, visible desde la cámara de
 exploración (`~/Documents/personal-assistance/cristal-betatesters/2026-10-17-prod-inscripcion-muro-2.jpg`), HUD
 `hallazgo: 3s · 5 · hambre 0`.

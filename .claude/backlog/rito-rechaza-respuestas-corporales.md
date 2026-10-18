@@ -1,6 +1,6 @@
 # El rito rechaza respuestas corporales legítimas y luego se calla
 
-Status: Done (fix en prod 2026-10-17, `acdfe2d`; la decisión sobre `...` sin salida se cerró en `673ef59`: nunca solo, ver `diversion-con-evidencia.md`)
+Status: Done (fix en prod 2026-10-17, `8603301`; la decisión sobre `...` sin salida se cerró en `d033a9a`: nunca solo, ver `diversion-con-evidencia.md`)
 Proposed: 2026-10-17 by me.tikkum (betatester, DM Instagram 2026-10-16 23:41) — destilado por Claude
 
 **Qué es.** El primer betatester hizo exactamente lo que el rito pidió y el rito lo trató como si no
@@ -35,9 +35,9 @@ cuentan como cuerpo: la pregunta del rito las pide explícitamente.
 - Si `...` puede existir como respuesta terminal sin una salida visible (regla 6), o siempre debe ir
   acompañado de un prompt de escape.
 
-**Hecho (2026-10-17, `acdfe2d`).** 1 y 2 corregidos con sus cuatro frases como tests en tres capas
+**Hecho (2026-10-17, `8603301`).** 1 y 2 corregidos con sus cuatro frases como tests en tres capas
 (`StanceClassifier.test.ts`, `PsychologicalResponseEngine.test.ts`, `terminalCore.integration.test.ts`);
-los seis tests fallan en el HEAD anterior y pasan con el fix. El `...` sin salida se cerró el mismo día en `673ef59`: siempre va acompañado de un nag y al turno estancado siguiente la consola cambia de tema (Short 2009, Façade); la evidencia está en `diversion-con-evidencia.md`.
+los seis tests fallan en el HEAD anterior y pasan con el fix. El `...` sin salida se cerró el mismo día en `d033a9a`: siempre va acompañado de un nag y al turno estancado siguiente la consola cambia de tema (Short 2009, Façade); la evidencia está en `diversion-con-evidencia.md`.
 
 **Verificado en prod (2026-10-17 09:25, cristal.bernarduriza.com, consola ALPHA, sesión limpia).** La secuencia
 exacta del tester: `es fría` → "Lo guardé. Ahora vive en mí, contigo." · `tiene frío` → ídem · `sufre por el frío` →

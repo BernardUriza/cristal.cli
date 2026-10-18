@@ -33,7 +33,7 @@ jugadores entra al universo.
 **Lo que no existe en ninguna fuente y hay que medir aquí:** drop-off en WASD/pointer-lock, legibilidad de texto en
 el viaje (preguntar al tester mañana), retención de memoramas.
 
-**Hecho (2026-10-17, `53d4178` + `673ef59`).** Punto 1 completo en `web/src/terminal/psych/`:
+**Hecho (2026-10-17, `0439029` + `d033a9a`).** Punto 1 completo en `web/src/terminal/psych/`:
 `replyPool.ts` (pool tipado, 12 líneas por stance + catch-all + nag + pivot, condiciones `when` y placeholders
 `{palabra}` `{frase}` `{glifo}` `{objetivo}`), `ReplyBag.ts` (shuffle-bag sembrado por `sessionId` + turno: nunca
 la misma línea dos veces seguidas, agota el nivel más específico y baja al genérico), catch-all que refleja la
@@ -50,7 +50,7 @@ se cumple por ausencia y el enriquecimiento asíncrono es un endpoint nuevo que 
 la decisión que `rito-rechaza-respuestas-corporales.md` dejaba abierta. Si Bernard quiere `...` terminal, se revierte
 solo `SilenceEngine.ts`.
 
-**Verificado en prod (2026-10-17 10:00, deploy `d71f1fb`):** secuencia del tester → 4 líneas distintas, presión 0 %; diez turnos
+**Verificado en prod (2026-10-17 10:00, deploy `ab05fce`):** secuencia del tester → 4 líneas distintas, presión 0 %; diez turnos
 de `no siento nada, da igual` → diez líneas distintas, `...` con nag en el octavo, pivot al cuarto de la confesión en el noveno.
 Detalle y captura en `Donde_quedamos.md`.
 
@@ -62,7 +62,7 @@ pegada al muro mirando al centro, `deformPhrase` para la ambigüedad, persistenc
 nodo, inscripción, frase; umbral 60 s) y `useDiscoveryClock.ts` (muestrea la pose a 12 Hz en exploración; sin
 hallazgo un minuto, el laberinto escribe un fragmento deformado de las palabras del jugador uno o dos anillos
 adelante). El HUD de debug muestra `hallazgo: Ns · finds · hambre N`. Verificado en dev (hambre real a los 60.2 s) y en prod
-(deploy `5938ca4`: dos frases en los muros este y oeste de ALPHA, captura en `Donde_quedamos.md`). El glifo y la puerta como cambios visibles
+(deploy `b09c5fb`: dos frases en los muros este y oeste de ALPHA, captura en `Donde_quedamos.md`). El glifo y la puerta como cambios visibles
 quedan para cuando el cuarto IA (`/generate`) deje de tardar 40 s (`latencia-cristal-api.md`).
 
 **Hecho, punto 3 (2026-10-17; Bernard eligió el endpoint en cristal-api para el embudo).**
@@ -89,9 +89,9 @@ sin spoiler («CRISTAL memorama · templo del día 8660 · 6 pares · 10 movimie
 `localStorage` («nueva mejor marca (antes N)» / «mejor marca N»); juice suave: pulso y halo al acierto, atenuación breve
 al fallo, respiración lenta de los pares resueltos, dos tonos cortos (acierto, victoria) con botón ♪ persistido; sin
 timer ni castigo. Compartir: portapapeles en escritorio, hoja nativa solo con puntero táctil (en Chrome de escritorio
-la hoja nativa deja la promesa colgada). Verificado en dev y en prod (deploy `3a0a0cf`) jugando una partida completa por DOM.
+la hoja nativa deja la promesa colgada). Verificado en dev y en prod (deploy `f52e963`) jugando una partida completa por DOM.
 
-**Hecho, punto 5 (2026-10-17, `ceadffc`).** Modo viaje (`?viaje=1` o botón VIAJE, persistido en `cristal.viaje.v1`):
+**Hecho, punto 5 (2026-10-17, `2717a60`).** Modo viaje (`?viaje=1` o botón VIAJE, persistido en `cristal.viaje.v1`):
 pantalla escasa (sin HUD de debug, minimapa, badges, beats ni etiqueta de modo), texto grande (objetivo y prompt 24 px,
 hint 32 px, consola 24 px), CRT sin parpadeo, salida grande siempre visible abajo a la izquierda (consola → desconecta,
 cuarto → sale, laberinto → vuelve al selector), el laberinto camina solo hacia el objetivo del rito a paso lento tras
@@ -101,7 +101,7 @@ parpadeo de luces a 2.5 Hz (`flashSafety.ts`): la luz del cuarto IA oscilaba a 5
 presión, fuera de WCAG 2.3.1, para todos los jugadores. Verificado en dev: clase `viaje`, salida, HUD oculto,
 deriva de spawn a ALPHA a los 6 s. Lo que sigue siendo del tester: legibilidad del texto en el viaje (preguntar).
 
-**Hecho, punto 6 (2026-10-17, `8c63e3c` + web).** Bernard autorizó el eco anónimo y deformado. `server/echo.py`:
+**Hecho, punto 6 (2026-10-17, `6bfd9e1` + web).** Bernard autorizó el eco anónimo y deformado. `server/echo.py`:
 `POST /echo` guarda la frase (≤64 chars, sin sesión ni IP) en `echo.jsonl` del share montado; `GET /echo?exclude=`
 devuelve una ajena al azar entre las últimas 400. Cliente: al archivarse la confesión se manda y se pide una ajena
 (`echoClient.ts`, también al cargar); la hambre escribe primero la frase ajena deformada con acento violeta (fuente
@@ -109,7 +109,7 @@ devuelve una ajena al azar entre las últimas 400. Cliente: al archivarse la con
 código): insultos, órdenes de daño («mátate», «kill yourself») y datos de contacto (URLs, @, teléfonos) se rechazan
 al entrar (422) y se saltan al salir; el deformado atempera lo demás. No es moderación humana ni un modelo.
 
-**Verificado en prod (2026-10-17, deploy `41d32f4`, API revisión `cristal-api--0000006`):** `?viaje=1` → clase, salida
+**Verificado en prod (2026-10-17, deploy `463a675`, API revisión `cristal-api--0000006`):** `?viaje=1` → clase, salida
 grande, HUD y minimapa ocultos; el deriva llevó al jugador a ALPHA solo; la confesión disparó `POST /echo` 204 y
 `GET /echo?exclude=…` 200 desde la página; tras el minuto de hambre el laberinto escribió «… miedo aquí» (frase ajena
 deformada, fuente `echo`) en (7,4) junto a ROTURA, adonde el deriva lo había llevado. El embudo sobrevivió a la revisión

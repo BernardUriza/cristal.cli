@@ -13,7 +13,7 @@ repos de Bernard antes de armar uno nuevo (Art. 6).
 
 **Decisión de Bernard.** Fuentes del corpus y dónde vive (no en este repo si trae datos sensibles).
 
-**Ya aterrizado (`5984d9e`, 2026-10-17).** Diseño completo de ChatGPT pegado por Bernard en
+**Ya aterrizado (`8bc93c0`, 2026-10-17).** Diseño completo de ChatGPT pegado por Bernard en
 `fuente-chatgpt-corpus-psiconautico-2026-10-17.md` (10 bibliotecas, 4 tipos de conocimiento, ficha por sustancia,
 motor de seguridad antes del modelo). Esquema en `server/corpus/SCHEMA.md`; fichas YAML en `server/corpus/sustancias/`
 (LSD, psilocibina, DMT/ayahuasca, MDMA, ketamina, cannabis; cafeína y bebidas energéticas en curso), 37 interacciones
