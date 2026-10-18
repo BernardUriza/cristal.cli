@@ -1,6 +1,6 @@
 import { DEFAULT_ARCHITECTURE, SCENE_LIMITS, type ArchitectureSpec, type Creature, type Group, type Scene } from "../graphics/config/scene.ts";
-import { ARCHITECTURE_RULES, ARRANGEMENT_RULES, CREATURE_TEMPLATES, MATERIAL_STOP, MATERIAL_WORDS, PLACE_RULES, WALL_RULE } from "./sceneRules.ts";
-import { countBefore, maskSizeWords, sizeAfter } from "./sceneWords.ts";
+import { ARCHITECTURE_RULES, ARRANGEMENT_RULES, COURTYARD_NOUNS, CREATURE_TEMPLATES, MATERIAL_STOP, MATERIAL_WORDS, PLACE_RULES, WALL_RULE } from "./sceneRules.ts";
+import { countBefore, isFigureWord, maskSizeWords, placeSizeAfter, sizeAfter } from "./sceneWords.ts";
 import { fnv1a } from "../shared/rng.ts";
 import type { MotifName } from "./vocabulary.ts";
 import { familyProgram, maskOpWords, programWords } from "./creatureProgramReader.ts";
@@ -35,10 +35,8 @@ function namedOutside(re: RegExp, text: string, zones: ReadonlyArray<readonly [n
   return null;
 }
 
-const isFigure = (word: string) => CREATURE_TEMPLATES.some((t) => new RegExp(`^(?:${t.match.source})$`, "i").test(word));
-
 export function readScene(spoken: string, wallMotifs: MotifName[] = [], seed: number = fnv1a(spoken)): SceneReading {
-  const narration = maskSizeWords(maskOpWords(spoken), isFigure);
+  const narration = maskSizeWords(maskOpWords(spoken), isFigureWord);
   const because: string[] = [];
   const groups: Group[] = [];
   const at: number[] = [];
@@ -80,8 +78,14 @@ export function readScene(spoken: string, wallMotifs: MotifName[] = [], seed: nu
     because.push(`${motif} de la pared, al centro del patio`);
   }
   const architecture: ArchitectureSpec = { ...DEFAULT_ARCHITECTURE };
+  const sized = maskSizeWords(spoken, isFigureWord);
+  const yard = placeSizeAfter(sized, COURTYARD_NOUNS);
+  if (yard) {
+    architecture.courtyard = yard.size;
+    because.push(`«${yard.phrase}»: patio ${yard.size}`);
+  }
   for (const r of ARCHITECTURE_RULES) {
-    if (!r.match.test(spoken) || architecture[r.field] !== DEFAULT_ARCHITECTURE[r.field]) continue;
+    if (!r.match.test(sized) || architecture[r.field] !== DEFAULT_ARCHITECTURE[r.field]) continue;
     (architecture as Record<string, string>)[r.field] = r.value;
     because.push(r.because);
   }

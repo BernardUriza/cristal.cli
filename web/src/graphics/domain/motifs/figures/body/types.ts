@@ -3,7 +3,7 @@ import type { Vec2 } from "../../../shapes.ts";
 import type { RegionWeights } from "../../morph/blend.ts";
 import type { StructuralRole } from "../parts.ts";
 
-export type Primitive = "capsule" | "barrel" | "disc" | "spike" | "pivot";
+export type Primitive = "capsule" | "rod" | "barrel" | "disc" | "spike" | "pivot";
 
 export type MotifMorph = { label: string; contour: Vec2[]; features: boolean; spec: { with?: string; weights?: RegionWeights; k?: number } };
 
@@ -32,7 +32,14 @@ export type PartEdge = {
   flip?: boolean;
   behind?: boolean;
   recursion?: Recursion;
+  skew?: number;
+  side?: "1" | "2";
 };
+
+export type HeldPose = { name: string; kind: Primitive; scale: number; angle: number; side: "1" | "2" };
+
+/** Degrees per joint (shoulder, wrist, hip; `*Skew` opens the mirrored pair apart), torso `tilt`, and length factors per segment. */
+export type BodyPose = { tilt: number; shoulder: number; armSkew: number; wrist: number; hip: number; legSkew: number; arm: number; leg: number; head: number; held?: HeldPose };
 
 export type BodyFit = "pivot" | "bounds";
 
@@ -46,6 +53,7 @@ export type BodyGraph = {
   edges: PartEdge[];
   applied: AppliedBodyRule[];
   fallbacks: string[];
+  tilt?: number;
 };
 
 export type BodyProgram = { seed: number; family: BodyFamily; motifs?: Partial<Record<BodySlot, string>>; budget?: number };

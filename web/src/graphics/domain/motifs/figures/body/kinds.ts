@@ -24,6 +24,7 @@ function stadium(w: number, h: number, n = 8): Vec2[] {
 
 const PRIMITIVES: Record<Primitive, Vec2[]> = {
   capsule: stadium(0.34, 1),
+  rod: stadium(0.1, 1),
   barrel: stadium(1, 0.5),
   disc: oval(0, 0, 0.5, 0.5),
   spike: [[-0.2, -0.5], [0.2, -0.5], [0, 0.5]],

@@ -18,6 +18,14 @@ export const SIZE_WORDS: { match: RegExp; scale: number; because: string }[] = [
   { match: /^(?:gigantes?|enormes?|colosal(?:es)?|inmens[oa]s?|descomunal(?:es)?)$/i, scale: 1.8, because: "protagonista a escala 1.8" },
 ];
 
+/** A size word right after a place noun («patio pequeño») sizes that place; `muy` in between is read through. */
+export const PLACE_SIZE_WORDS: { match: RegExp; size: "grande" | "chico" }[] = [
+  { match: /^(?:grandes?|enormes?|gigantes?|inmens[oa]s?|vast[oa]s?|ampli[oa]s?|grandios[oa]s?|colosal(?:es)?)$/i, size: "grande" },
+  { match: /^(?:peque[nñ][oa]s?|chic[oa]s?|diminut[oa]s?|estrech[oa]s?|[ií]ntim[oa]s?|humildes?)$/i, size: "chico" },
+];
+
+export const COURTYARD_NOUNS = /^(?:patios?|recintos?|claustros?)$/i;
+
 /** The materials of a group end where another figure enters with its own article or number, or a clause begins. */
 export const MATERIAL_STOP = /\s(?:que|donde|cuando|mientras)\b|\s(?:a|al|y|e|con|ante|sobre|entre|hacia|junto a|frente a)\s+(?:un|una|unos|unas|el|la|los|las|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|\d+)\b/i;
 
@@ -55,7 +63,7 @@ export const MATERIAL_WORDS: { match: RegExp; motif: SceneMotif; part: BodyPart 
 
 export const ARRANGEMENT_RULES: { match: RegExp; arrangement: Arrangement; place?: Place; because: string }[] = [
   { match: /suben|subiendo|ascienden|escaleras? (infinit|sin fin)|trepan/i, arrangement: "escalera", place: "escalera", because: "suben: van en escalera" },
-  { match: /rodean|alrededor|c[ií]rculo|ronda|giran/i, arrangement: "circulo", because: "rodean: van en círculo" },
+  { match: /\brode(?:a|an|ar|ando|aba|aban|aron|ó)\b|alrededor|c[ií]rculo|ronda|gir(?:a|an|ar|ando)\b/i, arrangement: "circulo", because: "rodean: van en círculo" },
   { match: /espiral|remolino|torbellino/i, arrangement: "espiral", because: "espiral" },
   { match: /desfil|procesi[oó]n|marchan|caminan|peregrin/i, arrangement: "procesion", because: "marchan: procesión" },
   { match: /ej[eé]rcito|filas|formados|cuadr[ií]cula|reticula/i, arrangement: "reticula", because: "formados: retícula" },

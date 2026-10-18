@@ -18,7 +18,9 @@ export type ResolvedBody = { shapes: Shape[]; pieces: BodyPiece[]; edges: EdgeTr
 
 type Placed = { node: PartNode; name: string; frame: BodyFrame };
 
-type Walk = { graph: BodyGraph; byId: Map<string, PartNode>; out: Placed[]; traces: Map<string, EdgeTrace> };
+type Laid = Pick<BodyGraph, "root" | "nodes" | "edges" | "tilt">;
+
+type Walk = { graph: Laid; byId: Map<string, PartNode>; out: Placed[]; traces: Map<string, EdgeTrace> };
 
 const pieceName = (n: PartNode, suffix: string, copy: string): string => `${n.id}${suffix}${copy}:${kindName(n.kind)}`;
 
@@ -44,21 +46,24 @@ function chain(w: Walk, e: PartEdge, parent: PartNode, pf: BodyFrame, suffix: st
   }
 }
 
+const skewed = (e: PartEdge, sign: number): PartEdge => (e.skew ? { ...e, angle: (e.angle ?? 0) + sign * e.skew } : e);
+
+/** `side` keeps an edge on one mirrored copy only (the flipped "1" or the plain "2"); `skew` opens the two copies apart. */
 function place(w: Walk, node: PartNode, f: BodyFrame, suffix: string, copy: string): void {
-  const outgoing = w.graph.edges.filter((e) => e.from === node.id);
+  const outgoing = w.graph.edges.filter((e) => e.from === node.id && (!e.side || suffix.endsWith(e.side)));
   const branch = (e: PartEdge) => {
     if (!e.mirror) return chain(w, e, node, e.flip ? { ...f, flip: !f.flip } : f, suffix, Boolean(e.flip));
-    chain(w, e, node, { ...f, flip: !f.flip }, `${suffix}1`, true);
-    chain(w, e, node, f, `${suffix}2`, false);
+    chain(w, skewed(e, 1), node, { ...f, flip: !f.flip }, `${suffix}1`, true);
+    chain(w, skewed(e, -1), node, f, `${suffix}2`, false);
   };
   outgoing.filter((e) => e.behind).forEach(branch);
   w.out.push({ node, name: pieceName(node, suffix, copy), frame: f });
   outgoing.filter((e) => !e.behind).forEach(branch);
 }
 
-export function layoutBody(graph: BodyGraph): { placed: Placed[]; edges: EdgeTrace[] } {
+export function layoutBody(graph: Laid): { placed: Placed[]; edges: EdgeTrace[] } {
   const w: Walk = { graph, byId: new Map(graph.nodes.map((n) => [n.id, n])), out: [], traces: new Map() };
-  place(w, w.byId.get(graph.root)!, ROOT_FRAME, "", "");
+  place(w, w.byId.get(graph.root)!, { ...ROOT_FRAME, rot: graph.tilt ?? 0 }, "", "");
   return { placed: w.out, edges: [...w.traces.values()] };
 }
 

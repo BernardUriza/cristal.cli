@@ -44,6 +44,10 @@ describe("readProgram", () => {
     expect(readProgram("un templo pequeño", seedOf("un templo pequeño", "R1")).program.rules[0].params).toEqual({ galleries: 2 });
     expect(readProgram("un templo con cinco capillas", seedOf("un templo con cinco capillas", "R7")).program.rules[0].params).toEqual({ shrines: 5 });
     expect(readProgram("un templo enorme", seedOf("un templo enorme", "R7")).program.rules[0].params).toEqual({});
+    const yard = "un templo de patios sucesivos con un jaguar gigante en un patio pequeño";
+    expect(readProgram(yard, seedOf(yard, "R1")).program.rules[1].params).toEqual({ scale: 0.3 });
+    expect(readProgram(yard, seedOf(yard, "R1")).because.join(" ")).toContain("«patio pequeño»");
+    expect(readProgram("un templo con un jaguar gigante", seedOf("un templo con un jaguar gigante", "R1")).program.rules[1].params).toEqual({});
     const towers = seedOf("una ciudad de dos torres", "R3");
     expect(readProgram("una ciudad de dos torres", towers).program.rules.filter((r) => r.rule === "R4")).toHaveLength(1);
   });

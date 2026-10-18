@@ -5,6 +5,7 @@ import { BODY_TUNING, SIX_SLOT_PLAN, type SixSlot } from "../tuning.ts";
 import { validateBody } from "../validate.ts";
 import { BODY_FAMILIES, BodyGraphError, type BodyGraph } from "../types.ts";
 import { applyOp, type OpState } from "./ops.ts";
+import { posed } from "./pose.ts";
 import { PROGRAM_LIMITS, type CompiledCreature, type CreatureOp, type CreatureProgram, type OpTrace } from "./types.ts";
 
 const SIX_SLOTS: readonly string[] = SIX_SLOT_PLAN.map((s) => s.part);
@@ -48,5 +49,10 @@ export function compileProgram(program: CreatureProgram, morph?: MorphPolicy): C
     }
   });
   const applied = [...graph.applied, ...trace.map((t) => ({ rule: `op:${t.op}`, target: t.targets.join(","), origin: "program" as const, added: t.added }))];
-  return { program, graph: { ...graph, ...state.graph, applied }, grammars: state.grammars, trace };
+  const done: BodyGraph = { ...graph, ...state.graph, applied };
+  if (!program.pose) return { program, graph: done, grammars: state.grammars, trace };
+  const pose = posed(done, program.pose);
+  validateBody(pose, BODY_TUNING.budget);
+  const added = pose.nodes.filter((n) => !done.nodes.some((m) => m.id === n.id)).map((n) => n.id);
+  return { program, graph: { ...pose, applied: [...applied, { rule: "postura", target: pose.root, origin: "program", added }] }, grammars: state.grammars, trace };
 }

@@ -60,4 +60,20 @@ describe("readScene", () => {
     expect(plan.motifs).not.toContain("sirena");
     expect(sceneFor(plan).groups.map((g) => g.creature.name)).toEqual(["guardián", "jaguar"]);
   });
+
+  it("«rodea» in any conjugation puts the group in a circle, as «rodean» does", () => {
+    for (const verb of ["rodea", "rodean", "rodear", "rodeando", "rodeaban", "rodearon"]) {
+      expect(readScene(`una procesión de monjes ${verb} a un jaguar`, [], 1).scene.groups[0].arrangement, verb).toBe("circulo");
+    }
+    expect(readScene("una procesión de monjes con cabeza de máscara rodea a un jaguar gigante en un patio pequeño de noche", [], 1).because.join("; ")).toContain("van en círculo");
+  });
+
+  it("the patio's size is read from the patio, never from a figure's size word: «jaguar gigante en un patio pequeño» is a small patio", () => {
+    const read = readScene("una procesión de monjes con cabeza de máscara rodea a un jaguar gigante en un patio pequeño de noche", [], 1);
+    expect(read.scene.architecture.courtyard).toBe("chico");
+    expect(read.because.join("; ")).toContain("«patio pequeño»");
+    expect(readScene("un jaguar gigante en un patio", [], 1).scene.architecture.courtyard).toBe("medio");
+    expect(readScene("un templo enorme con un patio chico", [], 1).scene.architecture.courtyard).toBe("chico");
+    expect(readScene("un patio enorme con un ojo pequeño", [], 1).scene.architecture.courtyard).toBe("grande");
+  });
 });

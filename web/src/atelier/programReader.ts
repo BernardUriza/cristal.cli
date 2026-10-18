@@ -4,6 +4,7 @@ import { GrammarError, type Archetype, type ArchitectureProgram, type RuleCall }
 import { ARCHETYPE_RULES, BIG, DEFAULT_ARCHETYPE, DEFAULT_ARCHETYPE_BECAUSE, DEFAULT_BRIDGES, MAX_BRIDGES, SEQUENCES, SMALL, TOWER_NOUNS, VARIANTS, type Step, type Variant } from "./programRules.ts";
 import { chooseVariant } from "./programVariant.ts";
 import { NUMBER_WORDS } from "./sceneRules.ts";
+import { isFigureWord, maskSizeWords, placeSizeAfter } from "./sceneWords.ts";
 
 export type ProgramReading = { program: ArchitectureProgram; because: string[]; matched: boolean };
 
@@ -36,17 +37,20 @@ const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v
 function paramsOf(step: Step, narration: string, because: string[]): RuleCall["params"] {
   const rule = ruleById(step.rule)!;
   const params: RuleCall["params"] = {};
+  const sized = maskSizeWords(narration, isFigureWord);
   for (const source of step.params) {
     const range = rule.params[source.key];
     const n = countOf(narration, source.nouns);
-    const big = BIG.exec(narration);
-    const small = SMALL.exec(narration);
+    const own = placeSizeAfter(sized, source.nouns);
+    const big = own ? null : BIG.exec(sized);
+    const small = own ? null : SMALL.exec(sized);
     if (n !== null) params[source.key] = clamp(n, range.min, range.max);
     else if (source.countOnly) continue;
+    else if (own) params[source.key] = own.size === "grande" ? range.max : range.min;
     else if (big) params[source.key] = range.max;
     else if (small) params[source.key] = range.min;
     else continue;
-    because.push(`${step.rule}.${source.key} = ${params[source.key]} (${n !== null ? `contaste ${n}` : `dijiste «${(big ?? small)![0]}»`}, rango ${range.min}–${range.max})`);
+    because.push(`${step.rule}.${source.key} = ${params[source.key]} (${n !== null ? `contaste ${n}` : `dijiste «${own ? own.phrase : (big ?? small)![0]}»`}, rango ${range.min}–${range.max})`);
   }
   return params;
 }

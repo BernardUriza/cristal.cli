@@ -1,5 +1,6 @@
 import { fnv1a, mulberry32, pick, shuffle, type Rng } from "../../../../../../shared/rng.ts";
-import type { MemberVariation, MinorOp } from "../../../../../config/variation.ts";
+import type { MemberVariation, MinorOp, PoseRanges } from "../../../../../config/variation.ts";
+import type { BodyPose } from "../types.ts";
 import { CHIMERIC_SLOTS } from "../tuning.ts";
 import { PROGRAM_LIMITS, type CreatureOp, type CreatureProgram } from "./types.ts";
 
@@ -50,12 +51,35 @@ function minor(p: CreatureProgram, rng: Rng, v: MemberVariation, fits: Fits): { 
   return { program: p };
 }
 
-/** One member of a group: its own seed (proportions and L1–L4 remates of the family), the group's operations kept, and maybe one seeded minor operation. */
+const deg = (rng: Rng, r: readonly [number, number]): number => Number(within(rng, r).toFixed(1));
+
+function poseOf(rng: Rng, r: PoseRanges): BodyPose {
+  const pose: BodyPose = { tilt: deg(rng, r.tilt), shoulder: deg(rng, r.shoulder), armSkew: deg(rng, r.armSkew), wrist: deg(rng, r.wrist), hip: deg(rng, r.hip), legSkew: deg(rng, r.legSkew), arm: Number(within(rng, r.arm).toFixed(2)), leg: Number(within(rng, r.leg).toFixed(2)), head: Number(within(rng, r.head).toFixed(2)) };
+  if (rng() >= r.heldShare || !r.held.length) return pose;
+  const h = pick(rng, r.held);
+  return { ...pose, held: { name: h.name, kind: h.kind, scale: Number(within(rng, h.scale).toFixed(2)), angle: deg(rng, h.angle), side: rng() < 0.5 ? "1" : "2" } };
+}
+
+/** The member's own posture, dropping the held object and then the whole pose if its body cannot take them. */
+function postured(p: CreatureProgram, seed: number, v: MemberVariation, fits: Fits): { program: CreatureProgram; note?: string } {
+  if (p.family === "seis-ranuras") return { program: p };
+  const pose = poseOf(mulberry32(fnv1a(`${seed}:postura`)), v.pose);
+  const { held, ...bare } = pose;
+  const candidates: BodyPose[] = held ? [pose, bare] : [bare];
+  for (const candidate of candidates) {
+    const next = { ...p, pose: candidate };
+    if (fits(next)) return { program: next, note: `postura inclina ${candidate.tilt}° hombro ${candidate.shoulder}°${candidate.held ? ` con ${candidate.held.name}` : ""}` };
+  }
+  return { program: p };
+}
+
+/** One member of a group: its own seed (proportions and L1–L4 remates of the family), the group's operations kept, maybe one seeded minor operation, and its own posture. */
 export function memberProgram(base: CreatureProgram, seed: number, v: MemberVariation, fits: Fits): MemberProgram {
   const rng = mulberry32(seed);
   const heightScale = Number(within(rng, v.height).toFixed(3));
   const start = base.family === "seis-ranuras" ? { program: base, note: "seis ranuras" } : reseeded(base, seed, v, fits);
   const mixed = chimeraFills(start.program, rng, fits);
   const tweaked = minor(mixed, rng, v, fits);
-  return { program: tweaked.program, heightScale, notes: [start.note, ...(tweaked.note ? [tweaked.note] : [])] };
+  const stance = postured(tweaked.program, seed, v, fits);
+  return { program: stance.program, heightScale, notes: [start.note, ...[tweaked.note, stance.note].filter((n): n is string => Boolean(n))] };
 }

@@ -1,6 +1,6 @@
 import { SCENE_LIMITS } from "../graphics/config/scene.ts";
 import { fnv1a, mulberry32 } from "../shared/rng.ts";
-import { COLLECTIVE_NOUNS, NUMBER_WORDS, SIZE_WORDS } from "./sceneRules.ts";
+import { COLLECTIVE_NOUNS, CREATURE_TEMPLATES, NUMBER_WORDS, PLACE_SIZE_WORDS, SIZE_WORDS } from "./sceneRules.ts";
 
 export type Counted = { count: number; because?: string };
 
@@ -43,4 +43,18 @@ export function maskSizeWords(text: string, isFigure: (word: string) => boolean)
     if (size && SIZE_WORDS.some((r) => r.match.test(size.word))) out = out.slice(0, size.at) + " ".repeat(size.word.length) + out.slice(size.at + size.word.length);
   }
   return out;
+}
+
+export const isFigureWord = (word: string) => CREATURE_TEMPLATES.some((t) => new RegExp(`^(?:${t.match.source})$`, "i").test(word));
+
+/** The size said right after a place noun, scanning every mention: «patios sucesivos … un patio pequeño» is a small patio. */
+export function placeSizeAfter(text: string, nouns: RegExp): { phrase: string; size: "grande" | "chico" } | null {
+  const words = [...text.matchAll(/\p{L}+/gu)].map((m) => m[0]);
+  for (let i = 0; i < words.length - 1; i++) {
+    if (!nouns.test(words[i])) continue;
+    const j = words[i + 1].toLowerCase() === "muy" ? i + 2 : i + 1;
+    const rule = j < words.length ? PLACE_SIZE_WORDS.find((r) => r.match.test(words[j])) : undefined;
+    if (rule) return { phrase: words.slice(i, j + 1).join(" "), size: rule.size };
+  }
+  return null;
 }

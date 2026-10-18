@@ -1,5 +1,5 @@
 import type { Region } from "../../regions.ts";
-import type { BodyFamily, BodyGraph } from "../types.ts";
+import type { BodyFamily, BodyGraph, BodyPose } from "../types.ts";
 
 export type ProgramFamily = BodyFamily | "seis-ranuras";
 
@@ -22,7 +22,7 @@ export type CreatureOp =
   | { op: "blend"; socket: string; motif: string; region: Region; weight: number }
   | { op: "caricature"; socket: string; k: number };
 
-export type CreatureProgram = { family: ProgramFamily; seed: number; operations: CreatureOp[] };
+export type CreatureProgram = { family: ProgramFamily; seed: number; operations: CreatureOp[]; pose?: BodyPose };
 
 export const PROGRAM_LIMITS = { operations: 6, countMin: 2, countMax: 8, kMin: 0.5, kMax: 2.5 } as const;
 

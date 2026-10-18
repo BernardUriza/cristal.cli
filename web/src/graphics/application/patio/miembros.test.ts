@@ -28,13 +28,31 @@ describe("members of one group", () => {
   const body = creatureOf(monks);
   const member = memberMaker([body], 1);
 
-  it("a procession of twelve monks reads as distinct monks, not clones (3+ clusters: before the contact fix floating heads counted as extra silhouettes)", () => {
+  it("a procession of twelve monks reads as distinct monks, not clones: 4+ silhouette clusters for every work seed 1–12", () => {
     const clones = complexityReport({ list: procession(() => body.compiled), width: W, height: H }).silhouettes.creatures;
-    const varied = complexityReport({ list: procession((i) => member(0, i).compiled), width: W, height: H }).silhouettes.creatures;
     expect(clones.distinctClusters).toBe(1);
-    expect(varied.eligibleUnits).toBe(12);
-    expect(varied.distinctClusters).toBeGreaterThanOrEqual(3);
-    expect(varied.effectiveDiversity).toBeGreaterThan(clones.effectiveDiversity);
+    const low: string[] = [];
+    for (let seed = 1; seed <= 12; seed++) {
+      const each = memberMaker([body], seed);
+      const varied = complexityReport({ list: procession((i) => each(0, i).compiled), width: W, height: H }).silhouettes.creatures;
+      expect(varied.eligibleUnits).toBe(12);
+      expect(varied.effectiveDiversity).toBeGreaterThan(clones.effectiveDiversity);
+      if (varied.distinctClusters < 4) low.push(`semilla ${seed}: ${varied.distinctClusters}`);
+    }
+    expect(low).toEqual([]);
+  }, 30_000);
+
+  it("each member stands in its own posture: joints, segment lengths and tilt differ, and some carry an object in one hand", () => {
+    const poses = Array.from({ length: 12 }, (_, i) => member(0, i).compiled.program.pose);
+    expect(poses.every(Boolean)).toBe(true);
+    expect(new Set(poses.map((p) => `${p!.shoulder}/${p!.hip}/${p!.tilt}/${p!.arm}/${p!.leg}`)).size).toBe(12);
+    const held = poses.filter((p) => p!.held);
+    expect(held.length).toBeGreaterThan(0);
+    for (let i = 0; i < 12; i++) {
+      const c = member(0, i).compiled;
+      expect(c.graph.applied.some((a) => a.rule === "postura")).toBe(true);
+      expect(c.graph.nodes.some((n) => n.id === "objeto-1")).toBe(Boolean(c.program.pose!.held));
+    }
   });
 
   it("every member keeps the group's motifs: mask head, stair torso, hands; only the L3 gaze may add its eye", () => {
