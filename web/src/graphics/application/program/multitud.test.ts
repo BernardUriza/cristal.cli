@@ -50,14 +50,13 @@ describe("crowds walk the program's ground", () => {
     expect(site.walks.every((w) => w.label === "andén")).toBe(true);
   });
 
-  it("when the ground cannot hold the whole crowd it shrinks or thins it and says so, never inside a building", () => {
+  it("a circle no ring can hold becomes a procession along the chained route and says so, never inside a building", () => {
     const site = siteOf("templo-radial");
     const g = monks(12, "circulo");
     const placed = poblado(site, { groups: [g], architecture: DEFAULT_ARCHITECTURE }, PALETTES.friedeberg, 1, 3);
     const h = creatureHeightM(g, site);
-    expect(placed.items.length).toBeLessThan(12);
-    expect(placed.items.length).toBeGreaterThan(0);
+    expect(placed.items).toHaveLength(12);
     expect(spotsFor(g, site).every((at) => bodyClears(at, h, site.projector.forward, site.obstacles))).toBe(true);
-    expect(placed.provenance.decision).toMatch(new RegExp(`sitio no alcanza: ${placed.items.length} de 12, escala`));
+    expect(placed.provenance.decision).toMatch(/acomodo «circulo» no cabe .* se vuelve «procesion» a lo largo de la ruta encadenada/);
   });
 });

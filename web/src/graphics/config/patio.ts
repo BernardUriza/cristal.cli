@@ -20,6 +20,7 @@ export type PatioConfig = {
   azimuth: number;
   towers: 2 | 4;
   architecture: ArchitectureSpec;
+  anomalyRate: number;
   width: number;
   height: number;
 };
@@ -38,6 +39,7 @@ export const DEFAULT_PATIO: PatioConfig = {
   azimuth: 0.55,
   towers: 4,
   architecture: DEFAULT_ARCHITECTURE,
+  anomalyRate: 0.4,
   width: 1400,
   height: 1000,
 };
@@ -115,6 +117,7 @@ export function resolvePatio(input: Partial<PatioConfig> = {}): PatioConfig {
   if (![1, 2, 3].includes(cfg.detail)) fail(`detail must be 1, 2 or 3, got ${cfg.detail}`);
   for (const lang of cfg.ornament) if (!ORNAMENT_LANGUAGES.includes(lang)) fail(`unknown ornament language ${lang}`);
   if (!PATIO_ANOMALIES.includes(cfg.anomaly)) fail(`unknown anomaly ${cfg.anomaly}`);
+  if (!(cfg.anomalyRate >= 0 && cfg.anomalyRate <= 1)) fail(`anomalyRate must be in 0..1, got ${cfg.anomalyRate}`);
   if (!Number.isFinite(cfg.azimuth)) fail(`azimuth must be a finite angle in radians`);
   if (cfg.towers !== 2 && cfg.towers !== 4) fail(`towers must be 2 or 4, got ${cfg.towers}`);
   if (!(cfg.width >= 200 && cfg.height >= 200)) fail(`viewport must be at least 200×200 px, got ${cfg.width}×${cfg.height}`);

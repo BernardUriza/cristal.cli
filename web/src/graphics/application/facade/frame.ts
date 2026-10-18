@@ -1,4 +1,5 @@
-import { greca } from "../../domain/motifs/bands.ts";
+import { grecaBand } from "../../domain/motifs/bands.ts";
+import { facadeBand } from "./bandCut.ts";
 import { rosette } from "../../domain/motifs/radial.ts";
 import { filled, group, rect, type Shape } from "../../domain/shapes.ts";
 import { ornament, palInks, type Painter } from "../painter.ts";
@@ -12,10 +13,11 @@ export function paintFrame(p: Painter, width: number, height: number): Shape[] {
   if (art.complexity >= 3) {
     const across = Math.round(width / (T * 2));
     const down = Math.round(height / (T * 2));
-    out.push(...greca(0, 0, width, T, across, ink));
-    out.push(...greca(0, height - T, width, T, across, ink));
-    out.push(group([{ rotate: 90 }, { translate: [0, -T] }], greca(0, 0, height, T, down, ink)));
-    out.push(group([{ translate: [width, 0] }, { rotate: 90 }], greca(0, 0, height, T, down, ink)));
+    const side = (band: string, y: number, w: number, n: number) => facadeBand(p, "marco", band, n, (d) => grecaBand(0, y, w, T, n, ink, d));
+    out.push(...side("arriba", 0, width, across));
+    out.push(...side("abajo", height - T, width, across));
+    out.push(group([{ rotate: 90 }, { translate: [0, -T] }], side("izquierda", 0, height, down)));
+    out.push(group([{ translate: [width, 0] }, { rotate: 90 }], side("derecha", 0, height, down)));
   } else {
     const colors = [pal.primary, pal.secondary, pal.accent];
     const nx = Math.ceil(width / T);

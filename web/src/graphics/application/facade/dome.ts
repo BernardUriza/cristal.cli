@@ -1,7 +1,8 @@
 import type { Colonnade, Dome } from "../../domain/architecture/types.ts";
 import { polar, star } from "../../domain/geometry.ts";
 import { arcLine, archedOpening, halfDisc } from "../../domain/motifs/arches.ts";
-import { dotRow, greca } from "../../domain/motifs/bands.ts";
+import { dotRow, grecaBand } from "../../domain/motifs/bands.ts";
+import { facadeBand } from "./bandCut.ts";
 import { radialLines } from "../../domain/motifs/radial.ts";
 import { circle, filled, line, polygon, rect, stroked, type Shape } from "../../domain/shapes.ts";
 import { ornament, palInks, type Painter } from "../painter.ts";
@@ -39,7 +40,7 @@ export function paintDome(p: Painter, col: Colonnade): Shape[] {
   let baseY = F.Y(dome.y);
   const drumH = R * 0.32;
   out.push(rect(cx - R, baseY - drumH, R * 2, drumH, filled(pal.secondary, pal.ink, F.sw)));
-  if (p.lod.shows(drumH * 0.3, 6)) out.push(...greca(cx - R, baseY - drumH * 0.3, R * 2, drumH * 0.3, Math.max(4, dome.ribs), ornament(p, palInks(pal, pal.secondary, pal.secondary, pal.accent), F.sw * 0.6)));
+  if (p.lod.shows(drumH * 0.3, 6)) out.push(...facadeBand(p, `cúpula @${col.z.toFixed(2)}`, "tambor", Math.max(4, dome.ribs), (d) => grecaBand(cx - R, baseY - drumH * 0.3, R * 2, drumH * 0.3, Math.max(4, dome.ribs), ornament(p, palInks(pal, pal.secondary, pal.secondary, pal.accent), F.sw * 0.6), d)));
   for (let i = 0; i < dome.windows; i++) {
     const wx = cx - R + ((2 * R) / dome.windows) * (i + 0.5);
     const wr = (R / dome.windows) * 0.3;
