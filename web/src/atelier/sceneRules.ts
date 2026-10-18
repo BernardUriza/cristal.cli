@@ -17,7 +17,7 @@ export const CREATURE_TEMPLATES: CreatureTemplate[] = [
   { match: /muertos?|esqueletos?|calacas?|catrinas?/i, name: "calaca", parts: { cabeza: "craneo", cuerpo: "escalera", manos: "mano", pies: "mano" } },
   { match: /bestias?|monstruos?|quimeras?|criaturas?|seres?/i, name: "quimera", parts: { cabeza: "jaguar", ojos: "ojo", cola: "sirena", pies: "mano" } },
   { match: /perros?|xolos?|lobos?/i, name: "perro", parts: { cuerpo: "perro" } },
-  { match: /jaguares?|gatos?|tigres?|felinos?/i, name: "jaguar", parts: { cuerpo: "jaguar" } },
+  { match: /jaguar(?:es)?|gatos?|tigres?|felinos?/i, name: "jaguar", parts: { cuerpo: "jaguar" } },
   { match: /sirenas?|peces?/i, name: "sirena", parts: { cuerpo: "sirena" } },
   { match: /ojos?\b/i, name: "ojo", parts: { cuerpo: "ojo" } },
   { match: /manos?\b/i, name: "mano", parts: { cuerpo: "mano" } },

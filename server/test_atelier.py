@@ -192,3 +192,35 @@ def test_prompt_teaches_the_creature_program():
     prompt = open("prompts/atelier.md", encoding="utf-8").read()
     for word in ("CreatureProgram", '"replace"', '"graft"', '"repeat"', '"architecturalize"', '"serpentine"', '"facade"', "hasta 6 operaciones"):
         assert word in prompt
+
+
+def test_creature_program_keeps_blend_and_caricature():
+    program = {"family": "quadruped", "seed": 4, "operations": [
+        {"op": "replace", "socket": "torso", "motif": "jaguar"},
+        {"op": "blend", "socket": "torso", "motif": "sirena", "region": "punta", "weight": 1},
+        {"op": "caricature", "socket": "torso", "k": 1.6},
+    ]}
+    client, _ = make_client(_scene_with(program))
+    body = client.post("/atelier/direct", json={"narration": "mitad jaguar mitad sirena", "seed": 3}).json()
+    assert body["choices"][0]["value"]["groups"][0]["program"] == program
+
+
+def test_bad_blend_or_caricature_drops_the_program():
+    bad = [
+        {"op": "blend", "socket": "torso", "motif": "dragon", "region": "punta", "weight": 1},
+        {"op": "blend", "socket": "torso", "motif": "sirena", "region": "ala", "weight": 1},
+        {"op": "blend", "socket": "torso", "motif": "sirena", "region": "punta", "weight": 0},
+        {"op": "blend", "socket": "torso", "motif": "sirena", "region": "punta", "weight": True},
+        {"op": "caricature", "socket": "torso", "k": 3},
+        {"op": "caricature", "socket": "torso", "k": "2"},
+    ]
+    for op in bad:
+        client, _ = make_client(_scene_with({"family": "biped", "operations": [op]}))
+        group = client.post("/atelier/direct", json={"narration": "una bestia", "seed": 3}).json()["choices"][0]["value"]["groups"][0]
+        assert "program" not in group
+
+
+def test_prompt_teaches_blend_and_caricature():
+    prompt = open("prompts/atelier.md", encoding="utf-8").read()
+    for word in ('"blend"', '"caricature"', '"punta"', "mitad jaguar mitad sirena"):
+        assert word in prompt

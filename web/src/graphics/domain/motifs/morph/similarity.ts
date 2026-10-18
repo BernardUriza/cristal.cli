@@ -36,6 +36,19 @@ export function mean(points: readonly Vec2[]): Vec2 {
   return [x / points.length, y / points.length];
 }
 
+/** Least-squares uniform scale + translation, no rotation: upright motifs stay upright. */
+export function scaleFit(src: readonly Vec2[], dst: readonly Vec2[]): Similarity {
+  const cs = mean(src), cd = mean(dst);
+  let num = 0, den = 0;
+  for (let i = 0; i < src.length; i++) {
+    const a: Vec2 = [src[i][0] - cs[0], src[i][1] - cs[1]];
+    num += a[0] * (dst[i][0] - cd[0]) + a[1] * (dst[i][1] - cd[1]);
+    den += a[0] * a[0] + a[1] * a[1];
+  }
+  const k = den < 1e-12 ? 1 : num / den;
+  return { s: [k, 0], t: [cd[0] - k * cs[0], cd[1] - k * cs[1]] };
+}
+
 export function procrustes(src: readonly Vec2[], dst: readonly Vec2[]): Similarity {
   const cs = mean(src), cd = mean(dst);
   let num: Vec2 = [0, 0], den = 0;

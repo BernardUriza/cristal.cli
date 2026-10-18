@@ -1,3 +1,4 @@
+import type { MorphPolicy } from "../../../../../config/morph.ts";
 import { expandBody } from "../expand.ts";
 import { sixSlotGraph } from "../sixSlot.ts";
 import { BODY_TUNING, SIX_SLOT_PLAN, type SixSlot } from "../tuning.ts";
@@ -28,12 +29,12 @@ function base(p: CreatureProgram): { graph: BodyGraph; ops: CreatureOp[] } {
   return { graph: sixSlotGraph(parts), ops: k < 0 ? [] : p.operations.slice(k) };
 }
 
-/** Family → semantic sockets → operations in order → validation; every failure is a BodyGraphError naming the operation. */
-export function compileProgram(program: CreatureProgram): CompiledCreature {
+/** Family → semantic sockets → operations in order → validation; every failure is a BodyGraphError naming the operation. blend/caricature need the morph policy. */
+export function compileProgram(program: CreatureProgram, morph?: MorphPolicy): CompiledCreature {
   if (!Array.isArray(program.operations)) throw new BodyGraphError("unknown-op", "operations must be a list");
   const { graph, ops } = base(program);
   if (ops.length > PROGRAM_LIMITS.operations) throw new BodyGraphError("too-many-ops", `${ops.length} operations (max ${PROGRAM_LIMITS.operations})`);
-  const state: OpState = { graph, grammars: {}, seed: program.seed, index: 0 };
+  const state: OpState = { graph, grammars: {}, seed: program.seed, index: 0, morph };
   const trace: OpTrace[] = [];
   ops.forEach((op, i) => {
     state.index = i;

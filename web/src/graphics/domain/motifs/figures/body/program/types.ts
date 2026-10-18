@@ -1,3 +1,4 @@
+import type { Region } from "../../regions.ts";
 import type { BodyFamily, BodyGraph } from "../types.ts";
 
 export type ProgramFamily = BodyFamily | "seis-ranuras";
@@ -11,18 +12,20 @@ export type RepeatArrangement = (typeof ARRANGEMENTS)[number];
 export const GRAMMARS = ["facade", "tower", "gallery"] as const;
 export type ArchGrammar = (typeof GRAMMARS)[number];
 
-export const OPS = ["replace", "graft", "repeat", "architecturalize"] as const;
+export const OPS = ["replace", "graft", "repeat", "architecturalize", "blend", "caricature"] as const;
 
 export type CreatureOp =
   | { op: "replace"; socket: string; motif: string }
   | { op: "graft"; socket: string; family: BodyFamily; part: string }
   | { op: "repeat"; socket: string; count: number; arrangement: RepeatArrangement }
-  | { op: "architecturalize"; socket: string; grammar: ArchGrammar };
+  | { op: "architecturalize"; socket: string; grammar: ArchGrammar }
+  | { op: "blend"; socket: string; motif: string; region: Region; weight: number }
+  | { op: "caricature"; socket: string; k: number };
 
 export type CreatureProgram = { family: ProgramFamily; seed: number; operations: CreatureOp[] };
 
-export const PROGRAM_LIMITS = { operations: 6, countMin: 2, countMax: 8 } as const;
+export const PROGRAM_LIMITS = { operations: 6, countMin: 2, countMax: 8, kMin: 0.5, kMax: 2.5 } as const;
 
-export type OpTrace = { index: number; op: CreatureOp["op"]; socket: string; targets: string[]; added: string[]; removed: string[]; detail: string };
+export type OpTrace = { index: number; op: CreatureOp["op"]; socket: string; targets: string[]; added: string[]; removed: string[]; detail: string; morph?: string };
 
 export type CompiledCreature = { program: CreatureProgram; graph: BodyGraph; grammars: Record<string, ArchGrammar>; trace: OpTrace[] };

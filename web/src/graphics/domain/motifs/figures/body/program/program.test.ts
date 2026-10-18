@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { mulberry32 } from "../../../../../../shared/rng.ts";
 import { drawCreature, drawProgram } from "../../creature.ts";
+import { MORPH_POLICY } from "../../../../../config/morph.ts";
+import { isSimple } from "../../../morph/intersect.ts";
 import { BodyGraphError } from "../types.ts";
 import { compileProgram, fromSixSlot } from "./compile.ts";
 import { readCreatureProgram } from "./sanitize.ts";
@@ -73,6 +75,50 @@ describe("CreatureProgram", () => {
     expect(plan.provenance.algorithm).toContain("plan corporal fijo");
     const built = compileProgram({ ...fromSixSlot(parts), operations: [...fromSixSlot(parts).operations, { op: "architecturalize", socket: "cuerpo", grammar: "tower" }] });
     expect(built.grammars).toEqual({ cuerpo: "tower" });
+  });
+
+  it("blend swaps the socket's piece for a region hybrid and caricature exaggerates it, each with its own provenance", () => {
+    const program: CreatureProgram = { family: "quadruped", seed: 8172, operations: [
+      { op: "replace", socket: "torso", motif: "jaguar" },
+      { op: "blend", socket: "torso", motif: "sirena", region: "punta", weight: 1 },
+      { op: "caricature", socket: "torso", k: 1.6 },
+    ] };
+    const c = compileProgram(program, MORPH_POLICY);
+    const torso = resolveSocket(c.graph, "torso")[0];
+    expect("motif" in torso.kind && torso.kind.motif).toBe("jaguar");
+    const morph = "motif" in torso.kind ? torso.kind.morph! : undefined;
+    expect(morph!.label).toMatch(/^jaguar⊕sirena\[punta 1\]~k/);
+    expect(isSimple(morph!.contour)).toBe(true);
+    expect(c.trace[1].morph).toContain("jaguar⊕sirena[punta 1]");
+    expect(c.trace[2].morph).toContain("norma:animales");
+    const drawn = drawProgram(program, 100, 300, 200, P, mulberry32(1), MORPH_POLICY);
+    expect(drawn.provenance.decision).toContain("2. blend torso: torso ← jaguar⊕sirena[punta 1]");
+    expect(drawn.pieces.find((p) => p.slot === torso.id)!.part.mask).toHaveLength(morph!.contour.length);
+  });
+
+  it("blend and caricature fail with typed errors", () => {
+    const run = (ops: CreatureProgram["operations"], morph = MORPH_POLICY) => codeOf(() => compileProgram({ family: "quadruped", seed: 1, operations: ops }, morph));
+    const torso = { op: "replace" as const, socket: "torso", motif: "jaguar" };
+    expect(run([torso, { op: "blend", socket: "torso", motif: "dragon", region: "punta", weight: 1 }])).toBe("unknown-kind");
+    expect(run([torso, { op: "blend", socket: "torso", motif: "sirena", region: "ala" as never, weight: 1 }])).toBe("unknown-region");
+    expect(run([torso, { op: "blend", socket: "torso", motif: "sirena", region: "punta", weight: 1.5 }])).toBe("bad-weight");
+    expect(run([torso, { op: "blend", socket: "torso", motif: "jaguar", region: "punta", weight: 1 }])).toBe("blend-conflict");
+    expect(run([torso, { op: "blend", socket: "torso", motif: "sirena", region: "punta", weight: 1 }, { op: "blend", socket: "torso", motif: "perro", region: "cabeza", weight: 1 }])).toBe("blend-conflict");
+    expect(run([torso, { op: "caricature", socket: "torso", k: 4 }])).toBe("bad-k");
+    expect(run([{ op: "caricature", socket: "eye", k: 1.5 }])).toBe("missing-socket");
+    expect(run([{ op: "blend", socket: "torso", motif: "sirena", region: "punta", weight: 1 }])).toBe("not-a-motif");
+    expect(codeOf(() => compileProgram({ family: "radial", seed: 1, operations: [{ op: "caricature", socket: "torso", k: 1.5 }] }, MORPH_POLICY))).toBe("ok");
+    expect(codeOf(() => compileProgram({ family: "quadruped", seed: 1, operations: [torso, { op: "caricature", socket: "torso", k: 1.5 }] }))).toBe("no-morph-policy");
+  });
+
+  it("reads blend and caricature from someone else, with region aliases, and rejects bad weights and k", () => {
+    const ok = readCreatureProgram({ family: "quadruped", seed: 2, operations: [{ op: "replace", socket: "cuerpo", motif: "jaguar" }, { op: "blend", socket: "cuerpo", motif: "sirena", region: "cola", weight: 0.8 }, { op: "caricature", socket: "cuerpo", k: 1.4 }] });
+    expect("program" in ok && ok.program.operations.slice(1)).toEqual([{ op: "blend", socket: "torso", motif: "sirena", region: "punta", weight: 0.8 }, { op: "caricature", socket: "torso", k: 1.4 }]);
+    const reject = (op: object) => readCreatureProgram({ family: "biped", operations: [op] });
+    expect("rejected" in reject({ op: "blend", socket: "head", motif: "sirena", region: "punta", weight: 0 })).toBe(true);
+    expect("rejected" in reject({ op: "blend", socket: "head", motif: "sirena", region: "ala", weight: 1 })).toBe(true);
+    expect("rejected" in reject({ op: "caricature", socket: "head", k: "2" })).toBe(true);
+    expect("rejected" in reject({ op: "caricature", socket: "head", k: 9 })).toBe(true);
   });
 
   it("reads a program written by someone else and rejects it whole on one bad operation", () => {

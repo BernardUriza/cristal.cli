@@ -2,6 +2,7 @@ import { DEFAULT_ARCHITECTURE, SCENE_LIMITS, type ArchitectureSpec, type Creatur
 import { ARCHITECTURE_RULES, ARRANGEMENT_RULES, CREATURE_TEMPLATES, MATERIAL_WORDS, NUMBER_WORDS, PLACE_RULES } from "./sceneRules.ts";
 import type { MotifName } from "./vocabulary.ts";
 import { familyProgram, maskOpWords, programWords } from "./creatureProgramReader.ts";
+import { morphWords, usesMotif } from "./morphReader.ts";
 
 const OBJECT_NAMES = ["ojo", "mano", "cráneo", "máscara"];
 const OBJECT_SCALE = 2.2;
@@ -52,9 +53,9 @@ export function readScene(spoken: string, wallMotifs: MotifName[] = []): SceneRe
     groups.push({ creature: { name: t.name, parts }, count, arrangement: arr?.arrangement ?? (count > 4 ? "procesion" : "fila"), place: arr?.place ?? place?.place ?? "patio", scale: isObject ? OBJECT_SCALE : 1, ...(program ? { program } : {}) });
     because.push(`${count} ${t.name} (encontré «${m[0]}»${Object.keys(custom).length ? `, hechos de ${Object.values(custom).join(" y ")}` : ""})${arr ? `; ${arr.because}` : ""}${place && !arr?.place ? `; ${place.because}` : ""}`);
   }
-  because.push(...programWords(spoken, groups, at));
+  because.push(...programWords(spoken, groups, at), ...morphWords(spoken, groups, at));
   for (const motif of wallMotifs) {
-    if (groups.length === SCENE_LIMITS.groups || groups.some((g) => Object.values(g.creature.parts).includes(motif))) continue;
+    if (groups.length === SCENE_LIMITS.groups || groups.some((g) => usesMotif(g, motif))) continue;
     groups.push({ creature: { name: motif, parts: { cuerpo: motif } }, count: 1, arrangement: "fila", place: "patio", scale: 1.4 });
     because.push(`${motif} de la pared, al centro del patio`);
   }

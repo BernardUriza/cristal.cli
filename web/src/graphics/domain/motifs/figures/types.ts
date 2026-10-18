@@ -23,6 +23,8 @@ export type MotifParams = {
   fill: string;
   ink: string;
   accent: string;
+  contour?: readonly Vec2[];
+  features?: boolean;
 };
 
 export type Provenance = {
