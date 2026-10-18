@@ -1,9 +1,10 @@
 import type { StructuralRole } from "../parts.ts";
 import type { BodyFamily, BodySlot, PartKind } from "./types.ts";
 
-export type BodyTuning = { budget: number; maxDepth: number; maxRecursion: number; fitAspect: number; inkRatio: number; restWeight: number };
+/** `contactSink`: how far a side joint sinks into its parent's silhouette (parent units), so touching pieces overlap instead of meeting at a point. */
+export type BodyTuning = { budget: number; maxDepth: number; maxRecursion: number; fitAspect: number; inkRatio: number; restWeight: number; contactSink: number };
 
-export const BODY_TUNING: BodyTuning = { budget: 40, maxDepth: 4, maxRecursion: 10, fitAspect: 1.24, inkRatio: 0.012, restWeight: 1 };
+export const BODY_TUNING: BodyTuning = { budget: 40, maxDepth: 4, maxRecursion: 10, fitAspect: 1.24, inkRatio: 0.012, restWeight: 1, contactSink: 0.04 };
 
 const ALL: readonly StructuralRole[] = ["support", "span", "enclosure", "opening", "crown", "connector"];
 

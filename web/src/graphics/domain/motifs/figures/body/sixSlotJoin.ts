@@ -1,5 +1,6 @@
 import { polygonBounds } from "../../../bezier.ts";
 import type { Vec2 } from "../../../shapes.ts";
+import { crossing } from "./contact.ts";
 import { unitPolygon } from "./kinds.ts";
 import { SIX_SLOT_JOIN as J, SIX_SLOT_PLAN, type SixSlot } from "./tuning.ts";
 
@@ -10,20 +11,6 @@ type Poly = Vec2[];
 const local = (motif: string, size: number, flip: boolean): Poly => unitPolygon({ motif }).map(([x, y]): Vec2 => [(flip ? -x : x) * size, y * size]);
 
 const moved = (p: Poly, at: Vec2): Poly => p.map(([x, y]): Vec2 => [x + at[0], y + at[1]]);
-
-/** Where a line x = v (axis 0) or y = v (axis 1) crosses the polygon: the lowest and highest crossing along the other axis. */
-export function crossing(poly: Poly, axis: 0 | 1, v: number): [number, number] | undefined {
-  const o = 1 - axis;
-  let lo = Infinity, hi = -Infinity;
-  for (let i = 0; i < poly.length; i++) {
-    const a = poly[i], b = poly[(i + 1) % poly.length];
-    if (a[axis] === b[axis] || (a[axis] - v) * (b[axis] - v) > 0) continue;
-    const w = a[o] + ((v - a[axis]) / (b[axis] - a[axis])) * (b[o] - a[o]);
-    lo = Math.min(lo, w);
-    hi = Math.max(hi, w);
-  }
-  return lo <= hi ? [lo, hi] : undefined;
-}
 
 const rowAt = (p: Poly, share: number) => {
   const b = polygonBounds(p);

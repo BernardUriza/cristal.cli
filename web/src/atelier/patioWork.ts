@@ -6,6 +6,7 @@ import type { MotifParams } from "../graphics/domain/motifs/figures/index.ts";
 import type { Plan, Recipe } from "./director.ts";
 import { usesMotif } from "./morphReader.ts";
 import { readScene } from "./sceneReader.ts";
+import { WALL_RULE } from "./sceneRules.ts";
 import type { Composer } from "./work.ts";
 
 const AZIMUTHS = [0.55, 0.38, 0.72, 0.46, 0.64];
@@ -15,7 +16,8 @@ export function sceneFor(plan: Plan): Scene {
   const raw = plan.scene ?? readScene("", plan.motifs).scene;
   const isWallOnly = (g: Scene["groups"][number]) => Object.keys(g.creature.parts).length === 1 && g.creature.name === g.creature.parts.cuerpo;
   const base = { ...raw, groups: raw.groups.filter((g) => !isWallOnly(g) || plan.motifs.includes(g.creature.name as never)) };
-  const missing = plan.motifs.filter((m) => !base.groups.some((g) => usesMotif(g, m)));
+  const asked = !WALL_RULE.onlyWithoutFigures || !base.groups.length || plan.motifsBy === "humano";
+  const missing = asked ? plan.motifs.filter((m) => !base.groups.some((g) => usesMotif(g, m))) : [];
   return missing.length ? { ...base, groups: [...base.groups, ...readScene("", missing).scene.groups].slice(0, SCENE_LIMITS.groups) } : base;
 }
 

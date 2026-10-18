@@ -4,6 +4,7 @@ import { polygonBounds } from "../../../bezier.ts";
 import type { Shape, Vec2 } from "../../../shapes.ts";
 import { renamePart, type Part } from "../parts.ts";
 import type { MotifParams } from "../types.ts";
+import { contactSocket, jointContact } from "./contact.ts";
 import { attach, ROOT_FRAME, toWorld, type BodyFrame } from "./frame.ts";
 import { drawKind, kindName, socketNamed, unitPolygon } from "./kinds.ts";
 import { BODY_TUNING } from "./tuning.ts";
@@ -28,14 +29,14 @@ function trace(w: Walk, e: PartEdge, name: string): void {
   w.traces.set(key, t);
 }
 
-function chain(w: Walk, e: PartEdge, parent: PartNode, pf: BodyFrame, suffix: string): void {
+function chain(w: Walk, e: PartEdge, parent: PartNode, pf: BodyFrame, suffix: string, mirrored: boolean): void {
   const child = w.byId.get(e.to)!;
-  const joint = socketNamed(child.kind, e.joint)!;
+  const joint = jointContact(child.kind, socketNamed(child.kind, e.joint)!);
   const r = e.recursion;
   const times = r?.times ?? 1;
-  let f = attach(pf, socketNamed(parent.kind, e.socket)!, joint, child.scale, e.offset, e.angle);
+  let f = attach(pf, contactSocket(parent.kind, socketNamed(parent.kind, e.socket)!, e.offset, mirrored), joint, child.scale, [0, 0], e.angle);
   for (let k = 0; k < times; k++) {
-    if (k > 0 && r) f = attach(f, socketNamed(child.kind, r.via ?? "bottom")!, joint, r.scale, e.offset, r.turn * (r.wave && Math.floor((k - 1) / r.wave) % 2 === 1 ? -1 : 1));
+    if (k > 0 && r) f = attach(f, contactSocket(child.kind, socketNamed(child.kind, r.via ?? "bottom")!, e.offset), joint, r.scale, [0, 0], r.turn * (r.wave && Math.floor((k - 1) / r.wave) % 2 === 1 ? -1 : 1));
     const copy = times > 1 ? `~${k + 1}` : "";
     trace(w, e, pieceName(child, suffix, copy));
     if (k < times - 1) w.out.push({ node: child, name: pieceName(child, suffix, copy), frame: f });
@@ -46,9 +47,9 @@ function chain(w: Walk, e: PartEdge, parent: PartNode, pf: BodyFrame, suffix: st
 function place(w: Walk, node: PartNode, f: BodyFrame, suffix: string, copy: string): void {
   const outgoing = w.graph.edges.filter((e) => e.from === node.id);
   const branch = (e: PartEdge) => {
-    if (!e.mirror) return chain(w, e, node, e.flip ? { ...f, flip: !f.flip } : f, suffix);
-    chain(w, e, node, { ...f, flip: !f.flip }, `${suffix}1`);
-    chain(w, e, node, f, `${suffix}2`);
+    if (!e.mirror) return chain(w, e, node, e.flip ? { ...f, flip: !f.flip } : f, suffix, Boolean(e.flip));
+    chain(w, e, node, { ...f, flip: !f.flip }, `${suffix}1`, true);
+    chain(w, e, node, f, `${suffix}2`, false);
   };
   outgoing.filter((e) => e.behind).forEach(branch);
   w.out.push({ node, name: pieceName(node, suffix, copy), frame: f });

@@ -28,12 +28,12 @@ describe("members of one group", () => {
   const body = creatureOf(monks);
   const member = memberMaker([body], 1);
 
-  it("a procession of twelve monks reads as distinct monks, not clones", () => {
+  it("a procession of twelve monks reads as distinct monks, not clones (3+ clusters: before the contact fix floating heads counted as extra silhouettes)", () => {
     const clones = complexityReport({ list: procession(() => body.compiled), width: W, height: H }).silhouettes.creatures;
     const varied = complexityReport({ list: procession((i) => member(0, i).compiled), width: W, height: H }).silhouettes.creatures;
     expect(clones.distinctClusters).toBe(1);
     expect(varied.eligibleUnits).toBe(12);
-    expect(varied.distinctClusters).toBeGreaterThanOrEqual(4);
+    expect(varied.distinctClusters).toBeGreaterThanOrEqual(3);
     expect(varied.effectiveDiversity).toBeGreaterThan(clones.effectiveDiversity);
   });
 

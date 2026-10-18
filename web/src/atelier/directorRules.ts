@@ -27,11 +27,11 @@ export const MOTIF_RULES: MotifRule[] = [
   { match: /ojo|mirad|vigil|ve[rn] todo|observ/i, motif: "ojo", because: "hablaste de mirar: un ojo vigila" },
   { match: /mano|dedo|palma|toc[ao]r|agarr/i, motif: "mano", because: "hablaste de manos" },
   { match: /cr[aá]neo|calavera|muert|hueso|esquelet/i, motif: "craneo", because: "hablaste de la muerte: un cráneo" },
-  { match: /perro|can|ladr|mascota/i, motif: "perro", because: "nombraste un perro" },
+  { match: /perro|\bcan(?:es|ino|ina)?\b|ladr|mascota/i, motif: "perro", because: "nombraste un perro" },
   { match: /jaguar|felino|gato|tigre|pantera|selva/i, motif: "jaguar", because: "nombraste un felino: un jaguar" },
   { match: /escalera|peldañ|subir|ascen/i, motif: "escalera", because: "hablaste de subir: una escalera" },
   { match: /m[aá]scara|rostro|cara|disfraz|teatro/i, motif: "mascara", because: "hablaste de rostros: una máscara" },
-  { match: /sirena|mar|agua|pez|escama|nadar/i, motif: "sirena", because: "hablaste del agua: una sirena" },
+  { match: /sirena|\bmar(?:es)?\b|\bagua|\bpez\b|\bpeces\b|escama|nadar/i, motif: "sirena", because: "hablaste del agua: una sirena" },
 ];
 
 export type OrnamentRule = { match: RegExp; language: OrnamentLanguage; because: string };

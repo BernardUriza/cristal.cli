@@ -23,7 +23,7 @@ const angleOf = (v: Vec2): number => Math.atan2(v[1], v[0]) / RAD;
 
 function alignment(socket: Socket, joint: Socket): number {
   if (joint.name === "center") return 0;
-  return angleOf(socket.dir) - angleOf([-joint.at[0], -joint.at[1]]);
+  return angleOf(socket.dir) - angleOf([-joint.dir[0], -joint.dir[1]]);
 }
 
 /** The child joint lands on the parent socket (plus offset in parent units); with no explicit angle the limb points along the socket direction. */

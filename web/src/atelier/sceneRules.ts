@@ -4,8 +4,25 @@ import { FAMILY_TEMPLATES } from "./creatureWords.ts";
 
 export const NUMBER_WORDS: Record<string, number> = {
   un: 1, una: 1, uno: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5, seis: 6, siete: 7, ocho: 8, nueve: 9, diez: 10,
-  once: 11, doce: 12, trece: 13, catorce: 14, quince: 15, veinte: 20, docena: 12, cientos: 24, miles: 24, muchos: 12, muchas: 12, multitud: 24,
+  once: 11, doce: 12, trece: 13, catorce: 14, quince: 15, veinte: 20, docena: 12, cientos: 24, miles: 24, muchos: 12, muchas: 12,
 };
+
+/** A collective noun with no number of its own: the group is plural, its size seeded inside `range`. */
+export const COLLECTIVE_NOUNS: { match: RegExp; range: readonly [number, number] }[] = [
+  { match: /^(?:procesi[oó]n|coro|cortejo|desfile|manada|comitiva|ronda)$/i, range: [7, 12] },
+  { match: /^(?:multitud|ej[eé]rcito|enjambre|legi[oó]n|horda)$/i, range: [12, 24] },
+];
+
+/** A size word right after a named figure is that figure's size, not another figure: «un jaguar gigante» is one jaguar, the protagonist. */
+export const SIZE_WORDS: { match: RegExp; scale: number; because: string }[] = [
+  { match: /^(?:gigantes?|enormes?|colosal(?:es)?|inmens[oa]s?|descomunal(?:es)?)$/i, scale: 1.8, because: "protagonista a escala 1.8" },
+];
+
+/** The materials of a group end where another figure enters with its own article or number, or a clause begins. */
+export const MATERIAL_STOP = /\s(?:que|donde|cuando|mientras)\b|\s(?:a|al|y|e|con|ante|sobre|entre|hacia|junto a|frente a)\s+(?:un|una|unos|unas|el|la|los|las|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|\d+)\b/i;
+
+/** The wall only puts its motifs in the patio when the narration brought no figure of its own. */
+export const WALL_RULE = { onlyWithoutFigures: true, because: "la narración ya trae sus figuras: la pared no mete motivos que nadie nombró" } as const;
 
 export type CreatureTemplate = { match: RegExp; name: string; parts: Partial<Record<BodyPart, SceneMotif>>; family?: BodyFamily };
 

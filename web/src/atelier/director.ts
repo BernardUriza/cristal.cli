@@ -66,7 +66,7 @@ export function direct(narration: string, seed = seedFromNarration(narration)): 
         ? { decision: { field: "ornament", value: DEFAULT_PROGRAM_ORNAMENT }, because: "sin lenguaje pedido: greca en muros, ajedrez en suelos y azoteas, estrías en las torres del programa", source: "defecto" }
         : { decision: { field: "ornament", value: DEFAULT_ORNAMENT }, because: "sin lenguaje pedido: greca en muros y ajedrez en el suelo", source: "defecto" },
   );
-  const reading = readScene(narration, motifs.values);
+  const reading = readScene(narration, motifs.values, seed);
   choices.push({
     decision: { field: "scene", value: reading.scene },
     because: reading.because.join("; ") || "sin criaturas nombradas: la arquitectura sola",
@@ -100,13 +100,17 @@ export type Plan = {
   columns: number | null;
   scene: Scene | null;
   program: ArchitectureProgram | null;
+  motifsBy?: ChoiceSource;
 };
 
 export function planOf(recipe: Recipe): Plan {
   const plan: Plan = { composition: "patio", motifs: [], ornament: DEFAULT_ORNAMENT, anomaly: "none", palette: "friedeberg", density: 0.6, complexity: 3, anomalyRate: 0.4, symmetry: "bilateral", projection: "perspective", columns: null, scene: null, program: null };
-  for (const { decision } of recipe.choices) {
+  for (const { decision, source } of recipe.choices) {
     if (decision.field === "composition") plan.composition = decision.value;
-    else if (decision.field === "motifs") plan.motifs = decision.value;
+    else if (decision.field === "motifs") {
+      plan.motifs = decision.value;
+      plan.motifsBy = source;
+    }
     else if (decision.field === "ornament") plan.ornament = decision.value;
     else if (decision.field === "anomaly") plan.anomaly = decision.value;
     else if (decision.field === "scene") plan.scene = decision.value;
