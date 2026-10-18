@@ -6,6 +6,7 @@ export const DIRECT_TIMEOUT_MS = 90000;
 
 import { sanitizeScene } from "../graphics/config/scene.ts";
 import { parseProgram } from "./programApi.ts";
+import { ARCH_RULES } from "../graphics/config/rewrites.ts";
 import { ANOMALIES, COMPOSITIONS, MAX_LANGUAGES, MAX_MOTIFS, MOTIF_NAMES, ORNAMENT_LANGUAGES, isOneOf } from "./vocabulary.ts";
 
 type WireChoice = { field: string; value: unknown; because: string };
@@ -26,6 +27,10 @@ function decisionOf(raw: WireChoice, seed: number): Decision | null {
   if (field === "scene") {
     const scene = sanitizeScene(value);
     return scene && scene.groups.length > 0 ? { field, value: scene } : null;
+  }
+  if (field === "rewrites") {
+    const list = subset(ARCH_RULES, value, ARCH_RULES.length);
+    return list ? { field, value: list } : null;
   }
   if (field === "composition") return isOneOf(COMPOSITIONS, value) ? { field, value } : null;
   if (field === "anomaly") return isOneOf(ANOMALIES, value) ? { field, value } : null;

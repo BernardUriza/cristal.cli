@@ -1,10 +1,11 @@
 import type { ConfigInput } from "../graphics/config/types.ts";
 import type { Scene } from "../graphics/config/scene.ts";
 import type { ArchitectureProgram } from "../graphics/domain/grammar/types.ts";
+import { ARCH_RULES, type ArchRule } from "../graphics/config/rewrites.ts";
 import { readProgram } from "./programReader.ts";
 import { readScene } from "./sceneReader.ts";
 import { fnv1a } from "../shared/rng";
-import { DEFAULT_ANOMALY, DEFAULT_COMPOSITION_BECAUSE, DEFAULT_DENSITY, DEFAULT_ORNAMENT, DEFAULT_PROGRAM_ORNAMENT, DIRECTOR_RULES, MAX_COMPLEXITY, MOTIF_RULES, ORNAMENT_RULES, WORDS_PER_COMPLEXITY_LEVEL, type Decision } from "./directorRules.ts";
+import { DEFAULT_ANOMALY, DEFAULT_COMPOSITION_BECAUSE, DEFAULT_DENSITY, DEFAULT_ORNAMENT, DEFAULT_PROGRAM_ORNAMENT, DIRECTOR_RULES, MAX_COMPLEXITY, MOTIF_RULES, ORNAMENT_RULES, REWRITE_RULES, WORDS_PER_COMPLEXITY_LEVEL, type Decision } from "./directorRules.ts";
 import { MAX_LANGUAGES, MAX_MOTIFS, type Anomaly, type Composition, type MotifName, type OrnamentLanguage } from "./vocabulary.ts";
 
 export type ChoiceSource = "narración" | "defecto" | "humano" | "pedro";
@@ -66,6 +67,7 @@ export function direct(narration: string, seed = seedFromNarration(narration)): 
         ? { decision: { field: "ornament", value: DEFAULT_PROGRAM_ORNAMENT }, because: "sin lenguaje pedido: greca en muros, ajedrez en suelos y azoteas, estrías en las torres del programa", source: "defecto" }
         : { decision: { field: "ornament", value: DEFAULT_ORNAMENT }, because: "sin lenguaje pedido: greca en muros y ajedrez en el suelo", source: "defecto" },
   );
+  choices.push(rewritesOf(narration));
   const reading = readScene(narration, motifs.values, seed);
   choices.push({
     decision: { field: "scene", value: reading.scene },
@@ -73,6 +75,13 @@ export function direct(narration: string, seed = seedFromNarration(narration)): 
     source: reading.because.length ? "narración" : "defecto",
   });
   return { title: titleFor(narration), narration, seed, choices, renderer: "canvas+svg", reference: "ninguna imagen externa" };
+}
+
+function rewritesOf(narration: string): Choice {
+  const hits = REWRITE_RULES.filter((r) => r.match.test(narration));
+  if (hits.length === 0) return { decision: { field: "rewrites", value: [] }, because: "no pediste arquitectura recursiva", source: "defecto" };
+  const value = ARCH_RULES.filter((id) => hits.some((r) => r.rules.includes(id)));
+  return { decision: { field: "rewrites", value }, because: hits.map((r) => `${r.because} (encontré «${narration.match(r.match)?.[0]}»)`).join("; "), source: "narración" };
 }
 
 function matchedList<T extends string>(narration: string, rules: { match: RegExp; value: T; because: string }[], max: number): { values: T[]; because: string[] } {
@@ -101,10 +110,11 @@ export type Plan = {
   scene: Scene | null;
   program: ArchitectureProgram | null;
   motifsBy?: ChoiceSource;
+  rewrites: ArchRule[];
 };
 
 export function planOf(recipe: Recipe): Plan {
-  const plan: Plan = { composition: "patio", motifs: [], ornament: DEFAULT_ORNAMENT, anomaly: "none", palette: "friedeberg", density: 0.6, complexity: 3, anomalyRate: 0.4, symmetry: "bilateral", projection: "perspective", columns: null, scene: null, program: null };
+  const plan: Plan = { composition: "patio", motifs: [], ornament: DEFAULT_ORNAMENT, anomaly: "none", palette: "friedeberg", density: 0.6, complexity: 3, anomalyRate: 0.4, symmetry: "bilateral", projection: "perspective", columns: null, scene: null, program: null, rewrites: [] };
   for (const { decision, source } of recipe.choices) {
     if (decision.field === "composition") plan.composition = decision.value;
     else if (decision.field === "motifs") {
@@ -118,6 +128,7 @@ export function planOf(recipe: Recipe): Plan {
     else if (decision.field === "palette") plan.palette = decision.value;
     else if (decision.field === "symmetry") plan.symmetry = decision.value;
     else if (decision.field === "projection") plan.projection = decision.value;
+    else if (decision.field === "rewrites") plan.rewrites = decision.value;
     else plan[decision.field] = decision.value;
   }
   return plan;

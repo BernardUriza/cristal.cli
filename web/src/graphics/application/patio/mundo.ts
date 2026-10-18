@@ -12,6 +12,7 @@ import { friso } from "./friso.ts";
 import { REASON_BODIES } from "./habitar.ts";
 import { decorSurface, ornamento, type FriezeOf } from "./ornamento.ts";
 import { poblado } from "./poblado.ts";
+import { recursion } from "./recursion.ts";
 import { siteOfBuilding } from "./lugares.ts";
 import { solidItems } from "./solidos.ts";
 import { visibleFaces, type Surface } from "./surfaces.ts";
@@ -38,7 +39,7 @@ export function habitada(items: SceneItem[], forward: PatioContext["projector"][
     shapes,
     provenance: {
       algorithm: `${base!.algorithm}; figuras y sólidos que las tapan en el MISMO grafo de precedencia (planos de eje entre cajas en metros, sólo pares que se traslapan en pantalla) y orden de Kahn: una torre delante de una figura se pinta después de ella`,
-      params: { ...base!.params, solidos_delante: deferred, T2_fachadas: t("T2_BODY_AS_FACADE"), T3_portales: t("T3_OPENING_AS_PORTAL"), T4_frisos: t("T4_INHABITED_FRIEZE") },
+      params: { ...base!.params, solidos_delante: deferred, T2_fachadas: t("T2_BODY_AS_FACADE"), T3_portales: t("T3_OPENING_AS_PORTAL"), T4_frisos: t("T4_INHABITED_FRIEZE"), T5_edificios: t("T5_BUILDING_AS_ORNAMENT"), T6_templos: t("T6_ARCHITECTURE_AS_ARCHITECTURE"), T7_espacios: t("T7_ORNAMENT_AS_SPACE") },
       decision: `${base!.decision}. Las etapas «volúmenes» y «figuras» se funden aquí para lo que está delante de una figura: la oclusión lo exige`,
       rewrites: records,
       ...(base!.regions ? { regions: base!.regions } : {}),
@@ -58,17 +59,18 @@ export function mundo(ctx: PatioContext, surfaces: Surface[], people: Inhabitant
   const kept = surfaces.filter((s) => !columns.bySolid.has(s.face.solid.id));
   const motifs = scene ? motifsOf(scene).map((m) => MOTIFS[m]).filter(Boolean) : [];
   const frieze: FriezeOf | undefined = scene ? (s) => friso(ctx, s, ink, motifs, seed, REASON_BODIES) : undefined;
+  const rec = recursion(ctx, kept, ink, seed);
   const solids = solidItems(ctx, faces, columns);
   for (const s of solids) tagRoot(s.shapes, CLOISTER);
   const placed = scene ? poblado(siteOfBuilding(ctx.building, ctx.projector), scene, people!.pal, people!.detail, seed, mini) : undefined;
   const forward = ctx.projector.forward;
   const front = placed ? occluders(solids, placed.items, forward) : new Set<string>();
   const back = paintOrder(solids.filter((s) => !front.has(s.id)), forward);
-  const world: World = { volumenes: volumenes(ctx, back, columns.records, front.size), ornamento: ornamento(ctx, kept.filter((s) => !front.has(s.face.solid.id)), frieze) };
+  const world: World = { volumenes: volumenes(ctx, back, columns.records, front.size), ornamento: ornamento(ctx, kept.filter((s) => !front.has(s.face.solid.id)), frieze, rec) };
   if (!placed) return world;
   const records = [...placed.records];
   const ahead = solids.filter((s) => front.has(s.id)).map((s) => {
-    const decor = kept.filter((k) => k.face.solid.id === s.id).map((k) => decorSurface(ctx, k, frieze));
+    const decor = kept.filter((k) => k.face.solid.id === s.id).map((k) => decorSurface(ctx, k, frieze, undefined, rec));
     records.push(...decor.flatMap((d) => d.records));
     return { ...s, shapes: [...s.shapes, ...decor.flatMap((d) => d.shapes)] };
   });

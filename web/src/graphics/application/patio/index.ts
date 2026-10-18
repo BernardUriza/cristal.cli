@@ -35,7 +35,7 @@ export function patioContext(input: Partial<PatioConfig>, rng?: Rng, extra: read
 }
 
 export function miniPatio(config: PatioConfig, seed: number): MiniScene {
-  const inner = composePatio({ ...config, seed, anomaly: "none", detail: 1, width: MINI_PX, height: MINI_PX, azimuth: config.azimuth }, mulberry32((seed + 1) * 7919));
+  const inner = composePatio({ ...config, seed, anomaly: "none", rewrites: [], detail: 1, width: MINI_PX, height: MINI_PX, azimuth: config.azimuth }, mulberry32((seed + 1) * 7919));
   return { shapes: inner.stages.slice(0, 3).flatMap((s) => s.shapes), width: MINI_PX, height: MINI_PX };
 }
 

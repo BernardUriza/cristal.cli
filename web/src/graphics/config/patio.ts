@@ -2,6 +2,7 @@ import type { CloisterLayout } from "../domain/architecture/layout.ts";
 import type { DrawingStyle } from "./drawings.ts";
 import { PALETTES, type PaletteName } from "./palettes.ts";
 import { CLOISTER_LAYOUT } from "./programs.ts";
+import { ARCH_RULES, type ArchRule } from "./rewrites.ts";
 import { DEFAULT_ARCHITECTURE, type ArchitectureSpec } from "./scene.ts";
 
 export type OrnamentLanguage = "greca" | "chevrón" | "ajedrez" | "estrías" | "roseta" | "sierpinski";
@@ -21,6 +22,7 @@ export type PatioConfig = {
   towers: 2 | 4;
   architecture: ArchitectureSpec;
   anomalyRate: number;
+  rewrites: ArchRule[];
   width: number;
   height: number;
 };
@@ -40,6 +42,7 @@ export const DEFAULT_PATIO: PatioConfig = {
   towers: 4,
   architecture: DEFAULT_ARCHITECTURE,
   anomalyRate: 0.4,
+  rewrites: [],
   width: 1400,
   height: 1000,
 };
@@ -110,12 +113,13 @@ function fail(message: string): never {
 }
 
 export function resolvePatio(input: Partial<PatioConfig> = {}): PatioConfig {
-  const cfg: PatioConfig = { ...DEFAULT_PATIO, ...input, ornament: [...(input.ornament ?? DEFAULT_PATIO.ornament)] };
+  const cfg: PatioConfig = { ...DEFAULT_PATIO, ...input, ornament: [...(input.ornament ?? DEFAULT_PATIO.ornament)], rewrites: [...(input.rewrites ?? DEFAULT_PATIO.rewrites)] };
   if (!Number.isInteger(cfg.seed) || cfg.seed < 0) fail(`seed must be a non-negative integer, got ${cfg.seed}`);
   if (!(cfg.palette in PALETTES)) fail(`unknown palette ${cfg.palette}`);
   if (!(cfg.density >= 0 && cfg.density <= 1)) fail(`density must be in 0..1, got ${cfg.density}`);
   if (![1, 2, 3].includes(cfg.detail)) fail(`detail must be 1, 2 or 3, got ${cfg.detail}`);
   for (const lang of cfg.ornament) if (!ORNAMENT_LANGUAGES.includes(lang)) fail(`unknown ornament language ${lang}`);
+  for (const r of cfg.rewrites) if (!ARCH_RULES.includes(r)) fail(`unknown architectural rewrite ${r}`);
   if (!PATIO_ANOMALIES.includes(cfg.anomaly)) fail(`unknown anomaly ${cfg.anomaly}`);
   if (!(cfg.anomalyRate >= 0 && cfg.anomalyRate <= 1)) fail(`anomalyRate must be in 0..1, got ${cfg.anomalyRate}`);
   if (!Number.isFinite(cfg.azimuth)) fail(`azimuth must be a finite angle in radians`);

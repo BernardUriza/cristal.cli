@@ -16,6 +16,7 @@ import type { Surface } from "./surfaces.ts";
 import type { PatioContext } from "./types.ts";
 import type { Decor } from "./friso.ts";
 import type { RewriteRecord } from "../../domain/rewrite/rewrite.ts";
+import { recursiveDecor, type Recursion } from "./recursion.ts";
 
 const STOREY_M = 3;
 
@@ -128,19 +129,28 @@ export function ornamentFor(s: Surface, ctx: PatioContext, frieze = false, log?:
 
 export type FriezeOf = (s: Surface) => Decor;
 
-export function decorSurface(ctx: PatioContext, s: Surface, frieze?: FriezeOf, log?: Cut[]): Decor {
+export function decorSurface(ctx: PatioContext, s: Surface, frieze?: FriezeOf, log?: Cut[], rec?: Recursion): Decor {
+  const lived = rec && recursiveDecor(ctx, s, rec);
+  if (lived) return lived;
   const t4 = frieze ? frieze(s) : { shapes: [], records: [] };
   const local = ornamentFor(s, ctx, t4.shapes.length > 0, log);
   return { shapes: [...mapShapes(local, s.frame, ctx.projector), ...t4.shapes], records: t4.records };
 }
 
-export function ornamento(ctx: PatioContext, surfaces: Surface[], frieze?: FriezeOf): Stage {
+export function archCounts(records: readonly RewriteRecord[]): Record<string, number> {
+  const n = (rule: string) => records.filter((r) => r.rule === rule).length;
+  return { T4_frisos: n("T4_INHABITED_FRIEZE"), T5_edificios: n("T5_BUILDING_AS_ORNAMENT"), T6_templos: n("T6_ARCHITECTURE_AS_ARCHITECTURE"), T7_espacios: n("T7_ORNAMENT_AS_SPACE") };
+}
+
+export const RECURSION_NOTE = "; T5–T7: en los muros anfitriones el panel es un edificio, el capitel o la cubierta un templo y la celda una escena con dos volúmenes, encadenados hasta maxDepth o el mínimo proyectado";
+
+export function ornamento(ctx: PatioContext, surfaces: Surface[], frieze?: FriezeOf, rec?: Recursion): Stage {
   const shapes: Shape[] = [];
   const records: RewriteRecord[] = [];
   const count: Record<string, number> = {};
   const cuts: Cut[] = [];
   for (const s of surfaces) {
-    const d = decorSurface(ctx, s, frieze, cuts);
+    const d = decorSurface(ctx, s, frieze, cuts, rec);
     if (d.shapes.length === 0) continue;
     count[s.role] = (count[s.role] ?? 0) + 1;
     shapes.push(...d.shapes);
@@ -151,8 +161,8 @@ export function ornamento(ctx: PatioContext, surfaces: Surface[], frieze?: Friez
     shapes,
     provenance: {
       algorithm: "ornamento por superficie y función: marco local (origen abajo-izquierda, u arista, v vertical), motivo 2D en metros, mapeo punto a punto a 3D y proyección",
-      params: { detalle: ctx.config.detail, densidad: ctx.config.density, lenguajes: ctx.config.ornament.join(","), ...count, frisos_habitados: records.length, anomalyRate: ctx.config.anomalyRate, ...cutsParams(cuts) },
-      decision: `muro exterior → banda bajo cornisa + ventanas ciegas, una fila por cada piso de 3 m; torre → estrías + roseta alta + una aspillera por cada 4 m de altura; arcada → chevrón apilado en pilares y banda en dinteles; cubierta de torre → sierpinski; losas lisas. Tres niveles: bandas / subdivisiones / puntos y rosetas; ${SYMMETRY_NOTE}` + (records.length ? `; T4: en ${records.length} muros altos la banda se vuelve friso de celdas habitadas` : ""),
+      params: { detalle: ctx.config.detail, densidad: ctx.config.density, lenguajes: ctx.config.ornament.join(","), ...count, frisos_habitados: archCounts(records).T4_frisos, ...archCounts(records), anomalyRate: ctx.config.anomalyRate, ...cutsParams(cuts) },
+      decision: `muro exterior → banda bajo cornisa + ventanas ciegas, una fila por cada piso de 3 m; torre → estrías + roseta alta + una aspillera por cada 4 m de altura; arcada → chevrón apilado en pilares y banda en dinteles; cubierta de torre → sierpinski; losas lisas. Tres niveles: bandas / subdivisiones / puntos y rosetas; ${SYMMETRY_NOTE}` + (archCounts(records).T4_frisos ? `; T4: en ${archCounts(records).T4_frisos} muros altos la banda se vuelve friso de celdas habitadas` : "") + (rec ? RECURSION_NOTE : ""),
       ...(records.length ? { rewrites: records } : {}),
     },
   };

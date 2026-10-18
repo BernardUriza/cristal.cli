@@ -224,3 +224,17 @@ def test_prompt_teaches_blend_and_caricature():
     prompt = open("prompts/atelier.md", encoding="utf-8").read()
     for word in ('"blend"', '"caricature"', '"punta"', "mitad jaguar mitad sirena"):
         assert word in prompt
+
+
+def test_rewrites_keep_only_the_known_architectural_rules():
+    client, _ = make_client(
+        {
+            "title": "La ciudad dentro de la ciudad",
+            "choices": [{"field": "rewrites", "value": ["T6", "T9", "T5", "T6", 7], "because": "dijiste templos en los capiteles"}],
+        }
+    )
+    res = client.post("/atelier/direct", json={"narration": "una ciudad dentro de la ciudad con templos en los capiteles", "seed": 9})
+    assert res.status_code == 200
+    assert res.json()["choices"] == [{"field": "rewrites", "value": ["T6", "T5"], "because": "dijiste templos en los capiteles", "source": "pedro"}]
+    prompt = open("prompts/atelier.md", encoding="utf-8").read()
+    assert all(word in prompt for word in ('- rewrites:', '"T5"', '"T6"', '"T7"', "templos en los capiteles"))

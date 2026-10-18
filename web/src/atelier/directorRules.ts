@@ -2,6 +2,7 @@ import type { PaletteName } from "../graphics/config/palettes.ts";
 import type { ProjectionKind, Symmetry } from "../graphics/config/types.ts";
 import type { Scene } from "../graphics/config/scene.ts";
 import type { ArchitectureProgram } from "../graphics/domain/grammar/types.ts";
+import type { ArchRule } from "../graphics/config/rewrites.ts";
 import type { Anomaly, Composition, MotifName, OrnamentLanguage } from "./vocabulary.ts";
 
 export type Decision =
@@ -17,7 +18,8 @@ export type Decision =
   | { field: "complexity"; value: number }
   | { field: "density"; value: number }
   | { field: "anomalyRate"; value: number }
-  | { field: "columns"; value: number };
+  | { field: "columns"; value: number }
+  | { field: "rewrites"; value: ArchRule[] };
 
 export type DirectorRule = { match: RegExp; decision: Decision; because: string };
 
@@ -43,6 +45,15 @@ export const ORNAMENT_RULES: OrnamentRule[] = [
   { match: /estr[ií]a|acanalad|l[ií]neas vertical|columna/i, language: "estrías", because: "hablaste de columnas: estrías" },
   { match: /roset|flor|p[eé]talo|sol\b|estrella/i, language: "roseta", because: "hablaste de flores o soles: rosetas" },
   { match: /tri[aá]ngul|fractal|sierpinski|infinit|recursiv/i, language: "sierpinski", because: "hablaste de infinito: Sierpinski" },
+];
+
+export type RewriteRule = { match: RegExp; rules: ArchRule[]; because: string };
+
+export const REWRITE_RULES: RewriteRule[] = [
+  { match: /ciudad(?:es)? dentro de (?:la|una|otra) ciudad|edificios? (?:en|dentro de) (?:los |las )?(?:paneles|fachadas|muros)|fachadas? (?:que son|hechas de) edificios/i, rules: ["T5"], because: "pediste una ciudad dentro de la ciudad: cada panel de fachada es un edificio con entrada, cubierta y ventanas" },
+  { match: /templos? en (?:los |las )?(?:capiteles|frontones|cubiertas|techos|azoteas)|capiteles? (?:que son|como|con forma de) templos?/i, rules: ["T6"], because: "pediste templos en los capiteles: capitel, frontón o cubierta se vuelven un templo que cambia la silueta" },
+  { match: /frisos? que son ventanas|ventanas? que son (?:mundos|espacios|cuartos|portales|escenas)|losetas? que son/i, rules: ["T7"], because: "pediste frisos que son ventanas: cada celda abre un cuarto con dos volúmenes" },
+  { match: /infinit|recursiv/i, rules: ["T5", "T6", "T7"], because: "pediste lo recursivo: panel → edificio, cubierta → templo, ventana → espacio, encadenados" },
 ];
 
 export const DEFAULT_ORNAMENT: OrnamentLanguage[] = ["greca", "ajedrez"];

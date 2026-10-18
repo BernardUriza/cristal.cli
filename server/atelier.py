@@ -27,6 +27,7 @@ _COMPOSITIONS = ("programa", "templo", "patio")
 _MOTIFS = ("ojo", "mano", "craneo", "perro", "jaguar", "escalera", "mascara", "sirena")
 _ORNAMENT = ("greca", "chevrón", "ajedrez", "estrías", "roseta", "sierpinski")
 _ANOMALIES = ("none", "escalera-imposible", "edificio-anidado", "torre-flotante", "columna-figura")
+_REWRITES = ("T5", "T6", "T7")
 _MAX_LIST = 3
 _MAX_CHOICES = 12
 _PARTS = ("cabeza", "ojos", "cuerpo", "manos", "cola", "pies")
@@ -215,6 +216,8 @@ def _coerce(field: str, value: Any) -> str | int | float | list[str] | dict[str,
         return _subset(value, _MOTIFS)
     if field == "ornament":
         return _subset(value, _ORNAMENT)
+    if field == "rewrites":
+        return _subset(value, _REWRITES)
     if field == "palette":
         return value if value in _PALETTES else None
     if field == "symmetry":

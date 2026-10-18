@@ -15,7 +15,7 @@ export function edificioAnidado(ctx: PatioContext, surfaces: Surface[], compose:
   const empty: Stage = { name: "anomalía", shapes: [], provenance: { algorithm: "edificio anidado", params: {}, decision: "ninguna cara de torre mira a cámara: no hay dónde anidar" } };
   if (faces.length === 0) return empty;
   const host = faces[0];
-  const inner = compose({ ...ctx.config, anomaly: "none", detail: 1, width: NESTED_PX.width, height: NESTED_PX.height });
+  const inner = compose({ ...ctx.config, anomaly: "none", rewrites: [], detail: 1, width: NESTED_PX.width, height: NESTED_PX.height });
   const { width: w, height: h } = host.frame;
   const frame = subFrame(host.frame, INSET, INSET + 0.8, w - 2 * INSET, h - 2 * INSET - 0.8, inner.width, inner.height);
   const scale = Math.hypot(...frame.u);
