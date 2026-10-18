@@ -1,6 +1,7 @@
 import type { Rng } from "../../../shared/rng.ts";
 import { mapShapePoints, type PointMap } from "../mapPoints.ts";
 import { frameOf, matchesPart, quad, type Frame2, type Part, type PartMatch } from "../motifs/figures/parts.ts";
+import { tagRewrite } from "../semantic.ts";
 import { group, type Shape, type Vec2 } from "../shapes.ts";
 
 export type Rewrite = {
@@ -10,7 +11,7 @@ export type Rewrite = {
   constraints: { preserveBounds: boolean; preserveAnchors: boolean; maxDepth: number; minProjectedPx: number };
 };
 
-export type RewriteRecord = { operation: "rewrite"; rule: string; sourceNode: string; outputNode: string; depth: number; seed: number; reason: string; region?: string };
+export type RewriteRecord = { operation: "rewrite"; rule: string; sourceNode: string; outputNode: string; sourceRole: string; replacementRole: string; depth: number; seed: number; reason: string; region?: string };
 
 export type Ink = { fill: string; ink: string; accent: string; deep: string; line: number; detail: 1 | 2 | 3 };
 
@@ -80,10 +81,10 @@ export function applyRewrite(rule: Rule, source: Part, env: RewriteEnv, rules: r
   const mask = source.mask ?? (rw.constraints.preserveBounds ? quad(0, 0, frame.w, frame.h).map(at) : undefined);
   const part: Part = { ...out, anchors: rw.constraints.preserveAnchors ? { ...out.anchors, ...source.anchors } : out.anchors, mask, frame };
   const depth = env.depth + 1;
-  const record: RewriteRecord = { operation: "rewrite", rule: rw.id, sourceNode: source.id, outputNode: part.id, depth, seed: env.seed, reason: env.reason, ...(env.region ? { region: env.region } : {}) };
+  const record: RewriteRecord = { operation: "rewrite", rule: rw.id, sourceNode: source.id, outputNode: part.id, sourceRole: source.geometryId, replacementRole: rw.replaceWith, depth, seed: env.seed, reason: env.reason, ...(env.region ? { region: env.region } : {}) };
   const nested = rewriteTree(part, rules, { ...env, depth }, false);
   const shapes = [...mapShapePoints(made.shapes, at), ...nested.shapes];
-  return { part, shapes: [group([], shapes, mask)], records: [record, ...nested.records] };
+  return { part, shapes: [tagRewrite(group([], shapes, mask), part.id)], records: [record, ...nested.records] };
 }
 
 export type TreeResult = { rootReplaced: boolean; shapes: Shape[]; records: RewriteRecord[] };

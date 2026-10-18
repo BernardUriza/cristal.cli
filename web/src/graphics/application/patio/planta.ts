@@ -3,6 +3,7 @@ import { openingSpan, type Space } from "../../domain/architecture/plan.ts";
 import { regularPolygon } from "../../domain/geometry.ts";
 import { filled, line, polygon, polyline, rect, solid, stroked, type Shape, type Style, type Vec2 } from "../../domain/shapes.ts";
 import type { Stage } from "../compose.ts";
+import { boxOn, siteEvidence } from "../siteEvidence.ts";
 import { paintFaces } from "../drawings/faces.ts";
 import { visibleFaces } from "./surfaces.ts";
 import type { PatioContext } from "./types.ts";
@@ -85,6 +86,11 @@ function routes(ctx: PatioContext): Shape[] {
   return out;
 }
 
+function declaredTop(ctx: PatioContext): number {
+  const h = ctx.building.plan.layout.heights;
+  return Math.max(...ctx.building.plan.spaces.map((s) => s.height + h.roofSlab + (s.kind === "tower" ? h.towerRoof : 0)));
+}
+
 export function planta(ctx: PatioContext): Stage {
   const patio = ctx.building.plan.spaces.find((s) => s.kind === "courtyard")!;
   const slab = paintFaces(visibleFaces(ctx).filter((f) => f.solid.tag.kind === "floor"), ctx.projector, ctx.style);
@@ -99,6 +105,7 @@ export function planta(ctx: PatioContext): Stage {
       algorithm: "planta real proyectada sobre y=0: explanada con retícula, cenefa de ajedrez alrededor del zócalo, ajedrez del patio por baldosa, contorno de cada espacio y grafo de recorridos por cada hueco",
       params: { baldosa_m: TILE, reticula_m: GRID, explanada_m: PATIO_APRON, baldosas_invertidas: flipped, recorridos: ctx.building.plan.openings.length },
       decision: "el suelo organiza la composición: se lee como mapa (nodos en el centro de cada espacio, caminos por los huecos, avenida de entrada); los rombos aparecen con density ≥ 0.5",
+      site: siteEvidence("patio", boxOn(ctx.building.plan.bounds, 0, declaredTop(ctx)), ctx.projector.toScreen),
     },
   };
 }

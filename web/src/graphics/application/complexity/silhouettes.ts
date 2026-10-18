@@ -10,10 +10,10 @@ import type { SilhouetteReport, SilhouetteUnit } from "./types.ts";
 
 const opaque = (s: Style) => s.fill !== undefined && s.fill !== "none" && s.opacity !== 0;
 
-type Painted = { roots: { id: string; root: string; kind: SemanticKind }[]; owner: Int32Array; projectedPx: number[]; cellPx: number; cols: number; rows: number };
+export type Painted = { roots: { id: string; root: string; kind: SemanticKind }[]; owner: Int32Array; projectedPx: number[]; cellPx: number; cols: number; rows: number };
 
 /** Paints every filled piece of a building or creature in list order into one owner grid: the last to cover a cell owns it, as on screen. */
-function paint(list: DisplayList, width: number, height: number, tuning: ComplexityTuning): Painted {
+export function paint(list: DisplayList, width: number, height: number, tuning: ComplexityTuning): Painted {
   const grid = makeGrid(width, height, tuning.silhouetteCellPx);
   const leaves = flattenLeaves(list, tuning.circleSegments).filter((l) => l.root && l.closed && l.points.length >= 3 && opaque(l.style));
   const index = new Map<string, number>();
@@ -68,7 +68,7 @@ export function clusterShapes(descriptors: readonly ShapeDescriptor[], tuning: C
   return completeLinkage(descriptors.length, (i, j) => descriptorDistance(descriptors[i], descriptors[j], tuning.silhouetteWeights), tuning.silhouetteClusterDistance);
 }
 
-export function silhouetteReport(units: readonly SilhouetteUnit[], kind: SemanticKind, canvasArea: number, tuning: ComplexityTuning): SilhouetteReport {
+export function silhouetteReport(units: readonly SilhouetteUnit[], kind: SemanticKind, tuning: ComplexityTuning): SilhouetteReport {
   const own = units.filter((u) => u.kind === kind);
   const eligible = own.filter((u) => isEligible(u, tuning));
   const labels = clusterShapes(eligible.map((u) => u.descriptor), tuning);
@@ -77,7 +77,6 @@ export function silhouetteReport(units: readonly SilhouetteUnit[], kind: Semanti
     eligibleUnits: eligible.length,
     distinctClusters: new Set(labels).size,
     effectiveDiversity: effectiveDiversity(labels),
-    visibleAreaCoverage: eligible.reduce((s, u) => s + u.areaPx, 0) / canvasArea,
     monolithic: kind === "building" && own.length === 1,
   };
 }

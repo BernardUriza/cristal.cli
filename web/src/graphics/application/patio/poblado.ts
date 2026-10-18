@@ -18,6 +18,7 @@ import { habitar } from "./habitar.ts";
 import { figureLod, lodNote } from "./lodFigura.ts";
 import { creatureHeightM, spotsFor, type Site, type Spot } from "./lugares.ts";
 import { crowdNote } from "./nota.ts";
+import { narrativeRegions } from "./regiones.ts";
 import { crowdOn } from "./multitud.ts";
 import { isProtagonist } from "./protagonista.ts";
 
@@ -73,6 +74,7 @@ export function poblado(c: Site, scene: Scene, pal: Palette, detail: MotifParams
       algorithm: "escena del director: criaturas compuestas con partes de la pared, colocadas en METROS sobre la arquitectura (el suelo caminable: calles, plaza, anillos, terrazas, patio; azoteas, torres, cielo, escalera) sin que ningún cuerpo entre en un sólido y proyectadas con el mismo proyector isométrico",
       params: { grupos: scene.groups.length, figuras: spots.length, arquitectura: `${scene.architecture.footprint}/${scene.architecture.courtyard}/${scene.architecture.heights}`, ...lodParams },
       decision: `${summary.join("; ") || "sin figuras en la escena"}${lods.length ? `. LOD por tamaño proyectado: ${lods.join("; ")}` : ""}`,
+      regions: narrativeRegions(scene, c),
     },
   };
 }

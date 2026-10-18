@@ -26,7 +26,7 @@ describe("programa composition", () => {
     expect(String(work.stages[0].provenance?.params.reglas)).toContain("R2@root → R6@hall-1 → R5@courtyard-1");
     const records = work.stages.flatMap((s) => s.provenance?.rewrites ?? []);
     expect(new Set(records.map((r) => r.rule))).toEqual(new Set(["T1_COLUMN_AS_BODY", "T2_BODY_AS_FACADE", "T3_OPENING_AS_PORTAL", "T4_INHABITED_FRIEZE"]));
-    expect(workComplexity(work).semanticDepth).toBeGreaterThanOrEqual(3);
+    expect(workComplexity(work).rewrites).toMatchObject({ maxVerifiedDepth: 3, visibleChainsDepth3: 1 });
     expect(composeWork(direct(N.palace, 4), 1200, 900).stages).toEqual(work.stages);
   });
 

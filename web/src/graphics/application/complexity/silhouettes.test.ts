@@ -32,7 +32,7 @@ describe("visible semantic silhouettes", () => {
     expect(row(towers, "edificios: clústeres de siluetas visibles").pasa).toBe(false);
   });
 
-  it("five different figurines in a corner fail on coverage even though they differ", () => {
+  it("five different figurines in a corner report a small canvasFill with no pass or fail", () => {
     const corner = [
       ...unit("a", "creature", [circle(40, 40, 30, ink)]),
       ...unit("b", "creature", [rect(90, 10, 24, 100, ink)]),
@@ -43,15 +43,17 @@ describe("visible semantic silhouettes", () => {
     const s = complexityReport({ list: corner, width: W, height: H }).silhouettes.creatures;
     expect(s.eligibleUnits).toBe(5);
     expect(s.distinctClusters).toBeGreaterThanOrEqual(4);
-    expect(row(corner, "criaturas: cobertura visible del lienzo").pasa).toBe(false);
+    const fill = row(corner, "criaturas: canvasFill (visible / lienzo)");
+    expect(fill.pasa).toBeNull();
+    expect(fill.valor).toBeLessThan(0.05);
   });
 
-  it("four really different forms over the canvas pass all three criteria", () => {
+  it("four really different forms pass both silhouette criteria; coverage is measured, never judged", () => {
     const s = complexityReport({ list: fourForms(), width: W, height: H }).silhouettes.buildings;
     expect(s.distinctClusters).toBe(4);
     expect(s.effectiveDiversity).toBeCloseTo(4, 6);
-    expect(s.visibleAreaCoverage).toBeGreaterThanOrEqual(0.4);
-    expect(rows(fourForms()).filter((r) => r.criterio.startsWith("edificios")).map((r) => r.pasa)).toEqual([true, true, true]);
+    expect(complexityReport({ list: fourForms(), width: W, height: H }).coverage.buildings.canvasFill).toBeGreaterThanOrEqual(0.4);
+    expect(rows(fourForms()).filter((r) => r.criterio.startsWith("edificios")).map((r) => r.pasa)).toEqual([true, true, null, null, null]);
   });
 
   it("measures after occlusion: a tower mostly hidden by a later wall is not eligible", () => {
@@ -73,7 +75,7 @@ describe("visible semantic silhouettes", () => {
     const list = unit("templo", "building", [rect(100, 100, 900, 600, ink), rect(300, 50, 200, 100, ink)]);
     const report = complexityReport({ list, width: W, height: H });
     expect(report.silhouettes.buildings).toMatchObject({ units: 1, monolithic: true });
-    const building = evaluate(report).filter((r) => r.criterio.startsWith("edificios"));
+    const building = evaluate(report).filter((r) => r.criterio.startsWith("edificios") && !r.umbral.startsWith("sin umbral"));
     expect(building.every((r) => r.pasa === null && r.nota?.includes("monolítica"))).toBe(true);
   });
 

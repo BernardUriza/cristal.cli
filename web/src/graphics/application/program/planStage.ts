@@ -6,6 +6,8 @@ import type { Rect } from "../../domain/architecture/layout.ts";
 import { filled, line, polygon, polyline, rect, stroked, type Shape, type Style, type Vec2 } from "../../domain/shapes.ts";
 import type { Palette } from "../../config/palettes.ts";
 import type { Stage } from "../compose.ts";
+import type { SiteEvidence } from "../complexity/types.ts";
+import { boxOn, siteEvidence } from "../siteEvidence.ts";
 import type { ProgramScene } from "./scene.ts";
 
 const FILL: Record<SpaceKind, keyof Palette> = {
@@ -62,6 +64,14 @@ function door(s: ProgramScene, a: PlacedSpace, b: PlacedSpace): Shape | undefine
   return footprint(s, gap, Math.max(a.y0, b.y0), { fill: s.pal.bg, stroke: s.pal.ink, strokeWidth: 0.6 });
 }
 
+/** The root space's rect (everything the program holds, its courtyards and voids too) up to the highest space it declares. */
+function programSite(s: ProgramScene): SiteEvidence {
+  const root = s.layout.spaces.find((p) => !p.node.parent)!;
+  const y0 = Math.min(...s.layout.spaces.map((p) => p.y0));
+  const y1 = Math.max(...s.layout.spaces.map((p) => p.y1));
+  return siteEvidence("program", boxOn(root.rect, y0, y1), s.projector.toScreen);
+}
+
 export function programStage(s: ProgramScene): Stage {
   const { graph, layout, pal, projector } = s;
   const byId = new Map(layout.spaces.map((p) => [p.node.id, p]));
@@ -100,6 +110,7 @@ export function programStage(s: ProgramScene): Stage {
         meta: Object.entries(graph.goal ?? {}).map(([k, v]) => `${k}=${v}`).join(",") || "ninguna",
       },
       decision: [`* = expansión completada con PRNG sembrado`, ...graph.fallbacks, ...layout.fallbacks].join("; "),
+      site: programSite(s),
     },
   };
 }

@@ -57,7 +57,7 @@ const table = verdicts[0].map((row, i) => {
     min: values.length ? Math.min(...values) : null,
     mediana: values.length ? median(values) : null,
     max: values.length ? Math.max(...values) : null,
-    obrasQuePasan: values.length ? `${passing}/${works.length}` : "sin dato",
+    obrasQuePasan: !values.length ? "sin dato" : verdicts.every((v) => v[i].pasa === null) ? "sin umbral" : `${passing}/${works.length}`,
   };
 });
 
@@ -70,9 +70,21 @@ const visualOf = (own: Run[]) => {
 };
 const graphsOf = (own: Run[]) => own.flatMap((w) => (w.graph ? [w.graph] : []));
 const keyOf = (w: Run) => w.archetype ?? w.composition;
+const spread = (xs: (number | null)[]) => {
+  const v = xs.filter((x): x is number => x !== null);
+  return v.length ? `${Math.min(...v).toFixed(2)}/${median(v).toFixed(2)}/${Math.max(...v).toFixed(2)}` : "sin dato";
+};
 const summary = (own: Run[]) => {
   const b = own.map((w) => w.report.silhouettes.buildings);
-  return { obras: own.length, topologías: topologicalDiversity(graphsOf(own)), ...visualOf(own), clústeresMax: Math.max(...b.map((x) => x.distinctClusters)), dEffMax: Number(Math.max(...b.map((x) => x.effectiveDiversity)).toFixed(2)), coberturaMediana: Number(median(b.map((x) => x.visibleAreaCoverage)).toFixed(3)), criaturasDEffMax: Number(Math.max(...own.map((w) => w.report.silhouettes.creatures.effectiveDiversity)).toFixed(2)), nivelesMax: Math.max(...own.map((w) => w.report.semanticDepth)) };
+  const c = own.map((w) => w.report.coverage);
+  const r = own.map((w) => w.report.rewrites);
+  return {
+    obras: own.length, topologías: topologicalDiversity(graphsOf(own)), ...visualOf(own),
+    clústeresMax: Math.max(...b.map((x) => x.distinctClusters)), dEffMax: Number(Math.max(...b.map((x) => x.effectiveDiversity)).toFixed(2)),
+    siteFillEdif: spread(c.map((x) => x.buildings.siteFill)), hullEff: spread(c.map((x) => x.buildings.hullEfficiency)), siteFillCriat: spread(c.map((x) => x.creatures.siteFill)), regionFillCriat: spread(c.map((x) => x.creatures.regionFill)),
+    criaturasDEffMax: Number(Math.max(...own.map((w) => w.report.silhouettes.creatures.effectiveDiversity)).toFixed(2)),
+    profVerifMax: Math.max(...r.map((x) => x.maxVerifiedDepth)), obrasConCadena3: own.filter((w) => w.report.rewrites.visibleChainsDepth3 > 0).length,
+  };
 };
 const byArchetype = Object.fromEntries([...new Set(works.map(keyOf))].map((k) => [k, summary(works.filter((w) => keyOf(w) === k))]));
 const byNarration = Object.fromEntries(NARRATIONS.map((n) => [n.slice(0, 40), summary(works.filter((w) => w.narration === n))]));

@@ -41,6 +41,7 @@ export function habitada(items: SceneItem[], forward: PatioContext["projector"][
       params: { ...base!.params, solidos_delante: deferred, T2_fachadas: t("T2_BODY_AS_FACADE"), T3_portales: t("T3_OPENING_AS_PORTAL"), T4_frisos: t("T4_INHABITED_FRIEZE") },
       decision: `${base!.decision}. Las etapas «volúmenes» y «figuras» se funden aquí para lo que está delante de una figura: la oclusión lo exige`,
       rewrites: records,
+      ...(base!.regions ? { regions: base!.regions } : {}),
     },
   };
 }

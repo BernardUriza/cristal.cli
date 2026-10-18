@@ -14,11 +14,12 @@ import type { Painter } from "./painter.ts";
 import { cutsParams, type Cut } from "./ornamentDisorder.ts";
 import { makeView } from "./projection.ts";
 import type { RewriteRecord } from "../domain/rewrite/rewrite.ts";
+import type { RegionEvidence, SiteEvidence } from "./complexity/types.ts";
 import { tagRoot, type SemanticRoot } from "../domain/semantic.ts";
 
 const TEMPLE: SemanticRoot = { root: "templo", kind: "building" };
 
-export type Provenance = { algorithm: string; params: Record<string, number | string>; decision: string; rewrites?: RewriteRecord[] };
+export type Provenance = { algorithm: string; params: Record<string, number | string>; decision: string; rewrites?: RewriteRecord[]; site?: SiteEvidence; regions?: RegionEvidence[] };
 
 export type Stage = { name: string; shapes: DisplayList; provenance?: Provenance };
 

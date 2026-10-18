@@ -3,7 +3,7 @@ import { line, rect, solid, stroked, type DisplayList } from "../../domain/shape
 import { CLOISTER_LAYOUT, CLOISTER_PROGRAM } from "../../config/programs.ts";
 import { buildPlan } from "../../domain/architecture/plan.ts";
 import { COMPLEXITY_TUNING } from "../../config/complexity.ts";
-import { complexityReport, detailBand, evaluate, graphFromPlan, graphSignature, multiscaleCoverage, semanticDepth, topologicalDiversity, type SpaceGraph } from "./index.ts";
+import { complexityReport, detailBand, evaluate, graphFromPlan, graphSignature, multiscaleCoverage, topologicalDiversity, type SpaceGraph } from "./index.ts";
 
 const ink = solid("#fff");
 
@@ -51,26 +51,11 @@ describe("topology", () => {
   });
 });
 
-describe("semantic depth", () => {
-  it("reads the longest rewrite chain", () => {
-    const entries = [
-      { operation: "rewrite", id: "r1" },
-      { operation: "rewrite", id: "r2", parent: "r1" },
-      { operation: "rewrite", id: "r3", parent: "r2" },
-      { operation: "rewrite", id: "x", depth: 2 },
-      { operation: "stamp", id: "s", depth: 9 },
-    ];
-    expect(semanticDepth(entries)).toBe(3);
-    expect(semanticDepth([{ params: { operation: "rewrite", depth: 4 } }])).toBe(4);
-    expect(semanticDepth([])).toBe(0);
-  });
-});
-
 describe("evaluate", () => {
   it("reports every criterion against its threshold without summing", () => {
     const report = complexityReport({ list: [rect(0, 0, 50, 50, ink)], width: 200, height: 200 });
     const rows = evaluate(report, { topologies: 1 });
-    expect(rows.map((r) => r.pasa)).toEqual([false, false, false, null, null, null, null, null, null, null]);
+    expect(rows.map((r) => r.pasa)).toEqual([false, null, null, false, null, null, null, null, null, null, null, null, null, null, null, null]);
     expect(rows[rows.length - 1].valor).toBeNull();
     const withBattery = evaluate(report, { topologies: 1, occlusionViolations: 0 });
     expect(withBattery[withBattery.length - 1].pasa).toBe(true);
