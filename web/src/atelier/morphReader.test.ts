@@ -14,8 +14,8 @@ describe("the local director writes blend and caricature from declared words", (
   });
 
   it("«caricatura de» and «exagerado» exaggerate the named creature, and the provenance says the norm and k", () => {
-    expect(ops("una caricatura de un perro")).toEqual([["perro", ["replace cuerpo", "caricature torso k1.8"]]]);
-    expect(ops("un jaguar exagerado")).toEqual([["jaguar", ["replace cuerpo", "caricature torso k1.6"]]]);
+    expect(ops("una caricatura de un perro")).toEqual([["perro", ["replace torso", "caricature torso k1.8"]]]);
+    expect(ops("un jaguar exagerado")).toEqual([["jaguar", ["replace torso", "caricature torso k1.6"]]]);
     const r = readScene("un jaguar muy exagerado");
     expect(r.scene.groups[0].program?.operations[1]).toEqual({ op: "caricature", socket: "torso", k: 2.2 });
     expect(r.because.join(" ")).toContain("norma:animales");

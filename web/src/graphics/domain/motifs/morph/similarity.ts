@@ -36,16 +36,22 @@ export function mean(points: readonly Vec2[]): Vec2 {
   return [x / points.length, y / points.length];
 }
 
-/** Least-squares uniform scale + translation, no rotation: upright motifs stay upright. */
+const MIN_FIT_OF_RMS = 0.25;
+
+/** Least-squares uniform scale + translation, no rotation: upright motifs stay upright; a fit that collapses (poorly corresponding points) falls back to the RMS size ratio. */
 export function scaleFit(src: readonly Vec2[], dst: readonly Vec2[]): Similarity {
   const cs = mean(src), cd = mean(dst);
-  let num = 0, den = 0;
+  let num = 0, den = 0, dd = 0;
   for (let i = 0; i < src.length; i++) {
     const a: Vec2 = [src[i][0] - cs[0], src[i][1] - cs[1]];
-    num += a[0] * (dst[i][0] - cd[0]) + a[1] * (dst[i][1] - cd[1]);
+    const b: Vec2 = [dst[i][0] - cd[0], dst[i][1] - cd[1]];
+    num += a[0] * b[0] + a[1] * b[1];
     den += a[0] * a[0] + a[1] * a[1];
+    dd += b[0] * b[0] + b[1] * b[1];
   }
-  const k = den < 1e-12 ? 1 : num / den;
+  const ratio = den < 1e-12 ? 1 : Math.sqrt(dd / den);
+  const fit = den < 1e-12 ? 1 : num / den;
+  const k = fit > ratio * MIN_FIT_OF_RMS ? fit : ratio;
   return { s: [k, 0], t: [cd[0] - k * cs[0], cd[1] - k * cs[1]] };
 }
 

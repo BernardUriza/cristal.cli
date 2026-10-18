@@ -49,7 +49,7 @@ describe("patio work", () => {
     const work = composeWork(direct("ocho robots hechos de craneos y ojos abiertos que suben escaleras infinitas simulando la IA en las manos del poder"), 600, 450);
     const figuras = work.stages[work.stages.length - 1];
     expect(figuras.provenance?.params.figuras).toBe(9);
-    expect(figuras.provenance?.decision).toContain("8 robot (cabeza=craneo ojos=ojo cuerpo=escalera) en escalera");
+    expect(figuras.provenance?.decision).toContain("8 robot (programa biped#");
     expect(figuras.provenance?.decision).toContain("1 mano (cuerpo=mano) en fila · patio");
     expect(figuras.provenance?.params.arquitectura).toBe("cuadrado/grande/vertiginoso");
   });

@@ -13,7 +13,7 @@ const opsOf = (narration: string) => readScene(narration).scene.groups.map((g) =
 describe("the local director writes CreatureProgram from declared words", () => {
   it("reads families and operations: serpent, a thousand arms, a quadruped with a mermaid tail, a temple body", () => {
     expect(opsOf("tres serpientes rodean el patio")).toEqual([["serpiente", "serpentine", ["replace head"]]]);
-    expect(opsOf("un monje de mil brazos")).toEqual([["guardián", "biped", ["replace head", "repeat arm"]]]);
+    expect(opsOf("un monje de mil brazos")).toEqual([["guardián", "biped", ["replace torso", "replace head", "replace hand", "replace eye", "repeat arm"]]]);
     expect(opsOf("cuatro cuadrúpedos con cola de sirena")).toEqual([["cuadrúpedo", "quadruped", ["replace head", "graft tail", "replace tail"]]]);
     expect(opsOf("un gigante con cuerpo-templo")).toEqual([["gigante", "biped", ["replace head", "architecturalize torso"]]]);
   });
@@ -29,8 +29,8 @@ describe("the local director writes CreatureProgram from declared words", () => 
     expect(r.because.join(" ")).toContain("no cabe en serpiente");
   });
 
-  it("old narrations keep the six-slot plan", () => {
-    expect(readScene("ocho robots hechos de craneos que suben escaleras").scene.groups[0].program).toBeUndefined();
+  it("a narration with no body clue keeps the six-slot plan", () => {
+    expect(readScene("una máscara en el patio").scene.groups[0].program).toBeUndefined();
   });
 });
 

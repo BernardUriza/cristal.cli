@@ -5,6 +5,7 @@ import { PROGRAM_LIMITS, type CreatureProgram } from "../graphics/domain/motifs/
 import type { BodyFamily } from "../graphics/domain/motifs/figures/body/types.ts";
 import { fnv1a } from "../shared/rng";
 import { OP_WORDS, OP_WORD_GROUP } from "./creatureWords.ts";
+import { bodyProgram } from "./familyReader.ts";
 import { MORPH_PATTERNS } from "./morphWords.ts";
 
 const blank = (m: string) => " ".repeat(m.length);
@@ -28,7 +29,7 @@ const compiles = (p: CreatureProgram): boolean => {
 };
 
 /** Each declared modifier lands on the nearest creature named before it (or a new figure); an operation the body cannot take is dropped and said. */
-export function programWords(narration: string, groups: Group[], at: number[]): string[] {
+export function programWords(narration: string, groups: Group[], at: number[], defaulted: ReadonlySet<number> = new Set()): string[] {
   const because: string[] = [];
   for (const w of OP_WORDS) {
     const m = w.match.exec(narration);
@@ -42,8 +43,12 @@ export function programWords(narration: string, groups: Group[], at: number[]): 
       gi = groups.length - 1;
     }
     const g = groups[gi];
-    const base = g.program ?? familyProgram(w.family, narration, g.creature.parts.cabeza);
-    const next = { ...base, operations: [...base.operations, ...w.ops] };
+    const declared = (defaulted.has(gi) ? bodyProgram(w.family, narration, g.creature.name, g.creature.parts) : null) ?? familyProgram(w.family, narration, g.creature.parts.cabeza);
+    const bases = g.program ? (defaulted.has(gi) ? [g.program, declared] : [g.program]) : [declared];
+    const tries = bases.map((b) => ({ ...b, operations: [...b.operations, ...w.ops] }));
+    const fit = tries.findIndex((p) => p.operations.length <= PROGRAM_LIMITS.operations && compiles(p));
+    const base = bases[Math.max(0, fit)];
+    const next = tries[Math.max(0, fit)];
     if (next.operations.length > PROGRAM_LIMITS.operations || !compiles(next)) {
       because.push(`${w.because}: no cabe en ${g.creature.name} (${base.family}), lo dejé fuera`);
       continue;

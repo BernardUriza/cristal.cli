@@ -3,6 +3,8 @@ import { ARCHITECTURE_RULES, ARRANGEMENT_RULES, CREATURE_TEMPLATES, MATERIAL_WOR
 import type { MotifName } from "./vocabulary.ts";
 import { familyProgram, maskOpWords, programWords } from "./creatureProgramReader.ts";
 import { morphWords, usesMotif } from "./morphReader.ts";
+import { bodyProgram, chooseFamily, familyClues, sayFamily } from "./familyReader.ts";
+import type { BodyFamily } from "../graphics/domain/motifs/figures/body/types.ts";
 
 const OBJECT_NAMES = ["ojo", "mano", "cráneo", "máscara"];
 const OBJECT_SCALE = 2.2;
@@ -35,6 +37,8 @@ export function readScene(spoken: string, wallMotifs: MotifName[] = []): SceneRe
   const groups: Group[] = [];
   const at: number[] = [];
   const taken = new Set<string>();
+  const used = new Set<BodyFamily>();
+  const defaulted = new Set<number>();
   for (const t of CREATURE_TEMPLATES) {
     if (groups.length === SCENE_LIMITS.groups) break;
     const m = t.match.exec(narration);
@@ -49,11 +53,15 @@ export function readScene(spoken: string, wallMotifs: MotifName[] = []): SceneRe
     const arr = lead && !isObject ? ARRANGEMENT_RULES.find((r) => r.match.test(narration)) : undefined;
     const place = lead ? PLACE_RULES.find((r) => r.match.test(narration)) : undefined;
     at.push(m.index);
-    const program = t.family ? familyProgram(t.family, spoken, custom.cabeza ?? t.parts.cabeza) : undefined;
+    const loneObject = isObject && count === 1;
+    const choice = t.family || loneObject ? null : chooseFamily(familyClues(m[0], new Set(Object.values(custom)).size, narration, isObject), used);
+    const program = t.family ? familyProgram(t.family, spoken, custom.cabeza ?? t.parts.cabeza) : choice ? bodyProgram(choice.family, spoken, t.name, parts) ?? undefined : undefined;
+    if (program && program.family !== "seis-ranuras") used.add(program.family);
+    if (choice && program) defaulted.add(groups.length);
     groups.push({ creature: { name: t.name, parts }, count, arrangement: arr?.arrangement ?? (count > 4 ? "procesion" : "fila"), place: arr?.place ?? place?.place ?? "patio", scale: isObject ? OBJECT_SCALE : 1, ...(program ? { program } : {}) });
-    because.push(`${count} ${t.name} (encontré «${m[0]}»${Object.keys(custom).length ? `, hechos de ${Object.values(custom).join(" y ")}` : ""})${arr ? `; ${arr.because}` : ""}${place && !arr?.place ? `; ${place.because}` : ""}`);
+    because.push(`${count} ${t.name} (encontré «${m[0]}»${Object.keys(custom).length ? `, hechos de ${Object.values(custom).join(" y ")}` : ""})${arr ? `; ${arr.because}` : ""}${place && !arr?.place ? `; ${place.because}` : ""}${choice && program ? `; ${sayFamily(choice)}` : ""}`);
   }
-  because.push(...programWords(spoken, groups, at), ...morphWords(spoken, groups, at));
+  because.push(...programWords(spoken, groups, at, defaulted), ...morphWords(spoken, groups, at));
   for (const motif of wallMotifs) {
     if (groups.length === SCENE_LIMITS.groups || groups.some((g) => usesMotif(g, motif))) continue;
     groups.push({ creature: { name: motif, parts: { cuerpo: motif } }, count: 1, arrangement: "fila", place: "patio", scale: 1.4 });

@@ -6,6 +6,7 @@ import { figurePoints } from "../framing.ts";
 import type { Palette } from "../../config/palettes.ts";
 import { drawCompiled } from "../../domain/motifs/figures/creature.ts";
 import { creatureOf, type GroupCreature } from "./programa.ts";
+import { memberMaker } from "./miembros.ts";
 import type { MotifParams } from "../../domain/motifs/figures/types.ts";
 import { indexBelow, mulberry32 } from "../../../shared/rng.ts";
 import type { Provenance } from "../compose.ts";
@@ -40,14 +41,19 @@ export function poblado(c: Site, scene: Scene, pal: Palette, detail: MotifParams
   const heights = spots.map((spot) => creatureHeightM(scene.groups[spot.group], c));
   const biggest = heights.indexOf(Math.max(...heights));
   const bodies: GroupCreature[] = scene.groups.map(creatureOf);
+  const member = memberMaker(bodies, seed, scene.groups.map((_, gi) => spots.filter((s) => s.group === gi).length < 2));
+  const seen = scene.groups.map(() => 0);
+  const variants: string[][] = scene.groups.map(() => []);
   const lods: string[] = [];
   const lodParams: Record<string, number> = {};
   spots.forEach((spot, i) => {
     const hM = heights[i];
     const foot = c.projector.toScreen(spot.at);
     const head = c.projector.toScreen([spot.at[0], spot.at[1] + hM, spot.at[2]]);
-    const heightPx = Math.max(8, Math.hypot(head[0] - foot[0], head[1] - foot[1]));
-    const drawn = drawCompiled(bodies[spot.group].compiled, foot[0], foot[1], heightPx, params, rng);
+    const m = member(spot.group, seen[spot.group]++);
+    variants[spot.group].push(m.note);
+    const heightPx = Math.max(8, Math.hypot(head[0] - foot[0], head[1] - foot[1]) * m.heightScale);
+    const drawn = drawCompiled(m.compiled, foot[0], foot[1], heightPx, params, rng);
     const id = `criatura_${String(i + 1).padStart(2, "0")}`;
     const lod = figureLod(heightPx, detail, drawn.pieces);
     lodParams[`detail_${id}`] = lod.detail;
@@ -59,7 +65,7 @@ export function poblado(c: Site, scene: Scene, pal: Palette, detail: MotifParams
     const screen = { minX: foot[0] - half, maxX: foot[0] + half, minY: foot[1] - heightPx * FIGURE_EXTENT.height, maxY: foot[1] + 2 };
     items.push({ id, kind: "figure", box, screen, depth: c.projector.toNdc(spot.at)[2], shapes: tagRoot(lived.shapes, { root: id, kind: "creature" }) });
   });
-  const summary = scene.groups.map((g, gi) => `${g.count} ${g.creature.name} (${bodies[gi].label}) en ${g.arrangement} · ${g.place}${isProtagonist(g) ? "" : crowdNote(crowdOn(g, c), g.count)}`);
+  const summary = scene.groups.map((g, gi) => `${g.count} ${g.creature.name} (${bodies[gi].label}) en ${g.arrangement} · ${g.place}${isProtagonist(g) ? "" : crowdNote(crowdOn(g, c), g.count)}${variants[gi].length > 1 ? `; cada miembro con semilla propia fnv1a(obra+grupo+índice): ${variants[gi].join(" | ")}` : ""}`);
   return {
     items,
     records,
