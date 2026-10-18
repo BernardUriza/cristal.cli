@@ -7,6 +7,7 @@ import type { Vec3 } from "../domain/math/vec3.ts";
 import { creatureHeightM, spotsFor } from "./patio/lugares.ts";
 import { figureHull } from "./patio/poblado.ts";
 import { bodyClears } from "./patio/holgura.ts";
+import { crowdWantedM } from "./patio/multitud.ts";
 import { isProtagonist } from "./patio/protagonista.ts";
 import { programScene } from "./program/composeProgram.ts";
 import { siteOfProgram } from "./program/site.ts";
@@ -56,7 +57,8 @@ describe("protagonist", () => {
     expect(creatureHeightM(group(1, "patio"), site)).toBeGreaterThan(creatureHeightM(group(8, "patio"), site) * 1.4);
     expect(isProtagonist(group(3, "patio", "gigante"))).toBe(true);
     expect(isProtagonist(group(3, "patio"))).toBe(false);
-    expect(creatureHeightM(group(8, "patio"), site)).toBeCloseTo(Math.max(3, (site.span * 0.34) / Math.sqrt(2)));
+    expect(crowdWantedM(group(8, "patio"), site)).toBeCloseTo(Math.max(3, (site.span * 0.34) / Math.sqrt(2)));
+    expect(creatureHeightM(group(8, "patio"), site)).toBeLessThanOrEqual(crowdWantedM(group(8, "patio"), site));
   });
 
   it("stands on open ground with its body outside every solid, in courtyards and on terraces", () => {
