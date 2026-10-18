@@ -28,6 +28,8 @@ const NARRATIONS = [
   "un palacio de salones con habitaciones secretas donde vigila un ojo",
   "un templo de patios sucesivos con un jaguar en el centro",
   "un laberinto de pasillos donde se pierden cinco calacas",
+  "un templo en terrazas escalonadas: una pirámide con escalinatas que suben a la cima",
+  "una ciudad de calles y avenidas que se cruzan en esquinas y encrucijadas",
 ];
 
 const works = NARRATIONS.flatMap((narration) => SEEDS.map((seed) => {

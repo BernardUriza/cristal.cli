@@ -22,9 +22,18 @@ function forcedSide(e: SpaceEdge, kid: SpaceNode, anchor: SpaceNode): Side | und
   return undefined;
 }
 
+const SKELETON: readonly SpaceKind[] = ["street", "junction"];
+
 const kindOf = (s: Solver, id: string | undefined): SpaceKind | undefined => (id ? s.graph.nodes.find((n) => n.id === id)?.kind : undefined);
 
 const belowOf = (s: Solver, id: string): string | undefined => s.graph.edges.find((e) => e.relation === "above" && e.from === id)?.to;
+
+/** Streets and junctions are laid before their frontage, oldest first, so a closing street finds both ends already placed. */
+function nextSkeleton(queue: readonly string[], seen: Set<string>, s: Solver): number {
+  const rank = (id: string) => s.graph.nodes.findIndex((n) => n.id === id);
+  const open = queue.map((id, i) => ({ id, i })).filter(({ id }) => !seen.has(id) && SKELETON.includes(kindOf(s, id)!));
+  return open.length ? open.reduce((a, b) => (rank(b.id) < rank(a.id) ? b : a)).i : -1;
+}
 
 function bfsOrder(kids: SpaceNode[], s: Solver): SpaceNode[] {
   const ids = new Set(kids.map((k) => k.id));
@@ -34,7 +43,8 @@ function bfsOrder(kids: SpaceNode[], s: Solver): SpaceNode[] {
   const seen = new Set<string>();
   const queue = [hub.id];
   while (order.length < kids.length) {
-    const id = queue.shift() ?? kids.find((k) => !seen.has(k.id))!.id;
+    const first = nextSkeleton(queue, seen, s);
+    const id = (first >= 0 ? queue.splice(first, 1)[0] : queue.shift()) ?? kids.find((k) => !seen.has(k.id))!.id;
     if (seen.has(id)) continue;
     seen.add(id);
     order.push(kids.find((k) => k.id === id)!);

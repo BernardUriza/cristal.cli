@@ -3,9 +3,9 @@ import { axiom, COMPLETION_BIAS, DEFAULT_BUDGET } from "./axioms.ts";
 import { assertGoal, mergeGoals } from "./goal.ts";
 import { RULES, ruleById } from "./rules.ts";
 import { checkBudget, validateCall, validateGraph, validateProgram } from "./validate.ts";
-import { GrammarError, type AppliedRule, type ArchitectureProgram, type GrammarContext, type GrammarRule, type RuleCall, type SpaceEdge, type SpaceGraph, type SpaceKind, type SpaceNode } from "./types.ts";
+import { GrammarError, type AppliedRule, type ArchitectureProgram, type GrammarContext, type GrammarRule, type RuleCall, type SpaceEdge, type SpaceGraph, type SpaceKind, type SpaceNode, type TopologyGoal } from "./types.ts";
 
-type State = { nodes: SpaceNode[]; edges: SpaceEdge[]; applied: AppliedRule[]; fallbacks: string[]; counters: Map<SpaceKind, number> };
+type State = { nodes: SpaceNode[]; edges: SpaceEdge[]; applied: AppliedRule[]; fallbacks: string[]; counters: Map<SpaceKind, number>; goals: TopologyGoal[] };
 
 function seedCounters(nodes: readonly SpaceNode[]): Map<SpaceKind, number> {
   const counters = new Map<SpaceKind, number>();
@@ -22,6 +22,7 @@ function apply(state: State, rule: GrammarRule, target: SpaceNode, params: RuleC
     rng,
     params,
     budget,
+    graph: { nodes: state.nodes, edges: state.edges },
     nextId: (kind) => {
       const k = (counters.get(kind) ?? 0) + 1;
       counters.set(kind, k);
@@ -33,6 +34,7 @@ function apply(state: State, rule: GrammarRule, target: SpaceNode, params: RuleC
   state.counters = counters;
   state.nodes = [...state.nodes.map((n) => (n.id === target.id ? { ...n, depth: n.depth + 1 } : n)), ...out.nodes];
   state.edges = [...state.edges, ...out.edges];
+  if (out.goal) state.goals.push(out.goal);
   state.applied.push({ rule: rule.id, target: target.id, origin, added: out.nodes.map((n) => n.id) });
 }
 
@@ -81,13 +83,13 @@ export function expandProgram(program: ArchitectureProgram, budget = DEFAULT_BUD
   validateProgram(program);
   const rng = mulberry32(program.seed);
   const start = axiom(program.archetype);
-  const state: State = { ...start, applied: [], fallbacks: [], counters: seedCounters(start.nodes) };
+  const state: State = { ...start, applied: [], fallbacks: [], counters: seedCounters(start.nodes), goals: [] };
   for (const call of program.rules) {
     const { rule, target } = validateCall(state.nodes, call);
     apply(state, rule, target, call.params, rng, budget, "program");
   }
   complete(state, program, rng, budget);
-  const goal = mergeGoals([program.goal, ...program.rules.map((c) => ruleById(c.rule)?.goal)]);
+  const goal = mergeGoals([program.goal, ...program.rules.map((c) => ruleById(c.rule)?.goal), ...state.goals]);
   const graph: SpaceGraph = { archetype: program.archetype, nodes: state.nodes, edges: state.edges, applied: state.applied, fallbacks: state.fallbacks, goal };
   validateGraph(graph);
   return { ...graph, topology: assertGoal(graph, goal) };

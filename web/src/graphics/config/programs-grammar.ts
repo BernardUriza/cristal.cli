@@ -68,13 +68,13 @@ export const GRAMMAR_PROGRAMS: Record<GrammarProgramName, GrammarProgramEntry> =
     program: { seed: 53, archetype: "city", rules: [{ rule: "R9", target: "root", params: { blocks: 4 } }] },
   },
   "ciudad-ramal": {
-    narration: "ciudad de calles que se ramifican",
+    narration: "ciudad de calles que se ramifican y una vuelve a cerrar la manzana",
     program: {
       seed: 59,
       archetype: "city",
       rules: [
         { rule: "R10", target: "gallery-1", params: {} },
-        { rule: "R10", target: "street-1", params: {} },
+        { rule: "R10", target: "street-1", params: { loop: 1 } },
         { rule: "R3", target: "root", params: {} },
       ],
     },

@@ -45,13 +45,14 @@ export type TopologyGoal = {
 
 export type ArchitectureProgram = { seed: number; archetype: Archetype; rules: RuleCall[]; goal?: TopologyGoal };
 
-export type Expansion = { nodes: SpaceNode[]; edges: SpaceEdge[] };
+export type Expansion = { nodes: SpaceNode[]; edges: SpaceEdge[]; goal?: TopologyGoal };
 
 export type GrammarContext = {
   rng: Rng;
   params: Record<string, number | string>;
   nextId: (kind: SpaceKind) => string;
   budget: number;
+  graph?: { readonly nodes: readonly SpaceNode[]; readonly edges: readonly SpaceEdge[] };
 };
 
 export type GrammarRule = {
