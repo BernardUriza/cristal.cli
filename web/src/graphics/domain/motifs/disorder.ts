@@ -9,6 +9,8 @@ export type Interrupted = { index: number; kind: Interruption; amount: number };
 
 export type RepeatedItem = { shape: Shape; pivot: Vec2 };
 
+export type DisorderInput = { rng: Rng; policy: DisorderPolicy };
+
 export type DisorderResult = { shapes: Shape[]; interrupted: Interrupted[] };
 
 export function interruptionCount(count: number, fraction: number): number {

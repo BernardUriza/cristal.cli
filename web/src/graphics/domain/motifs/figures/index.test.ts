@@ -54,13 +54,14 @@ describe("motif library", () => {
     for (const v of Object.values(a.provenance.params)) expect(["number", "string"]).toContain(typeof v);
   });
 
-  it.each(["mano", "jaguar"])("%s: every stipple dot lies inside the silhouette", (id) => {
+  it.each(["mano", "jaguar", "sirena", "perro"])("%s: every flow-field stroke lies inside the silhouette", (id) => {
     const m = MOTIFS[id];
     const poly = m.silhouette(withDetail(3));
     const drawing = m.draw(0, 0, withDetail(3), mulberry32(5));
-    const dots = flatten(drawing.shapes).filter((s) => s.kind === "circle" && s.r < 2);
-    expect(dots.length).toBeGreaterThan(15);
-    for (const d of dots) if (d.kind === "circle") expect(pointInPolygon([d.cx, d.cy], poly)).toBe(true);
+    const strokes = flatten(drawing.shapes).filter((s) => s.kind === "polyline" && s.style.opacity !== undefined);
+    expect(strokes.length).toBeGreaterThan(15);
+    expect(drawing.provenance.params.flowLines).toBe(strokes.length);
+    for (const s of strokes) if (s.kind === "polyline") for (const p of s.points) expect(pointInPolygon(p, poly)).toBe(true);
   });
 
   it("mirror and rotate move the silhouette as a rigid body", () => {

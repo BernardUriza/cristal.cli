@@ -1,7 +1,9 @@
 import { ellipse, type Shape, type Vec2 } from "../../shapes.ts";
 import { a, defineMotif, sharp, strokeAt } from "./define.ts";
-import { stipple, type Ornament } from "./ornamentador.ts";
+import { CHARACTER } from "./character.ts";
+import type { Ornament } from "./ornamentador.ts";
 import { quad, type PartSpec } from "./parts.ts";
+import { flowTexture } from "./texture.ts";
 
 type Finger = { cx: number; w: number; tip: number; base: number };
 const FINGERS: Finger[] = [
@@ -33,7 +35,7 @@ export const mano = defineMotif({
   id: "mano",
   name: "Mano abierta",
   tags: ["cuerpo", "memoria", "transformación"],
-  version: "1.0.0",
+  version: "1.1.0",
   role: "span",
   parts: [
     { id: "palma", role: "enclosure", mask: [[-0.3, -0.12], [0.34, -0.12], [0.3, 0.3], [0.18, 0.48], [-0.16, 0.48], [-0.22, 0.26], [-0.3, 0.1]] },
@@ -58,16 +60,17 @@ export const mano = defineMotif({
       out.push({ shapes: [...palm, ...folds], params: { palmLines: PALM_LINES.length, creases: folds.length } });
     }
     if (p.detail >= 3) {
+      const skin = flowTexture(fig, fig.poly, rng, CHARACTER.skin, p.ink);
+      out.push({ shapes: skin.shapes, params: { ...skin.params, flowTexture: "piel" } });
       const nails: Shape[] = FINGERS.map((f) => {
         const c = fig.at([f.cx, f.tip + 0.045]);
         return ellipse(c[0], c[1], fig.px(f.w * 0.3), fig.px(0.035), { fill: p.accent, stroke: p.ink, strokeWidth: fig.inkWidth * 0.6 });
       });
       const thumb = fig.at([-0.46, -0.08]);
       nails.push(ellipse(thumb[0], thumb[1], fig.px(0.03), fig.px(0.035), { fill: p.accent, stroke: p.ink, strokeWidth: fig.inkWidth * 0.6 }));
-      const skin = stipple(fig.poly, rng, 70, fig.px(0.006), p.ink);
-      out.push({ shapes: [...nails, ...skin.shapes], params: { nails: nails.length, ...skin.params } });
+      out.push({ shapes: nails, params: { nails: nails.length } });
     }
     return out;
   },
-  decision: (p) => `mano abierta de ${FINGERS.length + 1} dedos; detail ${p.detail}: ${p.detail >= 2 ? "líneas de la palma y pliegues" : "solo contorno"}${p.detail >= 3 ? " + uñas y punteado" : ""}`,
+  decision: (p) => `mano abierta de ${FINGERS.length + 1} dedos; detail ${p.detail}: ${p.detail >= 2 ? "líneas de la palma y pliegues" : "solo contorno"}${p.detail >= 3 ? " + piel por flow field y uñas" : ""}`,
 });

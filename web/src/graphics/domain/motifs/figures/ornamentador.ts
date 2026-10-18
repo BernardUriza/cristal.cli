@@ -1,7 +1,7 @@
 import type { Rng } from "../../../../shared/rng";
 import { pointInPolygon, polygonBounds, polygonCentroid } from "../../bezier.ts";
 import { circle, ellipse, group, line, path, polygon, type Shape, type Style, type Vec2 } from "../../shapes.ts";
-import { disorderParams, interrupt, type DisorderPolicy, type RepeatedItem } from "../disorder.ts";
+import { disorderParams, interrupt, type DisorderInput, type RepeatedItem } from "../disorder.ts";
 
 export type Ornament = { shapes: Shape[]; params: Record<string, number | string> };
 
@@ -82,7 +82,7 @@ export function spots(poly: readonly Vec2[], rng: Rng, count: number, rMin: numb
   return { shapes, params: { spotCount: shapes.length, spotRadiusMin: rMin, spotRadiusMax: rMax } };
 }
 
-export type DisorderInput = { rng: Rng; policy: DisorderPolicy };
+export type { DisorderInput };
 
 export function scales(poly: readonly Vec2[], rowH: number, style: Style, disorder?: DisorderInput): Ornament {
   const b = polygonBounds(poly);
