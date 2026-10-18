@@ -1,5 +1,6 @@
 import type { Rect } from "../architecture/layout.ts";
 import { shuffle, type Rng } from "../../../shared/rng.ts";
+import { alignCauseways, checkGates } from "./gates.ts";
 import { CONTAINER_MARGIN, GAP_INSIDE, KIND_DIMENSIONS, LAYOUT_RULES, STREET_BY_STYLE } from "./dimensions.ts";
 import { bboxArea, bboxOf, candidatesAround, facingSlot, overlaps, sharedEdge, SIDES, translate, type Candidate, type Side } from "./place.ts";
 import { GrammarError, type Heading, type SpaceEdge, type SpaceGraph, type SpaceKind, type SpaceNode } from "./types.ts";
@@ -178,5 +179,7 @@ export function solveLayout(graph: SpaceGraph, rng: Rng): GraphLayout {
     return placed;
   };
   graph.nodes.forEach(placeY);
-  return { spaces: graph.nodes.map((n) => spaces.get(n.id)!), bounds: shifted.get(root.id)!, fallbacks: s.log };
+  const placed = alignCauseways(graph.nodes.map((n) => spaces.get(n.id)!), graph.edges);
+  checkGates(placed, graph.edges);
+  return { spaces: placed, bounds: shifted.get(root.id)!, fallbacks: s.log };
 }

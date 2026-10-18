@@ -17,11 +17,17 @@ export type DrawnCreature = { shapes: Shape[]; pieces: CreaturePiece[]; provenan
 
 function legacyProvenance(c: CompiledCreature, heightPx: number): Provenance {
   const kinds = new Map(c.graph.nodes.map((n) => [n.id, "motif" in n.kind ? n.kind.motif : n.kind.primitive]));
-  const used = c.graph.edges.map((e) => `${e.to}=${kinds.get(e.to)}${e.mirror ? "×2" : ""}`);
+  const count = new Map<string, number>();
+  for (const e of c.graph.edges) {
+    const key = `${e.to.replace(/-\d+$/, "")}=${kinds.get(e.to)}`;
+    count.set(key, (count.get(key) ?? 0) + (e.mirror ? 2 : 1));
+  }
+  const used = [...count].map(([k, n]) => `${k}${n > 1 ? `×${n}` : ""}`);
+  const joined = c.graph.fit === "bounds";
   return {
     algorithm: "criatura compuesta: plan corporal fijo (cabeza, ojos, cuerpo, manos, cola, pies) con motivos Bézier propios en cada parte",
     params: { partes: used.join(", "), altura_px: Math.round(heightPx) },
-    decision: c.graph.edges.length === 1 ? "una sola parte: el motivo entero es la figura" : "cada parte declarada ocupa su lugar del plan corporal; las pares van en espejo",
+    decision: c.graph.edges.length === 1 ? "una sola parte: el motivo entero es la figura" : joined ? "cada parte se cuelga del tronco (cuerpo, si no la cabeza) por contactos en su silueta con solape declarado: una sola masa conectada; las pares en espejo" : "sin cuerpo ni cabeza: cada parte ocupa su lugar del plan corporal; las pares van en espejo",
   };
 }
 

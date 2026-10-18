@@ -2,7 +2,7 @@ import { pyramid, type Solid } from "../architecture/mass.ts";
 import type { Rect } from "../architecture/layout.ts";
 import { ARCADE, CONTAINER_MARGIN, KIND_DIMENSIONS, LAYOUT_RULES } from "./dimensions.ts";
 import type { PlacedSpace } from "./layout.ts";
-import { causeway, crest, precinct, steppedBody, summitTemple } from "./pyramidVolumes.ts";
+import { causeway, crest, steppedBody, summitTemple } from "./pyramidVolumes.ts";
 import { gable, steppedDome } from "./roofs.ts";
 import { frameStrips, grow, part, pillarsAlong, walled } from "./solidKit.ts";
 
@@ -83,7 +83,6 @@ export function civicSolids(p: PlacedSpace): Solid[] {
     case "altar": return steppedBody(p);
     case "crest": return crest(p);
     case "causeway": return causeway(p);
-    case "precinct": return precinct(p);
     case "plaza":
     case "block": return slab(p);
     default: return [];

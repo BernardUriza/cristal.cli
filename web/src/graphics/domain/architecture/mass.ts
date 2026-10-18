@@ -1,6 +1,7 @@
 import { boundsOf, type Box3, type Vec3 } from "../math/vec3.ts";
 import type { Vec2 } from "../shapes.ts";
 import type { Rect } from "./layout.ts";
+import { spireBase } from "./spire.ts";
 import { openingSpan, wallLength, type Opening, type Plan, type Space, type Wall } from "./plan.ts";
 
 export type Face = { points: Vec3[]; normal: Vec3 };
@@ -143,7 +144,7 @@ export function buildMass(plan: Plan): Building {
     solids.push(box(`roof:${space.id}`, { kind: "roof", space: space.id }, cover, space.height, space.height + layout.heights.roofSlab));
     if (space.kind === "tower") {
       const top = space.height + layout.heights.roofSlab;
-      solids.push(pyramid(`tower-roof:${space.id}`, { kind: "tower-roof", space: space.id }, cover, top, top + layout.heights.towerRoof));
+      solids.push(pyramid(`tower-roof:${space.id}`, { kind: "tower-roof", space: space.id }, spireBase(cover), top, top + layout.heights.towerRoof));
     }
   }
   const bounds = boundsOf(solids.flatMap((s) => s.faces.flatMap((f) => f.points)));

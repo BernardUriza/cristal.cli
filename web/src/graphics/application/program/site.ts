@@ -1,11 +1,10 @@
-import { LAYOUT_RULES } from "../../domain/grammar/dimensions.ts";
 import type { PlacedSpace } from "../../domain/grammar/layout.ts";
 import type { Rect } from "../../domain/architecture/layout.ts";
 import { bboxOf } from "../../domain/grammar/place.ts";
 import type { SpaceKind } from "../../domain/grammar/types.ts";
 import { boxCenter, boundsOf, type Vec3 } from "../../domain/math/vec3.ts";
 import { roomOn } from "../patio/protagonista.ts";
-import { boxesOf, minSideOf, type Flight, type Footing, type Site } from "../patio/sitio.ts";
+import { boxesOf, crownOf, minSideOf, type Flight, type Footing, type Site } from "../patio/sitio.ts";
 import type { ProgramScene } from "./scene.ts";
 import { walksOfProgram } from "./suelo.ts";
 
@@ -18,7 +17,6 @@ const minSide = (p: PlacedSpace) => Math.min(p.rect.x1 - p.rect.x0, p.rect.z1 - 
 const area = (p: PlacedSpace) => (p.rect.x1 - p.rect.x0) * (p.rect.z1 - p.rect.z0);
 
 const NEAR_ENOUGH = 0.5;
-
 const MIN_STRIP = 2;
 
 const OPEN_GROUND: readonly SpaceKind[] = ["courtyard", "plaza", "platform", "ring-gallery", "complex"];
@@ -69,7 +67,7 @@ function openGround(s: ProgramScene, floor: Footing): Footing[] {
   return open.length ? open.sort((a, b) => roomOn(b, s) - roomOn(a, s)) : [floor];
 }
 
-/** Where the program lets creatures stand (crowds walk its streets, plaza, rings and terraces; see suelo.ts), sized against half the whole precinct so a giant reads as a building: the nearest of the big empty courtyards (or the free strip of a courtyard that holds a precinct, toward the camera; else the hall, or the precinct), tower spires, flat roofs, stair flights, and the sky over the whole. */
+/** Where the program lets creatures stand (crowds walk its streets, plaza, rings and terraces; see suelo.ts), sized against half the whole precinct so a giant reads as a building: the nearest of the big empty courtyards (or the free strip of a courtyard that holds a precinct, toward the camera; else the hall, or the precinct), tower crowns (the ledge at the spire's foot), flat roofs, stair flights, and the sky over the whole. */
 export function siteOfProgram(s: ProgramScene): Site {
   const root = s.layout.spaces.find((p) => !p.node.parent)!;
   const ground = largest(s, "courtyard", true) ?? largest(s, "courtyard") ?? largest(s, "plaza") ?? largest(s, "hall") ?? root;
@@ -77,6 +75,7 @@ export function siteOfProgram(s: ProgramScene): Site {
   const floor: Footing = { rect: ground.node.kind === "courtyard" ? openFloor(s, ground) : ground.rect, y: floorY, ...(ground.node.kind === "hall" ? { ceiling: ground.y1 } : {}) };
   const of = (kinds: SpaceKind[], lift: number): Footing[] => s.layout.spaces.filter((p) => kinds.includes(p.node.kind)).map((p) => ({ rect: p.rect, y: p.y1 + lift }));
   const walks = walksOfProgram(s);
+  const solid = (id: string) => s.solids.find((x) => x.id === id);
   const top = Math.max(...s.solids.flatMap((x) => x.faces.flatMap((f) => f.points.map((p) => p[1]))));
   return {
     projector: s.projector,
@@ -84,7 +83,7 @@ export function siteOfProgram(s: ProgramScene): Site {
     floor,
     walks: WALK_FLOORS.includes(ground.node.kind) ? [{ ...floor, label: ground.node.kind === "plaza" ? "plaza" : "patio" }, ...walks] : walks.length ? walks : [floor],
     stages: openGround(s, floor),
-    towers: of(["tower"], LAYOUT_RULES.towerRoof),
+    towers: s.layout.spaces.filter((p) => p.node.kind === "tower").map((p) => crownOf(p.rect, p.y1, solid(`${p.node.id}:roof`), solid(`${p.node.id}:spire`))),
     roofs: of(["chamber", "gallery", "bridge"], 0),
     stairs: s.layout.spaces.filter((p) => p.node.kind === "stair").flatMap((p) => flightOf(s, p) ?? []),
     sky: { rect: root.rect, y: top + SKY_MARGIN },

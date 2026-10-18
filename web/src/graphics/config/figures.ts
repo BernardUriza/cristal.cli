@@ -22,4 +22,9 @@ export const FIGURE_SCALE: FigureScale = {
   crowdSamples: 96,
 };
 
+/** A figure on a tower crown: `towardEdge` of the way from the spire's front corner to the roof's (less `edgeMargin` m), feet within `footTolerance` m of the surface. */
+export type Perch = { edgeMargin: number; towardEdge: number; footTolerance: number };
+
+export const PERCH: Perch = { edgeMargin: 0.1, towardEdge: 0.6, footTolerance: 0.02 };
+
 export const PROTAGONIST_NAMES = /gigante|coloso/i;

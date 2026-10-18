@@ -6,7 +6,7 @@ import type { Projector } from "../projector.ts";
 import { arrange } from "./acomodo.ts";
 import { crowdOn, liftedSpots } from "./multitud.ts";
 import { isProtagonist, protagonistStand, wantedHeightM } from "./protagonista.ts";
-import { boxesOf, type Site } from "./sitio.ts";
+import { boxesOf, crownOf, type Site } from "./sitio.ts";
 
 export type { Flight, Footing, Site } from "./sitio.ts";
 
@@ -19,13 +19,14 @@ export function siteOfBuilding(building: Building, projector: Projector): Site {
   const h = building.plan.layout.heights;
   const spaces = building.plan.spaces;
   const court = spaces.find((s) => s.kind === "courtyard")!.rect;
+  const solid = (id: string) => building.solids.find((x) => x.id === id);
   return {
     projector,
     span: Math.min(court.x1 - court.x0, court.z1 - court.z0),
     floor: { rect: court, y: 0 },
     walks: [{ rect: court, y: 0, label: "patio" }],
     stages: [{ rect: court, y: 0 }],
-    towers: spaces.filter((s) => s.kind === "tower").map((t) => ({ rect: t.rect, y: t.height + h.roofSlab + h.towerRoof })),
+    towers: spaces.filter((s) => s.kind === "tower").map((t) => crownOf(t.rect, t.height + h.roofSlab, solid(`roof:${t.id}`), solid(`tower-roof:${t.id}`))),
     roofs: spaces.filter((s) => s.kind === "room" || s.kind === "gallery").map((s) => ({ rect: s.rect, y: s.height + h.roofSlab })),
     stairs: [],
     sky: { rect: court, y: h.tower * SKY_LIFT },

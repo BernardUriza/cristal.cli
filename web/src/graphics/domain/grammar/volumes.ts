@@ -1,9 +1,12 @@
 import { pyramid, type Solid } from "../architecture/mass.ts";
+import { spireBase } from "../architecture/spire.ts";
 import type { Rect } from "../architecture/layout.ts";
 import { KIND_DIMENSIONS, LAYOUT_RULES, OPEN_GROUND_STYLES } from "./dimensions.ts";
 import type { GraphLayout, PlacedSpace } from "./layout.ts";
 import { corridor, openCell } from "./cells.ts";
 import { civicSolids } from "./civicVolumes.ts";
+import { gatesOf, type Gate } from "./gates.ts";
+import { precinct } from "./pyramidVolumes.ts";
 import { gable, steppedDome } from "./roofs.ts";
 import { grow, part, pillarsAlong, walled } from "./solidKit.ts";
 import type { SpaceEdge } from "./types.ts";
@@ -27,7 +30,7 @@ function stair(p: PlacedSpace, toward: Rect | undefined): Solid[] {
   });
 }
 
-function solidsOf(p: PlacedSpace, toward: Rect | undefined): Solid[] {
+function solidsOf(p: PlacedSpace, toward: Rect | undefined, gates: readonly Gate[]): Solid[] {
   const slab = KIND_DIMENSIONS[p.node.kind].slab;
   const r = p.rect;
   if (p.node.style === "labyrinth") {
@@ -46,8 +49,9 @@ function solidsOf(p: PlacedSpace, toward: Rect | undefined): Solid[] {
       return [...shell, gable(`${p.node.id}:gable`, { kind: "tower-roof", space: p.node.id }, grow(r, 0.3), roofY, Math.min(r.x1 - r.x0, r.z1 - r.z0) * 0.32)];
     }
     case "gallery": return [...pillarsAlong(p, r, p.y0, p.y1 - slab, "pier"), part(p, "roof", "lintel", r, p.y1 - slab, p.y1)];
-    case "tower": return [...walled(p), pyramid(`${p.node.id}:spire`, { kind: "tower-roof", space: p.node.id }, grow(r, 0.15), p.y1, p.y1 + LAYOUT_RULES.towerRoof)];
+    case "tower": return [...walled(p), pyramid(`${p.node.id}:spire`, { kind: "tower-roof", space: p.node.id }, spireBase(grow(r, 0.15)), p.y1, p.y1 + LAYOUT_RULES.towerRoof)];
     case "stair": return stair(p, toward);
+    case "precinct": return precinct(p, gates);
     case "bridge": {
       const inset = Math.min(r.x1 - r.x0, r.z1 - r.z0) * 0.3;
       const piers = pillarsAlong(p, grow(r, -inset), p.y0, p.y1 - slab, "pier").filter((_, i) => i % 2 === 0);
@@ -62,6 +66,6 @@ export function volumesOf(layout: GraphLayout, edges: readonly SpaceEdge[]): Spa
   return layout.spaces.map((space) => {
     const link = edges.find((e) => e.relation === "connects" && (e.from === space.node.id || e.to === space.node.id));
     const other = link ? byId.get(link.from === space.node.id ? link.to : link.from) : undefined;
-    return { space, solids: solidsOf(space, other?.rect) };
+    return { space, solids: solidsOf(space, other?.rect, space.node.kind === "precinct" ? gatesOf(space, layout.spaces, edges) : []) };
   });
 }

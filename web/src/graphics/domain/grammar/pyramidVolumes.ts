@@ -1,6 +1,9 @@
 import type { Solid } from "../architecture/mass.ts";
 import type { Rect } from "../architecture/layout.ts";
+import { BANQUETTE } from "./dimensions.ts";
+import type { Gate } from "./gates.ts";
 import type { PlacedSpace } from "./layout.ts";
+import type { Side } from "./place.ts";
 import { frameStrips, frustum, grow, part, withoutTop } from "./solidKit.ts";
 import type { Heading } from "./types.ts";
 
@@ -67,12 +70,30 @@ export function summitTemple(p: PlacedSpace): Solid[] {
   ];
 }
 
-const BANQUETTE = { width: 6, height: 2.6 } as const;
 
-/** Ciudadela: the enclosure's four raised banquettes with tablero fronts, on a paved floor that holds the pyramid and its plaza. */
-export function precinct(p: PlacedSpace): Solid[] {
+const STRIP_SIDES: readonly Side[] = ["north", "south", "west", "east"];
+
+const MIN_PIER = 0.5;
+
+/** A banquette strip with its side's gates cut out, the corners kept whole. */
+function cut(r: Rect, side: Side, gates: readonly Gate[]): Rect[] {
+  const alongX = side === "north" || side === "south";
+  let pieces: [number, number][] = [alongX ? [r.x0, r.x1] : [r.z0, r.z1]];
+  for (const g of gates.filter((x) => x.side === side)) {
+    pieces = pieces.flatMap(([a, b]): [number, number][] => (g.to <= a || g.from >= b ? [[a, b]] : [[a, g.from], [g.to, b]]));
+    pieces = pieces.filter(([u, v]) => v - u >= MIN_PIER);
+  }
+  return pieces.map(([a, b]) => (alongX ? { ...r, x0: a, x1: b } : { ...r, z0: a, z1: b }));
+}
+
+/** Ciudadela: the enclosure's four raised banquettes with tablero fronts, on a paved floor that holds the pyramid and its plaza; a gate opens on each stairway's axis and where the causeway arrives. */
+export function precinct(p: PlacedSpace, gates: readonly Gate[] = []): Solid[] {
   const top = p.y1 + BANQUETTE.height;
-  return [part(p, "floor", "floor", p.rect, p.y0, p.y1), ...frameStrips(p.rect, BANQUETTE.width).map((r, i) => part(p, `tablero${i}`, "wall", r, p.y1, top))];
+  const walls = frameStrips(p.rect, BANQUETTE.width).flatMap((r, i) => {
+    const pieces = cut(r, STRIP_SIDES[i], gates);
+    return pieces.map((q, k) => part(p, pieces.length === 1 ? `tablero${i}` : `tablero${i}-${k}`, "wall", q, p.y1, top));
+  });
+  return [part(p, "floor", "floor", p.rect, p.y0, p.y1), ...walls];
 }
 
 /** Calzada: a raised walk with a low parapet down each long side. */
