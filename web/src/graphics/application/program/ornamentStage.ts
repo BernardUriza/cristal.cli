@@ -23,6 +23,8 @@ export function roleOf(face: TaggedFace, s: ProgramScene): SurfaceRole | undefin
   const part = face.solid.id.split(":")[1] ?? "";
   if (!vertical) return space.node.kind === "tower" && part === "spire" ? "cubierta-torre" : undefined;
   if ((space.node.kind === "tower" || space.node.kind === "junction") && part === "body") return "torre";
+  if (part.startsWith("tablero")) return space.node.style === "nichos" ? "nichos" : "tablero";
+  if (space.node.kind === "crest") return "muro-exterior";
   if (BODY_WALLS.includes(space.node.kind) && (part === "body" || part === "crown")) return "muro-exterior";
   if (space.node.kind === "ring-gallery") return part.startsWith("roof") ? "dintel-arcada" : part.startsWith("pier") ? "pilar" : undefined;
   if (space.node.kind === "sanctuary" && part === "cornice") return "dintel-arcada";

@@ -15,10 +15,23 @@ const ESPLANADE_OF: readonly SpaceKind[] = ["ring-gallery", "platform"];
 
 const ESPLANADE_TILE = 1;
 
+const MONUMENTAL: readonly SpaceKind[] = ["platform", "plaza", "precinct"];
+
+const SLABS_ACROSS = 25;
+
+/** A pyramid's precinct is paved at its own scale: slabs of a 25th of the site on terraces and plaza, half that on the esplanade. */
+function monumentalTile(s: ProgramScene): number | undefined {
+  if (!s.layout.spaces.some((p) => p.node.kind === "platform")) return undefined;
+  const b = s.layout.bounds;
+  return Math.max(PROGRAM_TILE, Math.min(4, Math.round(Math.max(b.x1 - b.x0, b.z1 - b.z0) / SLABS_ACROSS)));
+}
+
 function tileOf(s: ProgramScene, space: PlacedSpace): number {
+  const slab = monumentalTile(s);
+  if (slab && MONUMENTAL.includes(space.node.kind)) return slab;
   if (PAVED.includes(space.node.kind)) return PROGRAM_TILE;
   const esplanade = space.node.kind === "complex" && s.layout.spaces.some((p) => p.node.parent === space.node.id && ESPLANADE_OF.includes(p.node.kind));
-  return esplanade ? ESPLANADE_TILE : 0;
+  return esplanade ? (slab ? slab / 2 : ESPLANADE_TILE) : 0;
 }
 
 /** Every slab from the lowest up; a courtyard, plaza, ring walk, terrace or temple esplanade gets the patio's checkered tiles, at a two-metre module, on its own top, so a nested precinct covers them. */

@@ -12,7 +12,8 @@ export type SpaceSolids = { space: PlacedSpace; solids: Solid[] };
 
 function stair(p: PlacedSpace, toward: Rect | undefined): Solid[] {
   const r = p.rect;
-  const alongX = r.x1 - r.x0 >= r.z1 - r.z0;
+  const heading = p.node.heading;
+  const alongX = heading === undefined ? r.x1 - r.x0 >= r.z1 - r.z0 : heading % 180 === 0;
   const length = alongX ? r.x1 - r.x0 : r.z1 - r.z0;
   const n = Math.max(3, Math.round((p.y1 - p.y0) / LAYOUT_RULES.riser));
   const centre = alongX ? (r.x0 + r.x1) / 2 : (r.z0 + r.z1) / 2;

@@ -3,11 +3,13 @@ import type { Rng } from "../../../shared/rng.ts";
 export type SpaceKind =
   | "complex" | "courtyard" | "hall" | "gallery" | "tower" | "stair" | "chamber" | "bridge"
   | "sanctuary" | "shrine" | "ring-gallery" | "platform"
-  | "plaza" | "block" | "building" | "street" | "junction" | "street-ring";
+  | "plaza" | "block" | "building" | "street" | "junction" | "street-ring"
+  | "altar" | "causeway" | "crest" | "precinct";
 
 export const SPACE_KINDS: readonly SpaceKind[] = [
   "complex", "courtyard", "hall", "gallery", "tower", "stair", "chamber", "bridge",
   "sanctuary", "shrine", "ring-gallery", "platform", "plaza", "block", "building", "street", "junction", "street-ring",
+  "altar", "causeway", "crest", "precinct",
 ];
 
 export type Heading = 0 | 90 | 180 | 270;

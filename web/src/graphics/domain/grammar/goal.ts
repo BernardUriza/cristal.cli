@@ -2,7 +2,7 @@ import { GrammarError, type SpaceGraph, type SpaceKind, type TopologyGoal, type 
 
 const CIRCULATION = new Set(["connects", "faces", "bridges"]);
 
-const BUILDINGS: readonly SpaceKind[] = ["building", "tower", "hall", "sanctuary", "shrine"];
+const BUILDINGS: readonly SpaceKind[] = ["building", "tower", "hall", "sanctuary", "shrine", "altar"];
 
 const ELEVATING: readonly SpaceKind[] = ["platform"];
 

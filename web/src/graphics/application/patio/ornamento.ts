@@ -5,7 +5,8 @@ import type { Shape } from "../../domain/shapes.ts";
 import { chance } from "../../../shared/rng.ts";
 import type { Stage } from "../compose.ts";
 import { mapShapes } from "./frame.ts";
-import { band, bandLanguage, blindWindow, cellsFor, enabled } from "./ornamentRules.ts";
+import { band, bandLanguage, blindWindow, cellSize, cellsFor, enabled } from "./ornamentRules.ts";
+import { nicheRow, tableroPanel } from "./tablero.ts";
 import type { Surface } from "./surfaces.ts";
 import type { PatioContext } from "./types.ts";
 import type { Decor } from "./friso.ts";
@@ -83,6 +84,13 @@ function towerRoof(s: Surface, ctx: PatioContext): Shape[] {
   return sierpinski(w / 2, h - lift - r / 2, r, config.detail, pal.accent, o);
 }
 
+function terraceFace(s: Surface, ctx: PatioContext): Shape[] {
+  const { width: w, height: h } = s.frame;
+  const { pal, config } = ctx;
+  const o = ornamentOn(s, ctx, inks(pal.ink, pal.secondary, pal.bg, pal.deep));
+  return s.role === "nichos" ? nicheRow(w, h, o) : tableroPanel(w, h, o, cellSize(config), enabled(config, "greca"));
+}
+
 export function ornamentFor(s: Surface, ctx: PatioContext, frieze = false): Shape[] {
   switch (s.role) {
     case "muro-exterior": return exteriorWall(s, ctx, frieze);
@@ -90,6 +98,8 @@ export function ornamentFor(s: Surface, ctx: PatioContext, frieze = false): Shap
     case "pilar": return pier(s, ctx);
     case "dintel-arcada": return arcadeLintel(s, ctx);
     case "cubierta-torre": return towerRoof(s, ctx);
+    case "tablero":
+    case "nichos": return terraceFace(s, ctx);
   }
 }
 

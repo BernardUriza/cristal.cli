@@ -5,7 +5,7 @@ import { spaceAt } from "./building.ts";
 import { frameOf, projectedSize, type LocalFrame } from "./frame.ts";
 import type { PatioContext } from "./types.ts";
 
-export type SurfaceRole = "muro-exterior" | "torre" | "pilar" | "dintel-arcada" | "cubierta-torre";
+export type SurfaceRole = "muro-exterior" | "torre" | "pilar" | "dintel-arcada" | "cubierta-torre" | "tablero" | "nichos";
 
 export type Surface = { face: TaggedFace; role: SurfaceRole; frame: LocalFrame; px: { w: number; h: number }; space?: string };
 
