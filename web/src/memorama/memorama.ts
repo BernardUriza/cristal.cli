@@ -96,6 +96,11 @@ export function resolve(state: GameState): GameState {
   return { ...state, faceUp: [], matched, history: [...state.history, isMatch ? "hit" : "miss"], status };
 }
 
+export function tap(state: GameState, index: number): GameState {
+  if (hasPendingPair(state) && !pendingIsMatch(state)) return flip(resolve(state), index);
+  return flip(state, index);
+}
+
 export function pairsFound(state: GameState): number {
   return state.matched.length / 2;
 }

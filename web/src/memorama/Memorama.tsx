@@ -1,14 +1,14 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { PALETTES } from "../graphics/config/palettes.ts";
 import { glyphSvgDataUri } from "../graphics/renderers/svg/glyph.ts";
 import { randomSeed } from "../minigames/kit/dailySeed.ts";
 import { shareText, type ShareOutcome } from "../minigames/kit/share.ts";
 import { TempleCanvas } from "../minigames/kit/TempleCanvas.tsx";
+import { useBoardFit } from "../minigames/kit/useBoardFit.ts";
 import { positiveInt, readSearch, replaceSearch, shareUrl } from "../minigames/kit/urlParams.ts";
 import {
   bestKey,
   dailySeed,
-  flip,
   hasPendingPair,
   isFaceUp,
   isPairCount,
@@ -20,6 +20,7 @@ import {
   resolve,
   saveBest,
   shareLine,
+  tap,
   totalPairs,
   updateBest,
   type BestMarks,
@@ -28,7 +29,9 @@ import {
 } from "./memorama.ts";
 import { loadSoundEnabled, playMatchTone, playWinTone, saveSoundEnabled } from "./memoramaSound.ts";
 
-const MISMATCH_DELAY_MS = 900;
+const MISMATCH_DELAY_MS = 1600;
+const CARD_GAP = 8;
+const CARD_ASPECT = 3 / 4;
 const JUICE_MS = 700;
 const BACK_GLYPH = glyphSvgDataUri("gate", PALETTES.noche.secondary, PALETTES.noche.accent, 77);
 
@@ -109,13 +112,17 @@ export function Memorama() {
 
   const share = async () => setShared(await shareText(shareLine(game, { daily: isDaily, url: shareUrl({ seed, pairs }) })));
 
-  const columns = useMemo(() => (pairs === 12 ? 6 : 4), [pairs]);
-  const rows = Math.ceil((pairs * 2) / columns);
+  const onCard = (index: number) => {
+    if (hasPendingPair(game) && !pendingIsMatch(game)) setJustMissed(game.faceUp);
+    setGame((g) => tap(g, index));
+  };
+
+  const { ref: boardRef, fit } = useBoardFit(pairs * 2, CARD_GAP, CARD_ASPECT);
   const won = game.status === "won";
   const bestHere = best[bestKey(seed, pairs)];
 
   return (
-    <div className="memorama" style={{ ["--cols" as string]: columns, ["--rows" as string]: rows }}>
+    <div className="memorama">
       <header className="minigame-header">
         <a className="minigame-home" href="/">← CRISTAL.CLI</a>
         <h1>memorama</h1>
@@ -139,7 +146,12 @@ export function Memorama() {
           </button>
         </div>
       </header>
-      <main className="memorama-grid" aria-label="tablero">
+      <main className="memorama-board" ref={boardRef}>
+        <div
+          className="memorama-grid"
+          aria-label="tablero"
+          style={fit ? { gridTemplateColumns: `repeat(${fit.columns}, ${fit.cardWidth}px)`, gap: CARD_GAP } : { visibility: "hidden" }}
+        >
         {game.cards.map((card, i) => {
           const up = isFaceUp(game, i);
           const matched = game.matched.includes(i);
@@ -152,7 +164,7 @@ export function Memorama() {
               aria-label={up ? `carta ${i + 1} descubierta` : `carta ${i + 1}`}
               aria-pressed={up}
               disabled={won}
-              onClick={() => setGame((g) => flip(g, i))}
+              onClick={() => onCard(i)}
             >
               <div className="card-inner">
                 <div className="card-face card-back" style={{ backgroundImage: `url("${BACK_GLYPH}")` }} />
@@ -161,6 +173,7 @@ export function Memorama() {
             </button>
           );
         })}
+        </div>
       </main>
       {won && (
         <div className="memorama-won" role="status">

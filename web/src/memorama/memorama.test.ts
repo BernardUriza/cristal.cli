@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bestKey, dailySeed, flip, hasPendingPair, isFaceUp, MIN_PAIR_DISTANCE, newGame, pairsFound, resolve, resultGlyphs, shareLine, totalPairs, updateBest, type GameState } from "./memorama.ts";
+import { bestKey, dailySeed, flip, hasPendingPair, isFaceUp, MIN_PAIR_DISTANCE, newGame, pairsFound, resolve, resultGlyphs, shareLine, tap, totalPairs, updateBest, type GameState } from "./memorama.ts";
 import { artSignature, signatureDistance } from "../minigames/kit/templeArt.ts";
 
 function indicesOfPair(state: GameState, pairId: number): [number, number] {
@@ -144,5 +144,28 @@ describe("daily seed, share line and best marks", () => {
     const better = updateBest(first.best, 777, 8, 12);
     expect(better).toEqual({ best: { [bestKey(777, 8)]: 12 }, isRecord: true, previous: 17 });
     expect(updateBest(better.best, 777, 12, 30).best[bestKey(777, 12)]).toBe(30);
+  });
+});
+
+describe("tap", () => {
+  it("dismisses a pending miss and flips the tapped card in one move", () => {
+    let g = newGame(5, 6);
+    const [a] = indicesOfPair(g, 0);
+    const [b] = indicesOfPair(g, 1);
+    const [c] = indicesOfPair(g, 2);
+    g = tap(tap(g, a), b);
+    expect(hasPendingPair(g)).toBe(true);
+    g = tap(g, c);
+    expect(g.faceUp).toEqual([c]);
+    expect(g.history).toEqual(["miss"]);
+    expect(g.moves).toBe(1);
+  });
+
+  it("does not skip a pending match", () => {
+    let g = newGame(5, 6);
+    const [a, b] = indicesOfPair(g, 0);
+    const [c] = indicesOfPair(g, 1);
+    g = tap(tap(g, a), b);
+    expect(tap(g, c)).toBe(g);
   });
 });

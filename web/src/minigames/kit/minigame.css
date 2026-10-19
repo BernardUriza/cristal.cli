@@ -57,3 +57,11 @@
   opacity: 0.4;
   cursor: default;
 }
+
+@media (pointer: coarse) {
+  .minigame-controls button,
+  .minigame-button {
+    min-height: 44px;
+    padding: 6px 12px;
+  }
+}
