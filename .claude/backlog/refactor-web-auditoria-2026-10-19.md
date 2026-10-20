@@ -97,5 +97,13 @@ Bug de `observeSymbol` → `shared/rng` con tests dorados → `tokens.css` → `
   `atelier/manifest.ts` y `i+d/friedeberg/complexity-baseline.ts`; los tests que entraban por él leen su módulo.
 - Abierto: una corrida de la suite tuvo `connectivity.test.ts` en rojo una vez y 5 verdes después; semillas fijas,
   sin `Math.random`, sin ediciones ajenas. Causa sin verificar.
+- `27e8f33` `shared/url` (`searchParams`, `stringParam`, `flagParam`, `numberParam`, `positiveIntParam`,
+  `replaceSearch`, `shareUrl`; sin `window` lee `""`) y `shared/display` (`deviceScale`, tope 2). `kit/urlParams.ts`
+  borrado; `main.tsx`, `viaje`, `sessionSlice`, `GraphicsPreview`, atelier y memorama lo usan; `building/main.ts` ya
+  no usa `devicePixelRatio` sin tope. Grep: `new URLSearchParams`/`location.search`/`devicePixelRatio` sólo en
+  `shared/`. Navegador (DPR 2.5): atelier 2400×1800 = 1200×900×2, building 1280 = 640×2, laberinto R3F 1280 = 640×2
+  (su `dpr` por defecto `[1,2]`, no se toca); `?viaje=1` → true, `?viaje=off` → false; memorama sin `pairs` → 8.
+  Visto de paso, sin tocar: `building/main.ts` sólo redimensiona en `resize` de ventana, así que la altura del
+  canvas queda vieja si el layout cambia después de arrancar (262 vs 113×2 hasta un `resize`).
 
 **Decisión de Bernard.** Ninguna bloqueante; el orden es de Claude. Sólo `AbsencePlanner` cambia salida al unificar.

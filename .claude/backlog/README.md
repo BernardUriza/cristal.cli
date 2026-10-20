@@ -24,4 +24,4 @@ Un archivo por item; status se voltea el día que cambia. Fuente de las ideas de
 | [El rito rechaza respuestas corporales legítimas y luego se calla](rito-rechaza-respuestas-corporales.md) | Done | 2026-10-17 |
 | [Diversión con evidencia: la consola nunca rechaza, nunca repite, siempre mueve](diversion-con-evidencia.md) | Done (1–6 en prod; queda la pregunta al tester y el DM) | 2026-10-17 |
 | [Figuras generativas: grafo de partes, esqueletos, híbridos por región, teselas](figuras-generativas.md) | In progress (pasos 1, 3 y 5 hechos) | 2026-10-17 |
-| [Refactor de web/: duplicación, capas y archivos con varias responsabilidades](refactor-web-auditoria-2026-10-19.md) | In progress (bug, rng, tokens, api, storage, capas, audio, math, muertos hechos; faltan URL/DPR y cortes) | 2026-10-19 |
+| [Refactor de web/: duplicación, capas y archivos con varias responsabilidades](refactor-web-auditoria-2026-10-19.md) | In progress (bug, rng, tokens, api, storage, capas, audio, math, muertos, URL/DPR hechos; faltan cortes) | 2026-10-19 |
