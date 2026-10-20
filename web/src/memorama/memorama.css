@@ -301,12 +301,8 @@ body {
     padding-bottom: 8px;
   }
   .minigame-stats {
-    flex-wrap: wrap;
     gap: 2px 12px;
     width: 100%;
-  }
-  .minigame-stats > span {
-    white-space: nowrap;
   }
   .minigame-controls {
     width: 100%;

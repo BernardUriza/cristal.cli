@@ -25,8 +25,13 @@
 
 .minigame-stats {
   display: flex;
-  gap: 16px;
+  flex-wrap: wrap;
+  gap: 2px 16px;
   color: var(--fg);
+}
+
+.minigame-stats > span {
+  white-space: nowrap;
 }
 
 .minigame-controls {
