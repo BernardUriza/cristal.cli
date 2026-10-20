@@ -196,3 +196,78 @@ body {
     margin-left: 0;
   }
 }
+
+.memorama-sound {
+  order: 10;
+  min-width: 44px;
+}
+
+.memorama-pairs {
+  display: inline-flex;
+  gap: 0;
+}
+
+.memorama-pairs button {
+  min-width: 44px;
+}
+
+.memorama-pairs button + button {
+  border-left-width: 0;
+}
+
+.memorama-pairs button.active + button {
+  border-left-width: 1px;
+}
+
+.memorama-pairs button:has(+ button.active) {
+  border-right-width: 0;
+}
+
+.card.matched {
+  cursor: zoom-in;
+}
+
+.memorama-closeup {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 14px;
+  padding: 16px;
+  background: rgba(11, 11, 18, 0.94);
+  cursor: zoom-out;
+  font-size: 18px;
+  color: var(--dim);
+}
+
+.memorama-closeup-art {
+  width: min(92vw, calc((100dvh - 96px) * 3 / 4));
+  aspect-ratio: 3 / 4;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 0 40px rgba(51, 255, 153, 0.25);
+}
+
+.memorama-closeup-art canvas {
+  display: block;
+}
+
+@media (max-width: 640px) {
+  .minigame-header {
+    gap: 6px 12px;
+    padding-bottom: 8px;
+  }
+  .minigame-stats {
+    gap: 12px;
+    width: 100%;
+  }
+  .minigame-controls {
+    width: 100%;
+  }
+  .memorama-sound {
+    order: 0;
+    margin-left: auto;
+  }
+}

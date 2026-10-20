@@ -50,6 +50,7 @@ export function Memorama() {
   const [justMatched, setJustMatched] = useState<number[]>([]);
   const [justMissed, setJustMissed] = useState<number[]>([]);
   const [shared, setShared] = useState<"idle" | ShareOutcome>("idle");
+  const [closeUp, setCloseUp] = useState<number | null>(null);
   const resolveTimer = useRef<number | null>(null);
   const juiceTimer = useRef<number | null>(null);
 
@@ -112,7 +113,15 @@ export function Memorama() {
 
   const share = async () => setShared(await shareText(shareLine(game, { daily: isDaily, url: shareUrl({ seed, pairs }) })));
 
+  useEffect(() => {
+    if (closeUp === null) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setCloseUp(null);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [closeUp]);
+
   const onCard = (index: number) => {
+    if (game.matched.includes(index)) return setCloseUp(game.cards[index].artSeed);
     if (hasPendingPair(game) && !pendingIsMatch(game)) setJustMissed(game.faceUp);
     setGame((g) => tap(g, index));
   };
@@ -126,6 +135,9 @@ export function Memorama() {
       <header className="minigame-header">
         <a className="minigame-home" href="/">← CRISTAL.CLI</a>
         <h1>memorama</h1>
+        <button className="minigame-button memorama-sound" onClick={toggleSound} aria-pressed={sound} aria-label={sound ? "silenciar" : "activar sonido"}>
+          {sound ? "♪" : "♪̸"}
+        </button>
         <div className="minigame-stats">
           <span>pares {pairsFound(game)}/{totalPairs(game)}</span>
           <span>movimientos {game.moves}</span>
@@ -133,17 +145,16 @@ export function Memorama() {
           {bestHere !== undefined && <span className="memorama-best">mejor {bestHere}</span>}
         </div>
         <div className="minigame-controls">
-          {PAIR_OPTIONS.map((n) => (
-            <button key={n} className={n === pairs ? "active" : ""} onClick={() => start(isDaily ? today : randomSeed(), n)}>
-              {n} pares
-            </button>
-          ))}
+          <span className="memorama-pairs" role="group" aria-label="pares">
+            {PAIR_OPTIONS.map((n) => (
+              <button key={n} className={n === pairs ? "active" : ""} aria-label={`${n} pares`} onClick={() => start(isDaily ? today : randomSeed(), n)}>
+                {n}
+              </button>
+            ))}
+          </span>
           <button className={isDaily ? "active" : ""} onClick={() => start(today, pairs)}>hoy</button>
           <button onClick={() => start(seed, pairs)}>repetir</button>
           <button onClick={() => start(randomSeed(), pairs)}>nueva</button>
-          <button onClick={toggleSound} aria-pressed={sound} aria-label={sound ? "silenciar" : "activar sonido"}>
-            {sound ? "♪ on" : "♪ off"}
-          </button>
         </div>
       </header>
       <main className="memorama-board" ref={boardRef}>
@@ -175,6 +186,12 @@ export function Memorama() {
         })}
         </div>
       </main>
+      {closeUp !== null && (
+        <div className="memorama-closeup" role="dialog" aria-label="templo de cerca" onClick={() => setCloseUp(null)}>
+          <TempleCanvas artSeed={closeUp} className="memorama-closeup-art" />
+          <p>toca para volver</p>
+        </div>
+      )}
       {won && (
         <div className="memorama-won" role="status">
           <p>
