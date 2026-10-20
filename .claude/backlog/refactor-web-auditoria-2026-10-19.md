@@ -1,6 +1,6 @@
 # Refactor de web/: duplicación, capas y archivos con varias responsabilidades
 
-Status: In progress
+Status: Done
 Proposed: 2026-10-19 by Bernard ("busca qué más falta refactorizar"); auditoría de Claude con dos agentes y verificación por grep
 
 **Qué es.** Lo que falta refactorizar en `web/src` (26.8k LOC), medido por responsabilidades y copias, no por tamaño.
@@ -104,6 +104,27 @@ Bug de `observeSymbol` → `shared/rng` con tests dorados → `tokens.css` → `
   `shared/`. Navegador (DPR 2.5): atelier 2400×1800 = 1200×900×2, building 1280 = 640×2, laberinto R3F 1280 = 640×2
   (su `dpr` por defecto `[1,2]`, no se toca); `?viaje=1` → true, `?viaje=off` → false; memorama sin `pairs` → 8.
   Visto de paso, sin tocar: `building/main.ts` sólo redimensiona en `resize` de ventana, así que la altura del
-  canvas queda vieja si el layout cambia después de arrancar (262 vs 113×2 hasta un `resize`).
+  canvas queda vieja si el layout cambia después de arrancar (262 vs 113×2 hasta un `resize`). Cerrado en `7199a7a`.
+- `6d717c0` bug de muebles: `game/furniture/areaLightBudget` (`assignAreaLights`, puro y por laberinto) y
+  `furniture/materialCache` (un caché por montaje de `BackroomFurnitureSet`, `dispose()` al desmontar). El test nuevo
+  falló con el `Set` de módulo (3 rojos) antes del arreglo. Navegador: 29 materiales liberados al salir del laberinto,
+  2 luces de área y materiales nuevos al volver.
+- `7e4c494` bug del minimapa: visitados derivados con `withVisited` (sin mutar) y recordados en un efecto;
+  `ui/minimap/routePolicy` (`planMinimapRoute`) y `ui/minimap/coords` (`poseCell`, `poseMarker`) con tests. Navegador:
+  tras teletransportar a VISION y CORRUPTION sus marcas bajan a 0.4 y la ruta pasa a BETA 7.
+- `d62f6b9` corte de `BackroomFurniture.tsx` (529 → 343): `furniture/materials` (tabla tipada `FURNITURE_MATERIALS`),
+  `furniture/materialsContext`, `furniture/primitives`; las 34 firmas de material idénticas en el navegador.
+- `58cb634` corte de `roomFlowSlice` (285 → 216): `store/roomFlowPatches` puros y un solo suscriptor
+  (`store/persistVerticalSlice`); cero `saveVerticalSlice` en reducers (eran 6 aquí y 2 en `consoleSlice`). Test verde
+  antes y después: lo guardado = el estado tras cada acción, misma secuencia de pasos.
+- `fe98600` corte de `ConsoleOverlay` (277 → `ui/console/ConsoleOverlay.tsx` 112 + `ConsoleLine`, `scramble`, `lines`,
+  `useVoiceStream`, `turn`, `copy`); el archivo viejo borrado. Navegador: eco, frase archivada, objetivo y respuesta
+  local iguales; el POST de voz sale (servidor local 8131 apagado en esta corrida: rama de silencio).
+- `fd9a5d7` corte de `RuntimeTransference` (345 → 283): `game/transference/terminalAdapter` (con
+  `TERMINAL_ADAPTER_COPY`) y `game/transference/worldDice`; prueba diferencial contra la clase previa, 4800 respuestas
+  idénticas; snapshots dorados intactos.
+- `1de471f` cortes chicos: `terminal/arcana` (terminalCore 225 → 185), `game/music/selection` y
+  `game/music/settingsStore` (MusicDirector 272 → 182), `game/VerticalSliceStorage` (VerticalSlice 256 → 213).
+- El rojo suelto de `connectivity.test.ts` no se repitió en las 8 corridas completas de esta tanda.
 
 **Decisión de Bernard.** Ninguna bloqueante; el orden es de Claude. Sólo `AbsencePlanner` cambia salida al unificar.
