@@ -1,25 +1,14 @@
-import { API_BASE_URL } from "./roomApi";
+import { API_BASE_URL, apiLive, beacon } from "../shared/api";
 
 const FRAGMENT_MAX = 64;
 
 export function leaveEcho(text: string): void {
-  if (import.meta.env.DEV || typeof fetch === "undefined") return;
   const clean = text.trim().replace(/\s+/g, " ").slice(0, FRAGMENT_MAX);
-  if (clean.length < 3) return;
-  try {
-    void fetch(`${API_BASE_URL}/echo`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: clean }),
-      keepalive: true,
-    }).catch(() => undefined);
-  } catch {
-    return;
-  }
+  if (clean.length >= 3) beacon("/echo", { text: clean });
 }
 
 export async function takeEcho(exclude: string): Promise<string | null> {
-  if (import.meta.env.DEV || typeof fetch === "undefined") return null;
+  if (!apiLive()) return null;
   try {
     const res = await fetch(`${API_BASE_URL}/echo?exclude=${encodeURIComponent(exclude)}`);
     if (!res.ok) return null;

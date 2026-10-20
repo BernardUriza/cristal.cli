@@ -1,10 +1,8 @@
 import type { SymbolicArchetype } from "./symbolicBus";
 import { mix32, mulberry32, pick } from "../shared/rng";
+import { postJson, withTimeout } from "../shared/api";
 import { coerceRoom } from "./RoomContractValidator";
 import type { RoomShape } from "./types";
-
-export const API_BASE_URL: string = import.meta.env.VITE_CRISTAL_LLM_URL ?? "http://localhost:8131";
-const BASE_URL = API_BASE_URL;
 
 export interface Room {
   name: string;
@@ -34,38 +32,15 @@ export async function generateRoom(params: {
   fragments?: string[];
   timeoutMs?: number;
 }): Promise<Room> {
-  const timeoutMs = params.timeoutMs ?? GENERATE_ROOM_TIMEOUT_MS;
-  const controller = new AbortController();
-  let timer: ReturnType<typeof setTimeout> | undefined;
+  const body = { seed: params.seed, archetype: params.archetype, depth: params.depth, fragments: params.fragments ?? [] };
   try {
-    const timeout = new Promise<never>((_, reject) => {
-      timer = setTimeout(() => {
-        controller.abort();
-        reject(new Error(`/generate timed out after ${timeoutMs}ms`));
-      }, timeoutMs);
-    });
-    const request = (async () => {
-      const res = await fetch(`${BASE_URL}/generate`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          seed: params.seed,
-          archetype: params.archetype,
-          depth: params.depth,
-          fragments: params.fragments ?? [],
-        }),
-        signal: controller.signal,
-      });
-      if (!res.ok) {
-        throw new Error(`/generate ${res.status}: ${await res.text()}`);
-      }
+    return await withTimeout(params.timeoutMs ?? GENERATE_ROOM_TIMEOUT_MS, undefined, async (signal) => {
+      const res = await postJson("/generate", body, signal);
+      if (!res.ok) throw new Error(`/generate ${res.status}: ${await res.text()}`);
       return coerceRoom(await res.json(), params.seed);
-    })();
-    return await Promise.race([request, timeout]);
+    });
   } catch {
     return localRoom(params);
-  } finally {
-    if (timer !== undefined) clearTimeout(timer);
   }
 }
 

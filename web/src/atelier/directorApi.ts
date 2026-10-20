@@ -1,4 +1,4 @@
-import { API_BASE_URL } from "../game/roomApi";
+import { postJson, withTimeout } from "../shared/api.ts";
 import type { Direction } from "./director.ts";
 import type { Decision } from "./directorRules.ts";
 
@@ -61,21 +61,12 @@ export function parseDirection(data: unknown, seed = 1): Direction | null {
 }
 
 export async function requestDirection(narration: string, seed: number, signal?: AbortSignal): Promise<Direction | null> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), DIRECT_TIMEOUT_MS);
-  signal?.addEventListener("abort", () => controller.abort());
   try {
-    const res = await fetch(`${API_BASE_URL}/atelier/direct`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ narration, seed }),
-      signal: controller.signal,
+    return await withTimeout(DIRECT_TIMEOUT_MS, signal, async (linked) => {
+      const res = await postJson("/atelier/direct", { narration, seed }, linked);
+      return res.ok ? parseDirection(await res.json(), seed) : null;
     });
-    if (!res.ok) return null;
-    return parseDirection(await res.json(), seed);
   } catch {
     return null;
-  } finally {
-    clearTimeout(timer);
   }
 }
