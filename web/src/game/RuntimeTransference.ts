@@ -167,18 +167,17 @@ export class RuntimeTransference {
     });
   }
 
-  // INPUT: symbolic invocation/progress. OUTPUT: updated ritual gravity. SIDE EFFECTS: remembers bounded symbolic observations this session.
+  // INPUT: symbolic invocation/progress. OUTPUT: snapshot with only ritual gravity moved. SIDE EFFECTS: remembers bounded symbolic observations this session.
   observeSymbol(event: SymbolicEvent): RuntimeTransferenceSnapshot {
     this.observations = [
       ...this.observations,
       { archetype: event.archetype, intensity: clamp01(event.intensity) },
     ].slice(-32);
-    return this.recompute({
-      pressure: this.snapshotState.worldBehavior ? 0 : 0,
-      history: [],
-      room: null,
-      narrativeReflection: this.snapshotState.narrativeReflection,
-    });
+    this.snapshotState = {
+      ...this.snapshotState,
+      ritualGravity: resolveRitualGravity({ observations: this.observations, profile: this.profile }),
+    };
+    return this.snapshotState;
   }
 
   // INPUT: completed runtime session. OUTPUT: persisted profile plus narrative paragraph. SIDE EFFECTS: writes persistent profile.

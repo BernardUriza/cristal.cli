@@ -160,3 +160,23 @@ describe("RuntimeTransference D3 integration", () => {
     expect(useGame.getState().transference.narrativeReflection).toMatch(/labyrinth|rooms/i);
   });
 });
+
+describe("observeSymbol", () => {
+  it("moves ritual gravity without ticking identity or dropping the room context", () => {
+    const runtime = new RuntimeTransference(memoryStorage());
+    const before = runtime.enterRoom({ room, pressure: 0.5, history: mixedHistory() });
+    const after = runtime.observeSymbol({ archetype: "moon", signal: "invoked", intensity: 1, at: 2000 });
+
+    expect(after.ritualGravity.archetypeBias.moon).toBeGreaterThan(before.ritualGravity.archetypeBias.moon);
+    expect(after.identity.updates).toBe(before.identity.updates);
+    expect(after.worldBehavior).toEqual(before.worldBehavior);
+    expect(after.memoryEchoes).toEqual(before.memoryEchoes);
+  });
+
+  it("ticks identity at most once per glyph invoked inside a room", () => {
+    useGame.setState({ mode: GameMode.Room, room, emotionalHistory: mixedHistory() });
+    const before = useGame.getState().transference.identity.updates;
+    useGame.getState().setLastSymbol({ archetype: "moon", signal: "invoked", intensity: 1, at: 3000 });
+    expect(useGame.getState().transference.identity.updates - before).toBeLessThanOrEqual(1);
+  });
+});

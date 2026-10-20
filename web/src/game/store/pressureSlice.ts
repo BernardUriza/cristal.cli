@@ -54,17 +54,7 @@ export const createPressureSlice: GameSlice<PressureSlice> = (set, get) => ({
   transference: initialTransference,
 
   setLastSymbol: (lastSymbol) =>
-    set((s) => {
-      const observed = runtimeTransference.observeSymbol(lastSymbol);
-      const transference = s.room
-        ? runtimeTransference.enterRoom({
-            room: s.room,
-            pressure: s.psychologicalPressure,
-            history: s.emotionalHistory,
-          })
-        : observed;
-      return { lastSymbol, transference };
-    }),
+    set({ lastSymbol, transference: runtimeTransference.observeSymbol(lastSymbol) }),
 
   setPsychologicalPressure: (pressure, stance) =>
     set((s) => {
