@@ -6,7 +6,7 @@ import { Scene } from "./game/Scene";
 import { RoomScene } from "./game/RoomScene";
 import { InteractPrompt } from "./ui/InteractPrompt";
 import { OnboardingHint } from "./ui/OnboardingHint";
-import { ConsoleOverlay } from "./ui/ConsoleOverlay";
+import { ConsoleOverlay } from "./ui/console/ConsoleOverlay";
 import { DebugHUD } from "./ui/DebugHUD";
 import { RoomPanel } from "./ui/RoomPanel";
 import { RoomCaption } from "./ui/RoomCaption";
