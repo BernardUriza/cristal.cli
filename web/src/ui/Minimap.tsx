@@ -1,25 +1,20 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { CELL, generateMaze } from "../game/maze";
+import { useEffect, useMemo, useState } from "react";
+import { generateMaze } from "../game/maze";
 import { distanceField, isFullyConnected } from "../game/mazeGraph";
-import { cellKey, nearestUnvisited, routeToRoom } from "../game/MazeRouteAdvisor";
 import { MAZE_COLS, MAZE_ROWS, MAZE_SEED, SPAWN_CELL } from "../game/mazeConfig";
 import { getPlayerPose, subscribePlayerPose, type PlayerPose } from "../game/playerPositionBus";
 import { riteCandidateNodes } from "../game/riteFocus";
 import { useGame } from "../game/store";
 import { GameMode } from "../game/types";
 import { useRitePrefetch } from "../game/useRitePrefetch";
-import { WORLD_NODES, type WorldNode } from "../game/worldNodes";
+import { WORLD_NODES } from "../game/worldNodes";
+import { CELL_PX, MAP_HEIGHT as h, MAP_WIDTH as w, center, poseCell, poseMarker } from "./minimap/coords";
+import { nodeVisited, planMinimapRoute, withVisited } from "./minimap/routePolicy";
 
-const CELL_PX = 18;
 const STROKE = "#1d4d3a";
 const PHOSPHOR = "#39ff14";
 const PLAYER = "#7dffd0";
 const ROUTE = "#ffcf4d";
-
-const center = (c: number) => c * CELL_PX + CELL_PX / 2;
-
-const OFFSET_X = (MAZE_COLS * CELL) / 2 - CELL / 2;
-const OFFSET_Z = (MAZE_ROWS * CELL) / 2 - CELL / 2;
 
 function heat(distance: number, max: number): string {
   if (distance < 0) return "#0a0f0c";
@@ -40,50 +35,20 @@ export function Minimap() {
   const [pose, setPose] = useState<PlayerPose>(getPlayerPose);
   useEffect(() => subscribePlayerPose(setPose), []);
 
-  const w = MAZE_COLS * CELL_PX;
-  const h = MAZE_ROWS * CELL_PX;
-
-  const dotX = ((pose.x + OFFSET_X) / CELL) * CELL_PX + CELL_PX / 2;
-  const dotZ = ((pose.z + OFFSET_Z) / CELL) * CELL_PX + CELL_PX / 2;
-  const headX = dotX + Math.sin(pose.heading) * CELL_PX * 0.6;
-  const headZ = dotZ + Math.cos(pose.heading) * CELL_PX * 0.6;
+  const { dotX, dotZ, headX, headZ } = poseMarker(pose);
 
   // Route tiers: nearest rite target (never demoted by visits, so standing on it
   // reads "aquí" instead of pointing at a farther twin), unvisited node, unvisited cell.
   const verticalSlice = useGame((s) => s.verticalSlice);
   const exploring = useGame((s) => s.mode === GameMode.Exploration);
-  const visited = useRef<Set<string>>(new Set());
-  const pcx = Math.max(0, Math.min(MAZE_COLS - 1, Math.round((pose.x + OFFSET_X) / CELL)));
-  const pcy = Math.max(0, Math.min(MAZE_ROWS - 1, Math.round((pose.z + OFFSET_Z) / CELL)));
-  visited.current.add(cellKey({ x: pcx, y: pcy }));
-  const { route, targetNode, isRiteTarget } = useMemo(() => {
-    const from = { x: pcx, y: pcy };
-    const shortestRouteTo = (nodes: readonly WorldNode[]) =>
-      nodes
-        .map((node) => ({
-          node,
-          route: routeToRoom(maze, from, { x: node.cell[0], y: node.cell[1] }),
-        }))
-        .filter((entry): entry is { node: WorldNode; route: NonNullable<ReturnType<typeof routeToRoom>> } =>
-          Boolean(entry.route)
-        )
-        .sort((a, b) => a.route.length - b.route.length)[0] ?? null;
-
-    const riteHit = shortestRouteTo(riteCandidateNodes(verticalSlice, WORLD_NODES));
-    if (riteHit) return { route: riteHit.route, targetNode: riteHit.node, isRiteTarget: true };
-
-    const nodeHit = shortestRouteTo(
-      WORLD_NODES.filter((node) => !visited.current.has(cellKey({ x: node.cell[0], y: node.cell[1] })))
-    );
-    if (nodeHit) return { route: nodeHit.route, targetNode: nodeHit.node, isRiteTarget: false };
-
-    const target = nearestUnvisited(maze, from, visited.current);
-    return {
-      route: target ? routeToRoom(maze, from, target) : null,
-      targetNode: null,
-      isRiteTarget: false,
-    };
-  }, [maze, pcx, pcy, verticalSlice]);
+  const { x: pcx, y: pcy } = poseCell(pose);
+  const [remembered, setRemembered] = useState<ReadonlySet<string>>(() => new Set());
+  const visited = useMemo(() => withVisited(remembered, { x: pcx, y: pcy }), [remembered, pcx, pcy]);
+  useEffect(() => setRemembered(visited), [visited]);
+  const { route, targetNode, isRiteTarget } = useMemo(
+    () => planMinimapRoute(maze, { x: pcx, y: pcy }, riteCandidateNodes(verticalSlice, WORLD_NODES), WORLD_NODES, visited),
+    [maze, pcx, pcy, verticalSlice, visited]
+  );
   useRitePrefetch(targetNode, isRiteTarget);
 
   if (!exploring) return null;
@@ -150,7 +115,7 @@ export function Minimap() {
         {WORLD_NODES.map((node) => {
           const x = center(node.cell[0]);
           const y = center(node.cell[1]);
-          const visitedNode = visited.current.has(cellKey({ x: node.cell[0], y: node.cell[1] }));
+          const visitedNode = nodeVisited(visited, node);
           const activeTarget = targetNode?.id === node.id;
           return node.kind === "glyph" ? (
             <rect
