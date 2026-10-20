@@ -54,10 +54,6 @@ export function translation(t: Vec3): Mat4 {
   return fromRows(1, 0, 0, t[0], 0, 1, 0, t[1], 0, 0, 1, t[2], 0, 0, 0, 1);
 }
 
-export function scaling(s: Vec3): Mat4 {
-  return fromRows(s[0], 0, 0, 0, 0, s[1], 0, 0, 0, 0, s[2], 0, 0, 0, 0, 1);
-}
-
 export function rotationY(angle: number): Mat4 {
   const c = Math.cos(angle);
   const s = Math.sin(angle);
@@ -103,9 +99,4 @@ export function perspective(fovY: number, aspect: number, near: number, far: num
   const c = -(far + near) / (far - near);
   const d = (-2 * far * near) / (far - near);
   return fromRows(x, 0, a, 0, 0, y, b, 0, 0, 0, c, d, 0, 0, -1, 0);
-}
-
-export function approxEqualMat(a: Mat4, b: Mat4, eps = 1e-9): boolean {
-  for (let i = 0; i < 16; i++) if (Math.abs(a[i] - b[i]) > eps) return false;
-  return true;
 }

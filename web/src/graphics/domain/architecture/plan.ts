@@ -1,5 +1,5 @@
 import type { Vec2 } from "../shapes.ts";
-import { type CloisterLayout, type Rect, rectWidth, rectDepth } from "./layout.ts";
+import { type CloisterLayout, type Rect } from "./layout.ts";
 import { EXTERIOR, pairKey, type AccessKind, type Program, type SpaceKind, type SpaceSpec } from "./program.ts";
 
 export type Space = SpaceSpec & { rect: Rect; floor: number; height: number };
@@ -227,8 +227,4 @@ export function openingSpan(wall: Wall, o: Opening): { start: Vec2; end: Vec2; c
   const to = o.at * L + o.width / 2;
   const pt = (t: number): Vec2 => [wall.a[0] + dx * t, wall.a[1] + dz * t];
   return { start: pt(from), end: pt(to), center: pt(o.at * L), from, to };
-}
-
-export function spaceRectSize(space: Space): { width: number; depth: number } {
-  return { width: rectWidth(space.rect), depth: rectDepth(space.rect) };
 }

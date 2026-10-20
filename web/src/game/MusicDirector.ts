@@ -66,10 +66,6 @@ export function setMusicVolume(volume: number): void {
   commitSettings({ ...settings, volume: clamp01(volume) });
 }
 
-export function isMusicMuted(): boolean {
-  return settings.muted;
-}
-
 export function getAudioSettings(): AudioSettings {
   return settings;
 }

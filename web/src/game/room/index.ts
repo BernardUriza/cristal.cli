@@ -1,9 +1,8 @@
-export * from "./config";
-export * from "./geometry";
-export * from "./atmosphere";
-export { makeInscriptionTexture, makeLabelTexture } from "../textTexture";
-export { Door, crossDoor, type DoorProps } from "./Door";
-export { FirstPersonController, type FirstPersonControllerProps } from "./FirstPersonController";
-export { CeilingLight, type CeilingLightProps } from "./CeilingLight";
-export { RoomShell, type RoomShellProps } from "./RoomShell";
-export { DeadCorridors, type DeadCorridorsProps } from "./DeadCorridors";
+export { buildDoors, deadCorridorCount, dimsForShape, driftDims, surfaceForShape } from "./geometry";
+export { atmosphere, type Rgb } from "./atmosphere";
+export { makeInscriptionTexture } from "../textTexture";
+export { Door } from "./Door";
+export { FirstPersonController } from "./FirstPersonController";
+export { CeilingLight } from "./CeilingLight";
+export { RoomShell } from "./RoomShell";
+export { DeadCorridors } from "./DeadCorridors";

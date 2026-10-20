@@ -256,25 +256,3 @@ export function createPersistentTransference(
     },
   };
 }
-
-const defaultApi = createPersistentTransference();
-
-export function load(): TransferenceProfile {
-  return defaultApi.load();
-}
-
-export function save(profile: TransferenceProfile): void {
-  defaultApi.save(profile);
-}
-
-export function mergeSession(profile: TransferenceSessionInput): TransferenceProfile {
-  return defaultApi.mergeSession(profile);
-}
-
-export function getTransference(): TransferenceProfile {
-  return defaultApi.getTransference();
-}
-
-export function reset(): void {
-  defaultApi.reset();
-}

@@ -6,17 +6,9 @@ export type SpaceKind =
   | "plaza" | "block" | "building" | "street" | "junction" | "street-ring"
   | "altar" | "causeway" | "crest" | "precinct";
 
-export const SPACE_KINDS: readonly SpaceKind[] = [
-  "complex", "courtyard", "hall", "gallery", "tower", "stair", "chamber", "bridge",
-  "sanctuary", "shrine", "ring-gallery", "platform", "plaza", "block", "building", "street", "junction", "street-ring",
-  "altar", "causeway", "crest", "precinct",
-];
-
 export type Heading = 0 | 90 | 180 | 270;
 
 export type Relation = "connects" | "contains" | "above" | "faces" | "bridges";
-
-export const RELATIONS: readonly Relation[] = ["connects", "contains", "above", "faces", "bridges"];
 
 export type Archetype = "palace" | "city" | "temple" | "labyrinth";
 

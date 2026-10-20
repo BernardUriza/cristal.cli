@@ -7,17 +7,12 @@ import { silhouetteReport, silhouetteUnits } from "./silhouettes.ts";
 import { graphSignature, localSignatures } from "./topology.ts";
 import type { ComplexityInput, ComplexityReport, RewriteEvidence } from "./types.ts";
 
-export type { BandCoverage, BoxM, ComplexityInput, ComplexityReport, CoverageReport, CreatureCoverage, ProvenanceLike, RegionEvidence, RewriteComplexity, RewriteEvidence, RewriteRecordLike, SilhouetteReport, SilhouetteUnit, SiteEvidence, SpaceGraph, SpaceGraphEdge, SpaceGraphNode, StructuralRelation } from "./types.ts";
-export { detailBand, DETAIL_BANDS, multiscaleCoverage, type DetailBand } from "./bands.ts";
-export { isVerified, rewriteComplexity } from "./chains.ts";
-export { coverage, SiteError, siteHull } from "./coverage.ts";
-export { rewriteEvidence } from "./rewriteEvidence.ts";
-export { clusterShapes, compositionSilhouette, isEligible, silhouetteReport, silhouetteUnits } from "./silhouettes.ts";
+export type { ComplexityReport, SpaceGraph } from "./types.ts";
+export { clusterShapes, compositionSilhouette, isEligible, silhouetteUnits } from "./silhouettes.ts";
 export { effectiveDiversity } from "./cluster.ts";
-export { occlusionViolations, scenePainter, type OcclusionBody, type Painter } from "./occlusion.ts";
-export { OCCLUSION_CASES, occlusionBattery, type BatteryRow } from "./occlusionCases.ts";
-export { graphFromPlan, graphSignature, localSignatures, topologicalDiversity, toSpaceGraph, type GraphSource } from "./topology.ts";
-export { evaluate, type SuiteContext, type Verdict } from "./verdicts.ts";
+export { occlusionBattery } from "./occlusionCases.ts";
+export { graphFromPlan, topologicalDiversity, toSpaceGraph } from "./topology.ts";
+export { evaluate } from "./verdicts.ts";
 export { ACCEPTANCE } from "../../config/complexity.ts";
 
 function silhouettesOf(input: ComplexityInput, tuning: ComplexityTuning): ComplexityReport["silhouettes"] {
@@ -25,7 +20,7 @@ function silhouettesOf(input: ComplexityInput, tuning: ComplexityTuning): Comple
   return { buildings: silhouetteReport(units, "building", tuning), creatures: silhouetteReport(units, "creature", tuning) };
 }
 
-export function evidenceOf(input: ComplexityInput, tuning: ComplexityTuning = COMPLEXITY_TUNING): RewriteEvidence[] {
+function evidenceOf(input: ComplexityInput, tuning: ComplexityTuning = COMPLEXITY_TUNING): RewriteEvidence[] {
   return rewriteEvidence(input.list, (input.provenance ?? []).flatMap((p) => p.rewrites ?? []), input.width, input.height, tuning);
 }
 

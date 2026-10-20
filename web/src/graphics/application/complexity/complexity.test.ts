@@ -3,7 +3,9 @@ import { line, rect, solid, stroked, type DisplayList } from "../../domain/shape
 import { CLOISTER_LAYOUT, CLOISTER_PROGRAM } from "../../config/programs.ts";
 import { buildPlan } from "../../domain/architecture/plan.ts";
 import { COMPLEXITY_TUNING } from "../../config/complexity.ts";
-import { complexityReport, detailBand, evaluate, graphFromPlan, graphSignature, multiscaleCoverage, topologicalDiversity, type SpaceGraph } from "./index.ts";
+import { detailBand, multiscaleCoverage } from "./bands.ts";
+import { complexityReport, evaluate, graphFromPlan, topologicalDiversity, type SpaceGraph } from "./index.ts";
+import { graphSignature } from "./topology.ts";
 
 const ink = solid("#fff");
 

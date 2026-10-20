@@ -5,7 +5,6 @@ import {
   ResponseSet,
   ResponseTemplate,
   ResponsePattern,
-  SemanticSignalType,
 } from "./types";
 import { parse, getArgument } from "./inputParser";
 import { matchPattern } from "./patterns";
@@ -14,11 +13,8 @@ import { CristalMemory } from "./memory";
 import { StateMachine, stateTransitionFromString } from "./stateMachine";
 import { generateCristalPsychReply, type PsychContext } from "./psych/PsychologicalResponseEngine";
 import { arbitrate } from "./psych/ToneArbitrator";
-import { clamp01 } from "../shared/math";
 
 const VARIABLE_PATTERN = /\{(\w+)\}/g;
-const NARRATIVE_THRESHOLD = 0.3;
-const RITUAL_THRESHOLD = 0.6;
 
 function patternLevel(level: ResponsePattern["level"]): ResponseLevel {
   return level === "narrative"
@@ -50,7 +46,7 @@ export class ResponseEngine {
     // stance engine instead of keyword-bucket matching. The state machine still
     // reacts to keywords separately (TerminalCore), so this only swaps the words.
     if (pattern && pattern.command) {
-      const level = this.determineLevel(command, pattern);
+      const level = patternLevel(pattern.level);
       const response = this.build(pattern, command, level);
       const transition = stateTransitionFromString(pattern.stateTransition);
       if (transition) this.state.transitionTo(transition);
@@ -155,34 +151,6 @@ export class ResponseEngine {
       patternId: pattern?.id,
       responseSet,
     };
-  }
-
-  private determineLevel(command: ParsedCommand, pattern: ResponsePattern | null): ResponseLevel {
-    if (pattern) return patternLevel(pattern.level);
-
-    const progression = this.calculateProgressionScore();
-    if (progression >= RITUAL_THRESHOLD) return ResponseLevel.Ritual;
-    if (progression >= NARRATIVE_THRESHOLD) return ResponseLevel.Narrative;
-
-    if (Math.abs(command.emotionalWeight) >= 1.5) return ResponseLevel.Narrative;
-
-    if (
-      command.signalType === SemanticSignalType.Philosophical ||
-      command.signalType === SemanticSignalType.Identity ||
-      command.signalType === SemanticSignalType.Ritual
-    ) {
-      return ResponseLevel.Narrative;
-    }
-    return ResponseLevel.Literal;
-  }
-
-  private calculateProgressionScore(): number {
-    let score = 0;
-    score += Math.min(this.memory.commandCount / 50, 0.3);
-    score += Math.min(this.memory.discoveredKeywordCount / 20, 0.2);
-    score += Math.min(this.memory.arcanaUnlockedCount / 7, 0.3);
-    score += Math.min(this.memory.majorEventsCount / 5, 0.2);
-    return clamp01(score);
   }
 
   private applyStateModifiers(response: BuiltResponse) {

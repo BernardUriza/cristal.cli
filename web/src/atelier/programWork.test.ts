@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { graphSignature } from "../graphics/application/complexity/index.ts";
+import { graphSignature } from "../graphics/application/complexity/topology.ts";
 import { direct, override } from "./director.ts";
 import { workComplexity, workGraph } from "./manifest.ts";
 import { composeWork } from "./work.ts";

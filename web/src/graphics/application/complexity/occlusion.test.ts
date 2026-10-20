@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { occlusionBattery, scenePainter } from "./index.ts";
+import { occlusionBattery } from "./index.ts";
+import { scenePainter } from "./occlusion.ts";
 
 describe("occlusion battery", () => {
   it("every figure overlaps something on screen, so the check has something to find", () => {

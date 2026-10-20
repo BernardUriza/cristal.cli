@@ -1,7 +1,5 @@
 export type Vec3 = readonly [number, number, number];
 
-export const v3 = (x: number, y: number, z: number): Vec3 => [x, y, z];
-
 export function add(a: Vec3, b: Vec3): Vec3 {
   return [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
 }
@@ -47,10 +45,6 @@ export function centroid(points: readonly Vec3[]): Vec3 {
   }
   const n = points.length || 1;
   return [x / n, y / n, z / n];
-}
-
-export function approxEqual(a: Vec3, b: Vec3, eps = 1e-9): boolean {
-  return Math.abs(a[0] - b[0]) <= eps && Math.abs(a[1] - b[1]) <= eps && Math.abs(a[2] - b[2]) <= eps;
 }
 
 export type Box3 = { min: Vec3; max: Vec3 };

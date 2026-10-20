@@ -102,10 +102,6 @@ export function recordEnvironmentalStance(stance: Stance): PressureState {
   return session.tracker.state;
 }
 
-export function recordEnvironmentalDeflection(): PressureState {
-  return recordEnvironmentalStance("deflection");
-}
-
 export function resetPsychSession(): void {
   session = freshSession();
 }

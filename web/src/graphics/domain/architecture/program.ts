@@ -18,7 +18,3 @@ export const EXTERIOR = "exterior";
 export function pairKey(a: string, b: string): string {
   return a < b ? `${a}|${b}` : `${b}|${a}`;
 }
-
-export function spaceById(program: Program, id: string): SpaceSpec | undefined {
-  return program.spaces.find((s) => s.id === id);
-}

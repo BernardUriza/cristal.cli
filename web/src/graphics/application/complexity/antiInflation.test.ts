@@ -3,7 +3,10 @@ import { COMPLEXITY_TUNING } from "../../config/complexity.ts";
 import { tagRewrite, tagRoot } from "../../domain/semantic.ts";
 import { group, rect, solid, type Shape, type Vec2 } from "../../domain/shapes.ts";
 import { convexHull } from "./descriptor.ts";
-import { complexityReport, rewriteComplexity, SiteError, type RewriteEvidence, type RewriteRecordLike, type SiteEvidence } from "./index.ts";
+import { rewriteComplexity } from "./chains.ts";
+import { SiteError } from "./coverage.ts";
+import { complexityReport } from "./index.ts";
+import type { RewriteEvidence, RewriteRecordLike, SiteEvidence } from "./types.ts";
 
 const W = 600, H = 400;
 const ink = solid("#fff");
