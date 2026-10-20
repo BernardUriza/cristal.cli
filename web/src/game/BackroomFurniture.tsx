@@ -1,14 +1,16 @@
-import { createContext, useContext, useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { RoundedBox } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
-import * as THREE from "three";
+import type * as THREE from "three";
 import { RectAreaLightUniformsLib } from "three/examples/jsm/lights/RectAreaLightUniformsLib.js";
 import { WALL_HEIGHT } from "./maze";
 import { backroomFurnitureByKind, type BackroomFurnitureKind } from "./backroomFurniture";
-import { getFurniturePbrTextures, type FurnitureTextureProfile } from "./proceduralPbrTextures";
 import type { BackroomFurniturePlacement } from "./BackroomFurniturePlacer";
 import { assignAreaLights } from "./furniture/areaLightBudget";
 import { FurnitureMaterialCache } from "./furniture/materialCache";
+import { createFurnitureMaterial, type FurnitureMaterialKey } from "./furniture/materials";
+import { FurnitureMaterialsContext, useFurnitureMaterial } from "./furniture/materialsContext";
+import { FurnitureBox, GlowPanel } from "./furniture/primitives";
 
 RectAreaLightUniformsLib.init();
 
@@ -23,198 +25,10 @@ function assertNever(value: never): never {
   throw new Error(`Unhandled backroom furniture kind: ${value}`);
 }
 
-type FurnitureMaterialKey =
-  | "deskTop"
-  | "deskLeg"
-  | "chairVinyl"
-  | "chairBase"
-  | "cabinetPaint"
-  | "cabinetDrawer"
-  | "cabinetHandle"
-  | "cardboardA"
-  | "cardboardB"
-  | "serverBody"
-  | "serverPanel"
-  | "extinguisherPaint"
-  | "darkRubber"
-  | "paperLabel"
-  | "exitShell"
-  | "exitFace"
-  | "ventPlate"
-  | "ventSlat"
-  | "pipeMetal"
-  | "pipeBracket"
-  | "vendingBody"
-  | "vendingGlass"
-  | "vendingPanel"
-  | "wetCarpet"
-  | "monitorPlastic"
-  | "monitorGlass"
-  | "cartMetal"
-  | "fluorescentTube"
-  | "emissiveGreen"
-  | "emissiveCyan";
-
 function flickerNoise(bucket: number, seed: number) {
   let n = bucket * 374761393 + seed * 668265263;
   n = (n ^ (n >> 13)) * 1274126177;
   return ((n ^ (n >> 16)) >>> 0) / 4294967295;
-}
-
-function makeMaterial(
-  key: FurnitureMaterialKey,
-  profile: FurnitureTextureProfile,
-  params: THREE.MeshStandardMaterialParameters,
-  normalScale = 0.25
-) {
-  const maps = getFurniturePbrTextures(profile);
-  const material = new THREE.MeshStandardMaterial({
-    ...params,
-    normalMap: maps.normalMap,
-    roughnessMap: maps.roughnessMap,
-  });
-  material.normalScale.set(normalScale, normalScale);
-  material.envMapIntensity = params.envMapIntensity ?? 0.35;
-  material.name = `backroom-${key}`;
-  return material;
-}
-
-function createFurnitureMaterial(key: FurnitureMaterialKey) {
-  switch (key) {
-    case "deskTop":
-      return makeMaterial(key, "agedLaminate", { color: "#4f453b", roughness: 0.58, metalness: 0.02 }, 0.28);
-    case "deskLeg":
-      return makeMaterial(key, "paintedMetal", { color: "#3b332c", roughness: 0.5, metalness: 0.28 }, 0.22);
-    case "chairVinyl":
-      return makeMaterial(key, "dustyPlastic", { color: "#252c2b", roughness: 0.64, metalness: 0.0 }, 0.34);
-    case "chairBase":
-      return makeMaterial(key, "paintedMetal", { color: "#171b1b", roughness: 0.47, metalness: 0.35 }, 0.2);
-    case "cabinetPaint":
-      return makeMaterial(key, "paintedMetal", { color: "#737d75", roughness: 0.48, metalness: 0.22 }, 0.32);
-    case "cabinetDrawer":
-      return makeMaterial(key, "paintedMetal", { color: "#626b64", roughness: 0.52, metalness: 0.18 }, 0.22);
-    case "cabinetHandle":
-      return makeMaterial(key, "bareMetal", { color: "#c2c8be", roughness: 0.38, metalness: 0.72, envMapIntensity: 0.55 }, 0.16);
-    case "cardboardA":
-      return makeMaterial(key, "cardboard", { color: "#8f6a45", roughness: 0.92, metalness: 0.0 }, 0.34);
-    case "cardboardB":
-      return makeMaterial(key, "cardboard", { color: "#a47c52", roughness: 0.88, metalness: 0.0 }, 0.32);
-    case "serverBody":
-      return makeMaterial(key, "paintedMetal", { color: "#111615", roughness: 0.43, metalness: 0.42 }, 0.2);
-    case "serverPanel":
-      return makeMaterial(key, "paintedMetal", { color: "#27302d", roughness: 0.5, metalness: 0.3 }, 0.2);
-    case "extinguisherPaint":
-      return makeMaterial(key, "paintedMetal", { color: "#b51f19", roughness: 0.36, metalness: 0.38, envMapIntensity: 0.5 }, 0.24);
-    case "darkRubber":
-      return makeMaterial(key, "dustyPlastic", { color: "#161918", roughness: 0.7, metalness: 0.0 }, 0.2);
-    case "paperLabel":
-      return makeMaterial(key, "cardboard", { color: "#e7e4d7", roughness: 0.9, metalness: 0.0 }, 0.1);
-    case "exitShell":
-      return makeMaterial(key, "dustyPlastic", { color: "#062813", emissive: "#49ff87", emissiveIntensity: 1.15, roughness: 0.48, metalness: 0.0, toneMapped: false }, 0.16);
-    case "exitFace":
-      return makeMaterial(key, "dustyPlastic", { color: "#dcffe8", emissive: "#49ff87", emissiveIntensity: 0.9, roughness: 0.42, metalness: 0.0, toneMapped: false }, 0.08);
-    case "ventPlate":
-      return makeMaterial(key, "bareMetal", { color: "#222927", roughness: 0.45, metalness: 0.72, envMapIntensity: 0.5 }, 0.22);
-    case "ventSlat":
-      return makeMaterial(key, "bareMetal", { color: "#68716b", roughness: 0.4, metalness: 0.78, envMapIntensity: 0.56 }, 0.16);
-    case "pipeMetal":
-      return makeMaterial(key, "bareMetal", { color: "#6d7771", roughness: 0.42, metalness: 0.78, envMapIntensity: 0.58 }, 0.18);
-    case "pipeBracket":
-      return makeMaterial(key, "paintedMetal", { color: "#3a423e", roughness: 0.52, metalness: 0.35 }, 0.16);
-    case "vendingBody":
-      return makeMaterial(key, "dustyPlastic", { color: "#3a2028", roughness: 0.52, metalness: 0.08 }, 0.3);
-    case "vendingGlass":
-      return makeMaterial(key, "smudgedGlass", { color: "#111719", emissive: "#c94b5f", emissiveIntensity: 0.5, roughness: 0.22, metalness: 0.0, envMapIntensity: 0.62, toneMapped: false }, 0.16);
-    case "vendingPanel":
-      return makeMaterial(key, "dustyPlastic", { color: "#101312", roughness: 0.58, metalness: 0.0 }, 0.18);
-    case "wetCarpet":
-      return makeMaterial(key, "dirtyCarpet", { color: "#102d26", roughness: 1, metalness: 0.0, transparent: true, opacity: 0.72 }, 0.55);
-    case "monitorPlastic":
-      return makeMaterial(key, "dustyPlastic", { color: "#111414", roughness: 0.62, metalness: 0.0 }, 0.25);
-    case "monitorGlass":
-      return makeMaterial(key, "smudgedGlass", { color: "#070b0d", emissive: "#7df0ff", emissiveIntensity: 0.22, roughness: 0.3, metalness: 0.0, envMapIntensity: 0.55, toneMapped: false }, 0.18);
-    case "cartMetal":
-      return makeMaterial(key, "bareMetal", { color: "#68716b", roughness: 0.36, metalness: 0.8, envMapIntensity: 0.58 }, 0.18);
-    case "fluorescentTube":
-      return makeMaterial(key, "smudgedGlass", { color: "#e5fff0", roughness: 0.18, metalness: 0.0, emissive: "#d8ffe3", emissiveIntensity: 1.4, toneMapped: false }, 0.08);
-    case "emissiveGreen":
-      return makeMaterial(key, "dustyPlastic", { color: "#46e6a1", emissive: "#46e6a1", emissiveIntensity: 1.6, roughness: 0.36, toneMapped: false }, 0.08);
-    case "emissiveCyan":
-      return makeMaterial(key, "smudgedGlass", { color: "#7df0ff", emissive: "#7df0ff", emissiveIntensity: 0.22, roughness: 0.34, toneMapped: false }, 0.1);
-    default:
-      return assertNever(key);
-  }
-}
-
-const FurnitureMaterialsContext = createContext<FurnitureMaterialCache<FurnitureMaterialKey> | null>(null);
-
-function useFurnitureMaterials() {
-  const cache = useContext(FurnitureMaterialsContext);
-  if (!cache) throw new Error("Backroom furniture rendered outside BackroomFurnitureSet");
-  return cache;
-}
-
-function useFurnitureMaterial() {
-  const cache = useFurnitureMaterials();
-  return (key: FurnitureMaterialKey) => cache.material(key);
-}
-
-function FurnitureBox({
-  material,
-  position,
-  scale,
-  rounded = true,
-  radius = 0.025,
-}: {
-  material: THREE.Material;
-  position: [number, number, number];
-  scale: [number, number, number];
-  rounded?: boolean;
-  radius?: number;
-}) {
-  if (rounded) {
-    return (
-      <RoundedBox
-        args={scale}
-        radius={Math.min(radius, scale[0] * 0.3, scale[1] * 0.3, scale[2] * 0.3)}
-        smoothness={3}
-        bevelSegments={2}
-        position={position}
-        material={material}
-        castShadow
-        receiveShadow
-      />
-    );
-  }
-
-  return (
-    <mesh position={position} castShadow receiveShadow>
-      <boxGeometry args={scale} />
-      <primitive object={material} attach="material" />
-    </mesh>
-  );
-}
-
-function GlowPanel({
-  color,
-  opacity,
-  position,
-  rotation = [0, 0, 0],
-  size,
-}: {
-  color: string;
-  opacity: number;
-  position: [number, number, number];
-  rotation?: [number, number, number];
-  size: [number, number];
-}) {
-  const material = useFurnitureMaterials().glow(color, opacity);
-  return (
-    <mesh position={position} rotation={rotation} renderOrder={2}>
-      <planeGeometry args={size} />
-      <primitive object={material} attach="material" />
-    </mesh>
-  );
 }
 
 function FluorescentCeilingLight({ accent, areaLight }: { accent: string; areaLight: boolean }) {
