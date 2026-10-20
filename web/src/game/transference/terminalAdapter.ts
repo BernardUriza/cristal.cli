@@ -1,5 +1,5 @@
 import type { ResponseContext } from "../../terminal/responseShaper";
-import type { RuntimeTransferenceSnapshot } from "../RuntimeTransference";
+import type { RuntimeTransferenceSnapshot } from "./snapshot";
 import { terminalEchoRoll, terminalSilenceRoll } from "./worldDice";
 
 export const TERMINAL_ADAPTER_COPY = {

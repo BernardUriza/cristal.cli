@@ -11,7 +11,7 @@ import type { FalseDoorAnnotation } from "../FalseDoorConsequences";
 import type { EmotionalHistoryEntry } from "../EmotionalHistory";
 import type { PressureEndingState } from "../PressureEnding";
 import type { Stance } from "../../terminal/psych/StanceClassifier";
-import type { RuntimeTransferenceSnapshot } from "../RuntimeTransference";
+import type { RuntimeTransferenceSnapshot } from "../transference/snapshot";
 import type { VerticalSliceState } from "../VerticalSlice";
 
 /** where the player stood in the maze on entering a room, restored on leaving */

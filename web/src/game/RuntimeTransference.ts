@@ -4,8 +4,8 @@ import { clamp01 } from "../shared/math";
 import { planAbsence, type AbsencePlan } from "./AbsencePlanner";
 import { resolveEmotionalSeason, type EmotionalSeasonState } from "./EmotionalSeason";
 import type { EmotionalHistoryEntry } from "./EmotionalHistory";
-import { IdentityDrift, type IdentityDriftState } from "./IdentityDrift";
-import { generateMemoryEchoes, type EchoFragment } from "./MemoryEchoEngine";
+import { IdentityDrift } from "./IdentityDrift";
+import { generateMemoryEchoes } from "./MemoryEchoEngine";
 import { compressNarrative } from "./NarrativeCompression";
 import {
   createPersistentTransference,
@@ -15,31 +15,14 @@ import {
   type TransferenceStorage,
 } from "./PersistentTransference";
 import { RelationshipTracker, type RelationshipSnapshot } from "./RelationshipTracker";
-import { resolveRitualGravity, type RitualGravity, type RitualObservation } from "./RitualGravity";
+import { resolveRitualGravity, type RitualObservation } from "./RitualGravity";
 import { adaptTerminalResponse } from "./transference/terminalAdapter";
+import type { RuntimeTransferenceSnapshot } from "./transference/snapshot";
 import type { Room } from "./roomApi";
 import type { SymbolicEvent } from "./symbolicBus";
 import { WORLD_NODES } from "./worldNodes";
-import { resolveWorldBehavior, type WorldBehavior, type WorldBehaviorPressure } from "./WorldBehaviorResolver";
-import { resolveWorldConfidence, type WorldConfidenceState } from "./WorldConfidence";
-
-export interface RuntimeTransferenceSnapshot {
-  profile: TransferenceProfile;
-  relationship: RelationshipSnapshot;
-  worldBehavior: WorldBehavior | null;
-  memoryEchoes: EchoFragment[];
-  identity: IdentityDriftState;
-  emotionalSeason: EmotionalSeasonState;
-  ritualGravity: RitualGravity;
-  absencePlan: AbsencePlan;
-  narrativeReflection: string | null;
-  worldConfidence: WorldConfidenceState;
-  saveMetadata: {
-    identity: string;
-    confidence: number;
-    updatedAt: number;
-  };
-}
+import { resolveWorldBehavior, type WorldBehaviorPressure } from "./WorldBehaviorResolver";
+import { resolveWorldConfidence } from "./WorldConfidence";
 
 export interface RuntimeInteractionInput {
   stance: Stance;

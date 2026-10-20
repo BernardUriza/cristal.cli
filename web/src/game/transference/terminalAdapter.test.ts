@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { RuntimeTransference, type RuntimeTransferenceSnapshot } from "../RuntimeTransference";
+import { RuntimeTransference } from "../RuntimeTransference";
+import type { RuntimeTransferenceSnapshot } from "./snapshot";
 import { TERMINAL_ADAPTER_COPY, adaptTerminalResponse } from "./terminalAdapter";
 
 const base = new RuntimeTransference(null).snapshot();
