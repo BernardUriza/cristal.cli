@@ -80,6 +80,21 @@ Bug de `observeSymbol` → `shared/rng` con tests dorados → `tokens.css` → `
   en las cuatro páginas.
 - `740c9ec` `shared/api` (`withTimeout`, `postJson`, `beacon`): atelier ya no importa `game/`; verificado en prod
   (Pedro contestó en 59 s).
+- `165752f` `shared/storage` (`readJson`/`writeJson`/`flagStore`): verificado en el navegador, sonido y mejor marca
+  sobreviven al reload.
+- `716bee4` `src/layering.test.ts` para todo el repo con `KNOWN_DEBT` vacío (`SymbolicArchetype` → `shared/archetype`,
+  puerto `responseShaper` de la terminal, `ErrorBoundary` → `game/`).
+- `99ffbec` `shared/audio`: un solo `AudioContext` (verificado: un contexto, un oscilador por par).
+- `303e720` `shared/math` (`clamp`, `lerp`, `smoothstep`), `shared/color` (`hexToRgb`/`rgbToHex`/`mixHex`;
+  `hexToLinearRgb` parsea con él) y `signedArea`/`polygonArea` junto a `pointInPolygon` en `graphics/domain/bezier.ts`;
+  21 copias borradas. Se quedan locales, a propósito: el `clamp` de `body/contact.ts` (límites invertidos → centro),
+  el `lerp` de `Vec2` en `morph/blend.ts` y el de `Vec3` en `math/vec3.ts` (otra firma), `lerpRgb` (espacio lineal,
+  ahora sobre `lerp`). Las copias inline de clamp01 pasan a `clamp(x, 0, 1)` y no a `clamp01`, que convierte NaN e
+  Infinity en 0; sólo `config/validate.ts` usa `clamp01` porque ya rechaza lo no finito. Snapshots dorados intactos.
+- `28d43f3` barrido de muertos: los doce símbolos, la fachada `defaultApi` (nadie importaba `load`/`save`/…; ya no lee
+  localStorage al importar), la rama de progresión de `determineLevel` (su único llamador siempre trae patrón) y los
+  re-exports sin uso de `game/room/index.ts` y `complexity/index.ts`. El barril de complexity conserva lo que importan
+  `atelier/manifest.ts` y `i+d/friedeberg/complexity-baseline.ts`; los tests que entraban por él leen su módulo.
 - Abierto: una corrida de la suite tuvo `connectivity.test.ts` en rojo una vez y 5 verdes después; semillas fijas,
   sin `Math.random`, sin ediciones ajenas. Causa sin verificar.
 
