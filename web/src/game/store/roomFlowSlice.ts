@@ -7,13 +7,13 @@ import { shouldFalseDoorBite, shouldOfferSafeExit, symbolicSeedBias } from "../t
 import {
   beginNextVariation,
   confessionFragmentsForRoom,
-  loadVerticalSlice,
   noteFalseDoor,
   noteGlyphInvoked,
   noteRoomCrossed,
   noteRoomDismissed,
   type VerticalSliceState,
 } from "../VerticalSlice";
+import { loadVerticalSlice } from "../VerticalSliceStorage";
 import { GOLDEN_RATIO_HASH } from "./config";
 import {
   falseDoorHistory,

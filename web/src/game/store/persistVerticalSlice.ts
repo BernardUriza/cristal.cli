@@ -1,5 +1,5 @@
 import type { StoreApi } from "zustand";
-import { saveVerticalSlice } from "../VerticalSlice";
+import { saveVerticalSlice } from "../VerticalSliceStorage";
 import type { GameState } from "./types";
 
 export function persistVerticalSlice(store: StoreApi<GameState>): () => void {

@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import manifest from "../../public/audio/manifest.json";
-import { MUSIC_TRACKS, TRACK_FILES, TRACK_LOOPS, resolveMusicIntensity, selectTrack } from "./MusicDirector";
-import { GameMode } from "./types";
-import type { WorldBehavior } from "./WorldBehaviorResolver";
+import manifest from "../../../public/audio/manifest.json";
+import { MUSIC_TRACKS, TRACK_FILES, TRACK_LOOPS, resolveMusicIntensity, selectTrack } from "./selection";
+import { GameMode } from "../types";
+import type { WorldBehavior } from "../WorldBehaviorResolver";
 
 describe("selectTrack", () => {
   it("maps exploration to the explore track", () => {
@@ -133,7 +133,7 @@ describe("resolveMusicIntensity", () => {
 
 describe("audio manifest", () => {
   const tracks = manifest.tracks as Record<string, { file: string; loop: boolean }>;
-  const filesOnDisk = Object.keys(import.meta.glob("../../public/audio/*.mp3")).map(
+  const filesOnDisk = Object.keys(import.meta.glob("../../../public/audio/*.mp3")).map(
     (path) => path.split("/").pop() ?? path,
   );
 

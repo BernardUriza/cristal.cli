@@ -4,7 +4,7 @@ import {
   setMusicMuted,
   setMusicVolume,
   subscribeAudioSettings,
-} from "../game/MusicDirector";
+} from "../game/music/settingsStore";
 
 export function AudioControl() {
   const settings = useSyncExternalStore(subscribeAudioSettings, getAudioSettings);

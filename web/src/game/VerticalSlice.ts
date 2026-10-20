@@ -1,4 +1,3 @@
-import { readJson, writeJson } from "../shared/storage";
 import type { SymbolicArchetype } from "../shared/archetype";
 import { parse } from "../terminal/inputParser";
 import { SemanticSignalType } from "../terminal/types";
@@ -22,8 +21,7 @@ export interface VerticalSliceState {
   lastSignal: string | null;
 }
 
-const STORAGE_KEY = "cristal.verticalSlice.v1";
-const FRAGMENT_MAX_LENGTH = 64;
+export const FRAGMENT_MAX_LENGTH = 64;
 
 export const INITIAL_VERTICAL_SLICE: VerticalSliceState = {
   step: "open_console",
@@ -51,30 +49,6 @@ export function objectiveForSlice(slice: VerticalSliceState): string {
     case "complete":
       return "Rito cerrado. Explora otro glifo si quieres abrir otra variación.";
   }
-}
-
-export function loadVerticalSlice(): VerticalSliceState {
-  const saved = readJson(STORAGE_KEY);
-  if (!saved || typeof saved !== "object") return INITIAL_VERTICAL_SLICE;
-  const parsed = saved as Partial<VerticalSliceState>;
-  return {
-      ...INITIAL_VERTICAL_SLICE,
-      ...parsed,
-      step: normalizeStep(parsed.step),
-      confessionFragment:
-        typeof parsed.confessionFragment === "string"
-          ? parsed.confessionFragment.slice(0, FRAGMENT_MAX_LENGTH)
-          : null,
-      invokedGlyph: typeof parsed.invokedGlyph === "string" ? parsed.invokedGlyph : null,
-      crossedRooms: numberOrZero(parsed.crossedRooms),
-      falseDoors: numberOrZero(parsed.falseDoors),
-      completedRuns: numberOrZero(parsed.completedRuns),
-      lastSignal: typeof parsed.lastSignal === "string" ? parsed.lastSignal : null,
-    };
-}
-
-export function saveVerticalSlice(slice: VerticalSliceState): void {
-  writeJson(STORAGE_KEY, slice);
 }
 
 export function noteConsoleOpened(slice: VerticalSliceState, label: string): VerticalSliceState {
@@ -236,21 +210,4 @@ function looksLikeConfession(input: string): boolean {
   if (parsed.isCommand) return false;
   if (parsed.signalType === SemanticSignalType.Identity) return false;
   return true;
-}
-
-function normalizeStep(step: unknown): SliceStep {
-  return [
-    "open_console",
-    "confess",
-    "invoke_glyph",
-    "cross_room",
-    "return_changed",
-    "complete",
-  ].includes(String(step))
-    ? (step as SliceStep)
-    : INITIAL_VERTICAL_SLICE.step;
-}
-
-function numberOrZero(value: unknown): number {
-  return typeof value === "number" && Number.isFinite(value) ? Math.max(0, value) : 0;
 }
