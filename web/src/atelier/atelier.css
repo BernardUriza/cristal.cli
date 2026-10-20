@@ -1,26 +1,3 @@
-:root {
-  --bg: #0b0b12;
-  --fg: #f1e6c8;
-  --dim: #8a7f66;
-  --accent: #33ff99;
-  --magenta: #d8468f;
-  --turquoise: #2fb7c9;
-}
-
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-html,
-body {
-  min-height: 100%;
-  background: var(--bg);
-  color: var(--fg);
-  font: 15px/1.5 "JetBrains Mono", Consolas, monospace;
-}
-
 .atelier {
   min-height: 100vh;
   display: flex;
@@ -60,14 +37,14 @@ body {
 
 .atelier-motif,
 .atelier-sketch {
-  background: #f3e7c6;
+  background: var(--paper);
   border: 1px solid #2a2a3a;
   padding: 4px;
   cursor: pointer;
   display: flex;
   flex-direction: column;
   gap: 2px;
-  color: #1a1412;
+  color: var(--card-ink);
   font: inherit;
   font-size: 12px;
 }
@@ -141,7 +118,7 @@ body {
   width: 100%;
   height: auto;
   aspect-ratio: 4 / 3;
-  background: #f3e7c6;
+  background: var(--paper);
   border: 1px solid #2a2a3a;
   cursor: crosshair;
   display: block;

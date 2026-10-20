@@ -3,7 +3,7 @@
   flex-wrap: wrap;
   align-items: baseline;
   gap: 8px 20px;
-  border-bottom: 1px solid #222;
+  border-bottom: 1px solid var(--line);
   padding-bottom: 10px;
 }
 

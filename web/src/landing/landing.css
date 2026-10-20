@@ -1,24 +1,5 @@
 :root {
   --bg: #000000;
-  --fg: #f1e6c8;
-  --dim: #8a7f66;
-  --accent: #33ff99;
-  --magenta: #d8468f;
-  --turquoise: #2fb7c9;
-}
-
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-html,
-body {
-  min-height: 100%;
-  background: var(--bg);
-  color: var(--fg);
-  font: 15px/1.5 "JetBrains Mono", Consolas, monospace;
 }
 
 .landing {
@@ -67,11 +48,11 @@ body {
   flex-direction: column;
   gap: 10px;
   padding: 20px;
-  border: 1px solid #222;
+  border: 1px solid var(--line);
   border-radius: 8px;
   color: var(--fg);
   text-decoration: none;
-  background: #0b0b12;
+  background: var(--night);
   transition: border-color 160ms ease, transform 160ms ease;
 }
 
@@ -110,7 +91,7 @@ body {
   background-size: 48%;
   background-position: center;
   background-repeat: no-repeat;
-  box-shadow: inset 0 0 0 4px #0b0b12, inset 0 0 0 5px var(--turquoise);
+  box-shadow: inset 0 0 0 4px var(--night), inset 0 0 0 5px var(--turquoise);
 }
 
 .landing-preview.temples {
@@ -118,11 +99,11 @@ body {
   grid-template-columns: repeat(3, 1fr);
   gap: 6px;
   padding: 6px;
-  background: #f3e7c6;
+  background: var(--paper);
 }
 
 .landing-preview.atelier {
-  background: #f3e7c6;
+  background: var(--paper);
 }
 
 .landing-preview.atelier canvas,

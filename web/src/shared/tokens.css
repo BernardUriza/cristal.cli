@@ -1,0 +1,26 @@
+:root {
+  --night: #0b0b12;
+  --bg: var(--night);
+  --fg: #f1e6c8;
+  --dim: #8a7f66;
+  --accent: #33ff99;
+  --magenta: #d8468f;
+  --turquoise: #2fb7c9;
+  --paper: #f3e7c6;
+  --card-ink: #1a1412;
+  --line: #222;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  min-height: 100%;
+  background: var(--bg);
+  color: var(--fg);
+  font: 15px/1.5 "JetBrains Mono", Consolas, monospace;
+}
