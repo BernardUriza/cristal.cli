@@ -5,7 +5,7 @@ import { InWorldConsole } from "./InWorldConsole";
 import { Player, type ConsoleRef } from "./Player";
 import { RitualGlyph, type GlyphRef } from "./RitualGlyph";
 import { WallInscription } from "./WallInscription";
-import { BackroomFurniture } from "./BackroomFurniture.tsx";
+import { BackroomFurnitureSet } from "./BackroomFurniture.tsx";
 import { placeBackroomFurniture } from "./BackroomFurniturePlacer";
 import { cellCenter, generateMaze } from "./maze";
 import { MAZE_COLS, MAZE_ROWS, MAZE_SEED, SPAWN_CELL } from "./mazeConfig";
@@ -121,14 +121,7 @@ export function Scene() {
         <WallInscription key={item.id} maze={maze} inscription={item} />
       ))}
 
-      {furniture.map((item) => (
-        <BackroomFurniture
-          key={item.id}
-          kind={item.kind}
-          position={item.position}
-          rotationY={item.rotationY}
-        />
-      ))}
+      <BackroomFurnitureSet items={furniture} />
 
       <Player maze={maze} spawn={spawn} consoles={consoles} glyphs={glyphs} />
     </>

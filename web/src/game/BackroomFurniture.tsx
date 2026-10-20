@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef } from "react";
 import { RoundedBox } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
@@ -6,6 +6,9 @@ import { RectAreaLightUniformsLib } from "three/examples/jsm/lights/RectAreaLigh
 import { WALL_HEIGHT } from "./maze";
 import { backroomFurnitureByKind, type BackroomFurnitureKind } from "./backroomFurniture";
 import { getFurniturePbrTextures, type FurnitureTextureProfile } from "./proceduralPbrTextures";
+import type { BackroomFurniturePlacement } from "./BackroomFurniturePlacer";
+import { assignAreaLights } from "./furniture/areaLightBudget";
+import { FurnitureMaterialCache } from "./furniture/materialCache";
 
 RectAreaLightUniformsLib.init();
 
@@ -13,6 +16,7 @@ export interface BackroomFurnitureProps {
   kind: BackroomFurnitureKind;
   position: [number, number, number];
   rotationY?: number;
+  areaLight?: boolean;
 }
 
 function assertNever(value: never): never {
@@ -51,50 +55,10 @@ type FurnitureMaterialKey =
   | "emissiveGreen"
   | "emissiveCyan";
 
-const materialCache = new Map<FurnitureMaterialKey, THREE.MeshStandardMaterial>();
-const glowMaterialCache = new Map<string, THREE.MeshBasicMaterial>();
-const areaLightFurnitureKeys = new Set<string>();
-const MAX_FLUORESCENT_AREA_LIGHTS = 8;
-
-function stableFurnitureHash(x: number, z: number) {
-  let n = Math.round(x * 10) * 73856093;
-  n ^= Math.round(z * 10) * 19349663;
-  n = (n ^ (n >> 13)) * 1274126177;
-  return (n ^ (n >> 16)) >>> 0;
-}
-
-function shouldUseFluorescentAreaLight(position: [number, number, number]) {
-  const key = `${position[0].toFixed(1)}:${position[2].toFixed(1)}`;
-  if (areaLightFurnitureKeys.has(key)) return true;
-  if (areaLightFurnitureKeys.size >= MAX_FLUORESCENT_AREA_LIGHTS) return false;
-  if (stableFurnitureHash(position[0], position[2]) % 3 !== 0) return false;
-  areaLightFurnitureKeys.add(key);
-  return true;
-}
-
 function flickerNoise(bucket: number, seed: number) {
   let n = bucket * 374761393 + seed * 668265263;
   n = (n ^ (n >> 13)) * 1274126177;
   return ((n ^ (n >> 16)) >>> 0) / 4294967295;
-}
-
-function glowMaterial(color: string, opacity: number) {
-  const key = `${color}:${opacity}`;
-  const cached = glowMaterialCache.get(key);
-  if (cached) return cached;
-
-  const material = new THREE.MeshBasicMaterial({
-    color,
-    transparent: true,
-    opacity,
-    blending: THREE.AdditiveBlending,
-    depthWrite: false,
-    side: THREE.DoubleSide,
-    toneMapped: false,
-  });
-  material.name = `backroom-glow-${key}`;
-  glowMaterialCache.set(key, material);
-  return material;
 }
 
 function makeMaterial(
@@ -103,9 +67,6 @@ function makeMaterial(
   params: THREE.MeshStandardMaterialParameters,
   normalScale = 0.25
 ) {
-  const cached = materialCache.get(key);
-  if (cached) return cached;
-
   const maps = getFurniturePbrTextures(profile);
   const material = new THREE.MeshStandardMaterial({
     ...params,
@@ -115,11 +76,10 @@ function makeMaterial(
   material.normalScale.set(normalScale, normalScale);
   material.envMapIntensity = params.envMapIntensity ?? 0.35;
   material.name = `backroom-${key}`;
-  materialCache.set(key, material);
   return material;
 }
 
-function furnitureMaterial(key: FurnitureMaterialKey) {
+function createFurnitureMaterial(key: FurnitureMaterialKey) {
   switch (key) {
     case "deskTop":
       return makeMaterial(key, "agedLaminate", { color: "#4f453b", roughness: 0.58, metalness: 0.02 }, 0.28);
@@ -186,6 +146,19 @@ function furnitureMaterial(key: FurnitureMaterialKey) {
   }
 }
 
+const FurnitureMaterialsContext = createContext<FurnitureMaterialCache<FurnitureMaterialKey> | null>(null);
+
+function useFurnitureMaterials() {
+  const cache = useContext(FurnitureMaterialsContext);
+  if (!cache) throw new Error("Backroom furniture rendered outside BackroomFurnitureSet");
+  return cache;
+}
+
+function useFurnitureMaterial() {
+  const cache = useFurnitureMaterials();
+  return (key: FurnitureMaterialKey) => cache.material(key);
+}
+
 function FurnitureBox({
   material,
   position,
@@ -235,16 +208,17 @@ function GlowPanel({
   rotation?: [number, number, number];
   size: [number, number];
 }) {
+  const material = useFurnitureMaterials().glow(color, opacity);
   return (
     <mesh position={position} rotation={rotation} renderOrder={2}>
       <planeGeometry args={size} />
-      <primitive object={glowMaterial(color, opacity)} attach="material" />
+      <primitive object={material} attach="material" />
     </mesh>
   );
 }
 
 function FluorescentCeilingLight({ accent, areaLight }: { accent: string; areaLight: boolean }) {
-  const mat = furnitureMaterial("fluorescentTube") as THREE.MeshStandardMaterial;
+  const mat = useFurnitureMaterial()("fluorescentTube");
   const pointLight = useRef<THREE.PointLight>(null);
   const rectLight = useRef<THREE.RectAreaLight>(null);
 
@@ -281,6 +255,7 @@ function FluorescentCeilingLight({ accent, areaLight }: { accent: string; areaLi
 }
 
 function OfficeDesk() {
+  const furnitureMaterial = useFurnitureMaterial();
   return (
     <group>
       <FurnitureBox material={furnitureMaterial("deskTop")} position={[0, 0.78, 0]} scale={[1.75, 0.16, 0.92]} radius={0.035} />
@@ -294,6 +269,7 @@ function OfficeDesk() {
 }
 
 function OfficeChair() {
+  const furnitureMaterial = useFurnitureMaterial();
   return (
     <group>
       <FurnitureBox material={furnitureMaterial("chairVinyl")} position={[0, 0.52, 0]} scale={[0.78, 0.14, 0.72]} radius={0.04} />
@@ -315,6 +291,7 @@ function OfficeChair() {
 }
 
 function FilingCabinet() {
+  const furnitureMaterial = useFurnitureMaterial();
   return (
     <group>
       <FurnitureBox material={furnitureMaterial("cabinetPaint")} position={[0, 0.72, 0]} scale={[0.78, 1.44, 0.58]} radius={0.035} />
@@ -329,6 +306,7 @@ function FilingCabinet() {
 }
 
 function StackedCardboardBoxes() {
+  const furnitureMaterial = useFurnitureMaterial();
   return (
     <group>
       <FurnitureBox material={furnitureMaterial("cardboardA")} position={[-0.28, 0.25, 0.08]} scale={[0.72, 0.5, 0.58]} radius={0.025} />
@@ -340,6 +318,7 @@ function StackedCardboardBoxes() {
 }
 
 function ServerRack() {
+  const furnitureMaterial = useFurnitureMaterial();
   return (
     <group>
       <FurnitureBox material={furnitureMaterial("serverBody")} position={[0, 0.92, 0]} scale={[0.82, 1.84, 0.58]} radius={0.03} />
@@ -358,6 +337,7 @@ function ServerRack() {
 }
 
 function FireExtinguisher() {
+  const furnitureMaterial = useFurnitureMaterial();
   return (
     <group position={[0, 0.92, -0.08]}>
       <mesh castShadow>
@@ -374,6 +354,7 @@ function FireExtinguisher() {
 }
 
 function ExitSign() {
+  const furnitureMaterial = useFurnitureMaterial();
   return (
     <group position={[0, 2.35, -0.08]}>
       <FurnitureBox material={furnitureMaterial("exitShell")} position={[0, 0, 0]} scale={[1.1, 0.38, 0.08]} radius={0.02} />
@@ -386,6 +367,7 @@ function ExitSign() {
 }
 
 function FloorVent() {
+  const furnitureMaterial = useFurnitureMaterial();
   return (
     <group position={[0, 0.012, 0]}>
       <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
@@ -400,6 +382,7 @@ function FloorVent() {
 }
 
 function ExposedPipes() {
+  const furnitureMaterial = useFurnitureMaterial();
   return (
     <group position={[0, WALL_HEIGHT - 0.32, 0]}>
       {[-0.18, 0.18].map((z) => (
@@ -415,6 +398,7 @@ function ExposedPipes() {
 }
 
 function VendingMachine() {
+  const furnitureMaterial = useFurnitureMaterial();
   return (
     <group>
       <FurnitureBox material={furnitureMaterial("vendingBody")} position={[0, 0.95, 0]} scale={[0.88, 1.9, 0.5]} radius={0.035} />
@@ -427,6 +411,7 @@ function VendingMachine() {
 }
 
 function WetCarpetPatch() {
+  const furnitureMaterial = useFurnitureMaterial();
   return (
     <mesh position={[0, 0.018, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
       <circleGeometry args={[0.64, 24]} />
@@ -436,6 +421,7 @@ function WetCarpetPatch() {
 }
 
 function BrokenMonitor() {
+  const furnitureMaterial = useFurnitureMaterial();
   return (
     <group>
       <FurnitureBox material={furnitureMaterial("monitorPlastic")} position={[0, 0.42, 0]} scale={[0.18, 0.5, 0.16]} radius={0.02} />
@@ -447,6 +433,7 @@ function BrokenMonitor() {
 }
 
 function RollingCart() {
+  const furnitureMaterial = useFurnitureMaterial();
   return (
     <group>
       {[0.38, 0.82].map((y) => (
@@ -469,13 +456,13 @@ function RollingCart() {
   );
 }
 
-export function BackroomFurniture({ kind, position, rotationY = 0 }: BackroomFurnitureProps) {
+export function BackroomFurniture({ kind, position, rotationY = 0, areaLight = false }: BackroomFurnitureProps) {
   const { accent } = backroomFurnitureByKind(kind);
 
   let body: JSX.Element;
   switch (kind) {
     case "fluorescent_ceiling_light":
-      body = <FluorescentCeilingLight accent={accent} areaLight={shouldUseFluorescentAreaLight(position)} />;
+      body = <FluorescentCeilingLight accent={accent} areaLight={areaLight} />;
       break;
     case "office_desk":
       body = <OfficeDesk />;
@@ -524,5 +511,19 @@ export function BackroomFurniture({ kind, position, rotationY = 0 }: BackroomFur
     <group position={position} rotation={[0, rotationY, 0]}>
       {body}
     </group>
+  );
+}
+
+export function BackroomFurnitureSet({ items }: { items: readonly BackroomFurniturePlacement[] }) {
+  const cache = useMemo(() => new FurnitureMaterialCache<FurnitureMaterialKey>(createFurnitureMaterial), []);
+  const lit = useMemo(() => assignAreaLights(items), [items]);
+  useEffect(() => () => cache.dispose(), [cache]);
+
+  return (
+    <FurnitureMaterialsContext.Provider value={cache}>
+      {items.map((item) => (
+        <BackroomFurniture key={item.id} kind={item.kind} position={item.position} rotationY={item.rotationY} areaLight={lit.has(item.id)} />
+      ))}
+    </FurnitureMaterialsContext.Provider>
   );
 }
