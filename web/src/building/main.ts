@@ -96,7 +96,7 @@ for (const b of document.querySelectorAll<HTMLButtonElement>("button[data-view]"
     applyView();
   });
 }
-window.addEventListener("resize", resize);
+new ResizeObserver(resize).observe(threeEl);
 
 renderer.setAnimationLoop(() => {
   controls.update();
