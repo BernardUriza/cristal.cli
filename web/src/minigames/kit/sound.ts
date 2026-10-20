@@ -1,19 +1,10 @@
+import { audioContext } from "../../shared/audio.ts";
 import { flagStore } from "../../shared/storage.ts";
-let context: AudioContext | null = null;
-
-function audio(): AudioContext | null {
-  if (typeof window === "undefined") return null;
-  const Ctor = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-  if (!Ctor) return null;
-  if (!context) context = new Ctor();
-  if (context.state === "suspended") void context.resume();
-  return context;
-}
 
 export type Tone = { from: number; to: number; durationMs: number; gain: number };
 
 export function playTone({ from, to, durationMs, gain }: Tone): void {
-  const ctx = audio();
+  const ctx = audioContext();
   if (!ctx) return;
   const osc = ctx.createOscillator();
   const amp = ctx.createGain();

@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { clamp01 } from "../shared/math";
-import { getCtx } from "./audio";
+import { audioContext } from "../shared/audio";
 import {
   loadAudioSettings,
   resolveMasterGain,
@@ -169,7 +169,7 @@ class MusicDirectorRuntime {
 
   private async start(): Promise<void> {
     if (this.started) return;
-    const ctx = getCtx();
+    const ctx = audioContext();
     if (!ctx) return;
     this.ctx = ctx;
     this.master = ctx.createGain();

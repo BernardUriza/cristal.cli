@@ -1,27 +1,9 @@
-// Procedural audio for the dream rooms — synthesised with WebAudio, no asset
-// files. A dread-tuned drone on entering a room, a downward whoosh on crossing
-// a door. The context is created lazily and resumed on first use so it survives
-// the browser autoplay policy (the player has already clicked / pressed a key).
-
-let ctx: AudioContext | null = null;
-
-export function getCtx(): AudioContext | null {
-  if (typeof window === "undefined") return null;
-  if (!ctx) {
-    const AC =
-      window.AudioContext ||
-      (window as unknown as { webkitAudioContext?: typeof AudioContext })
-        .webkitAudioContext;
-    if (!AC) return null;
-    ctx = new AC();
-  }
-  if (ctx.state === "suspended") void ctx.resume();
-  return ctx;
-}
+// Procedural audio for the dream rooms: a dread-tuned drone on entering a room, a whoosh on crossing a door.
+import { audioContext } from "../shared/audio";
 
 // Low drone whose pitch and dissonance rise with dread.
 export function playEnterDrone(dread: number): void {
-  const ac = getCtx();
+  const ac = audioContext();
   if (!ac) return;
   const t = ac.currentTime;
   const dr = Math.max(0, Math.min(100, dread)) / 100;
@@ -48,7 +30,7 @@ export function playEnterDrone(dread: number): void {
 
 // Downward sweep + filtered noise puff when stepping through a door.
 export function playCross(): void {
-  const ac = getCtx();
+  const ac = audioContext();
   if (!ac) return;
   const t = ac.currentTime;
 
@@ -87,7 +69,7 @@ export function playCross(): void {
 
 // Harsh dissonant cluster for a false door or a collapsing room — it bites.
 export function playAlarm(): void {
-  const ac = getCtx();
+  const ac = audioContext();
   if (!ac) return;
   const t = ac.currentTime;
   const gain = ac.createGain();
