@@ -5,13 +5,14 @@ import { composeIllustration } from "../application/compose.ts";
 import { PALETTES } from "../config/palettes.ts";
 import { presetInput } from "../config/presets.ts";
 import type { ConfigInput } from "../config/types.ts";
+import { searchParams } from "../../shared/url.ts";
 import { CompositionPreview } from "./CompositionPreview.tsx";
 import { Temple } from "./Temple.tsx";
 
 export type PreviewParams = { input: ConfigInput; backend: "svg" | "canvas" | "three" };
 
-export function parsePreviewParams(search: string): PreviewParams {
-  const q = new URLSearchParams(search);
+export function parsePreviewParams(search?: string): PreviewParams {
+  const q = searchParams(search);
   const input: ConfigInput = { ...(q.get("preset") ? presetInput(q.get("preset") as string) : {}) };
   const num = (key: keyof ConfigInput) => {
     const v = q.get(key);

@@ -1,5 +1,6 @@
 import { flagStore } from "../shared/storage";
 import { clamp01 } from "../shared/math";
+import { flagParam } from "../shared/url";
 
 export const AUTOWALK_IDLE_MS = 6000;
 export const REWARD_FULL_AT = 8;
@@ -26,13 +27,11 @@ export function isIdle(lastActivityAt: number, now: number, idleMs = AUTOWALK_ID
 
 const viajeFlag = flagStore(STORAGE_KEY, false);
 
-export function viajeFromSearch(search: string): boolean | null {
-  const value = new URLSearchParams(search).get("viaje");
-  if (value === null) return null;
-  return value !== "0" && value !== "off" && value !== "false";
+export function viajeFromSearch(search?: string): boolean | null {
+  return flagParam("viaje", search);
 }
 
-export function loadViaje(search: string): boolean {
+export function loadViaje(search?: string): boolean {
   const fromUrl = viajeFromSearch(search);
   return fromUrl ?? viajeFlag.load();
 }

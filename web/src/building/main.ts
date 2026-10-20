@@ -8,6 +8,7 @@ import { pairKey } from "../graphics/domain/architecture/program.ts";
 import { applyProjector } from "../graphics/renderers/three/building/camera.ts";
 import { buildingToGroup } from "../graphics/renderers/three/building/geometry.ts";
 import { toSvg } from "../graphics/renderers/svg/serialize.ts";
+import { deviceScale } from "../shared/display.ts";
 
 const DOOR = pairKey("sala-n1", "gal-n");
 type ViewName = "orbit" | "plan" | "front" | "section" | "isometric";
@@ -19,7 +20,7 @@ const doorValue = document.getElementById("door-value")!;
 const reportEl = document.getElementById("report")!;
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setPixelRatio(window.devicePixelRatio);
+renderer.setPixelRatio(deviceScale());
 renderer.localClippingEnabled = true;
 threeEl.appendChild(renderer.domElement);
 

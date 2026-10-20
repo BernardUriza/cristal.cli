@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { randomSeed } from "../minigames/kit/dailySeed.ts";
-import { deviceScale } from "../minigames/kit/templeCanvas.ts";
-import { positiveInt, readSearch, replaceSearch } from "../minigames/kit/urlParams.ts";
+import { deviceScale } from "../shared/display.ts";
+import { positiveIntParam, replaceSearch, stringParam } from "../shared/url.ts";
 import { direct, override, planOf, reseed, withDirection, type Direction, type Recipe } from "./director.ts";
 import type { Decision } from "./directorRules.ts";
 import { strokeAt } from "./hitTest.ts";
@@ -23,9 +23,8 @@ const HEIGHT = 900;
 const DEFAULT_NARRATION = "un patio de noche que se recorre como un mapa, con un ojo que vigila desde la torre y una escalera que sube al cielo";
 
 function initialRecipe(): Recipe {
-  const q = readSearch();
-  const narration = q.get("n") ?? DEFAULT_NARRATION;
-  return direct(narration, positiveInt(q.get("seed")) ?? undefined);
+  const narration = stringParam("n") ?? DEFAULT_NARRATION;
+  return direct(narration, positiveIntParam("seed") ?? undefined);
 }
 
 export function Atelier() {

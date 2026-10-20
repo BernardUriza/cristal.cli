@@ -11,7 +11,7 @@ export const createSessionSlice: GameSlice<SessionSlice> = (set) => ({
   locomotion: "idle",
   mazePose: null,
   funnel: loadFunnel(randomSessionId(mulberry32(Date.now() >>> 0)), Date.now()),
-  viaje: loadViaje(typeof window === "undefined" ? "" : window.location.search),
+  viaje: loadViaje(),
 
   reachFunnel: (step, now) =>
     set((s) => {

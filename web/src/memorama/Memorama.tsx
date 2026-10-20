@@ -5,7 +5,7 @@ import { randomSeed } from "../minigames/kit/dailySeed.ts";
 import { shareText, type ShareOutcome } from "../minigames/kit/share.ts";
 import { TempleCanvas } from "../minigames/kit/TempleCanvas.tsx";
 import { useBoardFit } from "../minigames/kit/useBoardFit.ts";
-import { positiveInt, readSearch, replaceSearch, shareUrl } from "../minigames/kit/urlParams.ts";
+import { positiveIntParam, replaceSearch, shareUrl, stringParam } from "../shared/url.ts";
 import {
   bestKey,
   dailySeed,
@@ -36,9 +36,8 @@ const JUICE_MS = 700;
 const BACK_GLYPH = glyphSvgDataUri("gate", PALETTES.noche.secondary, PALETTES.noche.accent, 77);
 
 function readUrl(): { seed: number; pairs: PairCount } {
-  const q = readSearch();
-  const pairs = Number(q.get("pairs"));
-  return { seed: positiveInt(q.get("seed")) ?? dailySeed(new Date()), pairs: isPairCount(pairs) ? pairs : 8 };
+  const pairs = Number(stringParam("pairs"));
+  return { seed: positiveIntParam("seed") ?? dailySeed(new Date()), pairs: isPairCount(pairs) ? pairs : 8 };
 }
 
 export function Memorama() {
