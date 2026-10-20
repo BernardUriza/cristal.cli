@@ -1,6 +1,6 @@
 # Refactor de web/: duplicación, capas y archivos con varias responsabilidades
 
-Status: Proposed
+Status: In progress
 Proposed: 2026-10-19 by Bernard ("busca qué más falta refactorizar"); auditoría de Claude con dos agentes y verificación por grep
 
 **Qué es.** Lo que falta refactorizar en `web/src` (26.8k LOC), medido por responsabilidades y copias, no por tamaño.
@@ -69,5 +69,18 @@ rama muerta de `determineLevel` en `terminal/responseEngine.ts:163`.
 Bug de `observeSymbol` → `shared/rng` con tests dorados → `tokens.css` → `shared/api` (quita atelier/terminal→game)
 → `shared/storage` → test de capas para todo el repo → audio → math/color/geometría → barrido de muertos y
 `graphics/CLAUDE.md` → cortes de archivos. Cada paso cierra con el grep de cero copias en el reporte.
+
+## Avance
+
+- `780863a` bug de `observeSymbol`: un glifo ya no mueve la identidad (test con `identity.updates`).
+- `3a0e813` `shared/rng`: `mix32`/`unitHash`/`GOLDEN_RATIO_HASH`; snapshots dorados (`shared/rngGolden.test.ts`)
+  prueban salida idéntica de salidas, cuartos, muebles, puertas falsas y respuestas. Bug extra encontrado y
+  cerrado: `planAbsence` reventaba (`consoles[-n]`) cuando el slot de una ronda caía en la mitad alta.
+- `faa5e29` `shared/tokens.css`: un `:root`; landing sólo sobrescribe `--bg`; verificado con estilos computados
+  en las cuatro páginas.
+- `740c9ec` `shared/api` (`withTimeout`, `postJson`, `beacon`): atelier ya no importa `game/`; verificado en prod
+  (Pedro contestó en 59 s).
+- Abierto: una corrida de la suite tuvo `connectivity.test.ts` en rojo una vez y 5 verdes después; semillas fijas,
+  sin `Math.random`, sin ediciones ajenas. Causa sin verificar.
 
 **Decisión de Bernard.** Ninguna bloqueante; el orden es de Claude. Sólo `AbsencePlanner` cambia salida al unificar.

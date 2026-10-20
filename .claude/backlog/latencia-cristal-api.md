@@ -15,3 +15,7 @@ por Messages API directo con un modelo rápido, fuera del agente. Y si vale pref
 (3× costo por confesión, concurrencia en AIRE).
 
 **Next.** Medir en AIRE cuánto del turno es overhead vs generación; decidir.
+
+**Medición 2026-10-19 22:40.** `/atelier/direct` tarda 59 s solo (curl directo, 200; y desde el atelier en prod,
+59 s hasta que Pedro propone), contra 32–34 s el 2026-10-17. Con dos peticiones a la vez la segunda pasa de los
+90 s de `DIRECT_TIMEOUT_MS` y cae al fallback local: sigue serializado bajo carga.
