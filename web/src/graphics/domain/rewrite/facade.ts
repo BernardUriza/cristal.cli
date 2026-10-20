@@ -2,8 +2,8 @@ import { pointInPolygon, polygonBounds } from "../bezier.ts";
 import { boxAnchors, quad, type Part } from "../motifs/figures/parts.ts";
 import { filled, line, polygon, type Shape, type Vec2 } from "../shapes.ts";
 import type { Ink, Producer } from "./rewrite.ts";
+import { clamp } from "../../../shared/math.ts";
 
-const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 
 function arched(x0: number, y0: number, x1: number, y1: number): Vec2[] {
   const r = (x1 - x0) / 2;

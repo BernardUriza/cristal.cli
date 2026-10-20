@@ -1,3 +1,6 @@
+import { hexToRgb } from "../../shared/color";
+import { lerp } from "../../shared/math";
+
 export interface Rgb {
   r: number;
   g: number;
@@ -19,16 +22,12 @@ function srgbToLinear(c: number): number {
 }
 
 export function hexToLinearRgb(hex: string): Rgb {
-  const n = parseInt(hex.slice(1), 16);
-  return {
-    r: srgbToLinear(((n >> 16) & 255) / 255),
-    g: srgbToLinear(((n >> 8) & 255) / 255),
-    b: srgbToLinear((n & 255) / 255),
-  };
+  const [r, g, b] = hexToRgb(hex);
+  return { r: srgbToLinear(r / 255), g: srgbToLinear(g / 255), b: srgbToLinear(b / 255) };
 }
 
 export function lerpRgb(a: Rgb, b: Rgb, t: number): Rgb {
-  return { r: a.r + (b.r - a.r) * t, g: a.g + (b.g - a.g) * t, b: a.b + (b.b - a.b) * t };
+  return { r: lerp(a.r, b.r, t), g: lerp(a.g, b.g, t), b: lerp(a.b, b.b, t) };
 }
 
 const CALM = hexToLinearRgb("#06140d");

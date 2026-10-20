@@ -74,12 +74,3 @@ export function leafBox(leaf: Leaf): { x0: number; y0: number; x1: number; y1: n
   return { x0, y0, x1, y1 };
 }
 
-export function polygonArea(points: readonly Vec2[]): number {
-  let sum = 0;
-  for (let i = 0; i < points.length; i++) {
-    const [ax, ay] = points[i];
-    const [bx, by] = points[(i + 1) % points.length];
-    sum += ax * by - bx * ay;
-  }
-  return Math.abs(sum) / 2;
-}

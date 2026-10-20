@@ -4,6 +4,7 @@ import { quad, type Part } from "../motifs/figures/parts.ts";
 import { filled, line, polygon, stroked, type Shape, type Vec2 } from "../shapes.ts";
 import { miniCourt } from "./miniCourt.ts";
 import type { Producer, RewriteEnv } from "./rewrite.ts";
+import { lerp } from "../../../shared/math.ts";
 
 export type MiniScene = { shapes: Shape[]; width: number; height: number };
 
@@ -13,7 +14,6 @@ export type PortalOptions = { frames: number; miniPx: number; mini?: MiniCompose
 
 const FAR = (k: number) => 0.8 * (1 - Math.pow(0.6, k));
 
-const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
 function corridor(x0: number, y0: number, x1: number, y1: number, frames: number, env: RewriteEnv): { shapes: Shape[]; end: Vec2[] } {
   const vp: Vec2 = [(x0 + x1) / 2, lerp(y0, y1, 0.48)];

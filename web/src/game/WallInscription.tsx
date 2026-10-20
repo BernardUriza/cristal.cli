@@ -3,6 +3,7 @@ import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import type { Maze } from "./maze";
 import { inscriptionPose, type WorldInscription } from "./inscriptions/WorldInscriptions";
+import { clamp } from "../shared/math";
 import { isEvasiveStance } from "../terminal/psych/stanceUtils";
 import { makeWallInscriptionTexture } from "./textTexture";
 
@@ -22,7 +23,7 @@ export function WallInscription({ maze, inscription }: { maze: Maze; inscription
     const mat = matRef.current;
     if (!mat) return;
     const age = Date.now() - inscription.at;
-    mat.opacity = Math.min(1, Math.max(0, age / REVEAL_MS)) * fullOpacity;
+    mat.opacity = clamp(age / REVEAL_MS, 0, 1) * fullOpacity;
   });
 
   return (

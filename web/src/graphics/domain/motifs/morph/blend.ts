@@ -1,3 +1,4 @@
+import { clamp } from "../../../../shared/math.ts";
 import type { MorphPolicy } from "../../../config/morph.ts";
 import type { Vec2 } from "../../shapes.ts";
 import { REGIONS, type Region } from "../figures/regions.ts";
@@ -32,7 +33,7 @@ function rawBlend(a: RegionContour, b: RegionContour, weights: RegionWeights, ke
   if (a.perRegion !== b.perRegion) throw new Error(`particiones distintas: ${a.perRegion} vs ${b.perRegion}`);
   const toA = align ? procrustes(b.points, a.points) : IDENTITY;
   const bA: RegionContour = { ...b, points: b.points.map((p) => applySim(toA, p)) };
-  const w = REGIONS.map((r) => Math.min(1, Math.max(0, weights[r] ?? 0)));
+  const w = REGIONS.map((r) => clamp(weights[r] ?? 0, 0, 1));
   const n = REGIONS.length;
   const target = REGIONS.map((_, k) => lerp(regionStart(a, k), regionStart(bA, k), Math.min(w[k], w[(k + n - 1) % n])));
   const points: Vec2[] = [];

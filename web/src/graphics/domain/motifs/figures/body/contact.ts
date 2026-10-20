@@ -1,4 +1,4 @@
-import { polygonBounds } from "../../../bezier.ts";
+import { pointInPolygon, polygonBounds } from "../../../bezier.ts";
 import type { Vec2 } from "../../../shapes.ts";
 import { unitPolygon } from "./kinds.ts";
 import { BODY_TUNING } from "./tuning.ts";
@@ -16,15 +16,6 @@ export function crossing(poly: readonly Vec2[], axis: 0 | 1, v: number): [number
     hi = Math.max(hi, w);
   }
   return lo <= hi ? [lo, hi] : undefined;
-}
-
-export function inside(poly: readonly Vec2[], p: Vec2): boolean {
-  let hit = false;
-  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
-    const [a, b] = [poly[i], poly[j]];
-    if (a[1] > p[1] !== b[1] > p[1] && p[0] < ((b[0] - a[0]) * (p[1] - a[1])) / (b[1] - a[1]) + a[0]) hit = !hit;
-  }
-  return hit;
 }
 
 type Side = { line: 0 | 1; far: boolean; inward: Vec2 };
@@ -48,7 +39,7 @@ function onSide(poly: readonly Vec2[], side: Side, offset: Vec2, sink: number): 
 }
 
 function within(poly: readonly Vec2[], p: Vec2, sink: number): Vec2 {
-  if (inside(poly, p)) return p;
+  if (pointInPolygon(p, poly)) return p;
   const b = polygonBounds(poly);
   const y = clamp(p[1], b.minY + sink, b.maxY - sink);
   const row = crossing(poly, 1, y);

@@ -1,4 +1,5 @@
 import { FIGURE_SCALE } from "../../config/figures.ts";
+import { clamp } from "../../../shared/math.ts";
 import type { Group } from "../../config/scene.ts";
 import type { Box3, Vec3 } from "../../domain/math/vec3.ts";
 import { arrange } from "./acomodo.ts";
@@ -57,7 +58,7 @@ function alongRoute(g: Group, segments: readonly Segment[], samples: number): Ca
     let d = ((k + 0.5) / samples) * total;
     const s = segments.find((x) => (d -= gap(x.from, x.to)) <= 0) ?? segments[segments.length - 1];
     const len = gap(s.from, s.to);
-    const t = Math.min(1, Math.max(0, (d + len) / Math.max(len, 1e-9)));
+    const t = clamp((d + len) / Math.max(len, 1e-9), 0, 1);
     const sway = g.arrangement === "procesion" ? Math.sin((k / samples) * Math.PI * 2 * SWAY_TURNS) * s.width * SWAY : 0;
     return { at: [s.from[0] + (s.to[0] - s.from[0]) * t + s.side[0] * sway, s.from[1] + (s.to[1] - s.from[1]) * t, s.from[2] + (s.to[2] - s.from[2]) * t + s.side[1] * sway], label: s.label };
   });

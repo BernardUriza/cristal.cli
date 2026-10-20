@@ -1,3 +1,4 @@
+import { polygonArea } from "../../bezier.ts";
 import type { Vec2 } from "../../shapes.ts";
 import { REGIONS, type RegionAnchors } from "./regions.ts";
 
@@ -21,14 +22,6 @@ function arc(poly: readonly Vec2[], from: number, to: number): Vec2[] {
 
 const mean = (pts: readonly Vec2[]): Vec2 => [pts.reduce((s, p) => s + p[0], 0) / pts.length, pts.reduce((s, p) => s + p[1], 0) / pts.length];
 
-function area(poly: readonly Vec2[]): number {
-  let s = 0;
-  poly.forEach((p, i) => {
-    const q = poly[(i + 1) % poly.length];
-    s += p[0] * q[1] - q[0] * p[1];
-  });
-  return Math.abs(s) / 2;
-}
 
 /** The longest run of the polygon's interior on the line coord[along] = s, as an interval of the other coordinate. */
 function chord(poly: readonly Vec2[], along: 0 | 1, s: number): [number, number] | undefined {
@@ -86,7 +79,7 @@ export function trunkOf(poly: readonly Vec2[], regions: RegionAnchors, t: TrunkT
   const m = t.margin * Math.min(a1 - a0, hi - lo);
   const corner = (a: number, b: number): Vec2 => (along === 0 ? [a, b] : [b, a]);
   const box: [Vec2, Vec2] = [corner(a0 + m, lo + m), corner(a1 - m, hi - m)];
-  if ((a1 - a0 - 2 * m) * (hi - lo - 2 * m) < t.minShare * area(poly)) return undefined;
+  if ((a1 - a0 - 2 * m) * (hi - lo - 2 * m) < t.minShare * polygonArea(poly)) return undefined;
   const mask = clipToBox(poly, box);
   return mask.length >= 3 ? { mask, box, head } : undefined;
 }

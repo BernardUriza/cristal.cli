@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { smoothstep } from "../shared/math";
 
 export type FurnitureTextureProfile =
   | "paintedMetal"
@@ -23,17 +24,13 @@ function hash2(x: number, y: number, seed: number) {
   return ((n ^ (n >> 16)) >>> 0) / 4294967295;
 }
 
-function smoothstep(t: number) {
-  return t * t * (3 - 2 * t);
-}
-
 function valueNoise(x: number, y: number, seed: number) {
   const xi = Math.floor(x);
   const yi = Math.floor(y);
   const xf = x - xi;
   const yf = y - yi;
-  const u = smoothstep(xf);
-  const v = smoothstep(yf);
+  const u = smoothstep(0, 1, xf);
+  const v = smoothstep(0, 1, yf);
   const a = hash2(xi, yi, seed);
   const b = hash2(xi + 1, yi, seed);
   const c = hash2(xi, yi + 1, seed);

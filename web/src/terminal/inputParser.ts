@@ -1,3 +1,4 @@
+import { clamp } from "../shared/math";
 import { ParsedCommand, SemanticSignalType } from "./types";
 
 // Port of Cristal.CLI.Input.InputParser.
@@ -25,10 +26,6 @@ const STOP_WORDS = new Set([
 ]);
 
 const COMMAND_PATTERN = /^(\w+)\s*(.*?)$/i;
-
-function clamp(v: number, lo: number, hi: number) {
-  return Math.max(lo, Math.min(hi, v));
-}
 
 function containsAny(text: string, set: Set<string>): boolean {
   for (const k of set) if (text.includes(k)) return true;

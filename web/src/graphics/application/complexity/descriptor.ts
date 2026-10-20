@@ -1,7 +1,8 @@
 import type { SilhouetteWeights } from "../../config/complexity.ts";
 import type { Vec2 } from "../../domain/shapes.ts";
-import { polygonArea } from "./leaves.ts";
+import { polygonArea } from "../../domain/bezier.ts";
 import type { MaskShape } from "./masks.ts";
+import { clamp } from "../../../shared/math.ts";
 
 export type ShapeDescriptor = { fourier: number[]; aspect: number; concavity: number };
 
@@ -38,7 +39,7 @@ export function describe(m: MaskShape, harmonics: number): ShapeDescriptor {
     return Math.hypot(re, im) / bins;
   });
   const hull = polygonArea(convexHull(envelope(m)));
-  const concavity = hull > 0 ? Math.min(1, Math.max(0, 1 - m.areaPx / hull)) : 0;
+  const concavity = hull > 0 ? clamp(1 - m.areaPx / hull, 0, 1) : 0;
   return { fourier, aspect: Math.log(Math.max(m.height, 1) / Math.max(m.width, 1)), concavity };
 }
 

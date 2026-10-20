@@ -39,6 +39,20 @@ export function flattenCubics(segments: readonly CubicSegment[], stepsPerSegment
   return out;
 }
 
+export function signedArea(poly: readonly Vec2[]): number {
+  let s = 0;
+  for (let i = 0; i < poly.length; i++) {
+    const a = poly[i];
+    const b = poly[(i + 1) % poly.length];
+    s += a[0] * b[1] - b[0] * a[1];
+  }
+  return s / 2;
+}
+
+export function polygonArea(poly: readonly Vec2[]): number {
+  return Math.abs(signedArea(poly));
+}
+
 export function pointInPolygon(p: Vec2, poly: readonly Vec2[]): boolean {
   let inside = false;
   for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {

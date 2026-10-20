@@ -1,3 +1,4 @@
+import { clamp } from "../../../../shared/math.ts";
 import type { Rng } from "../../../../shared/rng";
 import { pointInPolygon, polygonBounds } from "../../bezier.ts";
 import { polyline, type Shape, type Style, type Vec2 } from "../../shapes.ts";
@@ -8,14 +9,13 @@ export type FlowPolicy = { noiseCells: number; turns: number; baseAngle: number;
 export type FlowFill = { spacing: number; stepLen: number; style: Style; avoid?: (p: Vec2) => boolean };
 
 const smooth = (t: number) => t * t * (3 - 2 * t);
-const clamp01 = (t: number) => Math.min(Math.max(t, 0), 1);
 
 export function valueNoise(rng: Rng, cells: number): (u: number, v: number) => number {
   const n = cells + 1;
   const lattice = Array.from({ length: n * n }, () => rng());
   const at = (i: number, j: number) => lattice[j * n + i];
   return (u, v) => {
-    const x = clamp01(u) * cells, y = clamp01(v) * cells;
+    const x = clamp(u, 0, 1) * cells, y = clamp(v, 0, 1) * cells;
     const i = Math.min(cells - 1, Math.floor(x)), j = Math.min(cells - 1, Math.floor(y));
     const sx = smooth(x - i), sy = smooth(y - j);
     const top = at(i, j) + (at(i + 1, j) - at(i, j)) * sx;

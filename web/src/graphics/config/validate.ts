@@ -1,3 +1,4 @@
+import { clamp01 } from "../../shared/math.ts";
 import { PALETTE_NAMES } from "./palettes.ts";
 import { DEFAULT_ART, DEFAULT_TECH, type CompositionConfig, type ConfigInput } from "./types.ts";
 
@@ -14,7 +15,7 @@ function finite(name: string, value: number): number {
 }
 
 function unit(name: string, value: number): number {
-  return Math.min(1, Math.max(0, finite(name, value)));
+  return clamp01(finite(name, value));
 }
 
 function oneOf<T extends string>(name: string, value: string, allowed: readonly T[]): T {

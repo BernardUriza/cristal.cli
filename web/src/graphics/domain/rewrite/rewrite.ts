@@ -3,7 +3,8 @@ import { mapShapePoints, type PointMap } from "../mapPoints.ts";
 import { frameOf, matchesPart, quad, type Frame2, type Part, type PartMatch } from "../motifs/figures/parts.ts";
 import { tagRewrite } from "../semantic.ts";
 import { group, type Shape, type Vec2 } from "../shapes.ts";
-import { clipConvex, polygonArea } from "./visibility.ts";
+import { polygonArea } from "../bezier.ts";
+import { clipConvex } from "./visibility.ts";
 
 export type Rewrite = {
   id: string;

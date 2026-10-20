@@ -2,10 +2,10 @@ import { quad, type Part } from "../motifs/figures/parts.ts";
 import { filled, line, polygon, type Shape, type Vec2 } from "../shapes.ts";
 import { localPart } from "./localPart.ts";
 import type { Producer } from "./rewrite.ts";
+import { lerp } from "../../../shared/math.ts";
 
 const BACK = 0.42;
 
-const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
 /** T7: the flat cell opens into a room in one-point perspective holding two volumes, the near one hiding part of the far one. */
 export function portalScene(): Producer {

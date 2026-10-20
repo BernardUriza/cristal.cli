@@ -1,3 +1,4 @@
+import { clamp } from "../shared/math";
 import type { Room } from "./roomApi";
 
 const MIN_SCORE = 0;
@@ -15,10 +16,6 @@ export interface RoomDangerProfile {
   dangerScore: number;
   tags: string[];
   recommendedAction: RoomAction;
-}
-
-function clamp(value: number): number {
-  return Math.max(MIN_SCORE, Math.min(MAX_SCORE, value));
 }
 
 function hasVisitedSeed(room: Room, history: readonly Room[]): boolean {
@@ -49,7 +46,7 @@ export function profileRoomDanger(
   stability: number,
   history: readonly Room[],
 ): RoomDangerProfile {
-  const stableHeadroomPressure = MAX_SCORE - clamp(stability);
+  const stableHeadroomPressure = MAX_SCORE - clamp(stability, MIN_SCORE, MAX_SCORE);
   const isRevisit = hasVisitedSeed(room, history);
 
   const dangerScore = clamp(
@@ -58,6 +55,8 @@ export function profileRoomDanger(
         stableHeadroomPressure * 0.3 +
         (isRevisit ? REVISIT_PENALTY : 0),
     ),
+    MIN_SCORE,
+    MAX_SCORE,
   );
 
   return {

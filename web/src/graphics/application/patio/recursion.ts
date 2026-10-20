@@ -7,6 +7,7 @@ import { miniTemple } from "../../domain/rewrite/miniTemple.ts";
 import { portalScene } from "../../domain/rewrite/portalScene.ts";
 import { frameToScreen, mapPart, paintChildren, type Ink, type Rule } from "../../domain/rewrite/rewrite.ts";
 import type { Vec2 } from "../../domain/shapes.ts";
+import { clamp } from "../../../shared/math.ts";
 import { chance, fnv1a, mulberry32 } from "../../../shared/rng.ts";
 import { partOnFace } from "./facePart.ts";
 import type { Decor } from "./friso.ts";
@@ -28,7 +29,7 @@ export function archRules(ids: readonly ArchRule[]): Rule[] {
 
 /** How many walls and panels turn recursive: the recipe's ornament density and anomaly rate, never zero once declared. */
 export function rewriteRate(density: number, anomalyRate: number): number {
-  return Math.max(0, Math.min(1, K.base + K.density * density + K.anomaly * anomalyRate));
+  return clamp(K.base + K.density * density + K.anomaly * anomalyRate, 0, 1);
 }
 
 const isHost = (s: Surface) => HOSTS.includes(s.role) && Math.min(s.px.w, s.px.h) >= K.hostMinPx;

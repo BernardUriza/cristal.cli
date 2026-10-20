@@ -1,3 +1,5 @@
+import { clamp } from "../shared/math";
+
 export interface InscriptionSignals {
   keywords: string[];
   mood: "dread" | "sorrow" | "wonder" | "neutral";
@@ -148,10 +150,6 @@ function classifyMood(words: string[]): Mood {
   return "neutral";
 }
 
-function clampThreatLevel(value: number): number {
-  return Math.max(0, Math.min(100, value));
-}
-
 export function parseInscription(text: string): InscriptionSignals {
   const words = tokenize(text);
   const keywords = unique(words.filter(isKeyword)).slice(0, KEYWORD_LIMIT);
@@ -163,7 +161,7 @@ export function parseInscription(text: string): InscriptionSignals {
   return {
     keywords,
     mood: classifyMood(words),
-    threatLevel: clampThreatLevel(dreadHits * 25),
+    threatLevel: clamp(dreadHits * 25, 0, 100),
     symbols,
   };
 }

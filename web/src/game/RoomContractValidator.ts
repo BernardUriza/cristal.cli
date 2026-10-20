@@ -1,3 +1,4 @@
+import { clamp } from "../shared/math";
 import type { Room } from "./roomApi";
 import type { RoomShape } from "./types";
 
@@ -22,10 +23,6 @@ function coerceString(value: unknown): string {
 
 function coerceFiniteNumber(value: unknown, fallback: number): number {
   return typeof value === "number" && Number.isFinite(value) ? value : fallback;
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
 }
 
 function placeholderName(seed: number): string {

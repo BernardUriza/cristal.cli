@@ -1,5 +1,5 @@
+import { pointInPolygon } from "../../../bezier.ts";
 import type { Vec2 } from "../../../shapes.ts";
-import { inside } from "./contact.ts";
 import { toWorld } from "./frame.ts";
 import { unitPolygon } from "./kinds.ts";
 import { layoutBody } from "./resolve.ts";
@@ -11,7 +11,7 @@ function segmentsCross(a: Vec2, b: Vec2, c: Vec2, d: Vec2): boolean {
 }
 
 export const silhouettesTouch = (p: readonly Vec2[], q: readonly Vec2[]): boolean =>
-  p.some((v) => inside(q, v)) || q.some((v) => inside(p, v)) || p.some((a, i) => q.some((c, j) => segmentsCross(a, p[(i + 1) % p.length], c, q[(j + 1) % q.length])));
+  p.some((v) => pointInPolygon(v, q)) || q.some((v) => pointInPolygon(v, p)) || p.some((a, i) => q.some((c, j) => segmentsCross(a, p[(i + 1) % p.length], c, q[(j + 1) % q.length])));
 
 /** Connected components of a body's laid-out silhouettes: two pieces join when their outlines overlap. */
 export function silhouetteComponents(g: BodyGraph): number {

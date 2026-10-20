@@ -3,6 +3,7 @@ import { ruleById } from "../graphics/domain/grammar/rules.ts";
 import { GrammarError, type Archetype, type ArchitectureProgram, type RuleCall } from "../graphics/domain/grammar/types.ts";
 import { ARCHETYPE_RULES, BIG, DEFAULT_ARCHETYPE, DEFAULT_ARCHETYPE_BECAUSE, DEFAULT_BRIDGES, MAX_BRIDGES, SEQUENCES, SMALL, TOWER_NOUNS, VARIANTS, type Step, type Variant } from "./programRules.ts";
 import { chooseVariant } from "./programVariant.ts";
+import { clamp } from "../shared/math.ts";
 import { NUMBER_WORDS } from "./sceneRules.ts";
 import { isFigureWord, maskSizeWords, placeSizeAfter } from "./sceneWords.ts";
 
@@ -32,7 +33,6 @@ function countOf(narration: string, nouns: RegExp): number | null {
   return null;
 }
 
-const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 
 function paramsOf(step: Step, narration: string, because: string[]): RuleCall["params"] {
   const rule = ruleById(step.rule)!;

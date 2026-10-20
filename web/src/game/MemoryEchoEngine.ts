@@ -1,3 +1,4 @@
+import { clamp } from "../shared/math";
 import { isEvasiveStance } from "../terminal/psych/stanceUtils";
 import { summarizeEmotionalHistory, type EmotionalHistoryEntry } from "./EmotionalHistory";
 import type { RelationshipSnapshot } from "./RelationshipTracker";
@@ -105,5 +106,5 @@ export function generateMemoryEchoes(input: MemoryEchoInput): EchoFragment[] {
   return echoes
     .sort((a, b) => b.intensity - a.intensity)
     .slice(0, input.limit ?? 4)
-    .map((echo) => ({ ...echo, intensity: Math.max(0, Math.min(1, echo.intensity)) }));
+    .map((echo) => ({ ...echo, intensity: clamp(echo.intensity, 0, 1) }));
 }

@@ -1,3 +1,5 @@
+import { clamp } from "../shared/math";
+
 export interface StabilityState {
   stability: number;
   dread: number;
@@ -11,18 +13,14 @@ const DREAD_DECAY_MULTIPLIER = 2;
 const FALSE_DOOR_PENALTY = 45;
 const SAFE_DOOR_REWARD = 10;
 
-function clamp(value: number): number {
-  return Math.max(MIN_VALUE, Math.min(MAX_VALUE, value));
-}
-
 export class StabilityEngine {
   private _stability: number;
   private _dread: number;
   private _elapsed: number;
 
   constructor(opts?: { stability?: number; dread?: number }) {
-    this._stability = clamp(opts?.stability ?? MAX_VALUE);
-    this._dread = clamp(opts?.dread ?? MIN_VALUE);
+    this._stability = clamp(opts?.stability ?? MAX_VALUE, MIN_VALUE, MAX_VALUE);
+    this._dread = clamp(opts?.dread ?? MIN_VALUE, MIN_VALUE, MAX_VALUE);
     this._elapsed = 0;
   }
 
@@ -30,20 +28,22 @@ export class StabilityEngine {
     this._elapsed += dt;
     const dreadScale = 1 + (this._dread / MAX_VALUE) * DREAD_DECAY_MULTIPLIER;
     this._stability = clamp(
-      this._stability - dt * BASE_DECAY_PER_SECOND * dreadScale
+      this._stability - dt * BASE_DECAY_PER_SECOND * dreadScale,
+      MIN_VALUE,
+      MAX_VALUE,
     );
   }
 
   setDread(d: number): void {
-    this._dread = clamp(d);
+    this._dread = clamp(d, MIN_VALUE, MAX_VALUE);
   }
 
   falseDoorPenalty(): void {
-    this._stability = clamp(this._stability - FALSE_DOOR_PENALTY);
+    this._stability = clamp(this._stability - FALSE_DOOR_PENALTY, MIN_VALUE, MAX_VALUE);
   }
 
   safeDoorReward(): void {
-    this._stability = clamp(this._stability + SAFE_DOOR_REWARD);
+    this._stability = clamp(this._stability + SAFE_DOOR_REWARD, MIN_VALUE, MAX_VALUE);
   }
 
   get isEvicted(): boolean {

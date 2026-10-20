@@ -1,7 +1,7 @@
 import { filled, polygon, stroked, type Shape, type Vec2 } from "../shapes.ts";
 import type { RewriteEnv } from "./rewrite.ts";
+import { lerp } from "../../../shared/math.ts";
 
-const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
 /** The deepest mini-scene: a tiny courtyard seen from above inside the far door, a checkered rhombus under a back wall with an arch. */
 export function miniCourt(x0: number, y0: number, x1: number, y1: number, env: RewriteEnv): Shape[] {
