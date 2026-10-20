@@ -1,6 +1,6 @@
 import type { SliceStep } from "../game/VerticalSlice";
 import type { WorldNode } from "../game/worldNodes";
-import type { SymbolicArchetype } from "../game/symbolicBus";
+import type { SymbolicArchetype } from "../shared/archetype";
 
 export interface PromptCopy {
   action: string;

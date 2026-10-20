@@ -1,6 +1,7 @@
 import type { StateCreator } from "zustand";
 import type { GameMode, Locomotion } from "../types";
-import type { SymbolicArchetype, SymbolicEvent } from "../symbolicBus";
+import type { SymbolicArchetype } from "../../shared/archetype";
+import type { SymbolicEvent } from "../symbolicBus";
 import type { FunnelState, FunnelStep } from "../funnel";
 import type { CellCoord } from "../mazeGraph";
 import type { DiscoveryKind, DiscoveryState } from "../DiscoveryClock";

@@ -1,11 +1,4 @@
-export type SymbolicArchetype =
-  | "fragment"
-  | "echo"
-  | "corruption"
-  | "memory"
-  | "moon"
-  | "gate"
-  | "vision";
+import type { SymbolicArchetype } from "../shared/archetype";
 
 export type SymbolicSignal = "invoked" | "progress" | "complete";
 

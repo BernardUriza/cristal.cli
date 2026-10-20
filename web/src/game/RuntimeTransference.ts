@@ -1,4 +1,5 @@
 import type { Stance } from "../terminal/psych/StanceClassifier";
+import { shapeTerminalResponses, type ResponseContext } from "../terminal/responseShaper";
 import { clamp01 } from "../shared/math";
 import { unitHash } from "../shared/rng";
 import { planAbsence, type AbsencePlan } from "./AbsencePlanner";
@@ -18,7 +19,8 @@ import { RelationshipTracker, type RelationshipSnapshot } from "./RelationshipTr
 import { resolveRitualGravity, type RitualGravity, type RitualObservation } from "./RitualGravity";
 import type { Room } from "./roomApi";
 import type { SafeExit } from "./SafeExitResolver";
-import type { SymbolicArchetype, SymbolicEvent } from "./symbolicBus";
+import type { SymbolicArchetype } from "../shared/archetype";
+import type { SymbolicEvent } from "./symbolicBus";
 import { WORLD_NODES } from "./worldNodes";
 import { resolveWorldBehavior, type WorldBehavior, type WorldBehaviorPressure } from "./WorldBehaviorResolver";
 import { resolveWorldConfidence, type WorldConfidenceState } from "./WorldConfidence";
@@ -194,7 +196,7 @@ export class RuntimeTransference {
   }
 
   // INPUT: terminal response lines. OUTPUT: response lines/timing shaped by D2 state. SIDE EFFECTS: advances sparse terminal turn counter.
-  adaptTerminalResponse<T extends { lines: string[]; delayMs?: number }>(response: T, context: "welcome" | "input"): T {
+  adaptTerminalResponse<T extends { lines: string[]; delayMs?: number }>(response: T, context: ResponseContext): T {
     this.terminalTurns += 1;
     const { profile, relationship, identity, worldBehavior, memoryEchoes, worldConfidence } = this.snapshotState;
     let lines = [...response.lines];
@@ -315,6 +317,7 @@ export class RuntimeTransference {
 }
 
 const defaultRuntimeTransference = new RuntimeTransference();
+shapeTerminalResponses((response, context) => defaultRuntimeTransference.adaptTerminalResponse(response, context));
 
 export function getRuntimeTransference(): RuntimeTransference {
   return defaultRuntimeTransference;

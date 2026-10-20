@@ -1,4 +1,4 @@
-import type { SymbolicArchetype } from "../../game/symbolicBus";
+import type { SymbolicArchetype } from "../../shared/archetype";
 import { inks } from "../domain/motifs/ornament.ts";
 import { concentricRings, radialLines } from "../domain/motifs/radial.ts";
 import { flowerOfLife, glitchPattern, outlinedPolygon } from "../domain/motifs/sigils.ts";

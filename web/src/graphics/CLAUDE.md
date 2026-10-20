@@ -5,12 +5,15 @@ matemáticas y semillas deterministas. Sustituye a los antiguos `game/friedeberg
 `game/ornamentMotifs.ts`, `game/svgPrimitives.ts` y `game/glyphSvg.ts` (borrados el 2026-10-15;
 no restaurarlos: sus equivalentes están abajo).
 
-## Capas (las dependencias apuntan hacia abajo; `layering.test.ts` lo vigila, también ciclos)
+## Capas (las dependencias apuntan hacia abajo; `src/layering.test.ts` lo vigila para todo `src/`, también ciclos)
+
+Ninguna capa de `graphics/` importa de `game/`, `terminal/`, `ui/` ni de un minijuego; lo compartido vive en `src/shared/`
+(`rng`, `math`, `archetype`, `storage`, `api`, `tokens.css`).
 
 | Capa | Carpeta | Responsabilidad | Puede importar |
 |---|---|---|---|
-| Domain | `domain/` | `rng` (mulberry32, también lo usa `game/maze.ts`), `shapes` (IR 2D: `Shape`, `DisplayList`, `Style`, `Transform` ordenado), `geometry` (polígonos, estrellas, espirales, arcos → `Vec2[]`; `arcFromEndpoints` para Canvas), `lod` (`visible`, `makeLod`, `lodLevel`, `projectedHeightPx`), `motifs/*` (greca, chevrón, hélice, abanico, roseta, volutas, Sierpinski, dovelas, arcos, sigilos → `Shape[]`), `architecture/*` (gramática en metros: `Architecture`, `Colonnade`, `Column.shaft`, `Arch.gallery`…) | sólo `domain/` y tipos de `config/` |
-| Config | `config/` | `palettes`, `types` (`ArtConfig` vs `TechConfig`), `presets` (sparse/base/dense/noche/elevation), `validate` (`resolveConfig` clampa y lanza `ConfigError`), `composition` (la composición que monta el juego y dónde) | `domain/lod` (tipo) |
+| Domain | `domain/` | `shapes` (IR 2D: `Shape`, `DisplayList`, `Style`, `Transform` ordenado), `geometry` (polígonos, estrellas, espirales, arcos → `Vec2[]`; `arcFromEndpoints` para Canvas), `lod` (`visible`, `makeLod`, `lodLevel`, `projectedHeightPx`), `motifs/*` (greca, chevrón, hélice, abanico, roseta, volutas, Sierpinski, dovelas, arcos, sigilos → `Shape[]`), `architecture/*` (gramática en metros: `Architecture`, `Colonnade`, `Column.shaft`, `Arch.gallery`…) | `domain/`, `config/`, `shared/` |
+| Config | `config/` | `palettes`, `types` (`ArtConfig` vs `TechConfig`), `presets` (sparse/base/dense/noche/elevation), `validate` (`resolveConfig` clampa y lanza `ConfigError`), `composition` (la composición que monta el juego y dónde) | `domain/`, `shared/` |
 | Application | `application/` | `compose.ts` (config → `Architecture` → `DisplayList` por capas), `projection.ts` (`makeView`: perspectiva de un punto o alzado), `textureView.ts` (vista ortográfica a píxeles de textura: los mismos pintores pintan texturas para Three), `painter.ts`, `facade/*` (un pintor por elemento, emiten `Shape[]`), `glyph.ts` (sellos de arquetipo) | `domain/`, `config/` |
 | Renderers | `renderers/` | `pathData` (mini-lenguaje de path compartido), `svg/serialize` (`toSvg`), `svg/glyph` (data URI para `game/RitualGlyph.tsx`), `canvas/paint` (`DisplayList` → `CanvasRenderingContext2D`, arcos por centro), `canvas/rasterize`, `three/buildTemple` (`Architecture` → `THREE.Group` con `dispose()`), `three/materials` (+ `shaders/*.glsl` vía `?raw`: tablero/greca con fog y nervaduras de cúpula), `three/textures` (`DisplayList` → `CanvasTexture`) | todo lo anterior, `three`, DOM |
 | Presentation | `presentation/` | `Temple` (R3F dumb: config in, `<primitive>` out, LOD de textura por tamaño proyectado), `CompositionPreview` (svg \| canvas), `GraphicsPreview` (ruta `?view=graphics`) | todo |

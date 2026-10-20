@@ -1,5 +1,5 @@
 import { readJson, writeJson } from "../shared/storage";
-import type { SymbolicArchetype } from "./symbolicBus";
+import type { SymbolicArchetype } from "../shared/archetype";
 import { parse } from "../terminal/inputParser";
 import { SemanticSignalType } from "../terminal/types";
 

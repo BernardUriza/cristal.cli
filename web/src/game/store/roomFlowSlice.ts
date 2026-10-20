@@ -1,5 +1,5 @@
 import { GameMode } from "../types";
-import type { SymbolicArchetype } from "../symbolicBus";
+import type { SymbolicArchetype } from "../../shared/archetype";
 import { seedForExit, type Room } from "../roomApi";
 import { resolveFalseDoorConsequences } from "../FalseDoorConsequences";
 import { resolveSafeExit } from "../SafeExitResolver";

@@ -21,7 +21,7 @@ import {
   createInitialSilenceState,
   type SilenceState,
 } from "./psych/SilenceEngine";
-import { getRuntimeTransference } from "../game/RuntimeTransference";
+import { shapeResponse } from "./responseShaper";
 
 // Minimal arcana table (22 Major Arcana) for the `invoke arcana` command.
 // In Unity this lived in ArcanaSystem/ArcanaData; here it is enough to drive
@@ -193,7 +193,7 @@ export class TerminalCore {
   private finalize(built: BuiltResponse, context: "welcome" | "input"): TerminalResponse {
     // Text is never garbled at the data layer — corruption is a visual/decode
     // effect in the UI, so the message always stays readable.
-    return getRuntimeTransference().adaptTerminalResponse({
+    return shapeResponse({
       lines: built.lines,
       responseType: responseTypeFor(built.responseSet, built.level),
       applyGlitch: built.applyGlitch,

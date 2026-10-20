@@ -3,7 +3,7 @@ import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { useGame } from "./store";
 import { GameMode } from "./types";
-import type { SymbolicArchetype } from "./symbolicBus";
+import type { SymbolicArchetype } from "../shared/archetype";
 import { glyphSvgDataUri } from "../graphics/renderers/svg/glyph";
 
 const PROJECTION_DURATION = 4;

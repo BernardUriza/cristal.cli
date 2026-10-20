@@ -1,4 +1,4 @@
-import type { SymbolicArchetype } from "./symbolicBus";
+import type { SymbolicArchetype } from "../shared/archetype";
 import { mix32, mulberry32, pick } from "../shared/rng";
 import { postJson, withTimeout } from "../shared/api";
 import { coerceRoom } from "./RoomContractValidator";

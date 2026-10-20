@@ -1,4 +1,4 @@
-import type { SymbolicArchetype } from "./symbolicBus";
+import type { SymbolicArchetype } from "../shared/archetype";
 
 export type MazeCell = readonly [number, number];
 

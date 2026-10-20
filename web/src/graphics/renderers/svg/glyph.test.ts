@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { SymbolicArchetype } from "../../../game/symbolicBus";
+import type { SymbolicArchetype } from "../../../shared/archetype";
 import { generateGlyphSvg, glyphSvgDataUri } from "./glyph";
 
 const ARCHETYPES: SymbolicArchetype[] = ["fragment", "echo", "corruption", "memory", "moon", "gate", "vision"];

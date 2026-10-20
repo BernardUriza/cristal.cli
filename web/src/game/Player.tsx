@@ -2,7 +2,7 @@ import { Suspense, useEffect, useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { CapsuleAvatar, MixamoCharacter } from "./Character";
-import { ErrorBoundary } from "../ui/ErrorBoundary";
+import { ErrorBoundary } from "./ErrorBoundary";
 import { GameMode, type Locomotion } from "./types";
 import { useGame } from "./store";
 import type { Maze } from "./maze";

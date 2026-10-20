@@ -1,5 +1,5 @@
 import { generateRoom, type Room } from "../roomApi";
-import type { SymbolicArchetype } from "../symbolicBus";
+import type { SymbolicArchetype } from "../../shared/archetype";
 import { ROOM_CACHE_LIMIT } from "./config";
 
 interface PreparedGlyphRoom {

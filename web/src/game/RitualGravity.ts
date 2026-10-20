@@ -1,5 +1,5 @@
 import { clamp01 } from "../shared/math";
-import type { SymbolicArchetype } from "./symbolicBus";
+import type { SymbolicArchetype } from "../shared/archetype";
 import type { TransferenceProfile } from "./PersistentTransference";
 
 export interface RitualObservation {
