@@ -1,5 +1,6 @@
 import type { Stance } from "../terminal/psych/StanceClassifier";
 import { clamp01 } from "../shared/math";
+import { unitHash } from "../shared/rng";
 import { planAbsence, type AbsencePlan } from "./AbsencePlanner";
 import { resolveEmotionalSeason, type EmotionalSeasonState } from "./EmotionalSeason";
 import type { EmotionalHistoryEntry } from "./EmotionalHistory";
@@ -56,13 +57,6 @@ export interface RuntimeRoomInput {
 }
 
 const FALLBACK_PRESSURE_HISTORY = [0];
-
-function stableUnit(seed: number, salt: number): number {
-  let value = (seed ^ Math.imul(salt, 0x9e3779b1)) >>> 0;
-  value = Math.imul(value ^ (value >>> 16), 0x45d9f3b) >>> 0;
-  value = Math.imul(value ^ (value >>> 16), 0x45d9f3b) >>> 0;
-  return ((value ^ (value >>> 16)) >>> 0) / 0xffffffff;
-}
 
 function initialSeason(profile: TransferenceProfile, relationship: RelationshipSnapshot): EmotionalSeasonState {
   return resolveEmotionalSeason({
@@ -226,7 +220,7 @@ export class RuntimeTransference {
     }
 
     const silenceProbability = worldBehavior?.silenceProbability ?? profile.silenceTolerance * 0.55;
-    const shouldWait = context === "input" && silenceProbability > 0.45 && stableUnit(this.terminalTurns, 71) < silenceProbability;
+    const shouldWait = context === "input" && silenceProbability > 0.45 && unitHash(this.terminalTurns, 71) < silenceProbability;
     if (shouldWait && relationship.trust < 0.42) {
       lines = ["...", ...lines.filter((line) => line.trim().length > 0).slice(0, 1)];
     }
@@ -236,7 +230,7 @@ export class RuntimeTransference {
       context === "input" &&
       echo &&
       this.terminalTurns - this.lastEchoTurn >= 4 &&
-      stableUnit(this.terminalTurns + Math.round(echo.intensity * 100), 97) < echo.intensity;
+      unitHash(this.terminalTurns + Math.round(echo.intensity * 100), 97) < echo.intensity;
     if (canEcho) {
       lines.push(echo.text);
       this.lastEchoTurn = this.terminalTurns;
@@ -333,13 +327,13 @@ export function shouldOfferSafeExit(
 ): safeExit is SafeExit {
   if (!safeExit) return false;
   if (!behavior) return true;
-  return stableUnit(room.seed, 131) < behavior.safeExitProbability;
+  return unitHash(room.seed, 131) < behavior.safeExitProbability;
 }
 
 export function shouldFalseDoorBite(room: Room, index: number, candidateIndex: number, behavior: WorldBehavior | null): boolean {
   if (index !== candidateIndex || candidateIndex < 0) return false;
   if (!behavior) return true;
-  return stableUnit(room.seed + index, 149) < Math.max(0.08, behavior.falseDoorProbability);
+  return unitHash(room.seed + index, 149) < Math.max(0.08, behavior.falseDoorProbability);
 }
 
 export function symbolicSeedBias(archetype: SymbolicArchetype, gravity: RitualGravity): number {

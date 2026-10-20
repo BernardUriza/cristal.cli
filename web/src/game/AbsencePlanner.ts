@@ -1,4 +1,5 @@
 import { clamp01 } from "../shared/math";
+import { mix32 } from "../shared/rng";
 import type { RelationshipSnapshot } from "./RelationshipTracker";
 import type { TransferenceProfile } from "./PersistentTransference";
 import { WORLD_NODES, type WorldNode } from "./worldNodes";
@@ -27,9 +28,7 @@ export interface AbsencePlannerInput {
 
 function deterministicSlot(seed: number, salt: number, size: number): number {
   if (size <= 0) return -1;
-  let value = (seed ^ Math.imul(salt, 0x9e3779b1)) >>> 0;
-  value = Math.imul(value ^ (value >>> 16), 0x45d9f3b) >>> 0;
-  return (value ^ (value >>> 16)) % size;
+  return mix32(seed, salt, 1) % size;
 }
 
 export function planAbsence(input: AbsencePlannerInput): AbsencePlan {

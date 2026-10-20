@@ -8,7 +8,7 @@ import { drawCompiled } from "../../domain/motifs/figures/creature.ts";
 import { creatureOf, type GroupCreature } from "./programa.ts";
 import { memberMaker } from "./miembros.ts";
 import type { MotifParams } from "../../domain/motifs/figures/types.ts";
-import { indexBelow, mulberry32 } from "../../../shared/rng.ts";
+import { GOLDEN_RATIO_HASH, indexBelow, mulberry32 } from "../../../shared/rng.ts";
 import type { Provenance } from "../compose.ts";
 import type { MiniComposer } from "../../domain/rewrite/portal.ts";
 import type { RewriteRecord } from "../../domain/rewrite/rewrite.ts";
@@ -33,7 +33,7 @@ export function figureHull(c: Site, scene: Scene): Vec3[] {
 
 export function poblado(c: Site, scene: Scene, pal: Palette, detail: MotifParams["detail"], seed: number, mini?: MiniComposer): Placed {
   const spots: Spot[] = scene.groups.flatMap((g, gi) => spotsFor(g, c).map((at) => ({ at, group: gi })));
-  const rng = mulberry32(seed ^ 0x9e3779b1);
+  const rng = mulberry32(seed ^ GOLDEN_RATIO_HASH);
   const params = { detail, lodPx: DETAIL_LOD.bandsPx, fill: pal.bg, ink: pal.ink, accent: pal.primary };
   const ink = { ...params, deep: pal.deep, line: 1 };
   const facadeParity = indexBelow(rng, 2);

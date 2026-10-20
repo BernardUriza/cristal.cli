@@ -1,4 +1,5 @@
 import type { SymbolicArchetype } from "./symbolicBus";
+import { mix32, mulberry32, pick } from "../shared/rng";
 import { coerceRoom } from "./RoomContractValidator";
 import type { RoomShape } from "./types";
 
@@ -19,10 +20,7 @@ export interface Room {
 // index means door N of a given room always leads to the same next room, so the
 // backrooms graph is stable across reloads and cacheable by seed.
 export function seedForExit(parentSeed: number, index: number): number {
-  let a = (parentSeed ^ ((index + 1) * 0x9e3779b1)) >>> 0;
-  a = Math.imul(a ^ (a >>> 16), 0x45d9f3b) >>> 0;
-  a = Math.imul(a ^ (a >>> 16), 0x45d9f3b) >>> 0;
-  return (a ^ (a >>> 16)) >>> 0;
+  return mix32(parentSeed, index + 1);
 }
 
 // The AIRE room turn measured 38–54 s on 2026-10-16; a hung server still degrades
@@ -98,8 +96,8 @@ export function localRoom(params: {
     vision: ["pantalla", "profeta", "camara blanca"],
   } satisfies Record<SymbolicArchetype, string[]>;
   const verbs = ["respira", "miente", "espera", "recuerda", "parpadea"];
-  const noun = pick(nouns[params.archetype], rng);
-  const verb = pick(verbs, rng);
+  const noun = pick(rng, nouns[params.archetype]);
+  const verb = pick(rng, verbs);
   const fragment = clipAtWord(params.fragments?.[0]?.replace(/\s+/g, " "), 56);
   const depth = Math.max(0, params.depth);
   const dread = Math.min(100, 26 + depth * 7 + Math.floor(rng() * 42));
@@ -126,20 +124,6 @@ export function localRoom(params: {
   );
 }
 
-function pick<T>(items: readonly T[], rng: () => number): T {
-  return items[Math.floor(rng() * items.length)]!;
-}
-
 function capitalize(value: string): string {
   return value.charAt(0).toUpperCase() + value.slice(1);
-}
-
-function mulberry32(seed: number): () => number {
-  let t = seed;
-  return () => {
-    t += 0x6d2b79f5;
-    let r = Math.imul(t ^ (t >>> 15), 1 | t);
-    r ^= r + Math.imul(r ^ (r >>> 7), 61 | r);
-    return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
-  };
 }

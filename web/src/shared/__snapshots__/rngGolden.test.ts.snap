@@ -1,0 +1,1431 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`seeded outputs stay identical across the rng consolidation > drawReply 1`] = `
+[
+  "uno",
+  "tres",
+  "cuatro",
+  "cinco",
+  "dos",
+  "cinco",
+  "cuatro",
+  "tres",
+]
+`;
+
+exports[`seeded outputs stay identical across the rng consolidation > localRoom 1`] = `
+[
+  {
+    "description": "Fallback local: el servidor IA no respondio, pero la semilla 0 mantiene un cuarto jugable.",
+    "dread": 46,
+    "exits": [
+      "seguir donde marea lunar miente",
+      "abrir la puerta que evita tu nombre",
+    ],
+    "inscription": "si no confiesas nada, marea lunar miente por ti",
+    "name": "Moon 000",
+    "seed": 0,
+    "shape": "corridor",
+  },
+  {
+    "description": "Fallback local: el servidor IA no respondio, pero la semilla 1 mantiene un cuarto jugable.",
+    "dread": 81,
+    "exits": [
+      "seguir donde marea lunar espera",
+      "abrir la puerta que evita tu nombre",
+      "cruzar el marco tibio",
+    ],
+    "inscription": "si no confiesas nada, marea lunar espera por ti",
+    "name": "Moon 001",
+    "seed": 1,
+    "shape": "shaft",
+  },
+  {
+    "description": "Fallback local: el servidor IA no respondio, pero la semilla 7 mantiene un cuarto jugable.",
+    "dread": 69,
+    "exits": [
+      "seguir donde marea lunar parpadea",
+      "abrir la puerta que evita tu nombre",
+      "cruzar el marco tibio",
+    ],
+    "inscription": "si no confiesas nada, marea lunar parpadea por ti",
+    "name": "Moon 007",
+    "seed": 7,
+    "shape": "chamber",
+  },
+  {
+    "description": "Fallback local: el servidor IA no respondio, pero la semilla 42 mantiene un cuarto jugable.",
+    "dread": 68,
+    "exits": [
+      "seguir donde ventana falsa parpadea",
+      "abrir la puerta que evita tu nombre",
+    ],
+    "inscription": "si no confiesas nada, ventana falsa parpadea por ti",
+    "name": "Moon 042",
+    "seed": 42,
+    "shape": "shaft",
+  },
+  {
+    "description": "Fallback local: el servidor IA no respondio, pero la semilla 812 mantiene un cuarto jugable.",
+    "dread": 79,
+    "exits": [
+      "seguir donde ventana falsa miente",
+      "abrir la puerta que evita tu nombre",
+    ],
+    "inscription": "si no confiesas nada, ventana falsa miente por ti",
+    "name": "Moon 812",
+    "seed": 812,
+    "shape": "shaft",
+  },
+  {
+    "description": "Fallback local: el servidor IA no respondio, pero la semilla 1337 mantiene un cuarto jugable.",
+    "dread": 67,
+    "exits": [
+      "seguir donde marea lunar parpadea",
+      "abrir la puerta que evita tu nombre",
+    ],
+    "inscription": "si no confiesas nada, marea lunar parpadea por ti",
+    "name": "Moon 337",
+    "seed": 1337,
+    "shape": "chamber",
+  },
+  {
+    "description": "Fallback local: el servidor IA no respondio, pero la semilla 99991 mantiene un cuarto jugable.",
+    "dread": 68,
+    "exits": [
+      "seguir donde ventana falsa recuerda",
+      "abrir la puerta que evita tu nombre",
+    ],
+    "inscription": "si no confiesas nada, ventana falsa recuerda por ti",
+    "name": "Moon 991",
+    "seed": 99991,
+    "shape": "chamber",
+  },
+  {
+    "description": "Fallback local: el servidor IA no respondio, pero la semilla 2147483647 mantiene un cuarto jugable.",
+    "dread": 56,
+    "exits": [
+      "seguir donde marea lunar miente",
+      "abrir la puerta que evita tu nombre",
+    ],
+    "inscription": "si no confiesas nada, marea lunar miente por ti",
+    "name": "Moon 647",
+    "seed": 2147483647,
+    "shape": "corridor",
+  },
+  {
+    "description": "Fallback local: el servidor IA no respondio, pero la semilla 2147483653 mantiene un cuarto jugable.",
+    "dread": 71,
+    "exits": [
+      "seguir donde marea lunar parpadea",
+      "abrir la puerta que evita tu nombre",
+      "cruzar el marco tibio",
+    ],
+    "inscription": "si no confiesas nada, marea lunar parpadea por ti",
+    "name": "Moon 653",
+    "seed": 2147483653,
+    "shape": "shaft",
+  },
+  {
+    "description": "Fallback local: el servidor IA no respondio, pero la semilla 4294967295 mantiene un cuarto jugable.",
+    "dread": 79,
+    "exits": [
+      "seguir donde marea lunar recuerda",
+      "abrir la puerta que evita tu nombre",
+      "cruzar el marco tibio",
+    ],
+    "inscription": "si no confiesas nada, marea lunar recuerda por ti",
+    "name": "Moon 295",
+    "seed": 4294967295,
+    "shape": "void",
+  },
+]
+`;
+
+exports[`seeded outputs stay identical across the rng consolidation > placeBackroomFurniture 1`] = `
+[
+  [
+    {
+      "cell": [
+        7,
+        3,
+      ],
+      "id": "backroom_furniture_0_fluorescent_ceiling_light",
+      "kind": "fluorescent_ceiling_light",
+      "position": [
+        12,
+        0,
+        -4,
+      ],
+      "rotationY": 1.5707963267948966,
+    },
+    {
+      "cell": [
+        6,
+        6,
+      ],
+      "id": "backroom_furniture_1_office_desk",
+      "kind": "office_desk",
+      "position": [
+        8,
+        0,
+        9.44,
+      ],
+      "rotationY": 3.141592653589793,
+    },
+    {
+      "cell": [
+        1,
+        4,
+      ],
+      "id": "backroom_furniture_2_office_chair",
+      "kind": "office_chair",
+      "position": [
+        -12,
+        0,
+        -1.44,
+      ],
+      "rotationY": 0,
+    },
+    {
+      "cell": [
+        5,
+        0,
+      ],
+      "id": "backroom_furniture_3_filing_cabinet",
+      "kind": "filing_cabinet",
+      "position": [
+        2.56,
+        0,
+        -16,
+      ],
+      "rotationY": -1.5707963267948966,
+    },
+    {
+      "cell": [
+        3,
+        8,
+      ],
+      "id": "backroom_furniture_4_stacked_cardboard_boxes",
+      "kind": "stacked_cardboard_boxes",
+      "position": [
+        -4,
+        0,
+        17.44,
+      ],
+      "rotationY": 3.141592653589793,
+    },
+    {
+      "cell": [
+        0,
+        0,
+      ],
+      "id": "backroom_furniture_5_server_rack",
+      "kind": "server_rack",
+      "position": [
+        -16,
+        0,
+        -17.44,
+      ],
+      "rotationY": 0,
+    },
+    {
+      "cell": [
+        2,
+        2,
+      ],
+      "id": "backroom_furniture_6_fire_extinguisher",
+      "kind": "fire_extinguisher",
+      "position": [
+        -8,
+        0,
+        -6.5600000000000005,
+      ],
+      "rotationY": 3.141592653589793,
+    },
+    {
+      "cell": [
+        4,
+        4,
+      ],
+      "id": "backroom_furniture_7_exit_sign",
+      "kind": "exit_sign",
+      "position": [
+        -1.44,
+        0,
+        0,
+      ],
+      "rotationY": -1.5707963267948966,
+    },
+    {
+      "cell": [
+        0,
+        3,
+      ],
+      "id": "backroom_furniture_8_floor_vent",
+      "kind": "floor_vent",
+      "position": [
+        -16,
+        0,
+        -4,
+      ],
+      "rotationY": 0,
+    },
+    {
+      "cell": [
+        0,
+        7,
+      ],
+      "id": "backroom_furniture_9_exposed_pipes",
+      "kind": "exposed_pipes",
+      "position": [
+        -16,
+        0,
+        12,
+      ],
+      "rotationY": 0,
+    },
+    {
+      "cell": [
+        1,
+        3,
+      ],
+      "id": "backroom_furniture_10_vending_machine",
+      "kind": "vending_machine",
+      "position": [
+        -13.44,
+        0,
+        -4,
+      ],
+      "rotationY": -1.5707963267948966,
+    },
+    {
+      "cell": [
+        2,
+        6,
+      ],
+      "id": "backroom_furniture_11_wet_carpet_patch",
+      "kind": "wet_carpet_patch",
+      "position": [
+        -8,
+        0,
+        8,
+      ],
+      "rotationY": -1.5707963267948966,
+    },
+    {
+      "cell": [
+        1,
+        7,
+      ],
+      "id": "backroom_furniture_12_broken_monitor",
+      "kind": "broken_monitor",
+      "position": [
+        -13.44,
+        0,
+        12,
+      ],
+      "rotationY": -1.5707963267948966,
+    },
+    {
+      "cell": [
+        2,
+        7,
+      ],
+      "id": "backroom_furniture_13_rolling_cart",
+      "kind": "rolling_cart",
+      "position": [
+        -6.5600000000000005,
+        0,
+        12,
+      ],
+      "rotationY": 1.5707963267948966,
+    },
+    {
+      "cell": [
+        1,
+        0,
+      ],
+      "id": "backroom_furniture_14_floor_vent",
+      "kind": "floor_vent",
+      "position": [
+        -12,
+        0,
+        -16,
+      ],
+      "rotationY": 0,
+    },
+    {
+      "cell": [
+        3,
+        3,
+      ],
+      "id": "backroom_furniture_15_broken_monitor",
+      "kind": "broken_monitor",
+      "position": [
+        -5.4399999999999995,
+        0,
+        -4,
+      ],
+      "rotationY": -1.5707963267948966,
+    },
+    {
+      "cell": [
+        4,
+        7,
+      ],
+      "id": "backroom_furniture_16_floor_vent",
+      "kind": "floor_vent",
+      "position": [
+        0,
+        0,
+        12,
+      ],
+      "rotationY": 0,
+    },
+    {
+      "cell": [
+        4,
+        0,
+      ],
+      "id": "backroom_furniture_17_exit_sign",
+      "kind": "exit_sign",
+      "position": [
+        1.44,
+        0,
+        -16,
+      ],
+      "rotationY": 1.5707963267948966,
+    },
+    {
+      "cell": [
+        6,
+        1,
+      ],
+      "id": "backroom_furniture_18_server_rack",
+      "kind": "server_rack",
+      "position": [
+        9.44,
+        0,
+        -12,
+      ],
+      "rotationY": 1.5707963267948966,
+    },
+    {
+      "cell": [
+        5,
+        4,
+      ],
+      "id": "backroom_furniture_19_fire_extinguisher",
+      "kind": "fire_extinguisher",
+      "position": [
+        4,
+        0,
+        -1.44,
+      ],
+      "rotationY": 0,
+    },
+    {
+      "cell": [
+        5,
+        4,
+      ],
+      "id": "backroom_furniture_20_rolling_cart",
+      "kind": "rolling_cart",
+      "position": [
+        2.56,
+        0,
+        0,
+      ],
+      "rotationY": -1.5707963267948966,
+    },
+    {
+      "cell": [
+        7,
+        1,
+      ],
+      "id": "backroom_furniture_21_server_rack",
+      "kind": "server_rack",
+      "position": [
+        10.56,
+        0,
+        -12,
+      ],
+      "rotationY": -1.5707963267948966,
+    },
+    {
+      "cell": [
+        1,
+        6,
+      ],
+      "id": "backroom_furniture_22_server_rack",
+      "kind": "server_rack",
+      "position": [
+        -10.56,
+        0,
+        8,
+      ],
+      "rotationY": 1.5707963267948966,
+    },
+    {
+      "cell": [
+        5,
+        7,
+      ],
+      "id": "backroom_furniture_23_server_rack",
+      "kind": "server_rack",
+      "position": [
+        2.56,
+        0,
+        12,
+      ],
+      "rotationY": -1.5707963267948966,
+    },
+    {
+      "cell": [
+        8,
+        5,
+      ],
+      "id": "backroom_furniture_24_floor_vent",
+      "kind": "floor_vent",
+      "position": [
+        16,
+        0,
+        4,
+      ],
+      "rotationY": 1.5707963267948966,
+    },
+    {
+      "cell": [
+        6,
+        1,
+      ],
+      "id": "backroom_furniture_25_server_rack",
+      "kind": "server_rack",
+      "position": [
+        8,
+        0,
+        -10.56,
+      ],
+      "rotationY": 3.141592653589793,
+    },
+  ],
+  [
+    {
+      "cell": [
+        0,
+        0,
+      ],
+      "id": "backroom_furniture_0_fluorescent_ceiling_light",
+      "kind": "fluorescent_ceiling_light",
+      "position": [
+        -16,
+        0,
+        -16,
+      ],
+      "rotationY": -1.5707963267948966,
+    },
+    {
+      "cell": [
+        3,
+        8,
+      ],
+      "id": "backroom_furniture_1_office_desk",
+      "kind": "office_desk",
+      "position": [
+        -2.56,
+        0,
+        16,
+      ],
+      "rotationY": 1.5707963267948966,
+    },
+    {
+      "cell": [
+        4,
+        4,
+      ],
+      "id": "backroom_furniture_2_office_chair",
+      "kind": "office_chair",
+      "position": [
+        -1.44,
+        0,
+        0,
+      ],
+      "rotationY": -1.5707963267948966,
+    },
+    {
+      "cell": [
+        0,
+        7,
+      ],
+      "id": "backroom_furniture_3_filing_cabinet",
+      "kind": "filing_cabinet",
+      "position": [
+        -16,
+        0,
+        10.56,
+      ],
+      "rotationY": 0,
+    },
+    {
+      "cell": [
+        6,
+        6,
+      ],
+      "id": "backroom_furniture_4_stacked_cardboard_boxes",
+      "kind": "stacked_cardboard_boxes",
+      "position": [
+        9.44,
+        0,
+        8,
+      ],
+      "rotationY": 1.5707963267948966,
+    },
+    {
+      "cell": [
+        1,
+        4,
+      ],
+      "id": "backroom_furniture_5_server_rack",
+      "kind": "server_rack",
+      "position": [
+        -12,
+        0,
+        -1.44,
+      ],
+      "rotationY": 0,
+    },
+    {
+      "cell": [
+        0,
+        3,
+      ],
+      "id": "backroom_furniture_6_fire_extinguisher",
+      "kind": "fire_extinguisher",
+      "position": [
+        -14.56,
+        0,
+        -4,
+      ],
+      "rotationY": 1.5707963267948966,
+    },
+    {
+      "cell": [
+        5,
+        0,
+      ],
+      "id": "backroom_furniture_7_exit_sign",
+      "kind": "exit_sign",
+      "position": [
+        2.56,
+        0,
+        -16,
+      ],
+      "rotationY": -1.5707963267948966,
+    },
+    {
+      "cell": [
+        7,
+        3,
+      ],
+      "id": "backroom_furniture_8_floor_vent",
+      "kind": "floor_vent",
+      "position": [
+        12,
+        0,
+        -4,
+      ],
+      "rotationY": -1.5707963267948966,
+    },
+    {
+      "cell": [
+        2,
+        2,
+      ],
+      "id": "backroom_furniture_9_exposed_pipes",
+      "kind": "exposed_pipes",
+      "position": [
+        -8,
+        0,
+        -8,
+      ],
+      "rotationY": 1.5707963267948966,
+    },
+    {
+      "cell": [
+        7,
+        6,
+      ],
+      "id": "backroom_furniture_10_vending_machine",
+      "kind": "vending_machine",
+      "position": [
+        10.56,
+        0,
+        8,
+      ],
+      "rotationY": -1.5707963267948966,
+    },
+    {
+      "cell": [
+        5,
+        1,
+      ],
+      "id": "backroom_furniture_11_wet_carpet_patch",
+      "kind": "wet_carpet_patch",
+      "position": [
+        4,
+        0,
+        -12,
+      ],
+      "rotationY": 3.141592653589793,
+    },
+    {
+      "cell": [
+        5,
+        4,
+      ],
+      "id": "backroom_furniture_12_broken_monitor",
+      "kind": "broken_monitor",
+      "position": [
+        4,
+        0,
+        -1.44,
+      ],
+      "rotationY": 0,
+    },
+    {
+      "cell": [
+        4,
+        1,
+      ],
+      "id": "backroom_furniture_13_rolling_cart",
+      "kind": "rolling_cart",
+      "position": [
+        -1.44,
+        0,
+        -12,
+      ],
+      "rotationY": -1.5707963267948966,
+    },
+    {
+      "cell": [
+        6,
+        4,
+      ],
+      "id": "backroom_furniture_14_fluorescent_ceiling_light",
+      "kind": "fluorescent_ceiling_light",
+      "position": [
+        8,
+        0,
+        0,
+      ],
+      "rotationY": 3.141592653589793,
+    },
+    {
+      "cell": [
+        3,
+        3,
+      ],
+      "id": "backroom_furniture_15_server_rack",
+      "kind": "server_rack",
+      "position": [
+        -5.4399999999999995,
+        0,
+        -4,
+      ],
+      "rotationY": -1.5707963267948966,
+    },
+    {
+      "cell": [
+        3,
+        2,
+      ],
+      "id": "backroom_furniture_16_vending_machine",
+      "kind": "vending_machine",
+      "position": [
+        -2.56,
+        0,
+        -8,
+      ],
+      "rotationY": 1.5707963267948966,
+    },
+    {
+      "cell": [
+        3,
+        6,
+      ],
+      "id": "backroom_furniture_17_fluorescent_ceiling_light",
+      "kind": "fluorescent_ceiling_light",
+      "position": [
+        -4,
+        0,
+        8,
+      ],
+      "rotationY": 0,
+    },
+    {
+      "cell": [
+        4,
+        5,
+      ],
+      "id": "backroom_furniture_18_rolling_cart",
+      "kind": "rolling_cart",
+      "position": [
+        1.44,
+        0,
+        4,
+      ],
+      "rotationY": 1.5707963267948966,
+    },
+    {
+      "cell": [
+        8,
+        8,
+      ],
+      "id": "backroom_furniture_19_fire_extinguisher",
+      "kind": "fire_extinguisher",
+      "position": [
+        17.44,
+        0,
+        16,
+      ],
+      "rotationY": 1.5707963267948966,
+    },
+    {
+      "cell": [
+        4,
+        6,
+      ],
+      "id": "backroom_furniture_20_floor_vent",
+      "kind": "floor_vent",
+      "position": [
+        0,
+        0,
+        8,
+      ],
+      "rotationY": -1.5707963267948966,
+    },
+    {
+      "cell": [
+        6,
+        5,
+      ],
+      "id": "backroom_furniture_21_rolling_cart",
+      "kind": "rolling_cart",
+      "position": [
+        6.5600000000000005,
+        0,
+        4,
+      ],
+      "rotationY": -1.5707963267948966,
+    },
+    {
+      "cell": [
+        6,
+        2,
+      ],
+      "id": "backroom_furniture_22_broken_monitor",
+      "kind": "broken_monitor",
+      "position": [
+        8,
+        0,
+        -9.44,
+      ],
+      "rotationY": 0,
+    },
+    {
+      "cell": [
+        6,
+        2,
+      ],
+      "id": "backroom_furniture_23_office_desk",
+      "kind": "office_desk",
+      "position": [
+        8,
+        0,
+        -6.5600000000000005,
+      ],
+      "rotationY": 3.141592653589793,
+    },
+    {
+      "cell": [
+        8,
+        6,
+      ],
+      "id": "backroom_furniture_24_exit_sign",
+      "kind": "exit_sign",
+      "position": [
+        17.44,
+        0,
+        8,
+      ],
+      "rotationY": 1.5707963267948966,
+    },
+    {
+      "cell": [
+        3,
+        1,
+      ],
+      "id": "backroom_furniture_25_filing_cabinet",
+      "kind": "filing_cabinet",
+      "position": [
+        -2.56,
+        0,
+        -12,
+      ],
+      "rotationY": 1.5707963267948966,
+    },
+  ],
+  [
+    {
+      "cell": [
+        0,
+        3,
+      ],
+      "id": "backroom_furniture_0_fluorescent_ceiling_light",
+      "kind": "fluorescent_ceiling_light",
+      "position": [
+        -16,
+        0,
+        -4,
+      ],
+      "rotationY": 0,
+    },
+    {
+      "cell": [
+        0,
+        0,
+      ],
+      "id": "backroom_furniture_1_office_desk",
+      "kind": "office_desk",
+      "position": [
+        -14.56,
+        0,
+        -16,
+      ],
+      "rotationY": 1.5707963267948966,
+    },
+    {
+      "cell": [
+        6,
+        6,
+      ],
+      "id": "backroom_furniture_2_office_chair",
+      "kind": "office_chair",
+      "position": [
+        6.5600000000000005,
+        0,
+        8,
+      ],
+      "rotationY": -1.5707963267948966,
+    },
+    {
+      "cell": [
+        4,
+        4,
+      ],
+      "id": "backroom_furniture_3_filing_cabinet",
+      "kind": "filing_cabinet",
+      "position": [
+        0,
+        0,
+        1.44,
+      ],
+      "rotationY": 3.141592653589793,
+    },
+    {
+      "cell": [
+        3,
+        8,
+      ],
+      "id": "backroom_furniture_4_stacked_cardboard_boxes",
+      "kind": "stacked_cardboard_boxes",
+      "position": [
+        -4,
+        0,
+        17.44,
+      ],
+      "rotationY": 3.141592653589793,
+    },
+    {
+      "cell": [
+        1,
+        4,
+      ],
+      "id": "backroom_furniture_5_server_rack",
+      "kind": "server_rack",
+      "position": [
+        -12,
+        0,
+        -1.44,
+      ],
+      "rotationY": 0,
+    },
+    {
+      "cell": [
+        0,
+        7,
+      ],
+      "id": "backroom_furniture_6_fire_extinguisher",
+      "kind": "fire_extinguisher",
+      "position": [
+        -14.56,
+        0,
+        12,
+      ],
+      "rotationY": 1.5707963267948966,
+    },
+    {
+      "cell": [
+        7,
+        3,
+      ],
+      "id": "backroom_furniture_7_exit_sign",
+      "kind": "exit_sign",
+      "position": [
+        10.56,
+        0,
+        -4,
+      ],
+      "rotationY": -1.5707963267948966,
+    },
+    {
+      "cell": [
+        5,
+        0,
+      ],
+      "id": "backroom_furniture_8_floor_vent",
+      "kind": "floor_vent",
+      "position": [
+        4,
+        0,
+        -16,
+      ],
+      "rotationY": -1.5707963267948966,
+    },
+    {
+      "cell": [
+        2,
+        2,
+      ],
+      "id": "backroom_furniture_9_exposed_pipes",
+      "kind": "exposed_pipes",
+      "position": [
+        -8,
+        0,
+        -8,
+      ],
+      "rotationY": 1.5707963267948966,
+    },
+    {
+      "cell": [
+        1,
+        7,
+      ],
+      "id": "backroom_furniture_10_vending_machine",
+      "kind": "vending_machine",
+      "position": [
+        -12,
+        0,
+        13.44,
+      ],
+      "rotationY": 3.141592653589793,
+    },
+    {
+      "cell": [
+        8,
+        2,
+      ],
+      "id": "backroom_furniture_11_wet_carpet_patch",
+      "kind": "wet_carpet_patch",
+      "position": [
+        16,
+        0,
+        -8,
+      ],
+      "rotationY": -1.5707963267948966,
+    },
+    {
+      "cell": [
+        8,
+        3,
+      ],
+      "id": "backroom_furniture_12_broken_monitor",
+      "kind": "broken_monitor",
+      "position": [
+        17.44,
+        0,
+        -4,
+      ],
+      "rotationY": 1.5707963267948966,
+    },
+    {
+      "cell": [
+        6,
+        0,
+      ],
+      "id": "backroom_furniture_13_rolling_cart",
+      "kind": "rolling_cart",
+      "position": [
+        6.5600000000000005,
+        0,
+        -16,
+      ],
+      "rotationY": -1.5707963267948966,
+    },
+    {
+      "cell": [
+        3,
+        1,
+      ],
+      "id": "backroom_furniture_14_broken_monitor",
+      "kind": "broken_monitor",
+      "position": [
+        -5.4399999999999995,
+        0,
+        -12,
+      ],
+      "rotationY": -1.5707963267948966,
+    },
+    {
+      "cell": [
+        6,
+        3,
+      ],
+      "id": "backroom_furniture_15_fire_extinguisher",
+      "kind": "fire_extinguisher",
+      "position": [
+        8,
+        0,
+        -5.4399999999999995,
+      ],
+      "rotationY": 0,
+    },
+    {
+      "cell": [
+        4,
+        0,
+      ],
+      "id": "backroom_furniture_16_fire_extinguisher",
+      "kind": "fire_extinguisher",
+      "position": [
+        1.44,
+        0,
+        -16,
+      ],
+      "rotationY": 1.5707963267948966,
+    },
+    {
+      "cell": [
+        0,
+        2,
+      ],
+      "id": "backroom_furniture_17_exposed_pipes",
+      "kind": "exposed_pipes",
+      "position": [
+        -16,
+        0,
+        -8,
+      ],
+      "rotationY": 3.141592653589793,
+    },
+    {
+      "cell": [
+        4,
+        6,
+      ],
+      "id": "backroom_furniture_18_filing_cabinet",
+      "kind": "filing_cabinet",
+      "position": [
+        0,
+        0,
+        9.44,
+      ],
+      "rotationY": 3.141592653589793,
+    },
+    {
+      "cell": [
+        7,
+        2,
+      ],
+      "id": "backroom_furniture_19_rolling_cart",
+      "kind": "rolling_cart",
+      "position": [
+        12,
+        0,
+        -6.5600000000000005,
+      ],
+      "rotationY": 3.141592653589793,
+    },
+    {
+      "cell": [
+        5,
+        7,
+      ],
+      "id": "backroom_furniture_20_exposed_pipes",
+      "kind": "exposed_pipes",
+      "position": [
+        4,
+        0,
+        12,
+      ],
+      "rotationY": 0,
+    },
+    {
+      "cell": [
+        7,
+        5,
+      ],
+      "id": "backroom_furniture_21_office_chair",
+      "kind": "office_chair",
+      "position": [
+        13.44,
+        0,
+        4,
+      ],
+      "rotationY": 1.5707963267948966,
+    },
+    {
+      "cell": [
+        8,
+        6,
+      ],
+      "id": "backroom_furniture_22_filing_cabinet",
+      "kind": "filing_cabinet",
+      "position": [
+        14.56,
+        0,
+        8,
+      ],
+      "rotationY": -1.5707963267948966,
+    },
+    {
+      "cell": [
+        3,
+        5,
+      ],
+      "id": "backroom_furniture_23_server_rack",
+      "kind": "server_rack",
+      "position": [
+        -4,
+        0,
+        5.4399999999999995,
+      ],
+      "rotationY": 3.141592653589793,
+    },
+    {
+      "cell": [
+        0,
+        4,
+      ],
+      "id": "backroom_furniture_24_office_desk",
+      "kind": "office_desk",
+      "position": [
+        -17.44,
+        0,
+        0,
+      ],
+      "rotationY": -1.5707963267948966,
+    },
+    {
+      "cell": [
+        3,
+        7,
+      ],
+      "id": "backroom_furniture_25_rolling_cart",
+      "kind": "rolling_cart",
+      "position": [
+        -5.4399999999999995,
+        0,
+        12,
+      ],
+      "rotationY": -1.5707963267948966,
+    },
+  ],
+]
+`;
+
+exports[`seeded outputs stay identical across the rng consolidation > planAbsence 1`] = `
+[
+  [
+    "console_omega",
+    "sentence_4",
+    "glyph_vision",
+  ],
+  [
+    "console_omega",
+    "sentence_0",
+    "glyph_corruption",
+  ],
+  [
+    "console_alpha",
+    "sentence_0",
+    "glyph_moon",
+  ],
+  [
+    "console_beta",
+    "sentence_2",
+    "glyph_moon",
+  ],
+  [
+    "console_alpha",
+    "sentence_0",
+    "glyph_vision",
+  ],
+  [
+    "console_alpha",
+    "sentence_1",
+    "glyph_corruption",
+  ],
+  [
+    "console_alpha",
+    "sentence_0",
+    "glyph_moon",
+  ],
+  [
+    "console_omega",
+    "sentence_4",
+    "glyph_moon",
+  ],
+  [
+    "console_alpha",
+    "sentence_0",
+    "glyph_corruption",
+  ],
+  [
+    "console_omega",
+    "sentence_2",
+    "glyph_corruption",
+  ],
+]
+`;
+
+exports[`seeded outputs stay identical across the rng consolidation > seedForExit 1`] = `
+[
+  [
+    1051910520,
+    3951468376,
+    3373494168,
+    3274322686,
+  ],
+  [
+    1139902092,
+    110508506,
+    1806187775,
+    3735006556,
+  ],
+  [
+    961973655,
+    3657935092,
+    514453568,
+    2410192404,
+  ],
+  [
+    4157451727,
+    3893677218,
+    2786763120,
+    2077742501,
+  ],
+  [
+    1250711697,
+    4048337532,
+    3015373890,
+    4234173592,
+  ],
+  [
+    3853539103,
+    2087465569,
+    2910904952,
+    1626502806,
+  ],
+  [
+    2520353746,
+    3844235058,
+    1630086718,
+    1363149056,
+  ],
+  [
+    1941550497,
+    102701864,
+    13481122,
+    280763469,
+  ],
+  [
+    3792426950,
+    1759617085,
+    2397288964,
+    59108654,
+  ],
+  [
+    200795504,
+    3146303425,
+    3138362399,
+    431420653,
+  ],
+]
+`;
+
+exports[`seeded outputs stay identical across the rng consolidation > shouldFalseDoorBite 1`] = `
+[
+  [
+    true,
+    false,
+    false,
+    true,
+  ],
+  [
+    false,
+    false,
+    true,
+    true,
+  ],
+  [
+    false,
+    false,
+    false,
+    false,
+  ],
+  [
+    true,
+    false,
+    false,
+    false,
+  ],
+  [
+    false,
+    false,
+    false,
+    false,
+  ],
+  [
+    true,
+    false,
+    true,
+    true,
+  ],
+  [
+    true,
+    true,
+    false,
+    false,
+  ],
+  [
+    false,
+    true,
+    true,
+    true,
+  ],
+  [
+    true,
+    true,
+    true,
+    true,
+  ],
+  [
+    false,
+    true,
+    false,
+    false,
+  ],
+]
+`;

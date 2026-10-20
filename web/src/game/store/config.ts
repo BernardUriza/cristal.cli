@@ -11,4 +11,4 @@ export const STARVATION_FALLBACK: readonly string[] = [
 ];
 export const SPIKE_DECAY_PER_SECOND = 0.14;
 export const SPIKE_DECAY_DURING_ENDING = 0.8;
-export const GOLDEN_RATIO_HASH = 0x9e3779b1;
+export { GOLDEN_RATIO_HASH } from "../../shared/rng";

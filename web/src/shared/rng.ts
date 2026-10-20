@@ -1,5 +1,17 @@
 export type Rng = () => number;
 
+export const GOLDEN_RATIO_HASH = 0x9e3779b1;
+
+export function mix32(seed: number, salt: number, rounds = 2): number {
+  let value = (seed ^ Math.imul(salt, GOLDEN_RATIO_HASH)) >>> 0;
+  for (let i = 0; i < rounds; i++) value = Math.imul(value ^ (value >>> 16), 0x45d9f3b) >>> 0;
+  return (value ^ (value >>> 16)) >>> 0;
+}
+
+export function unitHash(seed: number, salt: number): number {
+  return mix32(seed, salt) / 0xffffffff;
+}
+
 export function mulberry32(seed: number): Rng {
   let a = seed >>> 0;
   return () => {

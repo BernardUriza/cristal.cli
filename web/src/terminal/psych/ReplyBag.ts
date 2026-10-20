@@ -1,4 +1,4 @@
-import { fnv1a, mulberry32 } from "../../shared/rng";
+import { fnv1a, GOLDEN_RATIO_HASH, mulberry32, shuffle } from "../../shared/rng";
 import type { ReplyCondition, ReplyLine } from "./replyPool";
 
 export interface ReplyContext {
@@ -87,15 +87,6 @@ export function substitutePlaceholders(text: string, ctx: ReplyContext): string 
   return text.replace(PLACEHOLDER, (_m, name: string) => placeholderValue(name, ctx) ?? "");
 }
 
-function shuffled(items: string[], rng: () => number): string[] {
-  const copy = [...items];
-  for (let i = copy.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1));
-    [copy[i], copy[j]] = [copy[j], copy[i]];
-  }
-  return copy;
-}
-
 function freshestLine(
   levels: string[][],
   used: string[],
@@ -104,7 +95,7 @@ function freshestLine(
 ): string | null {
   for (const texts of levels) {
     const fresh = texts.filter((text) => !used.includes(text) && text !== lastText);
-    if (fresh.length > 0) return shuffled(fresh, rng)[0];
+    if (fresh.length > 0) return shuffle(fresh, rng)[0];
   }
   return null;
 }
@@ -122,7 +113,7 @@ export function drawReply(
   const ranked = [...new Set(pool.map((line) => specificity(line, ctx)))].sort((a, b) => b - a);
   const levels = ranked.map((level) => pool.filter((line) => specificity(line, ctx) === level).map((line) => line.text));
   const lastText = state.lastText[poolKey];
-  const rng = mulberry32(fnv1a(ctx.sessionId) ^ Math.imul(ctx.turn + 1, 0x9e3779b1));
+  const rng = mulberry32(fnv1a(ctx.sessionId) ^ Math.imul(ctx.turn + 1, GOLDEN_RATIO_HASH));
 
   let used = state.used[poolKey] ?? [];
   let chosen = freshestLine(levels, used, lastText, rng);
