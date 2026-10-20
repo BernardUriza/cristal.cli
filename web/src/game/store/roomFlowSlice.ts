@@ -3,7 +3,7 @@ import { seedForExit, type Room } from "../roomApi";
 import { resolveFalseDoorConsequences } from "../FalseDoorConsequences";
 import { resolveSafeExit } from "../SafeExitResolver";
 import { recordEnvironmentalStance } from "../../terminal/psych/PsychologicalResponseEngine";
-import { shouldFalseDoorBite, shouldOfferSafeExit, symbolicSeedBias } from "../RuntimeTransference";
+import { shouldFalseDoorBite, shouldOfferSafeExit, symbolicSeedBias } from "../transference/worldDice";
 import {
   beginNextVariation,
   confessionFragmentsForRoom,

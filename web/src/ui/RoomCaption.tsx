@@ -2,7 +2,7 @@ import { useEffect, useMemo } from "react";
 import { useGame } from "../game/store";
 import { GameMode } from "../game/types";
 import { deriveRoomD1Results } from "../game/RoomD1Derivations";
-import { shouldOfferSafeExit } from "../game/RuntimeTransference";
+import { shouldOfferSafeExit } from "../game/transference/worldDice";
 
 // In-room HUD: the prophet's caption, breadcrumb, stability gauge, and the
 // cross/exit prompts. Crossing is proximity-only (walk to a door + E); ESC

@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from "react";
 import * as THREE from "three";
 import { useGame } from "./store";
-import { shouldOfferSafeExit } from "./RuntimeTransference";
+import { shouldOfferSafeExit } from "./transference/worldDice";
 import { playEnterDrone } from "./audio";
 import { resolveRoomPressureAtmosphere } from "./RoomPressureController";
 import { deriveRoomD1Results } from "./RoomD1Derivations";

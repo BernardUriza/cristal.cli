@@ -5,7 +5,7 @@ import { generateMaze } from "../game/maze";
 import { createPersistentTransference } from "../game/PersistentTransference";
 import { RelationshipTracker } from "../game/RelationshipTracker";
 import { localRoom, seedForExit, type Room } from "../game/roomApi";
-import { shouldFalseDoorBite } from "../game/RuntimeTransference";
+import { shouldFalseDoorBite } from "../game/transference/worldDice";
 import type { WorldBehavior } from "../game/WorldBehaviorResolver";
 import { createBagState, DEFAULT_REPLY_CONTEXT, drawReply } from "../terminal/psych/ReplyBag";
 

@@ -1,7 +1,6 @@
 import type { Stance } from "../terminal/psych/StanceClassifier";
 import { shapeTerminalResponses, type ResponseContext } from "../terminal/responseShaper";
 import { clamp01 } from "../shared/math";
-import { unitHash } from "../shared/rng";
 import { planAbsence, type AbsencePlan } from "./AbsencePlanner";
 import { resolveEmotionalSeason, type EmotionalSeasonState } from "./EmotionalSeason";
 import type { EmotionalHistoryEntry } from "./EmotionalHistory";
@@ -17,9 +16,8 @@ import {
 } from "./PersistentTransference";
 import { RelationshipTracker, type RelationshipSnapshot } from "./RelationshipTracker";
 import { resolveRitualGravity, type RitualGravity, type RitualObservation } from "./RitualGravity";
+import { adaptTerminalResponse } from "./transference/terminalAdapter";
 import type { Room } from "./roomApi";
-import type { SafeExit } from "./SafeExitResolver";
-import type { SymbolicArchetype } from "../shared/archetype";
 import type { SymbolicEvent } from "./symbolicBus";
 import { WORLD_NODES } from "./worldNodes";
 import { resolveWorldBehavior, type WorldBehavior, type WorldBehaviorPressure } from "./WorldBehaviorResolver";
@@ -198,51 +196,12 @@ export class RuntimeTransference {
   // INPUT: terminal response lines. OUTPUT: response lines/timing shaped by D2 state. SIDE EFFECTS: advances sparse terminal turn counter.
   adaptTerminalResponse<T extends { lines: string[]; delayMs?: number }>(response: T, context: ResponseContext): T {
     this.terminalTurns += 1;
-    const { profile, relationship, identity, worldBehavior, memoryEchoes, worldConfidence } = this.snapshotState;
-    let lines = [...response.lines];
-
-    if (context === "welcome" && identity.identity !== "You") {
-      lines = [`${identity.identity}.`, ...lines];
-    }
-
-    if (context === "input" && relationship.resistance > relationship.trust + 0.2) {
-      const first = lines.findIndex((line) => line.trim().length > 0);
-      if (first >= 0) lines[first] = `I recognize the turn away. ${lines[first]}`;
-    }
-
-    if (worldConfidence.terminalMode === "states" && context === "input") {
-      lines.push("The room does not ask this time. It names the pattern.");
-    } else if (worldConfidence.terminalMode === "asks" && context === "welcome") {
-      lines.push("What should the room learn first?");
-    }
-
-    const verbosity = worldBehavior?.roomVerbosity ?? (0.42 + profile.confessionRate * 0.18);
-    if (verbosity < 0.34 && lines.length > 2) {
-      lines = lines.filter((line) => line.trim().length > 0).slice(0, 2);
-    }
-
-    const silenceProbability = worldBehavior?.silenceProbability ?? profile.silenceTolerance * 0.55;
-    const shouldWait = context === "input" && silenceProbability > 0.45 && unitHash(this.terminalTurns, 71) < silenceProbability;
-    if (shouldWait && relationship.trust < 0.42) {
-      lines = ["...", ...lines.filter((line) => line.trim().length > 0).slice(0, 1)];
-    }
-
-    const echo = memoryEchoes[0];
-    const canEcho =
-      context === "input" &&
-      echo &&
-      this.terminalTurns - this.lastEchoTurn >= 4 &&
-      unitHash(this.terminalTurns + Math.round(echo.intensity * 100), 97) < echo.intensity;
-    if (canEcho) {
-      lines.push(echo.text);
-      this.lastEchoTurn = this.terminalTurns;
-    }
-
-    return {
-      ...response,
-      lines,
-      delayMs: Math.max(response.delayMs ?? 0, shouldWait ? 900 : 0) || undefined,
-    };
+    const adapted = adaptTerminalResponse(response, context, this.snapshotState, {
+      turn: this.terminalTurns,
+      lastEchoTurn: this.lastEchoTurn,
+    });
+    if (adapted.echoed) this.lastEchoTurn = this.terminalTurns;
+    return adapted.response;
   }
 
   reset(): RuntimeTransferenceSnapshot {
@@ -321,25 +280,4 @@ shapeTerminalResponses((response, context) => defaultRuntimeTransference.adaptTe
 
 export function getRuntimeTransference(): RuntimeTransference {
   return defaultRuntimeTransference;
-}
-
-export function shouldOfferSafeExit(
-  room: Room,
-  safeExit: SafeExit | null,
-  behavior: WorldBehavior | null
-): safeExit is SafeExit {
-  if (!safeExit) return false;
-  if (!behavior) return true;
-  return unitHash(room.seed, 131) < behavior.safeExitProbability;
-}
-
-export function shouldFalseDoorBite(room: Room, index: number, candidateIndex: number, behavior: WorldBehavior | null): boolean {
-  if (index !== candidateIndex || candidateIndex < 0) return false;
-  if (!behavior) return true;
-  return unitHash(room.seed + index, 149) < Math.max(0.08, behavior.falseDoorProbability);
-}
-
-export function symbolicSeedBias(archetype: SymbolicArchetype, gravity: RitualGravity): number {
-  const bias = gravity.archetypeBias[archetype] ?? 1;
-  return Math.round((bias - 1) * 1000 + (gravity.thresholdBias - 1) * 997);
 }
