@@ -1,10 +1,7 @@
-import { GameMode } from "../types";
 import type { SymbolicArchetype } from "../../shared/archetype";
 import { seedForExit, type Room } from "../roomApi";
 import { resolveFalseDoorConsequences } from "../FalseDoorConsequences";
 import { resolveSafeExit } from "../SafeExitResolver";
-import { appendEmotionalHistory, type EmotionalHistoryEntry } from "../EmotionalHistory";
-import { resolvePressureEnding } from "../PressureEnding";
 import { recordEnvironmentalStance } from "../../terminal/psych/PsychologicalResponseEngine";
 import { shouldFalseDoorBite, shouldOfferSafeExit, symbolicSeedBias } from "../RuntimeTransference";
 import {
@@ -15,10 +12,18 @@ import {
   noteGlyphInvoked,
   noteRoomCrossed,
   noteRoomDismissed,
-  saveVerticalSlice,
   type VerticalSliceState,
 } from "../VerticalSlice";
-import { FALSE_DOOR_HISTORY_LIMIT, GOLDEN_RATIO_HASH, HISTORY_LIMIT } from "./config";
+import { GOLDEN_RATIO_HASH } from "./config";
+import {
+  falseDoorHistory,
+  falseDoorPatch,
+  historyOnEntry,
+  roomEntryPatch,
+  roomLeavePatch,
+  sessionRoomDepths,
+  withDangerousSeed,
+} from "./roomFlowPatches";
 import {
   cachedRoom,
   fakeExitForRoom,
@@ -32,69 +37,30 @@ import {
 import { resolveRoomEntryPressureEnding, runtimeTransference, stabilityRuntime } from "./pressureSlice";
 import type { GameSlice, GameState, RoomFlowSlice } from "./types";
 
-function pushHistory(history: Room[], room: Room): Room[] {
-  const next = [...history.filter((r) => r.seed !== room.seed), room];
-  return next.slice(-HISTORY_LIMIT);
-}
-
-function historyOnEntry(s: GameState, room: Room): EmotionalHistoryEntry[] {
-  return s.psychologicalStance
-    ? appendEmotionalHistory(s.emotionalHistory, {
-        room: { seed: room.seed, name: room.name },
-        stance: s.psychologicalStance,
-        pressure: s.psychologicalPressure,
-        timestamp: Date.now(),
-      })
-    : s.emotionalHistory;
-}
-
-function enterRoomPatch(
+function enterRoom(
   s: GameState,
   room: Room,
   archetype: SymbolicArchetype,
   parentSeed: number | null,
   freshDescent: boolean
 ): Partial<GameState> {
-  const emotionalHistory = historyOnEntry(s, room);
-  return {
-    room,
-    roomArchetype: archetype,
-    roomLoading: false,
-    roomError: null,
-    mode: GameMode.Room,
-    parentSeed,
-    roomHistory: pushHistory(s.roomHistory, room),
-    emotionalHistory,
+  const emotionalHistory = historyOnEntry(s, room, Date.now());
+  return roomEntryPatch(s, room, archetype, parentSeed, emotionalHistory, {
     pressureEnding: resolveRoomEntryPressureEnding(s),
     stability: stabilityRuntime.enter(room, freshDescent),
-    transference: runtimeTransference.enterRoom({
-      room,
-      pressure: s.psychologicalPressure,
-      history: emotionalHistory,
-    }),
-  };
+    transference: runtimeTransference.enterRoom({ room, pressure: s.psychologicalPressure, history: emotionalHistory }),
+  });
 }
 
-function leaveRoomPatch(s: GameState): Partial<GameState> {
-  return {
-    room: null,
-    roomLoading: false,
-    roomError: null,
-    roomArchetype: null,
-    nearbyExit: null,
-    parentSeed: null,
-    roomHistory: [],
-    stability: 100,
-    roomPressureSpike: 0,
-    lastRoomWhisper: null,
-    pressureEnding: null,
-    transference: runtimeTransference.completeSession({
+function leaveRoom(s: GameState): Partial<GameState> {
+  return roomLeavePatch(
+    s,
+    runtimeTransference.completeSession({
       emotionalHistory: s.emotionalHistory,
       falseDoorCount: s.falseDoorAnnotations.length,
-      roomDepths: s.roomHistory.map((_, i) => Math.max(0, s.depth - s.roomHistory.length + i + 1)),
-    }),
-    mode: s.mode === GameMode.Room ? GameMode.Exploration : s.mode,
-  };
+      roomDepths: sessionRoomDepths(s),
+    })
+  );
 }
 
 export const createRoomFlowSlice: GameSlice<RoomFlowSlice> = (set, get) => {
@@ -123,14 +89,14 @@ export const createRoomFlowSlice: GameSlice<RoomFlowSlice> = (set, get) => {
     const requestId = roomRequests.begin();
     const cached = cachedRoom(seed);
     if (cached) {
-      set((s) => enterRoomPatch(s, cached, archetype, parentSeed, freshDescent));
+      set((s) => enterRoom(s, cached, archetype, parentSeed, freshDescent));
       return;
     }
     set({ roomLoading: true, roomError: null, roomArchetype: archetype });
     requestRoom(seed, archetype, get().depth, fragments)
       .then((room) => {
         if (!roomRequests.isCurrent(requestId)) return;
-        set((s) => ({ ...enterRoomPatch(s, room, archetype, parentSeed, freshDescent), depth: s.depth + 1 }));
+        set((s) => ({ ...enterRoom(s, room, archetype, parentSeed, freshDescent), depth: s.depth + 1 }));
       })
       .catch((e) => {
         if (!roomRequests.isCurrent(requestId)) return;
@@ -156,7 +122,6 @@ export const createRoomFlowSlice: GameSlice<RoomFlowSlice> = (set, get) => {
       const seed = glyphRoomSeed(archetype, glyphId);
       forgetGlyphRoom(glyphId);
       const verticalSlice = noteGlyphInvoked(get().verticalSlice, glyphId, archetype);
-      saveVerticalSlice(verticalSlice);
       get().reachFunnel("glyph_invoked", Date.now());
       set({ roomHistory: [], verticalSlice });
       loadRoom(seed, archetype, glyphRoomFragments(archetype, verticalSlice), null, true);
@@ -192,36 +157,15 @@ export const createRoomFlowSlice: GameSlice<RoomFlowSlice> = (set, get) => {
         const engine = stabilityRuntime.current();
         engine?.falseDoorPenalty();
         set((s) => {
-          const verticalSlice = noteFalseDoor(s.verticalSlice);
-          saveVerticalSlice(verticalSlice);
-          const emotionalHistory = appendEmotionalHistory(s.emotionalHistory, {
-            room: { seed: room.seed, name: room.name },
-            stance: consequence.pressureStance,
+          const now = Date.now();
+          const emotionalHistory = falseDoorHistory(s, room, consequence, pressure.pressure, now);
+          return falseDoorPatch(s, {
+            room,
+            consequence,
             pressure: pressure.pressure,
-            timestamp: Date.now(),
-          });
-          return {
-            stability: engine ? engine.state.stability : s.stability,
-            psychologicalPressure: pressure.pressure,
-            psychologicalStance: consequence.pressureStance,
-            pressureEnding:
-              s.pressureEnding ??
-              resolvePressureEnding({
-                pressure: pressure.pressure,
-                inRoom: s.mode === GameMode.Room && !!s.room,
-                now: Date.now(),
-              }),
-            roomPressureSpike: Math.max(s.roomPressureSpike, consequence.atmosphereSpike),
-            falseDoorAnnotations: [
-              ...s.falseDoorAnnotations,
-              { ...consequence.annotation, timestamp: Date.now() },
-            ].slice(-FALSE_DOOR_HISTORY_LIMIT),
+            stability: engine ? engine.state.stability : null,
             emotionalHistory,
-            lastRoomWhisper: consequence.whisper,
-            verticalSlice,
-            dangerousSeeds: s.dangerousSeeds.includes(room.seed)
-              ? s.dangerousSeeds
-              : [...s.dangerousSeeds, room.seed],
+            verticalSlice: noteFalseDoor(s.verticalSlice),
             transference: runtimeTransference.recordInteraction({
               stance: consequence.pressureStance,
               pressure: pressure.pressure,
@@ -229,7 +173,8 @@ export const createRoomFlowSlice: GameSlice<RoomFlowSlice> = (set, get) => {
               history: emotionalHistory,
               revisitedRoom: true,
             }),
-          };
+            now,
+          });
         });
         if (engine?.isEvicted) get().collapseRoom();
         return;
@@ -238,7 +183,6 @@ export const createRoomFlowSlice: GameSlice<RoomFlowSlice> = (set, get) => {
         stabilityRuntime.current()?.safeDoorReward();
         get().reachFunnel("door_crossed", Date.now());
         const verticalSlice = noteRoomCrossed(get().verticalSlice, safeExit.label);
-        saveVerticalSlice(verticalSlice);
         set({ lastRoomWhisper: "La puerta no se abre: deja de defenderse.", verticalSlice });
         loadRoom(safeExit.seed, roomArchetype, [room.inscription, "confession opened a stable path"], room.seed, false);
         return;
@@ -247,7 +191,6 @@ export const createRoomFlowSlice: GameSlice<RoomFlowSlice> = (set, get) => {
       const exitLabel = room.exits[index] ?? `puerta ${index + 1}`;
       get().reachFunnel("door_crossed", Date.now());
       const verticalSlice = noteRoomCrossed(get().verticalSlice, exitLabel);
-      saveVerticalSlice(verticalSlice);
       set({ lastRoomWhisper: null, verticalSlice });
       loadRoom(seedForExit(room.seed, index), roomArchetype, [room.inscription], room.seed, false);
     },
@@ -255,31 +198,19 @@ export const createRoomFlowSlice: GameSlice<RoomFlowSlice> = (set, get) => {
     collapseRoom: () => {
       stabilityRuntime.reset();
       roomRequests.invalidate();
-      set((s) => ({
-        ...leaveRoomPatch(s),
-        dangerousSeeds:
-          s.room && !s.dangerousSeeds.includes(s.room.seed)
-            ? [...s.dangerousSeeds, s.room.seed]
-            : s.dangerousSeeds,
-      }));
+      set((s) => ({ ...leaveRoom(s), dangerousSeeds: withDangerousSeed(s.dangerousSeeds, s.room?.seed) }));
     },
 
     dismissRoom: () => {
       stabilityRuntime.reset();
       roomRequests.invalidate();
-      set((s) => {
-        const verticalSlice = noteRoomDismissed(s.verticalSlice);
-        saveVerticalSlice(verticalSlice);
-        return { ...leaveRoomPatch(s), verticalSlice };
-      });
+      set((s) => ({ ...leaveRoom(s), verticalSlice: noteRoomDismissed(s.verticalSlice) }));
     },
 
     startNextVariation: () =>
       set((s) => {
         const verticalSlice = beginNextVariation(s.verticalSlice);
-        if (verticalSlice === s.verticalSlice) return s;
-        saveVerticalSlice(verticalSlice);
-        return { verticalSlice };
+        return verticalSlice === s.verticalSlice ? s : { verticalSlice };
       }),
   };
 };

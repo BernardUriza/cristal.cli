@@ -1,6 +1,6 @@
 import { GameMode } from "../types";
 import { leaveEcho } from "../echoClient";
-import { noteConsoleInput, noteConsoleOpened, saveVerticalSlice } from "../VerticalSlice";
+import { noteConsoleInput, noteConsoleOpened } from "../VerticalSlice";
 import { TRANSITION_MS } from "./config";
 import type { ConsoleSlice, GameSlice } from "./types";
 
@@ -11,7 +11,6 @@ export const createConsoleSlice: GameSlice<ConsoleSlice> = (set, get) => ({
   enterConsoleMode: (consoleId) => {
     if (get().mode !== GameMode.Exploration) return;
     const nextSlice = noteConsoleOpened(get().verticalSlice, consoleId.toUpperCase());
-    saveVerticalSlice(nextSlice);
     get().reachFunnel("console_open", Date.now());
     set({ mode: GameMode.Transition, activeConsoleId: consoleId, verticalSlice: nextSlice });
     window.setTimeout(() => {
@@ -35,7 +34,6 @@ export const createConsoleSlice: GameSlice<ConsoleSlice> = (set, get) => ({
     const before = get().verticalSlice;
     const verticalSlice = noteConsoleInput(before, input);
     if (verticalSlice === before) return;
-    saveVerticalSlice(verticalSlice);
     set({ verticalSlice });
     if (!before.confessed && verticalSlice.confessed && verticalSlice.confessionFragment) {
       leaveEcho(verticalSlice.confessionFragment);

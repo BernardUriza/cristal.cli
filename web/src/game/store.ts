@@ -5,6 +5,7 @@ import { createConsoleSlice } from "./store/consoleSlice";
 import { createWallsSlice } from "./store/wallsSlice";
 import { createPressureSlice } from "./store/pressureSlice";
 import { createRoomFlowSlice } from "./store/roomFlowSlice";
+import { persistVerticalSlice } from "./store/persistVerticalSlice";
 
 export type { GameState, MazePose } from "./store/types";
 export { fakeExitForRoom } from "./store/roomCache";
@@ -18,6 +19,8 @@ export const useGame = create<GameState>()((...a) => ({
   ...createPressureSlice(...a),
   ...createRoomFlowSlice(...a),
 }));
+
+persistVerticalSlice(useGame);
 
 if (import.meta.env.DEV && typeof window !== "undefined") {
   (window as unknown as { __game: typeof useGame }).__game = useGame;
