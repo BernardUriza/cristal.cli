@@ -51,6 +51,7 @@ export function Memorama() {
   const [justMissed, setJustMissed] = useState<number[]>([]);
   const [shared, setShared] = useState<"idle" | ShareOutcome>("idle");
   const [closeUp, setCloseUp] = useState<number | null>(null);
+  const [viewingTemples, setViewingTemples] = useState(false);
   const resolveTimer = useRef<number | null>(null);
   const juiceTimer = useRef<number | null>(null);
 
@@ -102,6 +103,7 @@ export function Memorama() {
     setGame(newGame(nextSeed, nextPairs));
     setRecord(null);
     setShared("idle");
+    setViewingTemples(false);
   };
 
   const toggleSound = () => {
@@ -174,7 +176,6 @@ export function Memorama() {
               className={`card${up ? " up" : ""}${matched ? " matched" : ""}${pulse ? " pulse" : ""}${miss ? " miss" : ""}`}
               aria-label={up ? `carta ${i + 1} descubierta` : `carta ${i + 1}`}
               aria-pressed={up}
-              disabled={won}
               onClick={() => onCard(i)}
             >
               <div className="card-inner">
@@ -192,8 +193,14 @@ export function Memorama() {
           <p>toca para volver</p>
         </div>
       )}
-      {won && (
+      {won && viewingTemples && closeUp === null && (
+        <button className="minigame-button memorama-result-tab" onClick={() => setViewingTemples(false)}>
+          ver resultado
+        </button>
+      )}
+      {won && !viewingTemples && (
         <div className="memorama-won" role="status">
+          <div className="memorama-won-panel">
           <p>
             {isDaily ? "templo del día" : "templo"} {seed} completo en {game.moves} movimientos
           </p>
@@ -209,6 +216,8 @@ export function Memorama() {
             </button>
             <button onClick={() => start(seed, pairs)}>repetir</button>
             <button onClick={() => start(randomSeed(), pairs)}>otra partida</button>
+            <button onClick={() => setViewingTemples(true)}>ver los templos</button>
+          </div>
           </div>
         </div>
       )}
