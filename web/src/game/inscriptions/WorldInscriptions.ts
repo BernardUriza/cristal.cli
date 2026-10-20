@@ -1,3 +1,4 @@
+import { readJson, writeJson } from "../../shared/storage";
 import { CELL, WALL_THICK, cellCenter, type Maze } from "../maze";
 import { connectedNeighbors, type CellCoord } from "../mazeGraph";
 import { cellKey } from "../MazeRouteAdvisor";
@@ -119,27 +120,15 @@ export function inscriptionId(text: string, at: number): string {
 }
 
 export function loadInscriptions(): WorldInscription[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as unknown;
-    if (!Array.isArray(parsed)) return [];
-    return parsed
-      .filter((item): item is WorldInscription =>
-        typeof item === "object" && item !== null && typeof (item as WorldInscription).text === "string" && typeof (item as WorldInscription).id === "string"
-      )
-      .slice(-INSCRIPTION_LIMIT);
-  } catch {
-    return [];
-  }
+  const parsed = readJson(STORAGE_KEY);
+  if (!Array.isArray(parsed)) return [];
+  return parsed
+    .filter((item): item is WorldInscription =>
+      typeof item === "object" && item !== null && typeof (item as WorldInscription).text === "string" && typeof (item as WorldInscription).id === "string"
+    )
+    .slice(-INSCRIPTION_LIMIT);
 }
 
 export function saveInscriptions(inscriptions: readonly WorldInscription[]): void {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(inscriptions.slice(-INSCRIPTION_LIMIT)));
-  } catch {
-    return;
-  }
+  writeJson(STORAGE_KEY, inscriptions.slice(-INSCRIPTION_LIMIT));
 }

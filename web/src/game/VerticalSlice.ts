@@ -1,3 +1,4 @@
+import { readJson, writeJson } from "../shared/storage";
 import type { SymbolicArchetype } from "./symbolicBus";
 import { parse } from "../terminal/inputParser";
 import { SemanticSignalType } from "../terminal/types";
@@ -53,12 +54,10 @@ export function objectiveForSlice(slice: VerticalSliceState): string {
 }
 
 export function loadVerticalSlice(): VerticalSliceState {
-  if (typeof window === "undefined") return INITIAL_VERTICAL_SLICE;
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return INITIAL_VERTICAL_SLICE;
-    const parsed = JSON.parse(raw) as Partial<VerticalSliceState>;
-    return {
+  const saved = readJson(STORAGE_KEY);
+  if (!saved || typeof saved !== "object") return INITIAL_VERTICAL_SLICE;
+  const parsed = saved as Partial<VerticalSliceState>;
+  return {
       ...INITIAL_VERTICAL_SLICE,
       ...parsed,
       step: normalizeStep(parsed.step),
@@ -72,19 +71,10 @@ export function loadVerticalSlice(): VerticalSliceState {
       completedRuns: numberOrZero(parsed.completedRuns),
       lastSignal: typeof parsed.lastSignal === "string" ? parsed.lastSignal : null,
     };
-  } catch {
-    return INITIAL_VERTICAL_SLICE;
-  }
 }
 
 export function saveVerticalSlice(slice: VerticalSliceState): void {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(slice));
-  } catch {
-    // Persistence is a convenience. Private browsing or full storage should not
-    // block the runtime.
-  }
+  writeJson(STORAGE_KEY, slice);
 }
 
 export function noteConsoleOpened(slice: VerticalSliceState, label: string): VerticalSliceState {

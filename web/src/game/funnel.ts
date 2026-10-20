@@ -1,3 +1,4 @@
+import { readJson, writeJson } from "../shared/storage";
 export const FUNNEL_STEPS = [
   "laberinto",
   "pointer_lock",
@@ -50,23 +51,11 @@ export function randomSessionId(random: () => number): string {
 }
 
 export function loadFunnel(sessionId: string, now: number): FunnelState {
-  if (typeof window === "undefined") return createFunnel(sessionId, now);
-  try {
-    const raw = window.sessionStorage.getItem(STORAGE_KEY);
-    if (!raw) return createFunnel(sessionId, now);
-    const parsed = JSON.parse(raw) as Partial<FunnelState>;
-    if (typeof parsed.sessionId !== "string" || typeof parsed.startedAt !== "number") return createFunnel(sessionId, now);
-    return { sessionId: parsed.sessionId, startedAt: parsed.startedAt, reached: parsed.reached ?? {} };
-  } catch {
-    return createFunnel(sessionId, now);
-  }
+  const parsed = (readJson(STORAGE_KEY, "session") ?? {}) as Partial<FunnelState>;
+  if (typeof parsed.sessionId !== "string" || typeof parsed.startedAt !== "number") return createFunnel(sessionId, now);
+  return { sessionId: parsed.sessionId, startedAt: parsed.startedAt, reached: parsed.reached ?? {} };
 }
 
 export function saveFunnel(state: FunnelState): void {
-  if (typeof window === "undefined") return;
-  try {
-    window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  } catch {
-    return;
-  }
+  writeJson(STORAGE_KEY, state, "session");
 }

@@ -1,3 +1,4 @@
+import { browserStorage } from "../shared/storage";
 import type { Stance } from "../terminal/psych/StanceClassifier";
 import { isEvasiveStance } from "../terminal/psych/stanceUtils";
 import { clamp01 } from "../shared/math";
@@ -81,12 +82,6 @@ const EMPTY_PROFILE: TransferenceProfile = {
   explorationStyle: "unformed",
   confidence: 0,
 };
-
-function browserStorage(): TransferenceStorage | null {
-  if (typeof globalThis === "undefined") return null;
-  const maybeStorage = (globalThis as { localStorage?: TransferenceStorage }).localStorage;
-  return maybeStorage ?? null;
-}
 
 function readPersisted(storage: TransferenceStorage | null): PersistedTransference {
   if (!storage) return { version: 1, sessions: [], profile: EMPTY_PROFILE };

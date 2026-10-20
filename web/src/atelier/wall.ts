@@ -1,3 +1,4 @@
+import { readJson, writeJson } from "../shared/storage.ts";
 import type { Recipe } from "./director.ts";
 
 export type Sketch = { id: string; title: string; seed: number; narration: string; recipe: Recipe; thumbnail: string; at: number };
@@ -6,22 +7,12 @@ const STORAGE_KEY = "cristal.atelier.wall.v1";
 export const WALL_LIMIT = 24;
 
 export function loadWall(): Sketch[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const parsed = JSON.parse(window.localStorage.getItem(STORAGE_KEY) || "[]") as unknown;
-    return Array.isArray(parsed) ? (parsed as Sketch[]).filter((s) => typeof s?.id === "string" && typeof s?.thumbnail === "string") : [];
-  } catch {
-    return [];
-  }
+  const parsed = readJson(STORAGE_KEY);
+  return Array.isArray(parsed) ? (parsed as Sketch[]).filter((s) => typeof s?.id === "string" && typeof s?.thumbnail === "string") : [];
 }
 
 export function saveWall(wall: Sketch[]): void {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(wall.slice(-WALL_LIMIT)));
-  } catch {
-    return;
-  }
+  writeJson(STORAGE_KEY, wall.slice(-WALL_LIMIT));
 }
 
 export function pinSketch(wall: Sketch[], sketch: Sketch): Sketch[] {

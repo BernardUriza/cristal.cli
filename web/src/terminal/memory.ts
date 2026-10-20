@@ -1,3 +1,4 @@
+import { readJson, writeJson } from "../shared/storage";
 // Port of the subset of Cristal.CLI.Memory.CristalMemory used by the response
 // system. Persists to localStorage so the session survives reloads.
 
@@ -35,13 +36,8 @@ export class CristalMemory {
   }
 
   private load(): MemoryData {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) return { ...this.fresh(), ...(JSON.parse(raw) as MemoryData) };
-    } catch {
-      /* ignore corrupt storage */
-    }
-    return this.fresh();
+    const saved = readJson(STORAGE_KEY);
+    return saved && typeof saved === "object" ? { ...this.fresh(), ...(saved as MemoryData) } : this.fresh();
   }
 
   private fresh(): MemoryData {
@@ -58,11 +54,7 @@ export class CristalMemory {
   }
 
   private save() {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
-    } catch {
-      /* storage may be unavailable */
-    }
+    writeJson(STORAGE_KEY, this.data);
   }
 
   get sessionId(): string {

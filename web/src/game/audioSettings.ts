@@ -1,3 +1,4 @@
+import { browserStorage } from "../shared/storage";
 import { clamp01 } from "../shared/math";
 
 // User-facing audio preferences, persisted across sessions. `volume` is the
@@ -45,16 +46,7 @@ export function resolveMasterGain(settings: AudioSettings): number {
 
 type SettingsStorage = Pick<Storage, "getItem" | "setItem">;
 
-function defaultStorage(): SettingsStorage | null {
-  if (typeof window === "undefined") return null;
-  try {
-    return window.localStorage;
-  } catch {
-    return null;
-  }
-}
-
-export function loadAudioSettings(storage: SettingsStorage | null = defaultStorage()): AudioSettings {
+export function loadAudioSettings(storage: SettingsStorage | null = browserStorage()): AudioSettings {
   if (!storage) return { ...DEFAULT_AUDIO_SETTINGS };
   try {
     return parseAudioSettings(storage.getItem(AUDIO_SETTINGS_KEY));
@@ -65,7 +57,7 @@ export function loadAudioSettings(storage: SettingsStorage | null = defaultStora
 
 export function saveAudioSettings(
   settings: AudioSettings,
-  storage: SettingsStorage | null = defaultStorage(),
+  storage: SettingsStorage | null = browserStorage(),
 ): void {
   if (!storage) return;
   try {

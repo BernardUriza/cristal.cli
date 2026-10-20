@@ -1,3 +1,4 @@
+import { flagStore } from "../../shared/storage.ts";
 let context: AudioContext | null = null;
 
 function audio(): AudioContext | null {
@@ -29,22 +30,5 @@ export function playTone({ from, to, durationMs, gain }: Tone): void {
 }
 
 export function soundSetting(storageKey: string): { load: () => boolean; save: (enabled: boolean) => void } {
-  return {
-    load: () => {
-      if (typeof window === "undefined") return true;
-      try {
-        return window.localStorage.getItem(storageKey) !== "off";
-      } catch {
-        return true;
-      }
-    },
-    save: (enabled) => {
-      if (typeof window === "undefined") return;
-      try {
-        window.localStorage.setItem(storageKey, enabled ? "on" : "off");
-      } catch {
-        return;
-      }
-    },
-  };
+  return flagStore(storageKey, true);
 }

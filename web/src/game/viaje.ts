@@ -1,3 +1,4 @@
+import { flagStore } from "../shared/storage";
 import { clamp01 } from "../shared/math";
 
 export const AUTOWALK_IDLE_MS = 6000;
@@ -23,6 +24,8 @@ export function isIdle(lastActivityAt: number, now: number, idleMs = AUTOWALK_ID
   return now - lastActivityAt >= idleMs;
 }
 
+const viajeFlag = flagStore(STORAGE_KEY, false);
+
 export function viajeFromSearch(search: string): boolean | null {
   const value = new URLSearchParams(search).get("viaje");
   if (value === null) return null;
@@ -31,20 +34,9 @@ export function viajeFromSearch(search: string): boolean | null {
 
 export function loadViaje(search: string): boolean {
   const fromUrl = viajeFromSearch(search);
-  if (fromUrl !== null) return fromUrl;
-  if (typeof window === "undefined") return false;
-  try {
-    return window.localStorage.getItem(STORAGE_KEY) === "on";
-  } catch {
-    return false;
-  }
+  return fromUrl ?? viajeFlag.load();
 }
 
 export function saveViaje(on: boolean): void {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(STORAGE_KEY, on ? "on" : "off");
-  } catch {
-    return;
-  }
+  viajeFlag.save(on);
 }
