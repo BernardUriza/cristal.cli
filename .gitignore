@@ -89,3 +89,6 @@ tmpclaude-*
 
 # TarotGame checkout (its own repo, github.com/BernardUriza/TarotGame)
 tarot/
+
+# Node dependencies and test caches (vite/vitest) — never commit
+node_modules/
