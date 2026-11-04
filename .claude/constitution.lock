@@ -6,8 +6,8 @@ override = []
 [core]
 id = "agent-constitution"
 repo = "https://github.com/BernardUriza/agent-constitution.git"
-rev = "56faba96d3f8e6aea4453fd7b833ef58ade7cbd8"
-tree = "sha256:8fd5867bc4173f25b9d35f3569028549cd906fd733abb824cad529ecde477536"
+rev = "205443b0f6b95a5338f9095c449416f729eca4c3"
+tree = "sha256:bb3dd6b3022110bcf73bdc0fb5a89407f52712eefb64286ef19e73f861fff667"
 
 [repo]
 id = "cristal.cli"
@@ -42,12 +42,12 @@ tree = "sha256:2e93bc0e242ac7246fc5d0a2d25b7307a1a0de6a15c5e200706d33aba1a7ca98"
 rules = true
 
 [lock]
-canonical_sha256 = "4a265d8ea93b26c26e42ba1a5bf4abaf8b18d413f594703fbe0fade2f6c81064"
+canonical_sha256 = "5673ce18147f81f54615185e8da9ad10508ac0b697052b5968a609f3bdc68843"
 
 [[overlay]]
 id = "bernard"
 layer = "personal"
 scope = "machine-only"
 repo = "https://github.com/BernardUriza/constitution-bernard.git"
-rev = "a668cea6113e626368e7c53128b837ff077ebc9e"
-tree = "sha256:3a3779724a3d6cf3a6afc6e8cfd965a0bfae69b29be3af57f511e16b17b385c3"
+rev = "8dc6f4c7a502e8db193b42d1ecaed4b102588acd"
+tree = "sha256:f32b97a3ceb8a73ace16e56aa0a71a5c9960eb62a4fcb4b73d858d2ed8fcf045"
