@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
 import { placeBackroomFurniture } from "./BackroomFurniturePlacer";
-import { furnitureSolids } from "./furnitureSolids";
+import { CONSOLE_RADIUS, furnitureSolids } from "./furnitureSolids";
+import { connectedNeighbors } from "./mazeGraph";
+import { CONSOLE_NODES } from "./worldNodes";
 import { cellCenter, generateMaze } from "./maze";
 import { MAZE_COLS, MAZE_ROWS, MAZE_SEED } from "./mazeConfig";
 import { PLAYER_RADIUS, stepTowards } from "./player/movement";
@@ -36,5 +38,20 @@ describe("furnitureSolids", () => {
         expect(Math.hypot(pos.x - cx, pos.z - cz)).toBeLessThan(PLAYER_RADIUS);
       }
     }
+  });
+});
+
+describe("a console standing in a corridor", () => {
+  it("lets the player walk through its cell from one neighbour to the other", () => {
+    const alpha = CONSOLE_NODES.find((node) => node.id === "console_alpha");
+    if (!alpha) throw new Error("ALPHA is gone");
+    const [ax, az] = cellCenter(maze, alpha.cell[0], alpha.cell[1]);
+    const neighbours = connectedNeighbors(maze, alpha.cell[0], alpha.cell[1]);
+    expect(neighbours.length).toBeGreaterThanOrEqual(2);
+    const [from, to] = neighbours.map((cell) => cellCenter(maze, cell.x, cell.y));
+    const pos = new THREE.Vector3(from[0] + 0.05, 0, from[1] + 0.05);
+    const pillar = [{ x: ax, z: az, radius: CONSOLE_RADIUS }];
+    for (let frame = 0; frame < 600; frame++) stepTowards(maze, pos, { x: to[0], z: to[1] }, 4, 1 / 60, pillar);
+    expect(Math.hypot(pos.x - to[0], pos.z - to[1])).toBeLessThan(PLAYER_RADIUS);
   });
 });

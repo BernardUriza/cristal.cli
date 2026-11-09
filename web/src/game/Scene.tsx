@@ -10,7 +10,7 @@ import { FloorTrail } from "./trail/FloorTrail";
 import { dawnLevel } from "./trail/trail";
 import { BackroomFurnitureSet } from "./BackroomFurniture.tsx";
 import { placeBackroomFurniture } from "./BackroomFurniturePlacer";
-import { furnitureSolids } from "./furnitureSolids";
+import { CONSOLE_RADIUS, NPC_RADIUS, furnitureSolids } from "./furnitureSolids";
 import { cellCenter, generateMaze } from "./maze";
 import { MAZE_COLS, MAZE_ROWS, MAZE_SEED, SPAWN_CELL } from "./mazeConfig";
 import { CONSOLE_NODES, GLYPH_NODES, NPC_NODES, WORLD_NODES } from "./worldNodes";
@@ -19,9 +19,10 @@ import { rewardLevel, viajeAtmosphere } from "./viaje";
 import { Temple } from "../graphics/presentation/Temple";
 import { GAME_COMPOSITION, TEMPLE_PLACEMENT } from "../graphics/config/composition";
 
-const SOLID_RADIUS = 0.55;
 const DAWN_AMBIENT = 2.5;
 const DAWN_HEMISPHERE = 2;
+
+const npcIds = new Set(NPC_NODES.map((node) => node.id));
 
 export function Scene() {
   const maze = useMemo(() => generateMaze(MAZE_COLS, MAZE_ROWS, MAZE_SEED), []);
@@ -81,7 +82,7 @@ export function Scene() {
 
   const solids = useMemo(
     () => [
-      ...consoles.map((c) => ({ x: c.position.x, z: c.position.z, radius: SOLID_RADIUS })),
+      ...consoles.map((c) => ({ x: c.position.x, z: c.position.z, radius: npcIds.has(c.id) ? NPC_RADIUS : CONSOLE_RADIUS })),
       ...furnitureSolids(maze, furniture),
     ],
     [consoles, furniture, maze]

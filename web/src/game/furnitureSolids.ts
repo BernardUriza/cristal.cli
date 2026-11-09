@@ -4,6 +4,9 @@ import { cellCenter, type Maze } from "./maze";
 import type { Pillar } from "./player/collision";
 
 const FURNITURE_RADIUS = 0.55;
+// A console stands mid-corridor, so it stays slim enough to walk past on either side; an inhabitant has a body.
+export const CONSOLE_RADIUS = 0.3;
+export const NPC_RADIUS = 0.55;
 const FLOOR_KINDS: ReadonlySet<string> = new Set(
   BACKROOM_FURNITURE.filter((item) => item.mount === "floor").map((item) => item.kind)
 );
