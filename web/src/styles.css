@@ -38,12 +38,20 @@ canvas {
   left: 50%;
   bottom: 14%;
   transform: translateX(-50%);
-  padding: 8px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  max-width: min(760px, 86vw);
+  padding: 14px 24px;
   border: 1px solid var(--term-dim);
   background: rgba(0, 0, 0, 0.78);
   color: var(--term-fg);
-  font-size: 14px;
+  font: inherit;
+  font-size: clamp(14px, 1.5vw, 20px);
   letter-spacing: 1px;
+  cursor: pointer;
+  pointer-events: auto;
   border-radius: 4px;
   text-shadow: 0 0 6px var(--term-dim);
   text-align: center;
@@ -72,9 +80,16 @@ canvas {
   50% { opacity: 1; }
 }
 
+.prompt-said {
+  font-size: clamp(16px, 1.9vw, 24px);
+  line-height: 1.35;
+  letter-spacing: 0.3px;
+  text-align: center;
+  text-wrap: balance;
+}
+
 .prompt-hint {
-  margin-top: 5px;
-  font-size: 11px;
+  font-size: 14px;
   letter-spacing: 0.5px;
   color: var(--term-dim);
 }
@@ -889,4 +904,98 @@ canvas {
 
 .viaje .console-overlay.crt::after {
   opacity: 0.05;
+}
+
+/* An inhabitant is talked to in the world: the scene stays visible and the words sit in the lower third. */
+.npc-overlay {
+  position: absolute;
+  inset: auto 0 0 0;
+  max-height: 78vh;
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 12vh 9vw 4vh;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.94) 0%, rgba(0, 0, 0, 0.86) 58%, rgba(0, 0, 0, 0) 100%);
+}
+
+.npc-overlay .npc-name {
+  font-size: 16px;
+  letter-spacing: 4px;
+}
+
+.npc-overlay .lines {
+  overflow-y: auto;
+  white-space: pre-wrap;
+  font-size: clamp(17px, 2.1vw, 28px);
+  line-height: 1.45;
+  text-wrap: pretty;
+}
+
+.npc-overlay .line.voice {
+  color: #e9fbff;
+}
+
+.npc-overlay .line.echo {
+  color: var(--term-dim);
+  font-size: 0.8em;
+}
+
+.npc-overlay .line.system {
+  color: var(--term-cyan);
+  font-size: 0.7em;
+  animation: npc-listening 1.6s ease-in-out infinite;
+}
+
+@keyframes npc-listening {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .npc-overlay .line.system { animation: none; }
+}
+
+.npc-overlay .input-row {
+  display: flex;
+  gap: 12px;
+  border-top: 1px solid currentColor;
+  padding-top: 14px;
+  font-size: clamp(16px, 1.9vw, 24px);
+}
+
+.npc-overlay input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--term-fg);
+  font: inherit;
+  caret-color: var(--term-fg);
+}
+
+.npc-overlay .hint {
+  color: var(--term-dim);
+  font-size: 15px;
+}
+
+.trail-meter {
+  position: absolute;
+  top: 52px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 18px;
+  font-size: 20px;
+  letter-spacing: 2px;
+  color: #ffe9a8;
+  text-shadow: 0 0 10px rgba(255, 190, 90, 0.6);
+  background: rgba(0, 0, 0, 0.55);
+  border-radius: 4px;
+}
+
+.trail-meter.complete {
+  font-size: 26px;
+  text-transform: uppercase;
+  color: #fff;
 }

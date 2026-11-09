@@ -6,6 +6,7 @@ import { Npc } from "./Npc";
 import { Player, type ConsoleRef } from "./Player";
 import { RitualGlyph, type GlyphRef } from "./RitualGlyph";
 import { WallInscription } from "./WallInscription";
+import { FloorTrail } from "./trail/FloorTrail";
 import { BackroomFurnitureSet } from "./BackroomFurniture.tsx";
 import { placeBackroomFurniture } from "./BackroomFurniturePlacer";
 import { cellCenter, generateMaze } from "./maze";
@@ -15,6 +16,8 @@ import { useGame } from "./store";
 import { rewardLevel, viajeAtmosphere } from "./viaje";
 import { Temple } from "../graphics/presentation/Temple";
 import { GAME_COMPOSITION, TEMPLE_PLACEMENT } from "../graphics/config/composition";
+
+const SOLID_RADIUS = 0.55;
 
 export function Scene() {
   const maze = useMemo(() => generateMaze(MAZE_COLS, MAZE_ROWS, MAZE_SEED), []);
@@ -50,6 +53,11 @@ export function Scene() {
         return { id: c.id, label: c.label, position: new THREE.Vector3(x, 0, z) };
       }),
     [maze, visibleConsoles]
+  );
+
+  const solids = useMemo(
+    () => consoles.map((c) => ({ x: c.position.x, z: c.position.z, radius: SOLID_RADIUS })),
+    [consoles]
   );
 
   const glyphs = useMemo<GlyphRef[]>(
@@ -90,6 +98,7 @@ export function Scene() {
       />
 
       <Labyrinth maze={maze} />
+      <FloorTrail maze={maze} />
       <Temple input={GAME_COMPOSITION} position={TEMPLE_PLACEMENT.position} rotation={TEMPLE_PLACEMENT.rotation} viewDistance={TEMPLE_PLACEMENT.viewDistance} />
 
       {visibleConsoles.map((c) => {
@@ -131,7 +140,7 @@ export function Scene() {
 
       <BackroomFurnitureSet items={furniture} />
 
-      <Player maze={maze} spawn={spawn} consoles={consoles} glyphs={glyphs} />
+      <Player maze={maze} spawn={spawn} consoles={consoles} glyphs={glyphs} solids={solids} />
     </>
   );
 }

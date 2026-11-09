@@ -9,7 +9,8 @@ import type { Maze } from "./maze";
 import { publishPlayerPose } from "./playerPositionBus";
 import { useKeyboard } from "./input/useKeyboard";
 import type { GlyphRef } from "./RitualGlyph";
-import { CROUCH_SPEED, ROTATION_SPEED, stepGravity, stepMovement, stepTowards } from "./player/movement";
+import { CROUCH_SPEED, KEY_TURN_SPEED, ROTATION_SPEED, stepGravity, stepMovement, stepTowards } from "./player/movement";
+import type { Pillar } from "./player/collision";
 import { autowalkTarget, type AutowalkTarget } from "./autowalk";
 import { lastInputActivityAt, markInputActivity } from "./inputActivity";
 import { cellAt } from "./maze";
@@ -23,7 +24,9 @@ import {
   EXPLORE_LERP,
 } from "./player/cameraRig";
 import { usePointerLook } from "./player/usePointerLook";
-import { useInteractKey } from "./player/useInteractKey";
+import { useInteract } from "./player/useInteract";
+import { stepOnCell } from "./trail/stepOnCell";
+import { cellHue, cellKey } from "./trail/trail";
 
 export interface ConsoleRef {
   id: string;
@@ -36,9 +39,11 @@ interface PlayerProps {
   spawn: [number, number, number];
   consoles: ConsoleRef[];
   glyphs: GlyphRef[];
+  /** bodies the player walks around instead of through */
+  solids: readonly Pillar[];
 }
 
-export function Player({ maze, spawn, consoles, glyphs }: PlayerProps) {
+export function Player({ maze, spawn, consoles, glyphs, solids }: PlayerProps) {
   const { camera, gl, scene } = useThree();
   const mode = useGame((s) => s.mode);
   const setNearbyConsole = useGame((s) => s.setNearbyConsole);
@@ -52,6 +57,9 @@ export function Player({ maze, spawn, consoles, glyphs }: PlayerProps) {
   const vertical = useRef({ velY: 0, grounded: true });
   const loco = useRef<Locomotion>("idle");
   const lastLoco = useRef<Locomotion>("idle");
+  const torch = useRef<THREE.PointLight>(null);
+  const torchTint = useMemo(() => new THREE.Color(), []);
+  const standingOn = useRef("");
   const autowalk = useRef<{ target: AutowalkTarget | null; at: number }>({ target: null, at: 0 });
 
   useEffect(() => markInputActivity(Date.now()), []);
@@ -71,7 +79,7 @@ export function Player({ maze, spawn, consoles, glyphs }: PlayerProps) {
   const { yaw, pitch } = usePointerLook(gl.domElement, exploring, {
     initialYaw: savedPose?.yaw ?? 0,
   });
-  useInteractKey(glyphs);
+  useInteract(gl.domElement);
 
   const desiredCam = useMemo(() => new THREE.Vector3(), []);
   const lookTarget = useMemo(() => new THREE.Vector3(), []);
@@ -94,7 +102,11 @@ export function Player({ maze, spawn, consoles, glyphs }: PlayerProps) {
 
     if (exploring) {
       const i = input.current;
-      let move = stepMovement(maze, pos.current, yaw.current, i, dt);
+      // Without the mouse captured, left and right turn the view, so the keyboard alone can steer.
+      const mouseLook = document.pointerLockElement === gl.domElement;
+      if (!mouseLook) yaw.current += ((i.left ? 1 : 0) - (i.right ? 1 : 0)) * KEY_TURN_SPEED * dt;
+      const steer = mouseLook ? i : { ...i, left: false, right: false };
+      let move = stepMovement(maze, pos.current, yaw.current, steer, dt, solids);
       const now = Date.now();
       const drifting = !move.moving && useGame.getState().viaje && isIdle(lastInputActivityAt(), now);
       if (drifting) {
@@ -106,7 +118,7 @@ export function Player({ maze, spawn, consoles, glyphs }: PlayerProps) {
         }
         const target = autowalk.current.target;
         if (target) {
-          move = stepTowards(maze, pos.current, target.world, CROUCH_SPEED, dt);
+          move = stepTowards(maze, pos.current, target.world, CROUCH_SPEED, dt, solids);
           if (move.targetYaw !== null) {
             const delta = Math.atan2(Math.sin(move.targetYaw - yaw.current), Math.cos(move.targetYaw - yaw.current));
             yaw.current += delta * Math.min(1, dt * 1.2);
@@ -127,6 +139,15 @@ export function Player({ maze, spawn, consoles, glyphs }: PlayerProps) {
         input.current.jump = false;
       }
 
+      const cell = cellAt(maze, pos.current.x, pos.current.z);
+      const key = cellKey(cell.x, cell.y);
+      if (key !== standingOn.current) {
+        standingOn.current = key;
+        stepOnCell(cell.x, cell.y, maze.cols * maze.rows);
+        torchTint.setHSL(cellHue(cell.x, cell.y, maze.cols), 0.8, 0.68);
+      }
+      torch.current?.color.lerp(torchTint, Math.min(1, dt * 3));
+
       const nearest = findNearestId(consoles, pos.current);
       if (nearest !== useGame.getState().nearbyConsoleId) setNearbyConsole(nearest);
       const nearestGlyph = findNearestId(glyphs, pos.current);
@@ -141,7 +162,11 @@ export function Player({ maze, spawn, consoles, glyphs }: PlayerProps) {
       if (loco.current !== "idle") useGame.getState().reachFunnel("first_step", Date.now());
     }
 
-    if (group.current) group.current.position.copy(pos.current);
+    if (group.current) {
+      group.current.position.copy(pos.current);
+      // The console camera sits where the player stands; their own back must not fill the frame.
+      group.current.visible = exploring;
+    }
 
     // Publish the live pose for the 2D minimap at ~12Hz (never via the store).
     posPubAccum.current += dt;
@@ -162,8 +187,8 @@ export function Player({ maze, spawn, consoles, glyphs }: PlayerProps) {
 
   return (
     <group ref={group} position={spawn}>
-      {/* torch so the player is always lit, even in dark corridors */}
-      <pointLight position={[0, 2.2, 0]} intensity={6} distance={12} decay={2} color="#7dffc4" />
+      {/* torch so the player is always lit; it takes the colour of the cell underfoot */}
+      <pointLight ref={torch} position={[0, 2.2, 0]} intensity={6} distance={12} decay={2} color="#7dffc4" />
       <Suspense fallback={<CapsuleAvatar moving={false} />}>
         <ErrorBoundary fallback={<CapsuleAvatar moving={false} />}>
           <MixamoCharacter loco={loco} />

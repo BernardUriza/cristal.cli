@@ -38,7 +38,6 @@ export function funnelProgress(state: FunnelState): number {
 }
 
 export function nextVerb(state: FunnelState): string | null {
-  if (state.reached.pointer_lock === undefined) return "click para mirar";
   if (state.reached.first_step === undefined) return "W A S D para caminar";
   return null;
 }

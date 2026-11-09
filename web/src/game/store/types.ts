@@ -133,6 +133,12 @@ export interface RoomFlowSlice {
   startNextVariation: () => void;
 }
 
-export type GameState = SessionSlice & ConsoleSlice & WallsSlice & PressureSlice & RoomFlowSlice;
+export interface TrailSlice {
+  /** maze cells the player has stepped on this visit, as "x,y" keys in the order they were lit */
+  litCells: readonly string[];
+  lightCell: (x: number, y: number) => void;
+}
+
+export type GameState = SessionSlice & ConsoleSlice & WallsSlice & PressureSlice & RoomFlowSlice & TrailSlice;
 
 export type GameSlice<T> = StateCreator<GameState, [], [], T>;

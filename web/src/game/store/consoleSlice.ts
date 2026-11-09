@@ -10,7 +10,10 @@ export const createConsoleSlice: GameSlice<ConsoleSlice> = (set, get) => ({
   activeConsoleId: null,
 
   enterConsoleMode: (consoleId) => {
-    if (get().mode !== GameMode.Exploration) return;
+    const leaving = get().mode === GameMode.Transition && get().activeConsoleId === null;
+    if (get().mode !== GameMode.Exploration && !leaving) return;
+    // The overlay owns the mouse; a captured pointer would hide it and swallow the first ESC.
+    if (typeof document !== "undefined" && document.pointerLockElement) document.exitPointerLock();
     // Talking to an inhabitant borrows the console mode (camera, overlay, ESC) but is not the rite.
     const isNpc = worldNodeById(consoleId)?.kind === "npc";
     const nextSlice = isNpc ? get().verticalSlice : noteConsoleOpened(get().verticalSlice, consoleId.toUpperCase());
@@ -24,7 +27,7 @@ export const createConsoleSlice: GameSlice<ConsoleSlice> = (set, get) => ({
   },
 
   exitConsoleMode: () => {
-    if (get().mode !== GameMode.Console) return;
+    if (get().activeConsoleId === null) return;
     set({ mode: GameMode.Transition, activeConsoleId: null });
     window.setTimeout(() => {
       if (get().activeConsoleId === null) {

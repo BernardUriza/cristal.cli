@@ -6,16 +6,18 @@ export interface PromptCopy {
   action: string;
   hint: string | null;
   accent: string;
+  /** what an inhabitant says out loud the moment the player walks up */
+  said: string | null;
 }
 
 export function promptForNode(node: WorldNode, step: SliceStep): PromptCopy {
   if (node.kind === "glyph") {
-    return { action: `invocar ${node.label}`, hint: glyphHint(step), accent: node.accent };
+    return { action: `invocar ${node.label}`, hint: glyphHint(step), accent: node.accent, said: null };
   }
   if (node.kind === "npc") {
-    return { action: `hablar con ${node.label}`, hint: "escribe lo que quieras decirle; te contesta con su voz", accent: node.accent };
+    return { action: `contestarle a ${node.label}`, hint: "escribe lo que quieras; te contesta con su voz", accent: node.accent, said: node.greeting };
   }
-  return { action: `conectar ${node.label}`, hint: consoleHint(step), accent: node.accent };
+  return { action: `conectar ${node.label}`, hint: consoleHint(step), accent: node.accent, said: null };
 }
 
 function glyphHint(step: SliceStep): string | null {

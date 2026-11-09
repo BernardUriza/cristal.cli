@@ -8,8 +8,8 @@ import { CONSOLE_COPY } from "./copy";
 import { plainLine, type Line } from "./lines";
 import { useVoiceStream } from "./useVoiceStream";
 
-/** Conversation with an inhabitant. Same CRT skin as the console, but no local
- *  stance engine: every line the player writes goes straight to the voice,
+/** Conversation with an inhabitant, held in the world: the scene stays visible and the
+ *  words sit in the lower third. No local stance engine: every line the player writes goes straight to the voice,
  *  which answers AS the inhabitant. One transcript per inhabitant per visit. */
 export function NpcOverlay() {
   const mode = useGame((s) => s.mode);
@@ -52,7 +52,8 @@ export function NpcOverlay() {
   };
 
   return (
-    <div className="console-overlay crt" style={{ borderColor: npc.accent }}>
+    <div className="npc-overlay" style={{ color: npc.accent }}>
+      <div className="npc-name">{npc.label}</div>
       <div className="lines" ref={linesRef}>
         {lines.map((l, i) => (
           <ConsoleLine key={i} text={l.text} cls={l.cls} scramble={l.scramble} />
@@ -68,14 +69,12 @@ export function NpcOverlay() {
             if (e.key === "Enter") submit();
             else if (e.key === "Escape") exitConsoleMode();
           }}
-          placeholder={`dile algo a ${npc.label.toLowerCase()}…`}
+          placeholder="escríbele lo que quieras…"
           autoComplete="off"
           spellCheck={false}
         />
       </div>
-      <div className="hint">
-        {npc.label} · {sessionId} · {CONSOLE_COPY.keys}
-      </div>
+      <div className="hint">enter: decírselo · esc: seguir caminando</div>
     </div>
   );
 }

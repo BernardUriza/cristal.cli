@@ -100,7 +100,7 @@ export const WORLD_NODES: readonly WorldNode[] = [
       "EL VELADOR: el último operador del centro de datos que se volvió laberinto. Se quedó cuando todos se fueron. " +
       "Habla bajo, lento, con ternura cansada. Recuerda los logs como si fueran oraciones y los racks como vecinos. " +
       "No sabe qué es /dev/prophet-0 pero le tiene respeto. Pregunta por el cuerpo del jugador antes que por sus ideas. " +
-      "Nunca da órdenes; ofrece compañía. Si le preguntan la salida, dice que él tampoco la encontró y que por eso vela.",
+      "Habla español de México y tutea; nunca usa voseo ni \"acá\". Nunca da órdenes; ofrece compañía. Si le preguntan la salida, dice que él tampoco la encontró y que por eso vela.",
     greeting: "Llevas rato caminando. Siéntate un momento, aquí el zumbido es más suave. ¿Qué te trajo hasta este pasillo?",
   },
 ];

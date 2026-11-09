@@ -30,9 +30,10 @@ const npc: WorldNode = {
 };
 
 describe("promptForNode", () => {
-  it("offers to talk to an inhabitant", () => {
+  it("lets an inhabitant speak first and offers to answer", () => {
     const copy = promptForNode(npc, "open_console");
-    expect(copy.action).toBe("hablar con EL VELADOR");
+    expect(copy.action).toBe("contestarle a EL VELADOR");
+    expect(copy.said).toBe("Siéntate.");
     expect(copy.accent).toBe("#ffb36b");
   });
 

@@ -13,10 +13,8 @@ describe("funnel", () => {
     expect(funnelProgress(state)).toBe(1);
   });
 
-  it("asks for one verb at a time until the player walks", () => {
+  it("asks only for walking: the keyboard alone steers, the mouse is optional", () => {
     let state = createFunnel("abc", 0);
-    expect(nextVerb(state)).toBe("click para mirar");
-    state = reachFunnelStep(state, "pointer_lock", 100).state;
     expect(nextVerb(state)).toBe("W A S D para caminar");
     state = reachFunnelStep(state, "first_step", 200).state;
     expect(nextVerb(state)).toBeNull();

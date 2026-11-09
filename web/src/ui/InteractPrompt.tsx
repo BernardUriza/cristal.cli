@@ -1,9 +1,10 @@
 import { useGame } from "../game/store";
 import { GameMode } from "../game/types";
+import { interactWithNearby } from "../game/player/interact";
 import { worldNodeById } from "../game/worldNodes";
 import { promptForNode } from "./promptCopy";
 
-// HUD analogue of FloatingInteractPrompt.
+// HUD analogue of FloatingInteractPrompt. The whole card is the button: E, Enter or a click.
 export function InteractPrompt() {
   const mode = useGame((s) => s.mode);
   const nearbyConsole = useGame((s) => s.nearbyConsoleId);
@@ -15,11 +16,16 @@ export function InteractPrompt() {
 
   const copy = promptForNode(node, step);
   return (
-    <div className="prompt" style={{ borderColor: copy.accent }} role="status">
-      <div className="prompt-action">
+    <button type="button" className="prompt" style={{ borderColor: copy.accent }} onClick={interactWithNearby}>
+      {copy.said && (
+        <span className="prompt-said" style={{ color: copy.accent }}>
+          «{copy.said}»
+        </span>
+      )}
+      <span className="prompt-action">
         <kbd>E</kbd> {copy.action}
-      </div>
-      {copy.hint && <div className="prompt-hint">{copy.hint}</div>}
-    </div>
+      </span>
+      {copy.hint && <span className="prompt-hint">{copy.hint}</span>}
+    </button>
   );
 }

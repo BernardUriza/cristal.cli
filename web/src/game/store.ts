@@ -5,6 +5,7 @@ import { createConsoleSlice } from "./store/consoleSlice";
 import { createWallsSlice } from "./store/wallsSlice";
 import { createPressureSlice } from "./store/pressureSlice";
 import { createRoomFlowSlice } from "./store/roomFlowSlice";
+import { createTrailSlice } from "./store/trailSlice";
 import { persistVerticalSlice } from "./store/persistVerticalSlice";
 
 export type { GameState, MazePose } from "./store/types";
@@ -18,6 +19,7 @@ export const useGame = create<GameState>()((...a) => ({
   ...createWallsSlice(...a),
   ...createPressureSlice(...a),
   ...createRoomFlowSlice(...a),
+  ...createTrailSlice(...a),
 }));
 
 persistVerticalSlice(useGame);

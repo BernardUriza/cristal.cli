@@ -5,6 +5,7 @@ import * as THREE from "three";
 import { Scene } from "./game/Scene";
 import { RoomScene } from "./game/RoomScene";
 import { InteractPrompt } from "./ui/InteractPrompt";
+import { TrailMeter } from "./ui/TrailMeter";
 import { OnboardingHint } from "./ui/OnboardingHint";
 import { ConsoleOverlay } from "./ui/console/ConsoleOverlay";
 import { NpcOverlay } from "./ui/console/NpcOverlay";
@@ -78,7 +79,7 @@ export function App() {
   // Global ESC also exits the console (mirrors LabyrinthManager.Update).
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.code === "Escape" && useGame.getState().mode === GameMode.Console) {
+      if (e.code === "Escape" && useGame.getState().activeConsoleId !== null) {
         useGame.getState().exitConsoleMode();
       }
     };
@@ -131,6 +132,7 @@ export function App() {
         <ModeBadge />
         <ExplorationHud>
           <ObjectivePanel />
+          <TrailMeter />
           <InteractPrompt />
           <OnboardingHint />
           <DebugHUD />

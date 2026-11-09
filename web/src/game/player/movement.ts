@@ -1,5 +1,6 @@
 import * as THREE from "three";
-import { isWalkable, type Maze } from "../maze";
+import type { Maze } from "../maze";
+import { resolveCircle, type Pillar } from "./collision";
 import type { Locomotion } from "../types";
 
 export const WALK_SPEED = 4;
@@ -8,7 +9,12 @@ export const CROUCH_SPEED = 2;
 export const GRAVITY = -15;
 export const JUMP_HEIGHT = 1.2;
 export const ROTATION_SPEED = 10;
-export const PLAYER_RADIUS = 0.6;
+export const KEY_TURN_SPEED = 2.4;
+export const PLAYER_RADIUS = 0.45;
+// below this share of the intended step the body is pressed on a wall, not walking
+const BLOCKED_SHARE = 0.25;
+// how much of the speed a grazed wall hands back: at 45 degrees the body keeps all of it
+const GLIDE_BOOST = 1.45;
 
 export interface MoveInput {
   forward: boolean;
@@ -49,13 +55,41 @@ export function computeMoveDirection(
   return true;
 }
 
-// Mutates `pos`. Axes resolve independently so the player slides along walls.
+// Mutates `pos`; returns how far the body really travelled after the walls pushed back.
+// A grazed wall hands the lost speed back along itself, so brushing a wall never drags.
+function advance(
+  maze: Maze,
+  pos: THREE.Vector3,
+  dir: THREE.Vector3,
+  distance: number,
+  pillars: readonly Pillar[]
+): number {
+  const startX = pos.x;
+  const startZ = pos.z;
+  pos.x += dir.x * distance;
+  pos.z += dir.z * distance;
+  resolveCircle(maze, pos, PLAYER_RADIUS, pillars);
+  const slideX = pos.x - startX;
+  const slideZ = pos.z - startZ;
+  const slid = Math.hypot(slideX, slideZ);
+  // The shallower the graze, the more of the lost speed comes back; head-on still stops.
+  const wanted = distance * Math.min(1, (slid / distance) * GLIDE_BOOST);
+  const rest = wanted - slid;
+  if (slid < 1e-6 || rest <= 0) return slid;
+  pos.x += (slideX / slid) * rest;
+  pos.z += (slideZ / slid) * rest;
+  resolveCircle(maze, pos, PLAYER_RADIUS, pillars);
+  return Math.hypot(pos.x - startX, pos.z - startZ);
+}
+
+// Mutates `pos`. A body pressed against a wall stands; it never walks in place.
 export function stepMovement(
   maze: Maze,
   pos: THREE.Vector3,
   yaw: number,
   input: MoveInput,
-  dt: number
+  dt: number,
+  pillars: readonly Pillar[] = []
 ): MoveResult {
   if (!computeMoveDirection(yaw, input, tmpMove)) {
     return { moving: false, locomotion: "idle", targetYaw: null };
@@ -65,15 +99,15 @@ export function stepMovement(
   if (sprinting) speed = SPRINT_SPEED;
   else if (input.crouch) speed = CROUCH_SPEED;
 
-  const nextX = pos.x + tmpMove.x * speed * dt;
-  if (isWalkable(maze, nextX, pos.z, PLAYER_RADIUS)) pos.x = nextX;
-  const nextZ = pos.z + tmpMove.z * speed * dt;
-  if (isWalkable(maze, pos.x, nextZ, PLAYER_RADIUS)) pos.z = nextZ;
+  const targetYaw = Math.atan2(tmpMove.x, tmpMove.z);
+  const intended = speed * dt;
+  const travelled = advance(maze, pos, tmpMove, intended, pillars);
+  const blocked = travelled < intended * BLOCKED_SHARE;
 
   return {
     moving: true,
-    locomotion: sprinting ? "run" : "walk",
-    targetYaw: Math.atan2(tmpMove.x, tmpMove.z),
+    locomotion: blocked ? "idle" : sprinting ? "run" : "walk",
+    targetYaw,
   };
 }
 
@@ -82,16 +116,15 @@ export function stepTowards(
   pos: THREE.Vector3,
   target: { x: number; z: number },
   speed: number,
-  dt: number
+  dt: number,
+  pillars: readonly Pillar[] = []
 ): MoveResult {
   tmpMove.set(target.x - pos.x, 0, target.z - pos.z);
   if (tmpMove.lengthSq() < 0.04) return { moving: false, locomotion: "idle", targetYaw: null };
   tmpMove.normalize();
-  const nextX = pos.x + tmpMove.x * speed * dt;
-  if (isWalkable(maze, nextX, pos.z, PLAYER_RADIUS)) pos.x = nextX;
-  const nextZ = pos.z + tmpMove.z * speed * dt;
-  if (isWalkable(maze, pos.x, nextZ, PLAYER_RADIUS)) pos.z = nextZ;
-  return { moving: true, locomotion: "walk", targetYaw: Math.atan2(tmpMove.x, tmpMove.z) };
+  const targetYaw = Math.atan2(tmpMove.x, tmpMove.z);
+  advance(maze, pos, tmpMove, speed * dt, pillars);
+  return { moving: true, locomotion: "walk", targetYaw };
 }
 
 export interface VerticalState {
