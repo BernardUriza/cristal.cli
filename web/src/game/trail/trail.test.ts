@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cellFigure, cellFrequency, cellHue, cellKey, cellSemitone, lightCell } from "./trail";
+import { cellFigure, cellFrequency, cellHue, cellKey, cellSemitone, dawnLevel, lightCell, trailRemark } from "./trail";
 
 describe("trail", () => {
   it("lights a cell once and keeps the same list when it is stepped on again", () => {
@@ -36,5 +36,20 @@ describe("trail", () => {
         expect([4, 6, 8, 12]).toContain(figure.sides);
       }
     }
+  });
+
+  it("pushes the dark back in steps as the floor fills, and never past full", () => {
+    expect(dawnLevel(0, 64)).toBe(0);
+    expect(dawnLevel(7, 64)).toBe(0);
+    expect(dawnLevel(8, 64)).toBe(0.125);
+    expect(dawnLevel(64, 64)).toBe(1);
+    expect(dawnLevel(90, 64)).toBe(1);
+  });
+
+  it("tells an inhabitant about the lit floor in a line short enough for the persona field", () => {
+    expect(trailRemark(1, 64)).toBe("");
+    expect(trailRemark(12, 64)).toContain("12 de 64");
+    expect(trailRemark(64, 64)).toContain("todo el piso");
+    expect(trailRemark(63, 64).length).toBeLessThan(200);
   });
 });

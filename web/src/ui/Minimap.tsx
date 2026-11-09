@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { generateMaze } from "../game/maze";
 import { distanceField, isFullyConnected } from "../game/mazeGraph";
+import { cellHue } from "../game/trail/trail";
 import { MAZE_COLS, MAZE_ROWS, MAZE_SEED, SPAWN_CELL } from "../game/mazeConfig";
 import { getPlayerPose, subscribePlayerPose, type PlayerPose } from "../game/playerPositionBus";
 import { riteCandidateNodes } from "../game/riteFocus";
@@ -41,6 +42,7 @@ export function Minimap() {
   // reads "aquí" instead of pointing at a farther twin), unvisited node, unvisited cell.
   const verticalSlice = useGame((s) => s.verticalSlice);
   const exploring = useGame((s) => s.mode === GameMode.Exploration);
+  const litCells = useGame((s) => s.litCells);
   const { x: pcx, y: pcy } = poseCell(pose);
   const [remembered, setRemembered] = useState<ReadonlySet<string>>(() => new Set());
   const visited = useMemo(() => withVisited(remembered, { x: pcx, y: pcy }), [remembered, pcx, pcy]);
@@ -85,6 +87,20 @@ export function Minimap() {
             );
           })
         )}
+        {litCells.map((key) => {
+          const [x, y] = key.split(",").map(Number);
+          return (
+            <rect
+              key={`lit-${key}`}
+              x={x * CELL_PX + 3}
+              y={y * CELL_PX + 3}
+              width={CELL_PX - 6}
+              height={CELL_PX - 6}
+              fill={`hsl(${Math.round(cellHue(x, y, MAZE_COLS) * 360)} 95% 62%)`}
+              opacity={0.85}
+            />
+          );
+        })}
         <circle
           cx={SPAWN_CELL.x * CELL_PX + CELL_PX / 2}
           cy={SPAWN_CELL.y * CELL_PX + CELL_PX / 2}

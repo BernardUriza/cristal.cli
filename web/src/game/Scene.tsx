@@ -7,8 +7,10 @@ import { Player, type ConsoleRef } from "./Player";
 import { RitualGlyph, type GlyphRef } from "./RitualGlyph";
 import { WallInscription } from "./WallInscription";
 import { FloorTrail } from "./trail/FloorTrail";
+import { dawnLevel } from "./trail/trail";
 import { BackroomFurnitureSet } from "./BackroomFurniture.tsx";
 import { placeBackroomFurniture } from "./BackroomFurniturePlacer";
+import { furnitureSolids } from "./furnitureSolids";
 import { cellCenter, generateMaze } from "./maze";
 import { MAZE_COLS, MAZE_ROWS, MAZE_SEED, SPAWN_CELL } from "./mazeConfig";
 import { CONSOLE_NODES, GLYPH_NODES, NPC_NODES, WORLD_NODES } from "./worldNodes";
@@ -25,6 +27,8 @@ export function Scene() {
   const inscriptions = useGame((s) => s.inscriptions);
   const viaje = useGame((s) => s.viaje);
   const atmosphere = viajeAtmosphere(viaje ? rewardLevel(inscriptions.length) : 0);
+  // The more floor the player lights, the further the dark retreats: progress you can see.
+  const dawn = useGame((s) => dawnLevel(s.litCells.length, MAZE_COLS * MAZE_ROWS));
   const omittedIds = useMemo(
     () => new Set(transference.absencePlan.omissions.map((item) => item.id)),
     [transference.absencePlan]
@@ -55,11 +59,6 @@ export function Scene() {
     [maze, visibleConsoles]
   );
 
-  const solids = useMemo(
-    () => consoles.map((c) => ({ x: c.position.x, z: c.position.z, radius: SOLID_RADIUS })),
-    [consoles]
-  );
-
   const glyphs = useMemo<GlyphRef[]>(
     () =>
       visibleGlyphs.map((g) => {
@@ -78,13 +77,21 @@ export function Scene() {
     [maze]
   );
 
+  const solids = useMemo(
+    () => [
+      ...consoles.map((c) => ({ x: c.position.x, z: c.position.z, radius: SOLID_RADIUS })),
+      ...furnitureSolids(maze, furniture),
+    ],
+    [consoles, furniture, maze]
+  );
+
   return (
     <>
       <color attach="background" args={["#02050a"]} />
-      <fog attach="fog" args={["#02050a", 8, atmosphere.fogFar]} />
+      <fog attach="fog" args={["#02050a", 8, atmosphere.fogFar + dawn * 40]} />
 
-      <ambientLight intensity={atmosphere.ambient} color="#2a5a44" />
-      <hemisphereLight args={["#1a4a32", "#04100a", atmosphere.hemisphere]} />
+      <ambientLight intensity={atmosphere.ambient * (1 + dawn * 2.2)} color="#2a5a44" />
+      <hemisphereLight args={["#1a4a32", "#04100a", atmosphere.hemisphere * (1 + dawn * 1.5)]} />
       <directionalLight
         position={[10, 18, 6]}
         intensity={1.1}

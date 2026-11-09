@@ -34,3 +34,18 @@ export function lightCell(lit: readonly string[], x: number, y: number): readonl
   const key = cellKey(x, y);
   return lit.includes(key) ? lit : [...lit, key];
 }
+
+const DAWN_STEPS = 8;
+
+/** 0..1 in a few coarse steps: how far the lit floor has pushed the dark back */
+export function dawnLevel(lit: number, total: number): number {
+  if (total <= 0) return 0;
+  return Math.floor((Math.min(lit, total) / total) * DAWN_STEPS) / DAWN_STEPS;
+}
+
+/** what an inhabitant is told about the floor the player has lit, so they can speak of it */
+export function trailRemark(lit: number, total: number): string {
+  if (lit <= 1) return "";
+  if (lit >= total) return "El jugador encendió todo el piso del laberinto al caminarlo; ya no queda una celda a oscuras.";
+  return `El jugador ha encendido ${lit} de ${total} celdas del piso al caminar; cada una brilla con su color y suena con su nota. Puedes mencionarlo si viene al caso.`;
+}

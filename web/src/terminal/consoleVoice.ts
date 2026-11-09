@@ -1,4 +1,4 @@
-import { postJson, withTimeout } from "../shared/api";
+import { apiLive, postJson, withTimeout } from "../shared/api";
 import type { Stance } from "./psych/StanceClassifier";
 
 export type VoiceTurn = { role: "player" | "cristal"; text: string };
@@ -25,6 +25,12 @@ export const RECENT_TURNS = 8;
 export type SafetyLine = { senal: string; accion: "urgente" | "atencion"; line: string };
 
 type Handlers = { onDelta: (text: string) => void; onLine: (line: string) => void; onSilence: () => void; onSafety?: (safety: SafetyLine) => void };
+
+/** Opens an inhabitant's session ahead of the first real turn; failing only leaves that turn slow. */
+export function warmVoice(sessionId: string, npc: VoiceNpc, greeting: string): void {
+  if (!apiLive()) return;
+  void postJson("/console/warm", { session_id: sessionId, npc, greeting }).catch(() => undefined);
+}
 
 export async function streamVoice(req: VoiceRequest, handlers: Handlers, signal: AbortSignal): Promise<void> {
   const body = {

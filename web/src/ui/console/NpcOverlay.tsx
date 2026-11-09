@@ -7,6 +7,10 @@ import { ConsoleLine } from "./ConsoleLine";
 import { CONSOLE_COPY } from "./copy";
 import { plainLine, type Line } from "./lines";
 import { useVoiceStream } from "./useVoiceStream";
+import { useNpcWarmup } from "./useNpcWarmup";
+import { npcSessionId } from "../../game/npcWarmup";
+import { MAZE_COLS, MAZE_ROWS } from "../../game/mazeConfig";
+import { trailRemark } from "../../game/trail/trail";
 
 /** Conversation with an inhabitant, held in the world: the scene stays visible and the
  *  words sit in the lower third. No local stance engine: every line the player writes goes straight to the voice,
@@ -24,8 +28,9 @@ export function NpcOverlay() {
   const [value, setValue] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const linesRef = useRef<HTMLDivElement>(null);
-  const sessionId = npc ? `${core.sessionId}-${npc.id}` : core.sessionId;
+  const sessionId = npc ? npcSessionId(core.sessionId, npc.id) : core.sessionId;
   const askVoice = useVoiceStream(sessionId, setLines);
+  useNpcWarmup(core.sessionId);
 
   const visible = npc !== null && (mode === GameMode.Console || mode === GameMode.Transition);
 
@@ -47,7 +52,8 @@ export function NpcOverlay() {
     const trimmed = value.trim();
     if (!trimmed) return;
     setLines((prev) => [...prev, plainLine(CONSOLE_COPY.echo(trimmed), "echo"), plainLine(`${npc.label} te escucha…`, "system")]);
-    askVoice(trimmed, "", { id: npc.id, name: npc.label, persona: npc.persona });
+    const remark = trailRemark(useGame.getState().litCells.length, MAZE_COLS * MAZE_ROWS);
+    askVoice(trimmed, "", { id: npc.id, name: npc.label, persona: remark ? `${npc.persona} ${remark}` : npc.persona });
     setValue("");
   };
 
