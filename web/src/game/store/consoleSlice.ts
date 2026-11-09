@@ -1,6 +1,7 @@
 import { GameMode } from "../types";
 import { leaveEcho } from "../echoClient";
 import { noteConsoleInput, noteConsoleOpened } from "../VerticalSlice";
+import { worldNodeById } from "../worldNodes";
 import { TRANSITION_MS } from "./config";
 import type { ConsoleSlice, GameSlice } from "./types";
 
@@ -10,8 +11,10 @@ export const createConsoleSlice: GameSlice<ConsoleSlice> = (set, get) => ({
 
   enterConsoleMode: (consoleId) => {
     if (get().mode !== GameMode.Exploration) return;
-    const nextSlice = noteConsoleOpened(get().verticalSlice, consoleId.toUpperCase());
-    get().reachFunnel("console_open", Date.now());
+    // Talking to an inhabitant borrows the console mode (camera, overlay, ESC) but is not the rite.
+    const isNpc = worldNodeById(consoleId)?.kind === "npc";
+    const nextSlice = isNpc ? get().verticalSlice : noteConsoleOpened(get().verticalSlice, consoleId.toUpperCase());
+    if (!isNpc) get().reachFunnel("console_open", Date.now());
     set({ mode: GameMode.Transition, activeConsoleId: consoleId, verticalSlice: nextSlice });
     window.setTimeout(() => {
       if (get().activeConsoleId === consoleId) {

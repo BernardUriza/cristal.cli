@@ -123,3 +123,17 @@ def test_unconfigured_voice_is_503():
     app = FastAPI()
     app.include_router(console.router)
     assert TestClient(app).post("/console/turn", json=REQ).status_code == 503
+
+
+def test_an_inhabitant_speaks_as_themselves_not_as_the_console():
+    client, seen = make_client(["EL VELADOR: Siéntate. ", "¿Te duele algo?"])
+    npc = {"id": "npc_velador", "name": "EL VELADOR", "persona": "El último operador. Habla bajo."}
+    res = client.post("/console/turn", json={**REQ, "local_line": "", "npc": npc, "recent": [{"role": "player", "text": "hola"}, {"role": "cristal", "text": "Llevas rato caminando."}]})
+    ev = events(res)
+    assert ev[-1]["type"] == "result" and ev[-1]["line"] == "Siéntate. ¿Te duele algo?"
+    assert seen["prompt"].startswith("ENCARNAS A EL VELADOR")
+    assert "El último operador. Habla bajo." in seen["prompt"]
+    assert "EL VELADOR: Llevas rato caminando." in seen["prompt"]
+    assert "el jugador le dice a EL VELADOR: «me pesa el pecho»" in seen["prompt"]
+    assert "la consola ya contestó" not in seen["prompt"]
+    assert client.post("/console/turn", json={**REQ, "npc": {**npc, "id": "bad id!"}}).status_code == 422

@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import * as THREE from "three";
 import { Labyrinth } from "./Labyrinth";
 import { InWorldConsole } from "./InWorldConsole";
+import { Npc } from "./Npc";
 import { Player, type ConsoleRef } from "./Player";
 import { RitualGlyph, type GlyphRef } from "./RitualGlyph";
 import { WallInscription } from "./WallInscription";
@@ -9,7 +10,7 @@ import { BackroomFurnitureSet } from "./BackroomFurniture.tsx";
 import { placeBackroomFurniture } from "./BackroomFurniturePlacer";
 import { cellCenter, generateMaze } from "./maze";
 import { MAZE_COLS, MAZE_ROWS, MAZE_SEED, SPAWN_CELL } from "./mazeConfig";
-import { CONSOLE_NODES, GLYPH_NODES, WORLD_NODES } from "./worldNodes";
+import { CONSOLE_NODES, GLYPH_NODES, NPC_NODES, WORLD_NODES } from "./worldNodes";
 import { useGame } from "./store";
 import { rewardLevel, viajeAtmosphere } from "./viaje";
 import { Temple } from "../graphics/presentation/Temple";
@@ -40,9 +41,11 @@ export function Scene() {
     return [x, 0, z];
   }, [maze]);
 
+  // Inhabitants ride the console pipeline (proximity, E, camera framing) so the
+  // player approaches and addresses them exactly like a console.
   const consoles = useMemo<ConsoleRef[]>(
     () =>
-      visibleConsoles.map((c) => {
+      [...visibleConsoles, ...NPC_NODES].map((c) => {
         const [x, z] = cellCenter(maze, c.cell[0], c.cell[1]);
         return { id: c.id, label: c.label, position: new THREE.Vector3(x, 0, z) };
       }),
@@ -100,6 +103,11 @@ export function Scene() {
             position={[x, 0, z]}
           />
         );
+      })}
+
+      {NPC_NODES.map((n) => {
+        const [x, z] = cellCenter(maze, n.cell[0], n.cell[1]);
+        return <Npc key={n.id} id={n.id} label={n.label} accent={n.accent} position={[x, 0, z]} />;
       })}
 
       {visibleGlyphs.map((g) => {

@@ -19,7 +19,23 @@ const consoleNode: WorldNode = {
   accent: "#33ff99",
 };
 
+const npc: WorldNode = {
+  kind: "npc",
+  id: "npc_velador",
+  label: "EL VELADOR",
+  cell: [6, 7],
+  accent: "#ffb36b",
+  persona: "el último operador",
+  greeting: "Siéntate.",
+};
+
 describe("promptForNode", () => {
+  it("offers to talk to an inhabitant", () => {
+    const copy = promptForNode(npc, "open_console");
+    expect(copy.action).toBe("hablar con EL VELADOR");
+    expect(copy.accent).toBe("#ffb36b");
+  });
+
   it("names the glyph action and carries its accent", () => {
     const copy = promptForNode(glyph, "invoke_glyph");
     expect(copy.action).toBe("invocar LUNA");

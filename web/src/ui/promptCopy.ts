@@ -12,6 +12,9 @@ export function promptForNode(node: WorldNode, step: SliceStep): PromptCopy {
   if (node.kind === "glyph") {
     return { action: `invocar ${node.label}`, hint: glyphHint(step), accent: node.accent };
   }
+  if (node.kind === "npc") {
+    return { action: `hablar con ${node.label}`, hint: "escribe lo que quieras decirle; te contesta con su voz", accent: node.accent };
+  }
   return { action: `conectar ${node.label}`, hint: consoleHint(step), accent: node.accent };
 }
 

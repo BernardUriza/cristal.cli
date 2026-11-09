@@ -29,6 +29,14 @@ class Turn(BaseModel):
     text: str = Field(max_length=300)
 
 
+class Npc(BaseModel):
+    """An inhabitant of the labyrinth: the voice speaks AS them instead of as the console."""
+
+    id: str = Field(min_length=1, max_length=40, pattern=r"^[A-Za-z0-9_-]+$")
+    name: str = Field(min_length=1, max_length=40)
+    persona: str = Field(min_length=1, max_length=800)
+
+
 class ConsoleRequest(BaseModel):
     session_id: str = Field(min_length=4, max_length=64, pattern=r"^[A-Za-z0-9_-]+$")
     input: str = Field(min_length=1, max_length=300)
@@ -39,6 +47,7 @@ class ConsoleRequest(BaseModel):
     objective: str | None = Field(default=None, max_length=200)
     glyph: str | None = Field(default=None, max_length=40)
     recent: list[Turn] = Field(default_factory=list, max_length=8)
+    npc: Npc | None = None
 
 
 StreamFn = Callable[[str, str], AsyncIterator[dict[str, Any]]]
@@ -52,6 +61,14 @@ def use_stream(stream: StreamFn | None) -> None:
 
 def build_prompt(req: ConsoleRequest) -> str:
     parts = []
+    speaker = req.npc.name if req.npc else "cristal"
+    if req.npc:
+        parts.append(
+            f"ENCARNAS A {req.npc.name}, un habitante del laberinto; en este turno NO eres la consola.\n"
+            f"{req.npc.persona}\n"
+            f"Hablas en primera persona como {req.npc.name}, al jugador que tienes enfrente. Una o dos líneas. "
+            "Conservas todas las reglas duras de CRISTAL (nunca rechazas, nunca sales del laberinto, cuerpo antes que teoría, sin consejos médicos)."
+        )
     c = corpus()
     knowledge = context_for(" ".join([req.input, *(t.text for t in req.recent if t.role == "player")]), c)
     if knowledge:
@@ -63,7 +80,7 @@ def build_prompt(req: ConsoleRequest) -> str:
     if signals:
         parts.append("SEÑAL DE SEGURIDAD detectada: " + ", ".join(f"{s.senal} ({s.accion})" for s in signals) + ". La consola ya dijo la línea de seguridad; tú acompañas, no repites instrucciones médicas.")
     if req.recent:
-        parts.append("Últimos turnos:\n" + "\n".join(f"{'jugador' if t.role == 'player' else 'cristal'}: {t.text}" for t in req.recent))
+        parts.append("Últimos turnos:\n" + "\n".join(f"{'jugador' if t.role == 'player' else speaker}: {t.text}" for t in req.recent))
     parts.append(f"postura detectada: {req.stance or 'ninguna'} · presión: {req.pressure:.2f}")
     if req.confession:
         parts.append(f"frase archivada: «{req.confession}»")
@@ -73,13 +90,18 @@ def build_prompt(req: ConsoleRequest) -> str:
         parts.append(f"glifo invocado: {req.glyph}")
     if req.local_line:
         parts.append(f"la consola ya contestó: «{req.local_line}»")
-    parts.append(f"el jugador escribe: «{req.input.strip()}»\nTu segunda voz:")
+    if req.npc:
+        parts.append(f"el jugador le dice a {req.npc.name}: «{req.input.strip()}»\n{req.npc.name} responde:")
+    else:
+        parts.append(f"el jugador escribe: «{req.input.strip()}»\nTu segunda voz:")
     return "\n".join(parts)
 
 
-def clean_line(text: str) -> str:
+def clean_line(text: str, speaker: str | None = None) -> str:
     line = text.strip().strip('"«»').strip()
     line = re.sub(r"^(cristal|CRISTAL)\s*:\s*", "", line)
+    if speaker:
+        line = re.sub(r"^" + re.escape(speaker) + r"\s*:\s*", "", line, flags=re.I)
     return line[:MAX_LINE_CHARS]
 
 
@@ -106,7 +128,7 @@ async def turn(req: ConsoleRequest) -> StreamingResponse:
                     collected.append(event["text"])
                     yield _event({"type": "text", "text": event["text"]})
                 elif event["type"] == "result":
-                    final = clean_line(event.get("text") or "".join(collected))
+                    final = clean_line(event.get("text") or "".join(collected), req.npc.name if req.npc else None)
                     if not final or FORBIDDEN.search(final):
                         yield _event({"type": "error", "detail": "the voice broke character; dropped"})
                         return

@@ -8,6 +8,7 @@ import { CONSOLE_COPY } from "./copy";
 import { objectiveLine, toLines, type Line } from "./lines";
 import { pressureHint, runConsoleTurn } from "./turn";
 import { useVoiceStream } from "./useVoiceStream";
+import { worldNodeById } from "../../game/worldNodes";
 
 /** In-world console driven by the ported TerminalCore. Corruption is visual
  *  (CRT skin + decode-on-reveal), never garbled into the text itself. */
@@ -26,7 +27,9 @@ export function ConsoleOverlay() {
   const lastObjective = useRef<string | null>(null);
   const askVoice = useVoiceStream(core.sessionId, setLines);
 
-  const visible = mode === GameMode.Console || (mode === GameMode.Transition && activeId !== null);
+  const up = mode === GameMode.Console || (mode === GameMode.Transition && activeId !== null);
+  // An inhabitant borrows the mode but has their own overlay (NpcOverlay).
+  const visible = up && worldNodeById(activeId)?.kind !== "npc";
 
   useEffect(() => {
     if (!visible) return;

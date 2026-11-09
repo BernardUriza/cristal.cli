@@ -3,6 +3,9 @@ import type { Stance } from "./psych/StanceClassifier";
 
 export type VoiceTurn = { role: "player" | "cristal"; text: string };
 
+/** an inhabitant of the labyrinth the voice must speak as, instead of the console */
+export type VoiceNpc = { id: string; name: string; persona: string };
+
 export type VoiceRequest = {
   sessionId: string;
   input: string;
@@ -13,6 +16,7 @@ export type VoiceRequest = {
   objective: string | null;
   glyph: string | null;
   recent: VoiceTurn[];
+  npc?: VoiceNpc | null;
 };
 
 export const VOICE_TIMEOUT_MS = 90000;
@@ -33,6 +37,7 @@ export async function streamVoice(req: VoiceRequest, handlers: Handlers, signal:
     objective: req.objective,
     glyph: req.glyph,
     recent: req.recent.slice(-RECENT_TURNS),
+    npc: req.npc ?? null,
   };
   let aborted = false;
   try {

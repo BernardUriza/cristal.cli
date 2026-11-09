@@ -1,7 +1,7 @@
 import { useEffect, useRef, type Dispatch, type SetStateAction } from "react";
 import { useGame } from "../../game/store";
 import { objectiveForSlice } from "../../game/VerticalSlice";
-import { streamVoice, RECENT_TURNS, type VoiceTurn } from "../../terminal/consoleVoice";
+import { streamVoice, RECENT_TURNS, type VoiceNpc, type VoiceTurn } from "../../terminal/consoleVoice";
 import { getPsychPressure } from "../../terminal/psych/PsychologicalResponseEngine";
 import { placeLine, plainLine, type Line } from "./lines";
 
@@ -11,7 +11,7 @@ export function useVoiceStream(sessionId: string, setLines: Dispatch<SetStateAct
 
   useEffect(() => () => abort.current?.abort(), []);
 
-  return (input: string, localLine: string) => {
+  return (input: string, localLine: string, npc: VoiceNpc | null = null) => {
     abort.current?.abort();
     const controller = new AbortController();
     abort.current = controller;
@@ -21,7 +21,8 @@ export function useVoiceStream(sessionId: string, setLines: Dispatch<SetStateAct
     const remember = (...turns: VoiceTurn[]) => {
       recentTurns.current = [...recentTurns.current, ...turns].slice(-RECENT_TURNS);
     };
-    remember({ role: "player", text: input }, { role: "cristal", text: localLine });
+    remember({ role: "player", text: input });
+    if (localLine) remember({ role: "cristal", text: localLine });
     let voiceIndex = -1;
     let draft = "";
     const showVoice = (text: string) =>
@@ -41,6 +42,7 @@ export function useVoiceStream(sessionId: string, setLines: Dispatch<SetStateAct
         objective: objectiveForSlice(game.verticalSlice),
         glyph: game.verticalSlice.invokedGlyph ?? null,
         recent: recentTurns.current,
+        npc,
       },
       {
         onDelta: (text) => {

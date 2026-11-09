@@ -7,6 +7,7 @@ import { RoomScene } from "./game/RoomScene";
 import { InteractPrompt } from "./ui/InteractPrompt";
 import { OnboardingHint } from "./ui/OnboardingHint";
 import { ConsoleOverlay } from "./ui/console/ConsoleOverlay";
+import { NpcOverlay } from "./ui/console/NpcOverlay";
 import { DebugHUD } from "./ui/DebugHUD";
 import { RoomPanel } from "./ui/RoomPanel";
 import { RoomCaption } from "./ui/RoomCaption";
@@ -148,6 +149,7 @@ export function App() {
       <RoomJournal />
       <PressureVignette />
       <ConsoleOverlay />
+      <NpcOverlay />
       <MusicDirector />
     </>
   );
