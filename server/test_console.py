@@ -47,6 +47,7 @@ def make_client(chunks, final=None, fail=False):
         yield {"type": "result", "text": final if final is not None else "".join(chunks), "model": "test"}
 
     console.use_stream(stream)
+    console.forget_warmed()
     app = FastAPI()
     app.include_router(console.router)
     return TestClient(app), seen
@@ -137,3 +138,29 @@ def test_an_inhabitant_speaks_as_themselves_not_as_the_console():
     assert "el jugador le dice a EL VELADOR: «me pesa el pecho»" in seen["prompt"]
     assert "la consola ya contestó" not in seen["prompt"]
     assert client.post("/console/turn", json={**REQ, "npc": {**npc, "id": "bad id!"}}).status_code == 422
+
+
+NPC = {"id": "npc_velador", "name": "EL VELADOR", "persona": "El último operador. Habla bajo."}
+
+
+def test_warming_opens_the_inhabitants_session_once_with_their_greeting():
+    client, seen = make_client(["…"])
+    body = {"session_id": "abc-123-npc_velador", "npc": NPC, "greeting": "Llevas rato caminando."}
+    assert client.post("/console/warm", json=body).json() == {"warmed": True}
+    assert seen["session"] == "abc-123-npc_velador"
+    assert "ENCARNAS A EL VELADOR" in seen["prompt"] and "El último operador. Habla bajo." in seen["prompt"]
+    assert "«Llevas rato caminando.»" in seen["prompt"]
+    assert "{" not in seen["prompt"]
+    seen.clear()
+    assert client.post("/console/warm", json=body).json() == {"warmed": False}
+    assert seen == {}
+
+
+def test_a_failed_warm_up_is_not_an_error_and_can_be_retried():
+    client, _ = make_client([], fail=True)
+    body = {"session_id": "abc-123-npc_velador", "npc": NPC}
+    res = client.post("/console/warm", json=body)
+    assert res.status_code == 200 and res.json() == {"warmed": False}
+    console.use_stream(None)
+    assert client.post("/console/warm", json=body).status_code == 503
+    assert client.post("/console/warm", json={**body, "session_id": "bad id!"}).status_code == 422

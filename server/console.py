@@ -10,17 +10,23 @@ from __future__ import annotations
 
 import json
 import re
+from collections import OrderedDict
+from pathlib import Path
 from typing import Any, AsyncIterator, Callable
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
+from fi_runner import load_prompt
+
 from corpus import check_signals, context_for, corpus
 
 router = APIRouter(prefix="/console")
 
 MAX_LINE_CHARS = 220
+WARM_PROMPT_PATH = Path(__file__).parent / "prompts" / "console-warm.md"
+WARMED_LIMIT = 2048
 FORBIDDEN = re.compile(r"no\s+(te\s+)?entend|i\s+don'?t\s+understand|s[eé]\s+m[aá]s\s+espec[ií]fic|no\s+puedo\s+ayudar|soy\s+(un\s+)?(modelo|ia|inteligencia)", re.I)
 
 
@@ -50,6 +56,14 @@ class ConsoleRequest(BaseModel):
     npc: Npc | None = None
 
 
+class WarmRequest(BaseModel):
+    """Opens an inhabitant's session before the player writes: the first turn of a session is the slow one."""
+
+    session_id: str = Field(min_length=4, max_length=64, pattern=r"^[A-Za-z0-9_-]+$")
+    npc: Npc
+    greeting: str = Field(default="", max_length=300)
+
+
 StreamFn = Callable[[str, str], AsyncIterator[dict[str, Any]]]
 _stream: StreamFn | None = None
 
@@ -57,6 +71,22 @@ _stream: StreamFn | None = None
 def use_stream(stream: StreamFn | None) -> None:
     global _stream
     _stream = stream
+
+
+_warmed: OrderedDict[str, None] = OrderedDict()
+
+
+def forget_warmed() -> None:
+    _warmed.clear()
+
+
+def build_warm_prompt(req: WarmRequest) -> str:
+    return (
+        load_prompt(WARM_PROMPT_PATH)
+        .replace("{name}", req.npc.name)
+        .replace("{persona}", req.npc.persona)
+        .replace("{greeting}", req.greeting.strip() or "…")
+    )
 
 
 def build_prompt(req: ConsoleRequest) -> str:
@@ -137,3 +167,22 @@ async def turn(req: ConsoleRequest) -> StreamingResponse:
             yield _event({"type": "error", "detail": f"AIRE: {exc}"})
 
     return StreamingResponse(events(), media_type="application/x-ndjson")
+
+
+@router.post("/warm")
+async def warm(req: WarmRequest) -> dict[str, bool]:
+    stream = _stream
+    if stream is None:
+        raise HTTPException(status_code=503, detail="console voice not configured")
+    if req.session_id in _warmed:
+        return {"warmed": False}
+    _warmed[req.session_id] = None
+    while len(_warmed) > WARMED_LIMIT:
+        _warmed.popitem(last=False)
+    try:
+        async for _ in stream(req.session_id, build_warm_prompt(req)):
+            pass
+    except Exception:  # noqa: BLE001 — a failed warm-up only means the first turn stays slow
+        _warmed.pop(req.session_id, None)
+        return {"warmed": False}
+    return {"warmed": True}
