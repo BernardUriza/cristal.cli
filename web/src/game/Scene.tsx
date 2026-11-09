@@ -20,6 +20,8 @@ import { Temple } from "../graphics/presentation/Temple";
 import { GAME_COMPOSITION, TEMPLE_PLACEMENT } from "../graphics/config/composition";
 
 const SOLID_RADIUS = 0.55;
+const DAWN_AMBIENT = 2.5;
+const DAWN_HEMISPHERE = 2;
 
 export function Scene() {
   const maze = useMemo(() => generateMaze(MAZE_COLS, MAZE_ROWS, MAZE_SEED), []);
@@ -90,8 +92,8 @@ export function Scene() {
       <color attach="background" args={["#02050a"]} />
       <fog attach="fog" args={["#02050a", 8, atmosphere.fogFar + dawn * 40]} />
 
-      <ambientLight intensity={atmosphere.ambient * (1 + dawn * 2.2)} color="#2a5a44" />
-      <hemisphereLight args={["#1a4a32", "#04100a", atmosphere.hemisphere * (1 + dawn * 1.5)]} />
+      <ambientLight intensity={atmosphere.ambient * (1 + dawn * DAWN_AMBIENT)} color="#2a5a44" />
+      <hemisphereLight args={["#1a4a32", "#04100a", atmosphere.hemisphere * (1 + dawn * DAWN_HEMISPHERE)]} />
       <directionalLight
         position={[10, 18, 6]}
         intensity={1.1}
@@ -104,7 +106,7 @@ export function Scene() {
         shadow-camera-bottom={-30}
       />
 
-      <Labyrinth maze={maze} />
+      <Labyrinth maze={maze} dawn={dawn} />
       <FloorTrail maze={maze} />
       <Temple input={GAME_COMPOSITION} position={TEMPLE_PLACEMENT.position} rotation={TEMPLE_PLACEMENT.rotation} viewDistance={TEMPLE_PLACEMENT.viewDistance} />
 

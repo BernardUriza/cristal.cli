@@ -1,18 +1,17 @@
 import { useEffect } from "react";
-import { npcSessionId, npcsToWarm } from "../../game/npcWarmup";
-import { subscribePlayerPose } from "../../game/playerPositionBus";
+import { npcSessionId } from "../../game/npcWarmup";
+import { useGame } from "../../game/store";
 import { NPC_NODES } from "../../game/worldNodes";
 import { warmVoice } from "../../terminal/consoleVoice";
 
-// The first turn of a voice session is the slow one, so it is spent while the player is still walking up.
+// Opening a voice session takes about 25 s, longer than the walk from any nearby cell.
+// So it starts on the player's first step: a visitor who never moves costs nothing.
 export function useNpcWarmup(coreSessionId: string): void {
+  const walked = useGame((s) => s.funnel.reached.first_step !== undefined);
   useEffect(() => {
-    const warmed = new Set<string>();
-    return subscribePlayerPose((pose) => {
-      for (const npc of npcsToWarm(pose, NPC_NODES, warmed)) {
-        warmed.add(npc.id);
-        warmVoice(npcSessionId(coreSessionId, npc.id), { id: npc.id, name: npc.label, persona: npc.persona }, npc.greeting);
-      }
-    });
-  }, [coreSessionId]);
+    if (!walked) return;
+    for (const npc of NPC_NODES) {
+      warmVoice(npcSessionId(coreSessionId, npc.id), { id: npc.id, name: npc.label, persona: npc.persona }, npc.greeting);
+    }
+  }, [walked, coreSessionId]);
 }
