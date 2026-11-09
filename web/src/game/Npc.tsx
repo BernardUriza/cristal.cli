@@ -60,11 +60,12 @@ export function Npc({ id, label, accent, position }: NpcProps) {
             <MixamoCharacter loco={loco} />
           </ErrorBoundary>
         </Suspense>
+        {/* the name turns with the body, so whoever he faces reads it, never its mirror */}
+        <mesh position={[0, 2.25, 0]}>
+          <planeGeometry args={[1.6, 0.5]} />
+          <meshBasicMaterial map={labelTex} transparent depthWrite={false} toneMapped={false} />
+        </mesh>
       </group>
-      <mesh position={[0, 2.25, 0]}>
-        <planeGeometry args={[1.6, 0.5]} />
-        <meshBasicMaterial map={labelTex} transparent depthWrite={false} toneMapped={false} side={THREE.DoubleSide} />
-      </mesh>
     </group>
   );
 }
